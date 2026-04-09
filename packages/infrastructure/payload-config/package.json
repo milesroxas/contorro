@@ -1,0 +1,29 @@
+{
+  "name": "@repo/infrastructure-payload-config",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@repo/domains-composition": "workspace:*",
+    "@repo/domains-content": "workspace:*",
+    "@repo/domains-design-system": "workspace:*",
+    "@repo/domains-publishing": "workspace:*",
+    "@repo/domains-runtime-catalog": "workspace:*",
+    "@repo/domains-user-access": "workspace:*",
+    "@repo/kernel": "workspace:*"
+  },
+  "peerDependencies": {
+    "payload": "^3.0.0"
+  }
+}

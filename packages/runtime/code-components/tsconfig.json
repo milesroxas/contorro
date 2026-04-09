@@ -1,0 +1,14 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "jsx": "react-jsx"
+  },
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../../kernel" },
+    { "path": "../../domains/runtime-catalog" },
+    { "path": "../../contracts/zod" }
+  ]
+}

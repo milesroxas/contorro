@@ -1,0 +1,22 @@
+{
+  "name": "@repo/application-publish-flow",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@repo/domains-publishing": "workspace:*",
+    "@repo/domains-runtime-catalog": "workspace:*",
+    "@repo/kernel": "workspace:*"
+  }
+}

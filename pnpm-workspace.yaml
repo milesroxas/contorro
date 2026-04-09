@@ -1,0 +1,11 @@
+packages:
+  - 'apps/*'
+  - 'packages/kernel'
+  - 'packages/domains/*'
+  - 'packages/application/*'
+  - 'packages/presentation/*'
+  - 'packages/infrastructure/*'
+  - 'packages/contracts/*'
+  - 'packages/runtime/*'
+  - 'packages/config/env'
+  - 'packages/config/tailwind'

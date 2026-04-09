@@ -1,0 +1,31 @@
+---
+description: Structural decisions and dependencies must follow docs/architecture-spec.md
+alwaysApply: true
+---
+
+# Architecture spec alignment
+
+Treat `docs/architecture-spec.md` as the source of truth for repo layout, boundaries, and tool choice.
+
+## Non-negotiables (§3)
+
+- Domain logic stays in `packages/domains/*` — not in Payload hooks, Next handlers, or React UI.
+- Application services in `packages/application/*` are the entry point for domain mutation; gateway and Payload hooks call those services, not aggregates directly.
+- **Presentation (`packages/presentation/*`) must not import `packages/infrastructure/*` directly** (§3.2).
+- Lexical vs composition tree text: no overlap (§3.1.6).
+
+## Monorepo (§4)
+
+- Match package names, folders, and the `pnpm-workspace.yaml` globs in §4.4.
+- `packages/kernel` must not take runtime deps other than what the spec allows (e.g. `nanoid` only).
+- Tooling: **Biome** only for repo lint/format (`biome.json`); **no ESLint/Prettier** as project linters.
+- Do not use the `@payload-config` alias inside shared `packages/*` (§4.4).
+
+## CI and local scripts (§17–18)
+
+- Lint: `pnpm lint` → `biome check .`
+- Typecheck: `pnpm typecheck` runs `tsc -b` (composite packages emit to `dist`; TypeScript cannot use `tsc -b --noEmit` with this graph) then `tsc --noEmit` in `apps/studio`.
+- Local DB: `docker-compose.yml` is Postgres-only per §18.1; studio uses `POSTGRES_URL` (see §18.3 and `apps/studio/.env.example`).
+- Integration tests expect Postgres (§17.2); run `pnpm db:up` and set env before `pnpm test`.
+
+When the spec and an ad-hoc choice conflict, **change the code to match the spec** (or update the spec deliberately in a dedicated change).

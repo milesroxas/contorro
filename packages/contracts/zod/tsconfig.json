@@ -1,0 +1,14 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../../kernel" },
+    { "path": "../../domains/composition" },
+    { "path": "../../domains/content" },
+    { "path": "../../domains/design-system" }
+  ]
+}

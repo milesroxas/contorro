@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "noEmit": false,
+    "types": ["node"]
+  },
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../../packages/kernel" },
+    { "path": "../../packages/config/env" },
+    { "path": "../../packages/contracts/zod" },
+    { "path": "../../packages/application/builder" },
+    { "path": "../../packages/application/contract-sync" },
+    { "path": "../../packages/application/publish-flow" },
+    { "path": "../../packages/infrastructure/event-bus" },
+    { "path": "../../packages/infrastructure/payload-config" },
+    { "path": "../../packages/infrastructure/persistence" }
+  ]
+}

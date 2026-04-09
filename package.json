@@ -1,0 +1,33 @@
+{
+  "name": "contorro",
+  "private": true,
+  "packageManager": "pnpm@10.11.0",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "pnpm --filter @repo/studio dev & pnpm --filter @repo/gateway dev",
+    "db:up": "docker compose up db -d",
+    "db:reset": "docker compose down -v && docker compose up db -d",
+    "migrate": "pnpm --filter @repo/studio exec payload migrate",
+    "migrate:create": "pnpm --filter @repo/studio exec payload migrate:create",
+    "seed": "pnpm --filter @repo/studio exec payload run src/seeds/index.ts",
+    "test": "pnpm --filter @repo/studio run test:int",
+    "test:e2e": "pnpm --filter @repo/studio exec playwright test",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc -b && pnpm --filter @repo/studio exec tsc --noEmit"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "typescript": "^6.0.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "esbuild",
+      "unrs-resolver",
+      "bufferutil",
+      "utf-8-validate",
+      "protobufjs"
+    ]
+  }
+}

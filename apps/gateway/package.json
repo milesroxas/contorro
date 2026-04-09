@@ -1,0 +1,33 @@
+{
+  "name": "@repo/gateway",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -b",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.0",
+    "@payloadcms/db-postgres": "3.82.1",
+    "@repo/application-builder": "workspace:*",
+    "@repo/application-contract-sync": "workspace:*",
+    "@repo/application-publish-flow": "workspace:*",
+    "@repo/config-env": "workspace:*",
+    "@repo/contracts-zod": "workspace:*",
+    "@repo/infrastructure-event-bus": "workspace:*",
+    "@repo/infrastructure-payload-config": "workspace:*",
+    "@repo/infrastructure-persistence": "workspace:*",
+    "@repo/kernel": "workspace:*",
+    "hono": "^4.6.0",
+    "payload": "3.82.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  }
+}
