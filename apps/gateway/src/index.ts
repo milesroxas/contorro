@@ -1,12 +1,10 @@
+import "./load-env.js";
 import { serve } from "@hono/node-server";
-import { ok } from "@repo/kernel";
-import { Hono } from "hono";
+import { parseGatewayEnv } from "@repo/config-env/gateway";
+import { gatewayApp } from "./app.js";
 
-const app = new Hono();
+const env = parseGatewayEnv(process.env);
+/** Default avoids Next.js dev fallback (3001) when root `pnpm dev` runs both apps. */
+const port = env.PORT ?? 3002;
 
-app.get("/health", (c) => {
-  return c.json(ok({ status: "ok" as const }));
-});
-
-const port = Number(process.env.PORT) || 3001;
-serve({ fetch: app.fetch, port });
+serve({ fetch: gatewayApp.fetch, port });

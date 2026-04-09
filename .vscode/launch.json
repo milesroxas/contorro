@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Next.js: debug studio (full stack)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/apps/studio/node_modules/next/dist/bin/next",
+      "runtimeArgs": ["--inspect"],
+      "skipFiles": ["<node_internals>/**"],
+      "serverReadyAction": {
+        "action": "debugWithChrome",
+        "killOnServerStop": true,
+        "pattern": "- Local:.+(https?://.+)",
+        "uriFormat": "%s",
+        "webRoot": "${workspaceFolder}/apps/studio"
+      },
+      "cwd": "${workspaceFolder}/apps/studio"
+    }
+  ]
+}

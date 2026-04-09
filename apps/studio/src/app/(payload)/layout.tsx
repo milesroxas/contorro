@@ -2,29 +2,22 @@
 /* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
 import config from "@payload-config";
 import "@payloadcms/next/css";
-import { RootLayout, handleServerFunctions } from "@payloadcms/next/layouts";
-import type { ServerFunctionClient } from "payload";
+import { RootLayout } from "@payloadcms/next/layouts";
 import type React from "react";
 
 import { importMap } from "./admin/importMap.js";
+import { payloadServerFunction } from "./payloadServerFunction";
 import "./custom.scss";
 
 type Args = {
   children: React.ReactNode;
 };
 
-const serverFunction: ServerFunctionClient = async (args) =>
-  handleServerFunctions({
-    ...args,
-    config,
-    importMap,
-  });
-
 const Layout = ({ children }: Args) => (
   <RootLayout
     config={config}
     importMap={importMap}
-    serverFunction={serverFunction}
+    serverFunction={payloadServerFunction}
   >
     {children}
   </RootLayout>

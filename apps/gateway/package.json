@@ -5,6 +5,16 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./app": {
+      "types": "./dist/app.d.ts",
+      "import": "./dist/app.js"
+    }
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -b",
@@ -22,8 +32,10 @@
     "@repo/infrastructure-payload-config": "workspace:*",
     "@repo/infrastructure-persistence": "workspace:*",
     "@repo/kernel": "workspace:*",
+    "dotenv": "16.4.7",
     "hono": "^4.6.0",
-    "payload": "3.82.1"
+    "payload": "3.82.1",
+    "sharp": "0.34.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

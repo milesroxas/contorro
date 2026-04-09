@@ -9,6 +9,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./studio": {
+      "types": "./dist/studio.d.ts",
+      "import": "./dist/studio.js"
+    },
+    "./gateway": {
+      "types": "./dist/gateway.d.ts",
+      "import": "./dist/gateway.js"
     }
   },
   "scripts": {
@@ -16,5 +24,8 @@
   },
   "dependencies": {
     "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0"
   }
 }
