@@ -7,7 +7,7 @@
     "dev": "pnpm --filter @repo/studio dev & pnpm --filter @repo/gateway dev",
     "db:up": "docker compose up db -d",
     "db:reset": "docker compose down -v && docker compose up db -d",
-    "migrate": "pnpm --filter @repo/studio exec payload migrate",
+    "migrate": "pnpm build && pnpm --filter @repo/studio exec payload migrate",
     "migrate:create": "pnpm --filter @repo/studio exec payload migrate:create",
     "seed": "pnpm --filter @repo/studio exec payload run src/seeds/index.ts",
     "test": "pnpm --filter @repo/studio run test:int",
