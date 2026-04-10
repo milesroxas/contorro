@@ -5,7 +5,6 @@ import { getPayload } from "payload";
 import React from "react";
 
 import config from "@/payload.config";
-import "./styles.css";
 
 export default async function HomePage() {
   const headers = await getHeaders();
@@ -30,6 +29,9 @@ export default async function HomePage() {
         {!user && <h1>Welcome to your new project.</h1>}
         {user && <h1>Welcome back, {user.email}</h1>}
         <div className="links">
+          <a className="admin" href="/design-system/preview">
+            Design token preview
+          </a>
           <a
             className="admin"
             href={payloadConfig.routes.admin}

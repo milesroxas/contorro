@@ -1,8 +1,8 @@
 # Implementation-Ready Architecture Spec
 
-**Version:** 0.3.1  
+**Version:** 0.3.2  
 **Owner:** Miles Roxas  
-**Updated:** April 9, 2026  
+**Updated:** April 10, 2026  
 **Surface:** Payload-powered visual builder platform
 
 ---
@@ -66,6 +66,7 @@
 | 26 | Migration ownership ambiguous when two processes share one DB | §9.3 clarifies only studio runs migrations; gateway is a consumer |
 | 27 | Monorepo build performance with 25+ packages unaddressed | §18.2 adds guidance: IDE for types in dev, `tsc --noEmit` in CI only |
 | 28 | §4.1 tree omitted root-level workspace/CI/Docker files and blurred studio vs `payload-config` ownership | §4.1 lists `pnpm-workspace.yaml`, root `package.json`, lockfile, `tsconfig.json`, `docker-compose.yml`, `.github/workflows/`; **Layout notes** state collections/globals are defined only under `infrastructure/payload-config` |
+| 29 | Studio gained a concrete Tailwind v4 CSS entry and shadcn-based primitives without a spec pointer | §4.1 **Layout notes** and new §11.5 document `globals.css`, `postcss.config.mjs`, `components.json`, and `src/components/ui/`; §4.4 lists representative app-level deps |
 
 ---
 
@@ -249,6 +250,13 @@ flowchart TD
 
   apps/
     studio/                     # Next.js + Payload app shell: routes, payload.config.ts, tests, env — not collection source files
+      postcss.config.mjs        # @tailwindcss/postcss (Tailwind v4 for Next)
+      components.json           # shadcn/ui CLI config (paths, Tailwind CSS entry, aliases)
+      src/
+        app/
+          globals.css           # Tailwind v4 entry (@import "tailwindcss", …) + app-wide theme; imported by frontend + Payload layouts
+        components/
+          ui/                   # shadcn primitives (Radix-based); app-shell only — not the composition canonical model
     gateway/                    # Hono app — builder mutation API (deployed within studio's Vercel project)
 
   packages/
@@ -313,6 +321,7 @@ flowchart TD
 **Layout notes**
 
 - **Collections and globals** are defined only under `packages/infrastructure/payload-config/src/` (`collections/`, `globals/`). `apps/studio` imports them and assembles `buildConfig` (e.g. DB adapter, `secret`, Lexical, `sharp`, admin `importMap` paths)—it does not duplicate collection modules locally.
+- **Studio CSS:** `src/app/globals.css` is the single Tailwind v4 stylesheet entry for the app (imported from both the frontend route group layout and the Payload route layout so utilities and design tokens are available on public pages and in admin). Token output from `packages/config/tailwind` is composed into that pipeline per §11.2–11.5.
 - **Optional IDE metadata** (e.g. `.vscode/`, `.cursor/rules/`) may live at the repo root for editor/CI ergonomics; behavior is still governed by this file and §17–18.
 
 ### 4.2 Package dependency graph
@@ -462,7 +471,10 @@ pnpm add -D -w @biomejs/biome typescript
 
 ```bash
 pnpm add sharp --filter @repo/studio
-pnpm add @tailwindcss/postcss --filter @repo/studio
+pnpm add @tailwindcss/postcss tailwindcss postcss --filter @repo/studio
+
+# App-shell UI (Next routes, previews): shadcn primitives + helpers — keep in studio, not in packages/presentation
+pnpm add class-variance-authority clsx tailwind-merge radix-ui @tabler/icons-react tw-animate-css shadcn --filter @repo/studio
 
 # Internal workspace packages
 pnpm add @repo/kernel @repo/contracts-zod \
@@ -1520,6 +1532,16 @@ export function resolveStyleBinding(
 
 Published tokens resolve to Tailwind utility classes. Unpublished tokens and overrides resolve to inline `style` props referencing CSS variables. On publish, a rebuild makes new tokens available as utility classes.
 
+### 11.5 Studio app shell: shadcn/ui on Tailwind v4
+
+**Scope:** `apps/studio` may depend on **shadcn/ui**-style primitives under `src/components/ui/`, configured via `components.json` (CLI/registry: `shadcn` package). These are **app-shell and marketing/preview UI** building blocks for Next.js routes (e.g. design token preview pages), not the visual builder’s canonical style model.
+
+**Relationship to §11.1:** Composition nodes still store **`StyleBinding`** (and the token compiler still drives `@theme`); shadcn components use **CVA** only for **fixed component variants** (button sizes, card layouts). Do not persist arbitrary Tailwind class strings from shadcn into the composition tree as the source of truth—that remains the job of `StyleBinding` + token metadata.
+
+**Stack:** Tailwind v4 (`tailwindcss`), `@tailwindcss/postcss` + `postcss.config.mjs`, `class-variance-authority`, `clsx`, `tailwind-merge`, Radix primitives (`radix-ui`), optional icons (`@tabler/icons-react`), animation helpers (`tw-animate-css`), and the `shadcn` package for codegen/registry. **Presentation packages** (`packages/presentation/*`) do not need to duplicate this stack unless they ship standalone UI that should share the same primitives—prefer importing shared pieces from a single place in a later refactor rather than copying `components/ui` into multiple packages.
+
+**Payload admin:** The Payload route layout imports the same `globals.css` so Tailwind utilities and CSS variables are consistent; Payload’s own SCSS still applies to the admin chrome. Avoid fighting Payload layout styles—scope any conflicting overrides to explicit route or component wrappers.
+
 ---
 
 ## 12. Runtime Renderer
@@ -2057,7 +2079,8 @@ gantt
 | Gateway initializes Payload via `getPayload()` | Full local API access, type safety, hook execution. Officially supported for standalone processes. | REST API calls from gateway to studio |
 | Zod v4 as canonical contract source | Built-in `z.toJSONSchema()`, 14x faster parsing, TypeScript compilation improvements. | io-ts, Valibot |
 | DDD for domain packages, FSD for presentation | DDD models the problem domain. FSD organizes UI by feature. Complementary. | FSD-only, layered architecture |
-| Structured `StyleBinding` over raw Tailwind strings | Validated, diffable, policy-enforceable. Raw class strings are none of these. | CVA |
+| Structured `StyleBinding` over raw Tailwind strings | Validated, diffable, policy-enforceable. Raw class strings are none of these. | CVA alone as the persistence model |
+| CVA + shadcn in `apps/studio` for app-shell primitives | Variant APIs for buttons, cards, etc. on Next routes; orthogonal to persisted composition style, which remains `StyleBinding` + tokens. | Duplicating shadcn into every presentation package from day one |
 | InProcessEventBus, string-based, Phase 0–5 | Zero infrastructure dependency. Simple to test. Typed registry deferred to Phase 6. | Typed registry from Phase 0 |
 | dnd-kit legacy packages (`@dnd-kit/core`) | `@dnd-kit/react` is v0.x (not stable). Legacy packages work with React 19 and are widely deployed. Migration path: when `@dnd-kit/react` reaches v1.0, evaluate in Phase 6. Canvas is FSD-isolated — swap is contained to one feature directory. | `@dnd-kit/react` v0.x, react-dnd, custom |
 | Drizzle migrations via Payload adapter | Payload manages migration lifecycle; Drizzle handles type-safe schema. | Prisma, raw SQL |

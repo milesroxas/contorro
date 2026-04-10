@@ -1,3 +1,7 @@
+export {
+  TOKEN_PUBLISHED,
+  type TokenPublishedPayload,
+} from "@repo/domains-design-system";
 export { createDesignTokenOverrideBeforeValidateHandler } from "./commands/override-hooks.js";
 export {
   createDesignTokenSetAfterChangeHandler,

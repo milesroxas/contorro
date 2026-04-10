@@ -1,32 +1,31 @@
+/* Legacy Payload template home — scoped so shadcn/Tailwind globals apply elsewhere. */
 :root {
   --font-mono: "Roboto Mono", monospace;
 }
 
-* {
+.home {
   box-sizing: border-box;
 }
 
-html {
-  font-size: 18px;
-  line-height: 32px;
-
-  background: rgb(0, 0, 0);
-  -webkit-font-smoothing: antialiased;
-}
-
-html,
-body,
-#app {
-  height: 100%;
-}
-
-body {
+.home {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 100vh;
+  padding: 45px;
+  max-width: 1024px;
+  margin: 0 auto;
+  overflow: hidden;
   font-family: system-ui;
   font-size: 18px;
   line-height: 32px;
+  color: rgb(255, 255, 255);
+  background: rgb(0, 0, 0);
 
-  margin: 0;
-  color: rgb(1000, 1000, 1000);
+  @media (max-width: 400px) {
+    padding: 24px;
+  }
 
   @media (max-width: 1024px) {
     font-size: 15px;
@@ -34,13 +33,17 @@ body {
   }
 }
 
-img {
+.home * {
+  box-sizing: border-box;
+}
+
+.home img {
   max-width: 100%;
   height: auto;
   display: block;
 }
 
-h1 {
+.home h1 {
   margin: 40px 0;
   font-size: 64px;
   line-height: 70px;
@@ -63,15 +66,15 @@ h1 {
   }
 }
 
-p {
+.home p {
   margin: 24px 0;
 
   @media (max-width: 1024px) {
-    margin: calc(var(--base) * 0.75) 0;
+    margin: calc(var(--base, 1rem) * 0.75) 0;
   }
 }
 
-a {
+.home a {
   color: currentColor;
 
   &:focus {
@@ -85,80 +88,64 @@ a {
   }
 }
 
-svg {
+.home svg {
   vertical-align: middle;
 }
 
-.home {
+.home .content {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   align-items: center;
-  height: 100vh;
-  padding: 45px;
-  max-width: 1024px;
-  margin: 0 auto;
-  overflow: hidden;
+  justify-content: center;
+  flex-grow: 1;
+}
 
-  @media (max-width: 400px) {
-    padding: 24px;
+.home .content h1 {
+  text-align: center;
+}
+
+.home .links {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  a {
+    text-decoration: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
   }
 
-  .content {
-    display: flex;
+  .admin {
+    color: rgb(0, 0, 0);
+    background: rgb(255, 255, 255);
+    border: 1px solid rgb(0, 0, 0);
+  }
+
+  .docs {
+    color: rgb(255, 255, 255);
+    background: rgb(0, 0, 0);
+    border: 1px solid rgb(255, 255, 255);
+  }
+}
+
+.home .footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  @media (max-width: 1024px) {
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    flex-grow: 1;
-
-    h1 {
-      text-align: center;
-    }
+    gap: 6px;
   }
 
-  .links {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    a {
-      text-decoration: none;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-    }
-
-    .admin {
-      color: rgb(0, 0, 0);
-      background: rgb(1000, 1000, 1000);
-      border: 1px solid rgb(0, 0, 0);
-    }
-
-    .docs {
-      color: rgb(1000, 1000, 1000);
-      background: rgb(0, 0, 0);
-      border: 1px solid rgb(1000, 1000, 1000);
-    }
+  p {
+    margin: 0;
   }
 
-  .footer {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    @media (max-width: 1024px) {
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    p {
-      margin: 0;
-    }
-
-    .codeLink {
-      text-decoration: none;
-      padding: 0 0.5rem;
-      background: rgb(60, 60, 60);
-      border-radius: 4px;
-    }
+  .codeLink {
+    text-decoration: none;
+    padding: 0 0.5rem;
+    background: rgb(60, 60, 60);
+    border-radius: 4px;
   }
 }

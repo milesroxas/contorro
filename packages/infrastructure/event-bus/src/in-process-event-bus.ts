@@ -17,12 +17,25 @@ export class InProcessEventBus implements EventBus {
   subscribe<E extends DomainEvent<string, unknown>>(
     type: E["type"],
     handler: (event: E) => Promise<void>,
-  ): void {
+  ): () => void {
     let set = this.handlers.get(type);
     if (!set) {
       set = new Set();
       this.handlers.set(type, set);
     }
-    set.add(handler as (event: DomainEvent<string, unknown>) => Promise<void>);
+    const wrapped = handler as (
+      event: DomainEvent<string, unknown>,
+    ) => Promise<void>;
+    set.add(wrapped);
+    return () => {
+      const current = this.handlers.get(type);
+      if (!current) {
+        return;
+      }
+      current.delete(wrapped);
+      if (current.size === 0) {
+        this.handlers.delete(type);
+      }
+    };
   }
 }
