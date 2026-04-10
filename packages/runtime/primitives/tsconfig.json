@@ -8,6 +8,6 @@
   "include": ["src/**/*"],
   "references": [
     { "path": "../../kernel" },
-    { "path": "../../domains/design-system" }
+    { "path": "../../domains/runtime-catalog" }
   ]
 }

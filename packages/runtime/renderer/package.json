@@ -16,11 +16,15 @@
   },
   "dependencies": {
     "@repo/config-tailwind": "workspace:*",
-    "@repo/domains-composition": "workspace:*",
+    "@repo/contracts-zod": "workspace:*",
     "@repo/domains-runtime-catalog": "workspace:*",
     "@repo/kernel": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3"
   }
 }

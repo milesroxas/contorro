@@ -7,8 +7,10 @@
     "dev": "pnpm --filter @repo/studio dev & pnpm --filter @repo/gateway dev",
     "db:up": "docker compose up db -d",
     "db:reset": "docker compose down -v && docker compose up db -d",
-    "migrate": "pnpm build && pnpm --filter @repo/studio exec payload migrate",
+    "migrate": "node ./scripts/migrate.mjs",
     "migrate:create": "pnpm --filter @repo/studio exec payload migrate:create",
+    "vercel:pull:prod": "vercel env pull apps/studio/.env.vercel.production.local --environment production --yes",
+    "vercel:pull:preview": "vercel env pull apps/studio/.env.vercel.preview.local --environment preview --yes",
     "seed": "pnpm --filter @repo/studio exec payload run src/seeds/index.ts",
     "test": "pnpm --filter @repo/studio run test:int",
     "test:e2e": "pnpm --filter @repo/studio exec playwright test",
@@ -18,7 +20,9 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "typescript": "^6.0.2"
+    "dotenv-cli": "^11.0.0",
+    "typescript": "^6.0.2",
+    "vercel": "^50.43.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

@@ -15,8 +15,11 @@
     "build": "tsc -b"
   },
   "dependencies": {
+    "@repo/contracts-zod": "workspace:*",
     "@repo/domains-composition": "workspace:*",
-    "@repo/domains-content": "workspace:*",
     "@repo/kernel": "workspace:*"
+  },
+  "peerDependencies": {
+    "payload": "^3.0.0"
   }
 }

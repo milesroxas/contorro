@@ -13,6 +13,8 @@ import { loadPublishedTokenSetForPreview } from "@/lib/load-published-token-set"
 import config from "@/payload.config";
 import { compileTokenSet } from "@repo/config-tailwind";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Design token preview",
   description:

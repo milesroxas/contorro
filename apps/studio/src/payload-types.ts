@@ -71,6 +71,9 @@ export interface Config {
     media: Media;
     'design-token-sets': DesignTokenSet;
     'design-token-overrides': DesignTokenOverride;
+    'component-definitions': ComponentDefinition;
+    'component-revisions': ComponentRevision;
+    'page-compositions': PageComposition;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -82,6 +85,9 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     'design-token-sets': DesignTokenSetsSelect<false> | DesignTokenSetsSelect<true>;
     'design-token-overrides': DesignTokenOverridesSelect<false> | DesignTokenOverridesSelect<true>;
+    'component-definitions': ComponentDefinitionsSelect<false> | ComponentDefinitionsSelect<true>;
+    'component-revisions': ComponentRevisionsSelect<false> | ComponentRevisionsSelect<true>;
+    'page-compositions': PageCompositionsSelect<false> | PageCompositionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -225,6 +231,88 @@ export interface DesignTokenOverride {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "component-definitions".
+ */
+export interface ComponentDefinition {
+  id: number;
+  key: string;
+  displayName: string;
+  propContract:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  slotContract:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "component-revisions".
+ */
+export interface ComponentRevision {
+  id: number;
+  definition: number | ComponentDefinition;
+  label: string;
+  propContract?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  slotContract?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  status: 'draft' | 'published';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Page composition tree (Phase 2). Lexical is not used for body layout.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "page-compositions".
+ */
+export interface PageComposition {
+  id: number;
+  title: string;
+  slug: string;
+  composition:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -262,6 +350,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'design-token-overrides';
         value: number | DesignTokenOverride;
+      } | null)
+    | ({
+        relationTo: 'component-definitions';
+        value: number | ComponentDefinition;
+      } | null)
+    | ({
+        relationTo: 'component-revisions';
+        value: number | ComponentRevision;
+      } | null)
+    | ({
+        relationTo: 'page-compositions';
+        value: number | PageComposition;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -376,6 +476,43 @@ export interface DesignTokenOverridesSelect<T extends boolean = true> {
   override?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "component-definitions_select".
+ */
+export interface ComponentDefinitionsSelect<T extends boolean = true> {
+  key?: T;
+  displayName?: T;
+  propContract?: T;
+  slotContract?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "component-revisions_select".
+ */
+export interface ComponentRevisionsSelect<T extends boolean = true> {
+  definition?: T;
+  label?: T;
+  propContract?: T;
+  slotContract?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "page-compositions_select".
+ */
+export interface PageCompositionsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  composition?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

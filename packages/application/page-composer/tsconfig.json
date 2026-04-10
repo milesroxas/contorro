@@ -7,7 +7,7 @@
   "include": ["src/**/*"],
   "references": [
     { "path": "../../kernel" },
-    { "path": "../../domains/composition" },
-    { "path": "../../domains/content" }
+    { "path": "../../contracts/zod" },
+    { "path": "../../domains/composition" }
   ]
 }

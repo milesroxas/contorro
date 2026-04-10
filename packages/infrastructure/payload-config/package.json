@@ -17,6 +17,7 @@
   "dependencies": {
     "@payloadcms/db-postgres": "3.82.1",
     "@repo/application-design-system": "workspace:*",
+    "@repo/application-page-composer": "workspace:*",
     "@repo/domains-composition": "workspace:*",
     "@repo/domains-content": "workspace:*",
     "@repo/domains-design-system": "workspace:*",

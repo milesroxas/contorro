@@ -61,7 +61,6 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install
-      - run: pnpm migrate
       - run: pnpm --filter @repo/gateway build
       - run: pnpm --filter @repo/studio build
 
@@ -97,7 +96,6 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install
-      - run: pnpm migrate
       - name: Install Playwright Chromium
         run: pnpm --filter @repo/studio exec playwright install chromium --with-deps
       - run: pnpm --filter @repo/studio run test:e2e
@@ -132,5 +130,4 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install
-      - run: pnpm migrate
       - run: pnpm test

@@ -9,7 +9,7 @@
   "references": [
     { "path": "../../kernel" },
     { "path": "../../config/tailwind" },
-    { "path": "../../domains/composition" },
+    { "path": "../../contracts/zod" },
     { "path": "../../domains/runtime-catalog" }
   ]
 }

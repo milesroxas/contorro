@@ -1,4 +1,17 @@
 export {
+  CompositionNodeSchema,
+  NodeKindSchema,
+  PageCompositionSchema,
+  PropContractSchema,
+  PropFieldSpecSchema,
+  SlotContractSchema,
+  type CompositionNode,
+  type NodeKind,
+  type PageComposition,
+  type PropContract,
+  type SlotContract,
+} from "./composition.js";
+export {
   ColorValueSchema,
   DesignTokenSchema,
   LengthUnitSchema,

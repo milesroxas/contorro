@@ -15,6 +15,7 @@
     "build": "tsc -b"
   },
   "dependencies": {
+    "@repo/contracts-zod": "workspace:*",
     "@repo/domains-composition": "workspace:*",
     "@repo/domains-content": "workspace:*",
     "@repo/domains-design-system": "workspace:*",
