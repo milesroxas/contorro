@@ -6,7 +6,9 @@
   },
   "include": ["src/**/*"],
   "references": [
+    { "path": "../../application/design-system" },
     { "path": "../../kernel" },
+    { "path": "../../infrastructure/event-bus" },
     { "path": "../../domains/composition" },
     { "path": "../../domains/content" },
     { "path": "../../domains/design-system" },

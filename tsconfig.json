@@ -13,6 +13,7 @@
     { "path": "./packages/config/env" },
     { "path": "./packages/config/tailwind" },
     { "path": "./packages/application/builder" },
+    { "path": "./packages/application/design-system" },
     { "path": "./packages/application/contract-sync" },
     { "path": "./packages/application/page-composer" },
     { "path": "./packages/application/publish-flow" },

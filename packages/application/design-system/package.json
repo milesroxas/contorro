@@ -1,5 +1,5 @@
 {
-  "name": "@repo/infrastructure-payload-config",
+  "name": "@repo/application-design-system",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -15,15 +15,8 @@
     "build": "tsc -b"
   },
   "dependencies": {
-    "@payloadcms/db-postgres": "3.82.1",
-    "@repo/application-design-system": "workspace:*",
-    "@repo/domains-composition": "workspace:*",
-    "@repo/domains-content": "workspace:*",
+    "@repo/contracts-zod": "workspace:*",
     "@repo/domains-design-system": "workspace:*",
-    "@repo/domains-publishing": "workspace:*",
-    "@repo/domains-runtime-catalog": "workspace:*",
-    "@repo/domains-user-access": "workspace:*",
-    "@repo/infrastructure-event-bus": "workspace:*",
     "@repo/kernel": "workspace:*"
   },
   "peerDependencies": {

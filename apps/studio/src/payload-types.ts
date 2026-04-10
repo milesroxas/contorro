@@ -69,6 +69,8 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    'design-token-sets': DesignTokenSet;
+    'design-token-overrides': DesignTokenOverride;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,6 +80,8 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    'design-token-sets': DesignTokenSetsSelect<false> | DesignTokenSetsSelect<true>;
+    'design-token-overrides': DesignTokenOverridesSelect<false> | DesignTokenOverridesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -87,8 +91,12 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'design-system-settings': DesignSystemSetting;
+  };
+  globalsSelect: {
+    'design-system-settings': DesignSystemSettingsSelect<false> | DesignSystemSettingsSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -163,6 +171,59 @@ export interface Media {
   focalY?: number | null;
 }
 /**
+ * Published token sets emit `design-system.token-published` for downstream compilation.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "design-token-sets".
+ */
+export interface DesignTokenSet {
+  id: number;
+  title: string;
+  scopeKey: string;
+  hasBeenPublished?: boolean | null;
+  tokens: {
+    key: string;
+    category:
+      | 'color'
+      | 'space'
+      | 'size'
+      | 'radius'
+      | 'typography'
+      | 'shadow'
+      | 'border'
+      | 'zIndex'
+      | 'opacity'
+      | 'transition'
+      | 'breakpoint'
+      | 'container';
+    resolvedValue: string;
+    id?: string | null;
+  }[];
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "design-token-overrides".
+ */
+export interface DesignTokenOverride {
+  id: number;
+  tokenSet: number | DesignTokenSet;
+  tokenKey: string;
+  override:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -193,6 +254,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'design-token-sets';
+        value: number | DesignTokenSet;
+      } | null)
+    | ({
+        relationTo: 'design-token-overrides';
+        value: number | DesignTokenOverride;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -279,6 +348,37 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "design-token-sets_select".
+ */
+export interface DesignTokenSetsSelect<T extends boolean = true> {
+  title?: T;
+  scopeKey?: T;
+  hasBeenPublished?: T;
+  tokens?:
+    | T
+    | {
+        key?: T;
+        category?: T;
+        resolvedValue?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "design-token-overrides_select".
+ */
+export interface DesignTokenOverridesSelect<T extends boolean = true> {
+  tokenSet?: T;
+  tokenKey?: T;
+  override?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -316,6 +416,30 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * Default published token set and active brand scope.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "design-system-settings".
+ */
+export interface DesignSystemSetting {
+  id: number;
+  defaultTokenSet?: (number | null) | DesignTokenSet;
+  activeBrandKey?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "design-system-settings_select".
+ */
+export interface DesignSystemSettingsSelect<T extends boolean = true> {
+  defaultTokenSet?: T;
+  activeBrandKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
