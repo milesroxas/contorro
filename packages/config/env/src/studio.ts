@@ -16,6 +16,13 @@ export const studioEnvSchema = z.object({
 
 export type StudioEnv = z.infer<typeof studioEnvSchema>;
 
+/** Prefer SITE_URL; on Vercel builds, VERCEL_URL is set when SITE_URL is not configured. */
+function resolveSiteUrl(env: NodeJS.ProcessEnv): string | undefined {
+  if (env.SITE_URL) return env.SITE_URL;
+  if (env.VERCEL_URL) return `https://${env.VERCEL_URL}`;
+  return undefined;
+}
+
 export function parseStudioEnv(env: NodeJS.ProcessEnv): StudioEnv {
   return studioEnvSchema.parse({
     NODE_ENV: env.NODE_ENV,
@@ -23,7 +30,7 @@ export function parseStudioEnv(env: NodeJS.ProcessEnv): StudioEnv {
     POSTGRES_URL_DIRECT: env.POSTGRES_URL_DIRECT,
     PAYLOAD_SECRET: env.PAYLOAD_SECRET,
     BLOB_READ_WRITE_TOKEN: env.BLOB_READ_WRITE_TOKEN,
-    SITE_URL: env.SITE_URL,
+    SITE_URL: resolveSiteUrl(env),
     PREVIEW_SECRET: env.PREVIEW_SECRET,
   });
 }
