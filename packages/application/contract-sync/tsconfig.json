@@ -7,7 +7,7 @@
   "include": ["src/**/*"],
   "references": [
     { "path": "../../kernel" },
-    { "path": "../../domains/runtime-catalog" },
-    { "path": "../../contracts/zod" }
+    { "path": "../../contracts/zod" },
+    { "path": "../../contracts/json-schema" }
   ]
 }

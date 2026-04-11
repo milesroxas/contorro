@@ -1,5 +1,8 @@
+import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { createPagesBeforeValidateHandler } from "@repo/application-page-composer";
 import type { CollectionConfig } from "payload";
+
+const pageMetadataLexical = lexicalEditor();
 
 import {
   pagesCreateAccess,
@@ -69,6 +72,7 @@ export const Pages: CollectionConfig = {
     {
       name: "seoDescription",
       type: "richText",
+      editor: pageMetadataLexical,
       label: "SEO description",
       admin: {
         description: "Metadata only — not composition body text.",
@@ -77,6 +81,7 @@ export const Pages: CollectionConfig = {
     {
       name: "socialShareText",
       type: "richText",
+      editor: pageMetadataLexical,
       label: "Social share text",
       admin: {
         description: "Metadata only — not composition body text.",

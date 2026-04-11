@@ -1,5 +1,4 @@
-import { getPayload } from "payload";
-import config from "../../src/payload.config.js";
+import { getTestPayload } from "./getTestPayload.js";
 
 export const designerUser = {
   email: "designer-e2e@example.com",
@@ -29,7 +28,7 @@ const emptyStackComposition = {
 export async function seedDesignerAndComposition(): Promise<{
   compositionId: string;
 }> {
-  const payload = await getPayload({ config });
+  const payload = await getTestPayload();
 
   await payload.delete({
     collection: "users",
@@ -63,7 +62,7 @@ export async function seedDesignerAndComposition(): Promise<{
 }
 
 export async function cleanupBuilderE2e(): Promise<void> {
-  const payload = await getPayload({ config });
+  const payload = await getTestPayload();
   await payload.delete({
     collection: "users",
     where: { email: { equals: designerUser.email } },

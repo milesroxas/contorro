@@ -29,7 +29,6 @@
     "@repo/application-contract-sync": "workspace:*",
     "@repo/config-env": "workspace:*",
     "@repo/contracts-zod": "workspace:*",
-    "@repo/infrastructure-event-bus": "workspace:*",
     "@repo/infrastructure-payload-config": "workspace:*",
     "@repo/infrastructure-persistence": "workspace:*",
     "@repo/kernel": "workspace:*",

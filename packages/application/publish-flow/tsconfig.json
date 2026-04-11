@@ -8,6 +8,6 @@
   "references": [
     { "path": "../../kernel" },
     { "path": "../../domains/publishing" },
-    { "path": "../../domains/runtime-catalog" }
+    { "path": "../../contracts/zod" }
   ]
 }

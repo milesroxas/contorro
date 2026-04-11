@@ -1,6 +1,7 @@
 import type { PageComposition } from "@repo/contracts-zod";
 
 const base = "/api/gateway/composer";
+const catalogBase = "/api/gateway/catalog";
 
 export type ComposerPageBundle = {
   id: string;
@@ -52,7 +53,7 @@ export async function fetchComposerTemplates(): Promise<
 }
 
 export async function fetchComponentCatalog(): Promise<ComposerCatalogItem[]> {
-  const res = await fetch(`${base}/component-catalog`, {
+  const res = await fetch(`${catalogBase}/components`, {
     credentials: "include",
   });
   if (!res.ok) {

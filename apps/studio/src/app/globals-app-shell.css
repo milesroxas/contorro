@@ -1,0 +1,14 @@
+/* App chrome only: do not import from the Payload admin layout — it breaks Payload theme + body styles. */
+@reference "./globals.css";
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}

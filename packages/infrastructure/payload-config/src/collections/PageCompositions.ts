@@ -42,6 +42,31 @@ export const PageCompositions: CollectionConfig = {
       type: "json",
       required: true,
     },
+    {
+      name: "catalogSubmittedAt",
+      type: "date",
+      admin: {
+        readOnly: true,
+        description:
+          "Set when the designer submits this composition for catalog review (gateway POST …/submit).",
+      },
+    },
+    {
+      name: "catalogReviewStatus",
+      type: "select",
+      required: true,
+      defaultValue: "none",
+      options: [
+        { label: "None", value: "none" },
+        { label: "Submitted", value: "submitted" },
+        { label: "Approved", value: "approved" },
+        { label: "Rejected", value: "rejected" },
+      ],
+      admin: {
+        description:
+          "Catalog approval gate (Phase 6). Page publish is blocked while submitted or rejected until approved.",
+      },
+    },
   ],
   hooks: {
     beforeValidate: [beforeValidate],

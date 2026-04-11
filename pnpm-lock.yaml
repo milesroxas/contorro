@@ -47,9 +47,6 @@ importers:
       '@repo/contracts-zod':
         specifier: workspace:*
         version: link:../../packages/contracts/zod
-      '@repo/infrastructure-event-bus':
-        specifier: workspace:*
-        version: link:../../packages/infrastructure/event-bus
       '@repo/infrastructure-payload-config':
         specifier: workspace:*
         version: link:../../packages/infrastructure/payload-config
@@ -277,12 +274,12 @@ importers:
 
   packages/application/contract-sync:
     dependencies:
+      '@repo/contracts-json-schema':
+        specifier: workspace:*
+        version: link:../../contracts/json-schema
       '@repo/contracts-zod':
         specifier: workspace:*
         version: link:../../contracts/zod
-      '@repo/domains-runtime-catalog':
-        specifier: workspace:*
-        version: link:../../domains/runtime-catalog
       '@repo/kernel':
         specifier: workspace:*
         version: link:../../kernel
@@ -319,12 +316,12 @@ importers:
 
   packages/application/publish-flow:
     dependencies:
+      '@repo/contracts-zod':
+        specifier: workspace:*
+        version: link:../../contracts/zod
       '@repo/domains-publishing':
         specifier: workspace:*
         version: link:../../domains/publishing
-      '@repo/domains-runtime-catalog':
-        specifier: workspace:*
-        version: link:../../domains/runtime-catalog
       '@repo/kernel':
         specifier: workspace:*
         version: link:../../kernel
@@ -395,6 +392,9 @@ importers:
 
   packages/domains/publishing:
     dependencies:
+      '@repo/contracts-zod':
+        specifier: workspace:*
+        version: link:../../contracts/zod
       '@repo/kernel':
         specifier: workspace:*
         version: link:../../kernel
@@ -453,6 +453,9 @@ importers:
       '@payloadcms/db-postgres':
         specifier: 3.82.1
         version: 3.82.1(@opentelemetry/api@1.9.1)(@vercel/postgres@0.9.0)(payload@3.82.1(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6))
+      '@payloadcms/richtext-lexical':
+        specifier: 3.82.1
+        version: 3.82.1(@faceless-ui/modal@3.0.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@faceless-ui/scroll-info@2.0.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@payloadcms/next@3.82.1(@types/react@19.2.14)(graphql@16.13.2)(monaco-editor@0.55.1)(next@16.2.2(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(@playwright/test@1.58.2)(babel-plugin-macros@3.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.77.4))(payload@3.82.1(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.2))(@types/react@19.2.14)(bufferutil@4.1.0)(monaco-editor@0.55.1)(next@16.2.2(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(@playwright/test@1.58.2)(babel-plugin-macros@3.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.77.4))(payload@3.82.1(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.2)(utf-8-validate@6.0.6)(yjs@13.6.30)
       '@repo/application-design-system':
         specifier: workspace:*
         version: link:../../application/design-system

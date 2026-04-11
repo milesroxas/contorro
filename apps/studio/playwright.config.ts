@@ -11,6 +11,11 @@ import "dotenv/config";
  */
 export default defineConfig({
   testDir: "./tests/e2e",
+  globalSetup: "./tests/e2e/global-setup.ts",
+  /* Hard ceiling so a hung run is killed rather than blocking CI forever. */
+  globalTimeout: process.env.CI ? 600_000 : 300_000,
+  /* Per-test timeout (includes beforeAll seed time). */
+  timeout: 60_000,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
@@ -21,8 +26,11 @@ export default defineConfig({
   reporter: "html",
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    // baseURL: 'http://localhost:3000',
+    baseURL: "http://localhost:3000",
+    /* First SSR hit can be slow after cold `pnpm dev` (gateway prebuild + compile). */
+    navigationTimeout: 60_000,
+    /* Upper bound for individual actions (clicks, fills, assertions). */
+    actionTimeout: 15_000,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
@@ -30,12 +38,14 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"], channel: "chromium" },
+      use: { ...devices["Desktop Chrome"] },
     },
   ],
   webServer: {
     command: "pnpm dev",
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI,
     url: "http://localhost:3000",
+    /* predev builds the gateway; first Next compile can exceed the default 60s. */
+    timeout: 180_000,
   },
 });

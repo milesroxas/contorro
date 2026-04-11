@@ -1,5 +1,6 @@
 import type React from "react";
 import "../globals.css";
+import "../globals-app-shell.css";
 import "./styles.css";
 
 export const metadata = {

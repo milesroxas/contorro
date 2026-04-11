@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.82.1",
+    "@payloadcms/richtext-lexical": "3.82.1",
     "@repo/application-design-system": "workspace:*",
     "@repo/application-page-composer": "workspace:*",
     "@repo/domains-composition": "workspace:*",

@@ -15,8 +15,6 @@
     { "path": "../../packages/application/page-composer" },
     { "path": "../../packages/application/publish-flow" },
     { "path": "../../packages/application/contract-sync" },
-    { "path": "../../packages/application/publish-flow" },
-    { "path": "../../packages/infrastructure/event-bus" },
     { "path": "../../packages/infrastructure/payload-config" },
     { "path": "../../packages/infrastructure/persistence" }
   ]

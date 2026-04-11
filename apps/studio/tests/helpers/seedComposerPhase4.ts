@@ -1,6 +1,4 @@
-import { getPayload } from "payload";
-
-import config from "../../src/payload.config.js";
+import { getTestPayload } from "./getTestPayload.js";
 
 export const editorUser = {
   email: "editor-phase4-e2e@example.com",
@@ -51,7 +49,7 @@ export async function seedComposerPhase4(): Promise<{
   visibleDefName: string;
   hiddenDefName: string;
 }> {
-  const payload = await getPayload({ config });
+  const payload = await getTestPayload();
 
   await payload.delete({
     collection: "users",
@@ -165,7 +163,7 @@ export async function seedComposerPhase4(): Promise<{
 }
 
 export async function cleanupComposerPhase4(): Promise<void> {
-  const payload = await getPayload({ config });
+  const payload = await getTestPayload();
   await payload.delete({
     collection: "pages",
     where: { slug: { equals: "composer-e2e-page" } },

@@ -7,7 +7,10 @@ export {
   saveDraftCommand,
   type SaveDraftError,
 } from "./commands/save-draft.js";
-export { submitForCatalogCommand } from "./commands/submit-for-catalog.js";
+export {
+  submitForCatalogCommand,
+  type SubmitForCatalogError,
+} from "./commands/submit-for-catalog.js";
 export {
   updateNodePropsCommand,
   type UpdateNodePropsError,

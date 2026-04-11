@@ -15,8 +15,8 @@
     "build": "tsc -b"
   },
   "dependencies": {
+    "@repo/contracts-json-schema": "workspace:*",
     "@repo/contracts-zod": "workspace:*",
-    "@repo/domains-runtime-catalog": "workspace:*",
     "@repo/kernel": "workspace:*"
   }
 }

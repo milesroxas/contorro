@@ -1,4 +1,5 @@
 import { type Page, expect, test } from "@playwright/test";
+import { closeTestPayload } from "../helpers/getTestPayload";
 import { login } from "../helpers/login";
 import {
   cleanupComposerPhase4,
@@ -29,19 +30,18 @@ test.describe("Phase 4 — Editor Composer", () => {
 
   test.afterAll(async () => {
     await cleanupComposerPhase4();
+    await closeTestPayload();
   });
 
   test("content editor cannot open builder; edits composer and catalog", async () => {
     await login({ page, user: editorUser });
 
-    await page.goto(
-      `http://localhost:3000/admin/builder?composition=${compositionId}`,
-    );
+    await page.goto(`/admin/builder?composition=${compositionId}`);
     await expect(
       page.getByText(/visual builder is limited to admin and designer/i),
     ).toBeVisible({ timeout: 15_000 });
 
-    await page.goto(`http://localhost:3000/admin/composer?page=${pageId}`);
+    await page.goto(`/admin/composer?page=${pageId}`);
     await expect(page.getByTestId("composer-app")).toBeVisible({
       timeout: 30_000,
     });
@@ -66,7 +66,7 @@ test.describe("Phase 4 — Editor Composer", () => {
     const p = await context.newPage();
     await login({ page: p, user: designerUser });
 
-    await p.goto(`http://localhost:3000/admin/composer?page=${pageId}`);
+    await p.goto(`/admin/composer?page=${pageId}`);
     await expect(p.getByTestId("composer-app")).toBeVisible({
       timeout: 30_000,
     });
@@ -81,7 +81,7 @@ test.describe("Phase 4 — Editor Composer", () => {
       p.getByTestId("composer-publish").click(),
     ]);
 
-    await p.goto("http://localhost:3000/composer-e2e-page");
+    await p.goto("/composer-e2e-page");
     await expect(p.getByText("ComposerHello")).toBeVisible({
       timeout: 15_000,
     });

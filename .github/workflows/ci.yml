@@ -30,15 +30,8 @@ jobs:
       - run: pnpm install
       - run: pnpm typecheck
 
-  build-studio:
-    needs: [lint, typecheck, test]
+  test:
     runs-on: ubuntu-latest
-    env:
-      POSTGRES_URL: postgresql://app:app@localhost:5432/builder_test
-      PAYLOAD_SECRET: test-ci-test-ci-test-ci-test-ci-secret-32
-      SITE_URL: http://localhost:3000
-      PREVIEW_SECRET: ci-preview-secret-32-characters-minimum-here
-      BLOB_READ_WRITE_TOKEN: ci-blob-read-write-token-placeholder
     services:
       postgres:
         image: postgres:16
@@ -53,6 +46,12 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+    env:
+      POSTGRES_URL: postgresql://app:app@localhost:5432/builder_test
+      PAYLOAD_SECRET: test-ci-test-ci-test-ci-test-ci-secret-32
+      SITE_URL: http://localhost:3000
+      PREVIEW_SECRET: ci-preview-secret-32-characters-minimum-here
+      BLOB_READ_WRITE_TOKEN: ci-blob-read-write-token-placeholder
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -62,10 +61,11 @@ jobs:
           cache: pnpm
       - run: pnpm install
       - run: pnpm build
-      - name: Apply Payload migrations (Postgres schema)
+      - name: Apply Payload migrations
         run: pnpm --filter @repo/studio exec payload migrate
-      - run: pnpm --filter @repo/gateway build
-      - run: pnpm --filter @repo/studio build
+      - name: Re-run migrations (stability / idempotency check)
+        run: pnpm --filter @repo/studio exec payload migrate
+      - run: pnpm test
 
   e2e:
     needs: [lint, typecheck, test]
@@ -100,43 +100,17 @@ jobs:
           cache: pnpm
       - run: pnpm install
       - run: pnpm build
-      - name: Apply Payload migrations (Postgres schema)
+      - name: Apply Payload migrations
+        run: pnpm --filter @repo/studio exec payload migrate
+      - name: Re-run migrations (stability / idempotency check)
         run: pnpm --filter @repo/studio exec payload migrate
       - name: Install Playwright Chromium
         run: pnpm --filter @repo/studio exec playwright install chromium --with-deps
       - run: pnpm --filter @repo/studio run test:e2e
-
-  test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: app
-          POSTGRES_PASSWORD: app
-          POSTGRES_DB: builder_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U app -d builder_test"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    env:
-      POSTGRES_URL: postgresql://app:app@localhost:5432/builder_test
-      PAYLOAD_SECRET: test-ci-test-ci-test-ci-test-ci-secret-32
-      SITE_URL: http://localhost:3000
-      PREVIEW_SECRET: ci-preview-secret-32-characters-minimum-here
-      BLOB_READ_WRITE_TOKEN: ci-blob-read-write-token-placeholder
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
         with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install
-      - run: pnpm build
-      - name: Apply Payload migrations (Postgres schema)
-        run: pnpm --filter @repo/studio exec payload migrate
-      - run: pnpm test
+          name: playwright-report
+          path: apps/studio/playwright-report/
+          retention-days: 14

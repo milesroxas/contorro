@@ -45,8 +45,27 @@ export const ComponentRevisions: CollectionConfig = {
       defaultValue: "draft",
       options: [
         { label: "Draft", value: "draft" },
+        { label: "Submitted", value: "submitted" },
+        { label: "Approved", value: "approved" },
         { label: "Published", value: "published" },
       ],
+    },
+    {
+      name: "isBreakingChange",
+      type: "checkbox",
+      defaultValue: false,
+      admin: {
+        description:
+          "Breaking contract changes require dependency impact acknowledgment before publish (Phase 6).",
+      },
+    },
+    {
+      name: "dependencyImpactAcknowledgedAt",
+      type: "date",
+      admin: {
+        description:
+          "Set when an approver acknowledges impacted pages (gateway or admin).",
+      },
     },
   ],
   hooks: {

@@ -1,4 +1,5 @@
 import { type Page, expect, test } from "@playwright/test";
+import { closeTestPayload } from "../helpers/getTestPayload";
 import { login } from "../helpers/login";
 import {
   cleanupBuilderE2e,
@@ -25,12 +26,11 @@ test.describe("Phase 3 — Builder MVP", () => {
 
   test.afterAll(async () => {
     await cleanupBuilderE2e();
+    await closeTestPayload();
   });
 
   test("designer composes, styles, saves, restores", async () => {
-    await page.goto(
-      `http://localhost:3000/admin/builder?composition=${compositionId}`,
-    );
+    await page.goto(`/admin/builder?composition=${compositionId}`);
 
     await expect(page.getByTestId("builder-app")).toBeVisible({
       timeout: 30_000,

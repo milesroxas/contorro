@@ -15,6 +15,7 @@
     "build": "tsc -b"
   },
   "dependencies": {
+    "@repo/contracts-zod": "workspace:*",
     "@repo/kernel": "workspace:*",
     "zod": "^4.0.0"
   }
