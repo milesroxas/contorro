@@ -17,12 +17,19 @@
   "dependencies": {
     "@repo/application-page-composer": "workspace:*",
     "@repo/contracts-zod": "workspace:*",
+    "@repo/domains-composition": "workspace:*",
     "@repo/kernel": "workspace:*",
     "@repo/presentation-shared": "workspace:*",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.5.0",
     "zustand": "^5.0.0"
   },
   "peerDependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3"
   }
 }

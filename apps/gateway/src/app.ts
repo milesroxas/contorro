@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { getPayloadInstance } from "./payload.js";
 import { builderRouter } from "./routes/builder.js";
+import { composerRouter } from "./routes/composer.js";
 
 export const gatewayApp = new Hono()
   .basePath("/api/gateway")
@@ -12,4 +13,5 @@ export const gatewayApp = new Hono()
     await payload.find({ collection: "users", limit: 1 });
     return c.json(ok({ status: "ok" as const, db: "reachable" as const }));
   })
-  .route("/builder", builderRouter);
+  .route("/builder", builderRouter)
+  .route("/composer", composerRouter);

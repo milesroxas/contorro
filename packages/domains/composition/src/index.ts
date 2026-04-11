@@ -3,6 +3,7 @@ export type {
   CompositionRepository,
   LoadedComposition,
 } from "./ports/composition-repository.js";
+export { clonePageCompositionWithNewIds } from "./graph/clone-composition.js";
 export {
   addChildNode,
   moveNode,

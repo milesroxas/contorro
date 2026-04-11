@@ -5,6 +5,8 @@ import { DesignTokenOverrides } from "./DesignTokenOverrides.js";
 import { DesignTokenSets } from "./DesignTokenSets.js";
 import { Media } from "./Media.js";
 import { PageCompositions } from "./PageCompositions.js";
+import { Pages } from "./Pages.js";
+import { Templates } from "./Templates.js";
 import { Users } from "./Users.js";
 
 export const collections: CollectionConfig[] = [
@@ -15,6 +17,8 @@ export const collections: CollectionConfig[] = [
   ComponentDefinitions,
   ComponentRevisions,
   PageCompositions,
+  Templates,
+  Pages,
 ];
 
 export {
@@ -24,5 +28,7 @@ export {
   DesignTokenSets,
   Media,
   PageCompositions,
+  Pages,
+  Templates,
   Users,
 };

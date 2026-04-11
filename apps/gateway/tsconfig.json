@@ -12,6 +12,8 @@
     { "path": "../../packages/config/env" },
     { "path": "../../packages/contracts/zod" },
     { "path": "../../packages/application/builder" },
+    { "path": "../../packages/application/page-composer" },
+    { "path": "../../packages/application/publish-flow" },
     { "path": "../../packages/application/contract-sync" },
     { "path": "../../packages/application/publish-flow" },
     { "path": "../../packages/infrastructure/event-bus" },

@@ -10,6 +10,7 @@
     { "path": "../../kernel" },
     { "path": "../../application/page-composer" },
     { "path": "../../contracts/zod" },
+    { "path": "../../domains/composition" },
     { "path": "../shared" }
   ]
 }

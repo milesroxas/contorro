@@ -35,6 +35,9 @@ importers:
       '@repo/application-contract-sync':
         specifier: workspace:*
         version: link:../../packages/application/contract-sync
+      '@repo/application-page-composer':
+        specifier: workspace:*
+        version: link:../../packages/application/page-composer
       '@repo/application-publish-flow':
         specifier: workspace:*
         version: link:../../packages/application/publish-flow
@@ -629,21 +632,37 @@ importers:
       '@repo/contracts-zod':
         specifier: workspace:*
         version: link:../../contracts/zod
+      '@repo/domains-composition':
+        specifier: workspace:*
+        version: link:../../domains/composition
       '@repo/kernel':
         specifier: workspace:*
         version: link:../../kernel
       '@repo/presentation-shared':
         specifier: workspace:*
         version: link:../shared
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       react:
         specifier: ^19.0.0
         version: 19.2.4
       react-dom:
         specifier: ^19.0.0
         version: 19.2.4(react@19.2.4)
+      tailwind-merge:
+        specifier: ^3.5.0
+        version: 3.5.0
       zustand:
         specifier: ^5.0.0
         version: 5.0.12(@types/react@19.2.14)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.14
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
 
   packages/presentation/preview-ui:
     dependencies:
@@ -662,6 +681,12 @@ importers:
 
   packages/presentation/shared:
     dependencies:
+      '@repo/contracts-zod':
+        specifier: workspace:*
+        version: link:../../contracts/zod
+      '@repo/domains-composition':
+        specifier: workspace:*
+        version: link:../../domains/composition
       react:
         specifier: ^19.0.0
         version: 19.2.4

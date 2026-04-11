@@ -41,6 +41,15 @@ export const ComponentDefinitions: CollectionConfig = {
       type: "json",
       required: true,
     },
+    {
+      name: "visibleInEditorCatalog",
+      type: "checkbox",
+      defaultValue: false,
+      admin: {
+        description:
+          "When enabled, content editors can see this definition in the composer catalog. Leave off until the design is approved.",
+      },
+    },
   ],
   hooks: {
     beforeValidate: [beforeValidate],

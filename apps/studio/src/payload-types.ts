@@ -74,6 +74,8 @@ export interface Config {
     'component-definitions': ComponentDefinition;
     'component-revisions': ComponentRevision;
     'page-compositions': PageComposition;
+    templates: Template;
+    pages: Page;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -88,6 +90,8 @@ export interface Config {
     'component-definitions': ComponentDefinitionsSelect<false> | ComponentDefinitionsSelect<true>;
     'component-revisions': ComponentRevisionsSelect<false> | ComponentRevisionsSelect<true>;
     'page-compositions': PageCompositionsSelect<false> | PageCompositionsSelect<true>;
+    templates: TemplatesSelect<false> | TemplatesSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -255,6 +259,10 @@ export interface ComponentDefinition {
     | number
     | boolean
     | null;
+  /**
+   * When enabled, content editors can see this definition in the composer catalog. Leave off until the design is approved.
+   */
+  visibleInEditorCatalog?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -312,6 +320,76 @@ export interface PageComposition {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Reusable starting points for Pages. Editors instantiate from approved templates.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "templates".
+ */
+export interface Template {
+  id: number;
+  title: string;
+  slug: string;
+  description?: string | null;
+  /**
+   * Composition copied when an editor creates a page from this template.
+   */
+  sourceComposition: number | PageComposition;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Public site page: references a page composition. Lexical fields are for page-level metadata only (SEO, social).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: number;
+  title: string;
+  slug: string;
+  pageComposition: number | PageComposition;
+  /**
+   * Metadata only — not composition body text.
+   */
+  seoDescription?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Metadata only — not composition body text.
+   */
+  socialShareText?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -362,6 +440,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'page-compositions';
         value: number | PageComposition;
+      } | null)
+    | ({
+        relationTo: 'templates';
+        value: number | Template;
+      } | null)
+    | ({
+        relationTo: 'pages';
+        value: number | Page;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -486,6 +572,7 @@ export interface ComponentDefinitionsSelect<T extends boolean = true> {
   displayName?: T;
   propContract?: T;
   slotContract?: T;
+  visibleInEditorCatalog?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -510,6 +597,33 @@ export interface PageCompositionsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   composition?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "templates_select".
+ */
+export interface TemplatesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  description?: T;
+  sourceComposition?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages_select".
+ */
+export interface PagesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  pageComposition?: T;
+  seoDescription?: T;
+  socialShareText?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

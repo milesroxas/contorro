@@ -1,6 +1,6 @@
 "use client";
 
-import { useConfig } from "@payloadcms/ui";
+import { useAuth, useConfig } from "@payloadcms/ui";
 import { BuilderApp } from "@repo/presentation-builder-ui";
 import { IconArrowLeft } from "@tabler/icons-react";
 import Link from "next/link";
@@ -13,10 +13,28 @@ import { Button } from "@/components/ui/button";
 const PAGE_COMPOSITIONS_SLUG = "page-compositions";
 
 function BuilderViewInner() {
+  const { user } = useAuth();
   const { config } = useConfig();
   const sp = useSearchParams();
   const compositionId = sp.get("composition") ?? "";
   const adminRoute = config.routes?.admin ?? "/admin";
+
+  const role =
+    user && typeof user === "object" && "role" in user
+      ? String((user as { role?: unknown }).role)
+      : "";
+
+  if (role === "contentEditor") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center text-muted-foreground">
+        <p className="max-w-md text-pretty">
+          The visual builder is limited to admin and designer roles. Use{" "}
+          <strong className="text-foreground">Composer</strong> to edit page
+          content.
+        </p>
+      </div>
+    );
+  }
 
   if (!compositionId) {
     return (
