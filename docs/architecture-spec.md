@@ -1,8 +1,8 @@
 # Implementation-Ready Architecture Spec
 
-**Version:** 0.3.2  
+**Version:** 0.3.3  
 **Owner:** Miles Roxas  
-**Updated:** April 10, 2026  
+**Updated:** April 11, 2026  
 **Surface:** Payload-powered visual builder platform
 
 ---
@@ -67,6 +67,7 @@
 | 27 | Monorepo build performance with 25+ packages unaddressed | §18.2 adds guidance: IDE for types in dev, `tsc --noEmit` in CI only |
 | 28 | §4.1 tree omitted root-level workspace/CI/Docker files and blurred studio vs `payload-config` ownership | §4.1 lists `pnpm-workspace.yaml`, root `package.json`, lockfile, `tsconfig.json`, `docker-compose.yml`, `.github/workflows/`; **Layout notes** state collections/globals are defined only under `infrastructure/payload-config` |
 | 29 | Studio gained a concrete Tailwind v4 CSS entry and shadcn-based primitives without a spec pointer | §4.1 **Layout notes** and new §11.5 document `globals.css`, `postcss.config.mjs`, `components.json`, and `src/components/ui/`; §4.4 lists representative app-level deps |
+| 30 | `application/design-system` shipped (Payload hooks for design token collections) but §4.1 / §4.2 / §4.4 omitted it | Documented package in §4.1, §4.2, and §4.4; studio install list includes `@repo/application-design-system` |
 
 ---
 
@@ -277,6 +278,7 @@ flowchart TD
 
     application/
       builder/                  # Commands/queries for designer builder
+      design-system/            # Commands/hooks for design token collections (studio + payload-config)
       page-composer/            # Commands/queries for editor surface
       publish-flow/             # Publish lifecycle orchestration
       contract-sync/            # Engineer contract import/export
@@ -336,10 +338,11 @@ graph LR
   D_UA[domains/user-access] --> K
 
   A_B[application/builder] --> D_C & D_DS & D_P
+  A_DS[application/design-system] --> D_DS
   A_PC[application/page-composer] --> D_CT & D_C
   A_PF[application/publish-flow] --> D_P & D_RC
 
-  I[infrastructure/*] --> A_B & A_PC & A_PF
+  I[infrastructure/*] --> A_B & A_DS & A_PC & A_PF
   PR[presentation/*] --> A_B & A_PC
   RT[runtime/*] --> D_C & D_DS & D_RC
   CNT[contracts/*] --> K & D_C & D_DS
@@ -478,7 +481,7 @@ pnpm add class-variance-authority clsx tailwind-merge radix-ui @tabler/icons-rea
 
 # Internal workspace packages
 pnpm add @repo/kernel @repo/contracts-zod \
-  @repo/application-builder @repo/application-page-composer \
+  @repo/application-builder @repo/application-design-system @repo/application-page-composer \
   @repo/application-publish-flow \
   @repo/presentation-builder-ui @repo/presentation-composer-ui \
   @repo/presentation-admin-extensions @repo/presentation-preview-ui \
@@ -534,6 +537,15 @@ pnpm add @repo/kernel @repo/domains-runtime-catalog @repo/contracts-zod \
   --filter @repo/application-contract-sync
 ```
 
+**`packages/application/design-system`**
+
+```bash
+pnpm add @repo/kernel @repo/domains-design-system @repo/contracts-zod \
+  --filter @repo/application-design-system
+```
+
+`payload` is a peer dependency (collection hook factories are composed from `packages/infrastructure/payload-config`).
+
 **`packages/contracts/zod`**
 
 ```bash
@@ -578,18 +590,21 @@ React is a peer dependency.
     "payload": "^3.x"
   },
   "dependencies": {
+    "@repo/application-design-system": "workspace:*",
+    "@repo/application-page-composer": "workspace:*",
     "@repo/kernel": "workspace:*",
     "@repo/domains-composition": "workspace:*",
     "@repo/domains-design-system": "workspace:*",
     "@repo/domains-content": "workspace:*",
     "@repo/domains-publishing": "workspace:*",
     "@repo/domains-runtime-catalog": "workspace:*",
-    "@repo/domains-user-access": "workspace:*"
+    "@repo/domains-user-access": "workspace:*",
+    "@repo/infrastructure-event-bus": "workspace:*"
   }
 }
 ```
 
-Collection definitions in this package must not import React components or admin panel code. Admin-specific components belong in `packages/presentation/admin-extensions` and are wired into the config by `apps/studio` only.
+The live package also pins the Postgres adapter; treat `package.json` as authoritative. Collection definitions in this package must not import React components or admin panel code. Admin-specific components belong in `packages/presentation/admin-extensions` and are wired into the config by `apps/studio` only.
 
 **`packages/infrastructure/event-bus`**
 
@@ -1070,6 +1085,8 @@ export async function addNodeCommand(
 All commands return `AsyncResult<T, E>` — never throw. All queries return `AsyncResult<T, E>` — never return null directly.
 
 ### 6.3 Application service index per package
+
+Other application packages (`design-system`, `page-composer`, `publish-flow`, `contract-sync`) follow the same command/query and `AsyncResult` conventions; layout is listed under §4.1.
 
 ```
 packages/application/builder/src/

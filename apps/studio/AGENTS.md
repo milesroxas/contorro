@@ -18,17 +18,16 @@ You are an expert Payload CMS developer. When working with Payload projects, fol
 
 ## Project Structure
 
+Collections, globals, and Payload hooks are defined in `packages/infrastructure/payload-config` (see `docs/architecture-spec.md`). This app assembles `buildConfig`, routes, and UI only.
+
 ```
 src/
 ├── app/
 │   ├── (frontend)/          # Frontend routes
 │   └── (payload)/           # Payload admin routes
-├── collections/             # Collection configs
-├── globals/                 # Global configs
-├── components/              # Custom React components
-├── hooks/                   # Hook functions
-├── access/                  # Access control functions
-└── payload.config.ts        # Main config
+├── components/              # App-shell components (e.g. shadcn/ui)
+└── ...
+payload.config.ts            # Composes config from @repo/infrastructure-payload-config
 ```
 
 ## Configuration
