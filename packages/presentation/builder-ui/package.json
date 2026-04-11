@@ -18,16 +18,29 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^9.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@radix-ui/react-context-menu": "^2.2.16",
+    "@radix-ui/react-scroll-area": "^1.2.10",
+    "@radix-ui/react-slot": "^1.2.4",
     "@repo/application-builder": "workspace:*",
+    "@repo/config-tailwind": "workspace:*",
     "@repo/contracts-zod": "workspace:*",
+    "@repo/domains-composition": "workspace:*",
     "@repo/kernel": "workspace:*",
     "@repo/presentation-shared": "workspace:*",
     "@repo/runtime-primitives": "workspace:*",
     "@repo/runtime-renderer": "workspace:*",
+    "@tabler/icons-react": "^3.41.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.0.2",
     "zustand": "^5.0.0"
   },
   "peerDependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3"
   }
 }

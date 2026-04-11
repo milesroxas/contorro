@@ -27,15 +27,49 @@ const studioBase = buildStudioConfig({
   serverURL: env.SITE_URL,
 });
 
+const collectionsWithStudioAdmin = (studioBase.collections ?? []).map(
+  (collection) => {
+    if (collection.slug !== "page-compositions") {
+      return collection;
+    }
+    return {
+      ...collection,
+      admin: {
+        ...collection.admin,
+        components: {
+          ...collection.admin?.components,
+          edit: {
+            ...collection.admin?.components?.edit,
+            beforeDocumentControls: [
+              "/components/admin/PageCompositionOpenBuilder",
+            ],
+          },
+        },
+      },
+    };
+  },
+);
+
 export default buildConfig({
   ...studioBase,
+  collections: collectionsWithStudioAdmin,
   admin: {
     user: Users.slug,
     importMap: {
       baseDir: path.resolve(dirname),
     },
     components: {
-      beforeDashboard: ["/components/admin/DesignSystemPreviewCallout"],
+      afterNavLinks: ["/components/admin/BuilderNavLink"],
+      beforeDashboard: [
+        "/components/admin/DesignSystemPreviewCallout",
+        "/components/admin/PageCompositionOpenBuilder",
+      ],
+      views: {
+        builder: {
+          Component: "/components/admin/BuilderView",
+          path: "/builder",
+        },
+      },
     },
   },
   editor: lexicalEditor(),

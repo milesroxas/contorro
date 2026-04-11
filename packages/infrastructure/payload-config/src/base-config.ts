@@ -12,7 +12,8 @@ export function buildBaseConfig(args: BaseConfigArgs): Config {
   return {
     db: args.db,
     secret: args.secret,
-    collections,
-    globals,
+    // Copy so Payload sanitize (`payload-kv`, jobs, etc.) never mutates the module singleton twice.
+    collections: [...collections],
+    globals: [...globals],
   };
 }

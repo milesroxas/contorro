@@ -6,9 +6,12 @@ const ERROR_STATUS_MAP: Record<string, number> = {
   NOT_FOUND: 404,
   INVALID_NODE: 422,
   SLOT_CAPACITY_EXCEEDED: 422,
+  VALIDATION_ERROR: 422,
   PERSISTENCE_ERROR: 500,
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
+  COMPOSITION_CONFLICT: 409,
+  NOT_IMPLEMENTED: 501,
 };
 
 export function resultToResponse<T, E extends string>(

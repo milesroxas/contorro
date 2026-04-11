@@ -10,6 +10,7 @@
     { "path": "../../kernel" },
     { "path": "../../application/builder" },
     { "path": "../../contracts/zod" },
+    { "path": "../../domains/composition" },
     { "path": "../shared" },
     { "path": "../../runtime/primitives" },
     { "path": "../../runtime/renderer" }

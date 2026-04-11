@@ -2,6 +2,12 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Workspace packages ship Tailwind classes; v4 only emits utilities for scanned sources. */
+@source "../../../../packages/presentation/builder-ui/src";
+@source "../../../../packages/presentation/admin-extensions/src";
+/* Studio app (Payload admin components, routes) — required or utilities in src/components / app never emit. */
+@source "..";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
