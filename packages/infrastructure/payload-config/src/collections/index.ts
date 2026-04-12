@@ -10,7 +10,6 @@ import { PageCompositions } from "./PageCompositions.js";
 import { Pages } from "./Pages.js";
 import { PublishJobs } from "./PublishJobs.js";
 import { ReleaseSnapshots } from "./ReleaseSnapshots.js";
-import { Templates } from "./Templates.js";
 import { Users } from "./Users.js";
 
 export const collections: CollectionConfig[] = [
@@ -21,7 +20,6 @@ export const collections: CollectionConfig[] = [
   ComponentDefinitions,
   ComponentRevisions,
   PageCompositions,
-  Templates,
   Pages,
   ReleaseSnapshots,
   PublishJobs,
@@ -41,6 +39,5 @@ export {
   Pages,
   PublishJobs,
   ReleaseSnapshots,
-  Templates,
   Users,
 };

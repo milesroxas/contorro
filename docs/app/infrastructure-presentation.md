@@ -4,7 +4,7 @@
 
 | Package | Role |
 |---------|------|
-| `payload-config` | Collections, globals, hooks; `buildBaseConfig` + `studio-config` assembly. Exports collections such as `Pages`, `PageCompositions`, `ComponentDefinitions`, `ComponentRevisions`, `Templates`, `DesignTokenSets`, `CatalogActivity`, `CompositionPresence`, etc. |
+| `payload-config` | Collections, globals, hooks; `buildBaseConfig` + `studio-config` assembly. Exports collections such as `Pages`, `PageCompositions`, `ComponentDefinitions`, `ComponentRevisions`, `DesignTokenSets`, `CatalogActivity`, `CompositionPresence`, etc. |
 | `persistence` | `createBuilderDb`, Drizzle `builder` schema (`builder.compositions`, …), `DrizzleCompositionRepository` implementing the composition repository port |
 | `event-bus`, `blob-storage`, `cache`, `telemetry` | Packages exist for adapters; wire-up is feature-specific |
 

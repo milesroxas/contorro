@@ -24,7 +24,7 @@ export const PageCompositions: CollectionConfig = {
     useAsTitle: "title",
     defaultColumns: ["title", "slug", "_status", "updatedAt"],
     description:
-      "Full-page layouts from the builder. Site pages and reusable Templates reference these documents.",
+      "Reusable full-page layouts from the builder. Pick one when creating a page (Pages → Page template).",
   },
   access: {
     read: authenticatedAccess,

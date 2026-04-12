@@ -104,7 +104,7 @@ export const Pages: CollectionConfig = {
       },
       admin: {
         description:
-          "Designer blocks: pick a published component per row (same slot model as templates). Optional if a page template above already defines the layout.",
+          "Designer blocks: pick a published component per row (same slot model as the page template). Optional if a page template above already defines the layout.",
         initCollapsed: false,
         isSortable: true,
         components: {

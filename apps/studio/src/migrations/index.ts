@@ -12,6 +12,7 @@ import * as migration_20260412_160000_pages_content_array_from_blocks from "./20
 import * as migration_20260412_170000_pages_template_slot_values from "./20260412_170000_pages_template_slot_values";
 import * as migration_20260412_180000_backfill_visible_catalog_from_published_revisions from "./20260412_180000_backfill_visible_catalog_from_published_revisions";
 import * as migration_20260412_190000_builder_mirror_updated_at_from_page_compositions from "./20260412_190000_builder_mirror_updated_at_from_page_compositions";
+import * as migration_20260412_200000_drop_templates_collection from "./20260412_200000_drop_templates_collection";
 
 export const migrations = [
   {
@@ -83,5 +84,10 @@ export const migrations = [
     up: migration_20260412_190000_builder_mirror_updated_at_from_page_compositions.up,
     down: migration_20260412_190000_builder_mirror_updated_at_from_page_compositions.down,
     name: "20260412_190000_builder_mirror_updated_at_from_page_compositions",
+  },
+  {
+    up: migration_20260412_200000_drop_templates_collection.up,
+    down: migration_20260412_200000_drop_templates_collection.down,
+    name: "20260412_200000_drop_templates_collection",
   },
 ];

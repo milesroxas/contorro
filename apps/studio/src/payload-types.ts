@@ -74,7 +74,6 @@ export interface Config {
     'component-definitions': ComponentDefinition;
     'component-revisions': ComponentRevision;
     'page-compositions': PageComposition;
-    templates: Template;
     pages: Page;
     'release-snapshots': ReleaseSnapshot;
     'publish-jobs': PublishJob;
@@ -94,7 +93,6 @@ export interface Config {
     'component-definitions': ComponentDefinitionsSelect<false> | ComponentDefinitionsSelect<true>;
     'component-revisions': ComponentRevisionsSelect<false> | ComponentRevisionsSelect<true>;
     'page-compositions': PageCompositionsSelect<false> | PageCompositionsSelect<true>;
-    templates: TemplatesSelect<false> | TemplatesSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     'release-snapshots': ReleaseSnapshotsSelect<false> | ReleaseSnapshotsSelect<true>;
     'publish-jobs': PublishJobsSelect<false> | PublishJobsSelect<true>;
@@ -341,7 +339,7 @@ export interface ComponentRevision {
   createdAt: string;
 }
 /**
- * Full-page layouts from the builder. Site pages and reusable Templates reference these documents.
+ * Reusable full-page layouts from the builder. Pick one when creating a page (Pages → Page template).
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "page-compositions".
@@ -367,25 +365,6 @@ export interface PageComposition {
    * Catalog approval gate: publishing can be blocked while submitted or rejected.
    */
   catalogReviewStatus: 'none' | 'submitted' | 'approved' | 'rejected';
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * Reusable starting points for Pages. Editors instantiate from approved templates.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "templates".
- */
-export interface Template {
-  id: number;
-  title: string;
-  slug: string;
-  description?: string | null;
-  /**
-   * Builder document copied when an editor creates a page from this template.
-   */
-  sourceComposition: number | PageComposition;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -417,7 +396,7 @@ export interface Page {
     | boolean
     | null;
   /**
-   * Designer blocks: pick a published component per row (same slot model as templates). Optional if a page template above already defines the layout.
+   * Designer blocks: pick a published component per row (same slot model as the page template). Optional if a page template above already defines the layout.
    */
   content?:
     | {
@@ -610,10 +589,6 @@ export interface PayloadLockedDocument {
         value: number | PageComposition;
       } | null)
     | ({
-        relationTo: 'templates';
-        value: number | Template;
-      } | null)
-    | ({
         relationTo: 'pages';
         value: number | Page;
       } | null)
@@ -787,19 +762,6 @@ export interface PageCompositionsSelect<T extends boolean = true> {
   composition?: T;
   catalogSubmittedAt?: T;
   catalogReviewStatus?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "templates_select".
- */
-export interface TemplatesSelect<T extends boolean = true> {
-  title?: T;
-  slug?: T;
-  description?: T;
-  sourceComposition?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

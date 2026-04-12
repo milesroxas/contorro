@@ -7,21 +7,21 @@
  */
 
 import type {} from "@payloadcms/db-postgres";
-import { relations, sql } from "@payloadcms/db-postgres/drizzle";
 import {
-  boolean,
-  foreignKey,
-  index,
-  integer,
-  jsonb,
-  numeric,
-  pgEnum,
   pgTable,
-  serial,
-  timestamp,
+  index,
   uniqueIndex,
+  foreignKey,
+  integer,
   varchar,
+  timestamp,
+  serial,
+  numeric,
+  boolean,
+  jsonb,
+  pgEnum,
 } from "@payloadcms/db-postgres/drizzle/pg-core";
+import { sql, relations } from "@payloadcms/db-postgres/drizzle";
 export const enum_users_role = pgEnum("enum_users_role", [
   "admin",
   "designer",
@@ -90,14 +90,6 @@ export const enum__page_compositions_v_version_status = pgEnum(
   "enum__page_compositions_v_version_status",
   ["draft", "published"],
 );
-export const enum_templates_status = pgEnum("enum_templates_status", [
-  "draft",
-  "published",
-]);
-export const enum__templates_v_version_status = pgEnum(
-  "enum__templates_v_version_status",
-  ["draft", "published"],
-);
 export const enum_pages_status = pgEnum("enum_pages_status", [
   "draft",
   "published",
@@ -146,7 +138,7 @@ export const users_sessions = pgTable(
     index("users_sessions_order_idx").on(columns._order),
     index("users_sessions_parent_id_idx").on(columns._parentID),
     foreignKey({
-      columns: [columns._parentID],
+      columns: [columns["_parentID"]],
       foreignColumns: [users.id],
       name: "users_sessions_parent_id_fk",
     }).onDelete("cascade"),
@@ -245,7 +237,7 @@ export const design_token_sets_tokens = pgTable(
     index("design_token_sets_tokens_order_idx").on(columns._order),
     index("design_token_sets_tokens_parent_id_idx").on(columns._parentID),
     foreignKey({
-      columns: [columns._parentID],
+      columns: [columns["_parentID"]],
       foreignColumns: [design_token_sets.id],
       name: "design_token_sets_tokens_parent_id_fk",
     }).onDelete("cascade"),
@@ -300,7 +292,7 @@ export const _design_token_sets_v_version_tokens = pgTable(
       columns._parentID,
     ),
     foreignKey({
-      columns: [columns._parentID],
+      columns: [columns["_parentID"]],
       foreignColumns: [_design_token_sets_v.id],
       name: "_design_token_sets_v_version_tokens_parent_id_fk",
     }).onDelete("cascade"),
@@ -585,108 +577,6 @@ export const _page_compositions_v = pgTable(
   ],
 );
 
-export const templates = pgTable(
-  "templates",
-  {
-    id: serial("id").primaryKey(),
-    title: varchar("title"),
-    slug: varchar("slug"),
-    description: varchar("description"),
-    sourceComposition: integer("source_composition_id").references(
-      () => page_compositions.id,
-      {
-        onDelete: "set null",
-      },
-    ),
-    updatedAt: timestamp("updated_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3,
-    })
-      .defaultNow()
-      .notNull(),
-    createdAt: timestamp("created_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3,
-    })
-      .defaultNow()
-      .notNull(),
-    _status: enum_templates_status("_status").default("draft"),
-  },
-  (columns) => [
-    uniqueIndex("templates_slug_idx").on(columns.slug),
-    index("templates_source_composition_idx").on(columns.sourceComposition),
-    index("templates_updated_at_idx").on(columns.updatedAt),
-    index("templates_created_at_idx").on(columns.createdAt),
-    index("templates__status_idx").on(columns._status),
-  ],
-);
-
-export const _templates_v = pgTable(
-  "_templates_v",
-  {
-    id: serial("id").primaryKey(),
-    parent: integer("parent_id").references(() => templates.id, {
-      onDelete: "set null",
-    }),
-    version_title: varchar("version_title"),
-    version_slug: varchar("version_slug"),
-    version_description: varchar("version_description"),
-    version_sourceComposition: integer(
-      "version_source_composition_id",
-    ).references(() => page_compositions.id, {
-      onDelete: "set null",
-    }),
-    version_updatedAt: timestamp("version_updated_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3,
-    }),
-    version_createdAt: timestamp("version_created_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3,
-    }),
-    version__status:
-      enum__templates_v_version_status("version__status").default("draft"),
-    createdAt: timestamp("created_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3,
-    })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3,
-    })
-      .defaultNow()
-      .notNull(),
-    latest: boolean("latest"),
-  },
-  (columns) => [
-    index("_templates_v_parent_idx").on(columns.parent),
-    index("_templates_v_version_version_slug_idx").on(columns.version_slug),
-    index("_templates_v_version_version_source_composition_idx").on(
-      columns.version_sourceComposition,
-    ),
-    index("_templates_v_version_version_updated_at_idx").on(
-      columns.version_updatedAt,
-    ),
-    index("_templates_v_version_version_created_at_idx").on(
-      columns.version_createdAt,
-    ),
-    index("_templates_v_version_version__status_idx").on(
-      columns.version__status,
-    ),
-    index("_templates_v_created_at_idx").on(columns.createdAt),
-    index("_templates_v_updated_at_idx").on(columns.updatedAt),
-    index("_templates_v_latest_idx").on(columns.latest),
-  ],
-);
-
 export const pages_content = pgTable(
   "pages_content",
   {
@@ -708,7 +598,7 @@ export const pages_content = pgTable(
       columns.componentDefinition,
     ),
     foreignKey({
-      columns: [columns._parentID],
+      columns: [columns["_parentID"]],
       foreignColumns: [pages.id],
       name: "pages_content_parent_id_fk",
     }).onDelete("cascade"),
@@ -777,7 +667,7 @@ export const _pages_v_version_content = pgTable(
       columns.componentDefinition,
     ),
     foreignKey({
-      columns: [columns._parentID],
+      columns: [columns["_parentID"]],
       foreignColumns: [_pages_v.id],
       name: "_pages_v_version_content_parent_id_fk",
     }).onDelete("cascade"),
@@ -1058,7 +948,6 @@ export const payload_locked_documents_rels = pgTable(
     "component-definitionsID": integer("component_definitions_id"),
     "component-revisionsID": integer("component_revisions_id"),
     "page-compositionsID": integer("page_compositions_id"),
-    templatesID: integer("templates_id"),
     pagesID: integer("pages_id"),
     "release-snapshotsID": integer("release_snapshots_id"),
     "publish-jobsID": integer("publish_jobs_id"),
@@ -1086,9 +975,6 @@ export const payload_locked_documents_rels = pgTable(
     index("payload_locked_documents_rels_page_compositions_id_idx").on(
       columns["page-compositionsID"],
     ),
-    index("payload_locked_documents_rels_templates_id_idx").on(
-      columns.templatesID,
-    ),
     index("payload_locked_documents_rels_pages_id_idx").on(columns.pagesID),
     index("payload_locked_documents_rels_release_snapshots_id_idx").on(
       columns["release-snapshotsID"],
@@ -1103,17 +989,17 @@ export const payload_locked_documents_rels = pgTable(
       columns["composition-presenceID"],
     ),
     foreignKey({
-      columns: [columns.parent],
+      columns: [columns["parent"]],
       foreignColumns: [payload_locked_documents.id],
       name: "payload_locked_documents_rels_parent_fk",
     }).onDelete("cascade"),
     foreignKey({
-      columns: [columns.usersID],
+      columns: [columns["usersID"]],
       foreignColumns: [users.id],
       name: "payload_locked_documents_rels_users_fk",
     }).onDelete("cascade"),
     foreignKey({
-      columns: [columns.mediaID],
+      columns: [columns["mediaID"]],
       foreignColumns: [media.id],
       name: "payload_locked_documents_rels_media_fk",
     }).onDelete("cascade"),
@@ -1143,12 +1029,7 @@ export const payload_locked_documents_rels = pgTable(
       name: "payload_locked_documents_rels_page_compositions_fk",
     }).onDelete("cascade"),
     foreignKey({
-      columns: [columns.templatesID],
-      foreignColumns: [templates.id],
-      name: "payload_locked_documents_rels_templates_fk",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [columns.pagesID],
+      columns: [columns["pagesID"]],
       foreignColumns: [pages.id],
       name: "payload_locked_documents_rels_pages_fk",
     }).onDelete("cascade"),
@@ -1218,12 +1099,12 @@ export const payload_preferences_rels = pgTable(
     index("payload_preferences_rels_path_idx").on(columns.path),
     index("payload_preferences_rels_users_id_idx").on(columns.usersID),
     foreignKey({
-      columns: [columns.parent],
+      columns: [columns["parent"]],
       foreignColumns: [payload_preferences.id],
       name: "payload_preferences_rels_parent_fk",
     }).onDelete("cascade"),
     foreignKey({
-      columns: [columns.usersID],
+      columns: [columns["usersID"]],
       foreignColumns: [users.id],
       name: "payload_preferences_rels_users_fk",
     }).onDelete("cascade"),
@@ -1381,25 +1262,6 @@ export const relations__page_compositions_v = relations(
     }),
   }),
 );
-export const relations_templates = relations(templates, ({ one }) => ({
-  sourceComposition: one(page_compositions, {
-    fields: [templates.sourceComposition],
-    references: [page_compositions.id],
-    relationName: "sourceComposition",
-  }),
-}));
-export const relations__templates_v = relations(_templates_v, ({ one }) => ({
-  parent: one(templates, {
-    fields: [_templates_v.parent],
-    references: [templates.id],
-    relationName: "parent",
-  }),
-  version_sourceComposition: one(page_compositions, {
-    fields: [_templates_v.version_sourceComposition],
-    references: [page_compositions.id],
-    relationName: "version_sourceComposition",
-  }),
-}));
 export const relations_pages_content = relations(pages_content, ({ one }) => ({
   _parentID: one(pages, {
     fields: [pages_content._parentID],
@@ -1553,11 +1415,6 @@ export const relations_payload_locked_documents_rels = relations(
       references: [page_compositions.id],
       relationName: "page-compositions",
     }),
-    templatesID: one(templates, {
-      fields: [payload_locked_documents_rels.templatesID],
-      references: [templates.id],
-      relationName: "templates",
-    }),
     pagesID: one(pages, {
       fields: [payload_locked_documents_rels.pagesID],
       references: [pages.id],
@@ -1642,8 +1499,6 @@ type DatabaseSchema = {
   enum_page_compositions_status: typeof enum_page_compositions_status;
   enum__page_compositions_v_version_catalog_review_status: typeof enum__page_compositions_v_version_catalog_review_status;
   enum__page_compositions_v_version_status: typeof enum__page_compositions_v_version_status;
-  enum_templates_status: typeof enum_templates_status;
-  enum__templates_v_version_status: typeof enum__templates_v_version_status;
   enum_pages_status: typeof enum_pages_status;
   enum__pages_v_version_status: typeof enum__pages_v_version_status;
   enum_publish_jobs_kind: typeof enum_publish_jobs_kind;
@@ -1662,8 +1517,6 @@ type DatabaseSchema = {
   component_revisions: typeof component_revisions;
   page_compositions: typeof page_compositions;
   _page_compositions_v: typeof _page_compositions_v;
-  templates: typeof templates;
-  _templates_v: typeof _templates_v;
   pages_content: typeof pages_content;
   pages: typeof pages;
   _pages_v_version_content: typeof _pages_v_version_content;
@@ -1691,8 +1544,6 @@ type DatabaseSchema = {
   relations_component_revisions: typeof relations_component_revisions;
   relations_page_compositions: typeof relations_page_compositions;
   relations__page_compositions_v: typeof relations__page_compositions_v;
-  relations_templates: typeof relations_templates;
-  relations__templates_v: typeof relations__templates_v;
   relations_pages_content: typeof relations_pages_content;
   relations_pages: typeof relations_pages;
   relations__pages_v_version_content: typeof relations__pages_v_version_content;

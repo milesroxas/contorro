@@ -6,7 +6,6 @@ import config from "../payload.config.js";
 /** Stable identifiers — re-run deletes and recreates these documents. */
 export const SEED_PAGE_COMPOSITION_SLUG = "local-seed";
 export const SEED_PAGE_SLUG = "local-seed-page";
-export const SEED_TEMPLATE_SLUG = "local-seed-template";
 export const SEED_TOKEN_SCOPE_KEY = "local-seed";
 
 /** `component-revisions` — stable labels for idempotent delete/recreate (gateway workflow; hidden in admin). */
@@ -168,7 +167,7 @@ const seedComposition = {
           required: true,
           label: "Hero headline",
           description:
-            "Filled via Pages → Template slots (maps to this template).",
+            "Filled via Pages → Template slots (maps to this page template).",
         },
       },
     },
@@ -197,11 +196,6 @@ async function seed(): Promise<void> {
     await payload.delete({
       collection: "pages",
       where: { slug: { equals: SEED_PAGE_DESIGNER_SLUG } },
-      overrideAccess: true,
-    });
-    await payload.delete({
-      collection: "templates",
-      where: { slug: { equals: SEED_TEMPLATE_SLUG } },
       overrideAccess: true,
     });
     await payload.delete({
@@ -429,26 +423,6 @@ async function seed(): Promise<void> {
       overrideAccess: true,
     });
 
-    const template = await payload.create({
-      collection: "templates",
-      data: {
-        title: "Local seed template",
-        slug: SEED_TEMPLATE_SLUG,
-        description: "Starting point for new pages in local testing.",
-        sourceComposition: composition.id,
-      },
-      draft: true,
-      overrideAccess: true,
-    });
-
-    await payload.update({
-      collection: "templates",
-      id: template.id,
-      data: {},
-      draft: false,
-      overrideAccess: true,
-    });
-
     const page = await payload.create({
       collection: "pages",
       data: {
@@ -510,9 +484,8 @@ async function seed(): Promise<void> {
 
     console.log("\n[seed] Done.\n");
     console.log(
-      `  Page composition: ${SEED_PAGE_COMPOSITION_SLUG} (id: ${compositionId})`,
+      `  Page template:      ${SEED_PAGE_COMPOSITION_SLUG} (id: ${compositionId})`,
     );
-    console.log(`  Template:         ${SEED_TEMPLATE_SLUG}`);
     console.log(
       `  Page (published): ${SEED_PAGE_SLUG} (template slot hero-headline + seed.card block)`,
     );

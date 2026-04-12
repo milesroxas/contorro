@@ -46,9 +46,16 @@ function pageCompositionFieldPairsTemplateSlotPath(
   }
   // Drafts: Payload often keeps this JSON field at top-level `templateSlotValues` while
   // the relationship value only appears under `version.pageComposition` in form state.
-  return (
+  if (
     templateSlotValuesPath === "templateSlotValues" &&
     pageCompositionFieldKey === "version.pageComposition"
+  ) {
+    return true;
+  }
+  // Inverse: relationship stays at top-level `pageComposition` while slot JSON is only under `version.templateSlotValues`.
+  return (
+    templateSlotValuesPath === "version.templateSlotValues" &&
+    pageCompositionFieldKey === "pageComposition"
   );
 }
 
@@ -136,7 +143,7 @@ function pageCompositionFromGetDataByPath(
   if (!ctx?.getDataByPath) {
     return undefined;
   }
-  for (const p of ["pageComposition", "version.pageComposition"]) {
+  for (const p of ["version.pageComposition", "pageComposition"]) {
     try {
       const v = ctx.getDataByPath(p);
       if (isPresentRelationshipValue(v)) {
@@ -313,11 +320,17 @@ function PageTemplateSlotValuesField(props: JSONFieldClientProps) {
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`);
         }
-        const json = (await res.json()) as {
-          doc?: { composition?: unknown };
-        };
-        const doc = json.doc ?? (json as { composition?: unknown });
-        const raw = doc?.composition;
+        // REST `GET /api/:collection/:id` returns the document as the JSON body (see Payload REST docs).
+        // Some responses may nest under `doc` instead; support both.
+        const json = (await res.json()) as Record<string, unknown>;
+        const doc =
+          json.doc !== undefined &&
+          json.doc !== null &&
+          typeof json.doc === "object" &&
+          !Array.isArray(json.doc)
+            ? (json.doc as { composition?: unknown })
+            : (json as { composition?: unknown });
+        const raw = doc.composition;
         const parsed = PageCompositionSchema.safeParse(raw);
         if (!cancelled) {
           if (!parsed.success) {
