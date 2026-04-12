@@ -26,18 +26,12 @@ importers:
       '@hono/node-server':
         specifier: ^1.13.0
         version: 1.19.13(hono@4.12.12)
-      '@payloadcms/db-postgres':
-        specifier: 3.82.1
-        version: 3.82.1(@opentelemetry/api@1.9.1)(@vercel/postgres@0.9.0)(payload@3.82.1(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6))
       '@repo/application-builder':
         specifier: workspace:*
         version: link:../../packages/application/builder
       '@repo/application-contract-sync':
         specifier: workspace:*
         version: link:../../packages/application/contract-sync
-      '@repo/application-page-composer':
-        specifier: workspace:*
-        version: link:../../packages/application/page-composer
       '@repo/application-publish-flow':
         specifier: workspace:*
         version: link:../../packages/application/publish-flow
@@ -47,9 +41,9 @@ importers:
       '@repo/contracts-zod':
         specifier: workspace:*
         version: link:../../packages/contracts/zod
-      '@repo/infrastructure-payload-config':
+      '@repo/domains-composition':
         specifier: workspace:*
-        version: link:../../packages/infrastructure/payload-config
+        version: link:../../packages/domains/composition
       '@repo/infrastructure-persistence':
         specifier: workspace:*
         version: link:../../packages/infrastructure/persistence
@@ -62,12 +56,12 @@ importers:
       hono:
         specifier: ^4.6.0
         version: 4.12.12
-      payload:
-        specifier: 3.82.1
-        version: 3.82.1(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6)
-      sharp:
-        specifier: 0.34.2
-        version: 0.34.2
+      jose:
+        specifier: ^6.0.0
+        version: 6.2.2
+      pg:
+        specifier: ^8.13.0
+        version: 8.16.3
       zod:
         specifier: ^4.0.0
         version: 4.3.6
@@ -75,6 +69,9 @@ importers:
       '@types/node':
         specifier: ^22.10.0
         version: 22.19.9
+      '@types/pg':
+        specifier: ^8.11.0
+        version: 8.11.6
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
@@ -102,9 +99,6 @@ importers:
       '@repo/application-design-system':
         specifier: workspace:*
         version: link:../../packages/application/design-system
-      '@repo/application-page-composer':
-        specifier: workspace:*
-        version: link:../../packages/application/page-composer
       '@repo/application-publish-flow':
         specifier: workspace:*
         version: link:../../packages/application/publish-flow
@@ -150,9 +144,6 @@ importers:
       '@repo/presentation-builder-ui':
         specifier: workspace:*
         version: link:../../packages/presentation/builder-ui
-      '@repo/presentation-composer-ui':
-        specifier: workspace:*
-        version: link:../../packages/presentation/composer-ui
       '@repo/presentation-preview-ui':
         specifier: workspace:*
         version: link:../../packages/presentation/preview-ui
@@ -299,21 +290,6 @@ importers:
         specifier: ^3.0.0
         version: 3.82.1(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6)
 
-  packages/application/page-composer:
-    dependencies:
-      '@repo/contracts-zod':
-        specifier: workspace:*
-        version: link:../../contracts/zod
-      '@repo/domains-composition':
-        specifier: workspace:*
-        version: link:../../domains/composition
-      '@repo/kernel':
-        specifier: workspace:*
-        version: link:../../kernel
-      payload:
-        specifier: ^3.0.0
-        version: 3.82.1(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6)
-
   packages/application/publish-flow:
     dependencies:
       '@repo/contracts-zod':
@@ -371,15 +347,6 @@ importers:
       '@repo/kernel':
         specifier: workspace:*
         version: link:../../kernel
-
-  packages/domains/content:
-    dependencies:
-      '@repo/kernel':
-        specifier: workspace:*
-        version: link:../../kernel
-      zod:
-        specifier: ^4.0.0
-        version: 4.3.6
 
   packages/domains/design-system:
     dependencies:
@@ -459,15 +426,12 @@ importers:
       '@repo/application-design-system':
         specifier: workspace:*
         version: link:../../application/design-system
-      '@repo/application-page-composer':
+      '@repo/contracts-zod':
         specifier: workspace:*
-        version: link:../../application/page-composer
+        version: link:../../contracts/zod
       '@repo/domains-composition':
         specifier: workspace:*
         version: link:../../domains/composition
-      '@repo/domains-content':
-        specifier: workspace:*
-        version: link:../../domains/content
       '@repo/domains-design-system':
         specifier: workspace:*
         version: link:../../domains/design-system
@@ -489,6 +453,13 @@ importers:
       payload:
         specifier: ^3.0.0
         version: 3.82.1(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6)
+      pg:
+        specifier: ^8.13.0
+        version: 8.16.3
+    devDependencies:
+      '@types/pg':
+        specifier: ^8.11.0
+        version: 8.11.6
 
   packages/infrastructure/persistence:
     dependencies:
@@ -498,9 +469,6 @@ importers:
       '@repo/domains-composition':
         specifier: workspace:*
         version: link:../../domains/composition
-      '@repo/domains-content':
-        specifier: workspace:*
-        version: link:../../domains/content
       '@repo/domains-design-system':
         specifier: workspace:*
         version: link:../../domains/design-system
@@ -513,9 +481,16 @@ importers:
       '@repo/kernel':
         specifier: workspace:*
         version: link:../../kernel
-      payload:
-        specifier: ^3.0.0
-        version: 3.82.1(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6)
+      drizzle-orm:
+        specifier: ^0.44.0
+        version: 0.44.7(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(@vercel/postgres@0.9.0)(pg@8.16.3)
+      pg:
+        specifier: ^8.13.0
+        version: 8.16.3
+    devDependencies:
+      '@types/pg':
+        specifier: ^8.11.0
+        version: 8.11.6
 
   packages/infrastructure/telemetry:
     dependencies:
@@ -615,46 +590,6 @@ importers:
         version: 19.2.4(react@19.2.4)
       tailwind-merge:
         specifier: ^3.0.2
-        version: 3.5.0
-      zustand:
-        specifier: ^5.0.0
-        version: 5.0.12(@types/react@19.2.14)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
-    devDependencies:
-      '@types/react':
-        specifier: ^19.2.14
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.2.3
-        version: 19.2.3(@types/react@19.2.14)
-
-  packages/presentation/composer-ui:
-    dependencies:
-      '@repo/application-page-composer':
-        specifier: workspace:*
-        version: link:../../application/page-composer
-      '@repo/contracts-zod':
-        specifier: workspace:*
-        version: link:../../contracts/zod
-      '@repo/domains-composition':
-        specifier: workspace:*
-        version: link:../../domains/composition
-      '@repo/kernel':
-        specifier: workspace:*
-        version: link:../../kernel
-      '@repo/presentation-shared':
-        specifier: workspace:*
-        version: link:../shared
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
-      react:
-        specifier: ^19.0.0
-        version: 19.2.4
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.4(react@19.2.4)
-      tailwind-merge:
-        specifier: ^3.5.0
         version: 3.5.0
       zustand:
         specifier: ^5.0.0
@@ -10317,7 +10252,6 @@ snapshots:
       '@types/node': 22.19.9
       pg-protocol: 1.13.0
       pg-types: 4.1.0
-    optional: true
 
   '@types/react-dom@19.2.3(@types/react@19.2.14)':
     dependencies:
@@ -11202,6 +11136,13 @@ snapshots:
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
       '@types/pg': 8.10.2
+      '@vercel/postgres': 0.9.0
+      pg: 8.16.3
+
+  drizzle-orm@0.44.7(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(@vercel/postgres@0.9.0)(pg@8.16.3):
+    optionalDependencies:
+      '@opentelemetry/api': 1.9.1
+      '@types/pg': 8.11.6
       '@vercel/postgres': 0.9.0
       pg: 8.16.3
 

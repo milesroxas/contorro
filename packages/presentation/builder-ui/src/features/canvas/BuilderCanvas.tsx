@@ -320,9 +320,16 @@ function CanvasNode({
       typeof node.propValues?.content === "string"
         ? node.propValues.content
         : "";
-    const fromBinding = node.contentBinding
-      ? `[${node.contentBinding.key}]`
-      : "";
+    const cb = node.contentBinding;
+    let fromBinding = "";
+    if (cb?.source === "slot" && cb.slot) {
+      fromBinding =
+        typeof cb.slot.defaultValue === "string"
+          ? cb.slot.defaultValue
+          : `[${cb.key}]`;
+    } else if (cb) {
+      fromBinding = `[${cb.key}]`;
+    }
     const display = raw || fromBinding;
     const showPlaceholder = display.trim() === "";
     primitive = (

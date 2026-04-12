@@ -242,6 +242,8 @@ export interface DesignTokenOverride {
   createdAt: string;
 }
 /**
+ * Published block types: contracts and template composition editors use on pages. Drafts are authored as component revisions (hidden) and promoted here when published from the builder.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "component-definitions".
  */
@@ -268,13 +270,27 @@ export interface ComponentDefinition {
     | boolean
     | null;
   /**
-   * When enabled, content editors can see this definition in the composer catalog. Leave off until the design is approved.
+   * Published template tree (v0.4). Copied from the revision on publish; used when rendering DesignerComponent blocks.
+   */
+  composition?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * When enabled, site editors can pick this block on pages. Publishing a revision from the builder sets this on; turn off to hide without deleting.
    */
   visibleInEditorCatalog?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
 /**
+ * Internal workflow documents (draft → publish). Designers use the builder and gateway; published data lives on component definitions.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "component-revisions".
  */
@@ -300,9 +316,21 @@ export interface ComponentRevision {
     | number
     | boolean
     | null;
+  /**
+   * Component template composition (v0.4). Promoted to the definition on publish.
+   */
+  composition?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   status: 'draft' | 'submitted' | 'approved' | 'published';
   /**
-   * Breaking contract changes require dependency impact acknowledgment before publish (Phase 6).
+   * Breaking contract changes require dependency impact acknowledgment before publish.
    */
   isBreakingChange?: boolean | null;
   /**
@@ -313,7 +341,7 @@ export interface ComponentRevision {
   createdAt: string;
 }
 /**
- * Page composition tree (Phase 2). Lexical is not used for body layout.
+ * Full-page layouts from the builder. Site pages and reusable Templates reference these documents.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "page-compositions".
@@ -332,11 +360,11 @@ export interface PageComposition {
     | boolean
     | null;
   /**
-   * Set when the designer submits this composition for catalog review (gateway POST …/submit).
+   * Set when the designer submits this template for catalog review.
    */
   catalogSubmittedAt?: string | null;
   /**
-   * Catalog approval gate (Phase 6). Page publish is blocked while submitted or rejected until approved.
+   * Catalog approval gate: publishing can be blocked while submitted or rejected.
    */
   catalogReviewStatus: 'none' | 'submitted' | 'approved' | 'rejected';
   updatedAt: string;
@@ -355,7 +383,7 @@ export interface Template {
   slug: string;
   description?: string | null;
   /**
-   * Composition copied when an editor creates a page from this template.
+   * Builder document copied when an editor creates a page from this template.
    */
   sourceComposition: number | PageComposition;
   updatedAt: string;
@@ -363,7 +391,7 @@ export interface Template {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * Public site page: references a page composition. Lexical fields are for page-level metadata only (SEO, social).
+ * Public site page: choose a page template from the builder and/or stack designer blocks. Lexical below is for SEO/social metadata only.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pages".
@@ -372,7 +400,46 @@ export interface Page {
   id: number;
   title: string;
   slug: string;
-  pageComposition: number | PageComposition;
+  /**
+   * Full-page layout authored in the builder. Slots marked on the template appear as fields below.
+   */
+  pageComposition?: (number | null) | PageComposition;
+  /**
+   * Fill content for slots exposed on the page template. Edit structure and slots in the builder.
+   */
+  templateSlotValues?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Designer blocks: pick a published component per row (same slot model as templates). Optional if a page template above already defines the layout.
+   */
+  content?:
+    | {
+        /**
+         * Blocks marked visible in the catalog. Pick the block type first.
+         */
+        componentDefinition: number | ComponentDefinition;
+        /**
+         * Filled from the component’s slot contract (managed in the design system).
+         */
+        slotValues:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
   /**
    * Metadata only — not composition body text.
    */
@@ -414,7 +481,7 @@ export interface Page {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * Point-in-time composition JSON captured when a page goes live.
+ * Point-in-time page template tree captured when a page goes live.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "release-snapshots".
@@ -454,7 +521,7 @@ export interface PublishJob {
   createdAt: string;
 }
 /**
- * Publishing and catalog actions (Phase 6).
+ * Internal publishing and catalog audit log.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "catalog-activity".
@@ -478,7 +545,7 @@ export interface CatalogActivity {
   createdAt: string;
 }
 /**
- * Heartbeat while a user has a composition open in the builder/composer.
+ * Heartbeat while a user has a page template open in the builder.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "composition-presence".
@@ -689,6 +756,7 @@ export interface ComponentDefinitionsSelect<T extends boolean = true> {
   displayName?: T;
   propContract?: T;
   slotContract?: T;
+  composition?: T;
   visibleInEditorCatalog?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -702,6 +770,7 @@ export interface ComponentRevisionsSelect<T extends boolean = true> {
   label?: T;
   propContract?: T;
   slotContract?: T;
+  composition?: T;
   status?: T;
   isBreakingChange?: T;
   dependencyImpactAcknowledgedAt?: T;
@@ -743,6 +812,14 @@ export interface PagesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   pageComposition?: T;
+  templateSlotValues?: T;
+  content?:
+    | T
+    | {
+        componentDefinition?: T;
+        slotValues?: T;
+        id?: T;
+      };
   seoDescription?: T;
   socialShareText?: T;
   updatedAt?: T;

@@ -43,9 +43,10 @@ export const Templates: CollectionConfig = {
       type: "relationship",
       relationTo: "page-compositions",
       required: true,
+      label: "Page template",
       admin: {
         description:
-          "Composition copied when an editor creates a page from this template.",
+          "Builder document copied when an editor creates a page from this template.",
       },
     },
   ],

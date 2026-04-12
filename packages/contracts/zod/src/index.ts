@@ -1,11 +1,13 @@
 export {
   CompositionNodeSchema,
+  LegacySlotContractSchema,
   NodeKindSchema,
   PageCompositionSchema,
   PropContractSchema,
   PropFieldSpecSchema,
   SlotContractSchema,
   type CompositionNode,
+  type LegacySlotContract,
   type NodeKind,
   type PageComposition,
   type PropContract,
@@ -23,3 +25,14 @@ export {
   type TokenCategory,
 } from "./design-system.js";
 export { StyleBindingSchema, type StyleBinding } from "./style-binding.js";
+export {
+  EDITOR_SLOT_TYPES,
+  EditorSlotContractSchema,
+  SlotDefinitionSchema,
+  type EditorSlotContract,
+  type SlotDefinition,
+} from "./slot-editor.js";
+export {
+  normalizeSlotContract,
+  parseEditorSlotContract,
+} from "./normalize-slot-contract.js";

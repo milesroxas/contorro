@@ -7,6 +7,8 @@ export const gatewayEnvSchema = z.object({
     .default("development"),
   POSTGRES_URL: z.string().min(1),
   PAYLOAD_SECRET: z.string().min(32),
+  /** Must match Payload `cookiePrefix` (default `payload` → cookie `payload-token`). */
+  PAYLOAD_COOKIE_PREFIX: z.string().min(1).default("payload"),
   PORT: z.coerce.number().optional(),
 });
 
@@ -17,6 +19,7 @@ export function parseGatewayEnv(env: NodeJS.ProcessEnv): GatewayEnv {
     NODE_ENV: env.NODE_ENV,
     POSTGRES_URL: env.POSTGRES_URL,
     PAYLOAD_SECRET: env.PAYLOAD_SECRET,
+    PAYLOAD_COOKIE_PREFIX: env.PAYLOAD_COOKIE_PREFIX,
     PORT: env.PORT,
   });
 }

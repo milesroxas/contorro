@@ -7,11 +7,10 @@
   "include": ["src/**/*"],
   "references": [
     { "path": "../../application/design-system" },
-    { "path": "../../application/page-composer" },
+    { "path": "../../contracts/zod" },
     { "path": "../../kernel" },
     { "path": "../../infrastructure/event-bus" },
     { "path": "../../domains/composition" },
-    { "path": "../../domains/content" },
     { "path": "../../domains/design-system" },
     { "path": "../../domains/publishing" },
     { "path": "../../domains/runtime-catalog" },

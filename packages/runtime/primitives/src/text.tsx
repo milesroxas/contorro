@@ -6,8 +6,17 @@ export function Text({ node, className, style }: RuntimePrimitiveProps) {
     typeof node.propValues?.content === "string"
       ? node.propValues.content
       : undefined;
-  const text =
-    fromProps ?? (node.contentBinding ? `[${node.contentBinding.key}]` : "");
+  const cb = node.contentBinding;
+  let fallback = "";
+  if (cb?.source === "slot" && cb.slot) {
+    fallback =
+      typeof cb.slot.defaultValue === "string"
+        ? cb.slot.defaultValue
+        : `[${cb.key}]`;
+  } else if (cb) {
+    fallback = `[${cb.key}]`;
+  }
+  const text = fromProps ?? fallback;
 
   return (
     <span

@@ -1,8 +1,8 @@
 import {
+  type EditorSlotContract,
   type PropContract,
   PropContractSchema,
-  type SlotContract,
-  SlotContractSchema,
+  parseEditorSlotContract,
 } from "@repo/contracts-zod";
 import { type Result, err, ok } from "@repo/kernel";
 
@@ -12,7 +12,7 @@ export type ParseContractImportError = "VALIDATION_ERROR";
 export function parsePropSlotContractImport(
   raw: unknown,
 ): Result<
-  { propContract?: PropContract; slotContract?: SlotContract },
+  { propContract?: PropContract; slotContract?: EditorSlotContract },
   ParseContractImportError
 > {
   if (typeof raw !== "object" || raw === null) {
@@ -20,7 +20,7 @@ export function parsePropSlotContractImport(
   }
   const o = raw as Record<string, unknown>;
   let propContract: PropContract | undefined;
-  let slotContract: SlotContract | undefined;
+  let slotContract: EditorSlotContract | undefined;
   if ("propContract" in o && o.propContract !== undefined) {
     const p = PropContractSchema.safeParse(o.propContract);
     if (!p.success) {
@@ -29,8 +29,8 @@ export function parsePropSlotContractImport(
     propContract = p.data;
   }
   if ("slotContract" in o && o.slotContract !== undefined) {
-    const s = SlotContractSchema.safeParse(o.slotContract);
-    if (!s.success) {
+    const s = parseEditorSlotContract(o.slotContract);
+    if (!s.ok) {
       return err("VALIDATION_ERROR");
     }
     slotContract = s.data;

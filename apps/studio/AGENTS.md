@@ -18,7 +18,7 @@ You are an expert Payload CMS developer. When working with Payload projects, fol
 
 ## Project Structure
 
-Collections, globals, and Payload hooks are defined in `packages/infrastructure/payload-config` (see `docs/architecture-spec.md`). This app assembles `buildConfig`, routes, and UI only.
+Collections, globals, and Payload hooks are defined in `packages/infrastructure/payload-config` (see repo root `AGENTS.md` and `docs/app/`). This app assembles `buildConfig`, routes, and UI only.
 
 ```
 src/

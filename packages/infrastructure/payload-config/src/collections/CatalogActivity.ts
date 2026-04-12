@@ -2,13 +2,14 @@ import type { CollectionConfig } from "payload";
 
 import { authenticatedAccess } from "../access/design-system-access.js";
 
-/** Append-only activity log — Phase 6 (gateway writes via Local API + overrideAccess). */
+/** Append-only activity log (gateway writes via Local API + overrideAccess). */
 export const CatalogActivity: CollectionConfig = {
   slug: "catalog-activity",
   admin: {
+    hidden: true,
     useAsTitle: "action",
     defaultColumns: ["action", "resourceType", "resourceId", "createdAt"],
-    description: "Publishing and catalog actions (Phase 6).",
+    description: "Internal publishing and catalog audit log.",
   },
   access: {
     read: authenticatedAccess,
@@ -22,7 +23,7 @@ export const CatalogActivity: CollectionConfig = {
       type: "select",
       required: true,
       options: [
-        { label: "Page composition", value: "pageComposition" },
+        { label: "Page template", value: "pageComposition" },
         { label: "Component revision", value: "componentRevision" },
         { label: "Component definition", value: "componentDefinition" },
         { label: "Page", value: "page" },

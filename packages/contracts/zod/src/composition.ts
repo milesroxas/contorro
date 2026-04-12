@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { SlotDefinitionSchema } from "./slot-editor.js";
 import { StyleBindingSchema } from "./style-binding.js";
 
 /** §5.4 — composition node kinds */
@@ -26,8 +27,10 @@ export const CompositionNodeSchema = z.object({
   slotValues: z.record(z.string(), z.array(z.string())).optional(),
   contentBinding: z
     .object({
-      source: z.enum(["inline", "field", "global"]),
+      source: z.enum(["inline", "field", "global", "slot"]),
       key: z.string(),
+      /** Present when `source` is `slot` — editor fill-in contract (v0.4). */
+      slot: SlotDefinitionSchema.optional(),
     })
     .optional(),
   visibility: z.object({ hidden: z.boolean() }).optional(),
@@ -64,7 +67,8 @@ export const PropContractSchema = z.object({
 
 export type PropContract = z.infer<typeof PropContractSchema>;
 
-export const SlotContractSchema = z.object({
+/** §5.4 — pre-v0.4 slot shape (maxNodes per slot id). */
+export const LegacySlotContractSchema = z.object({
   slots: z.record(
     z.string(),
     z.object({
@@ -73,4 +77,9 @@ export const SlotContractSchema = z.object({
   ),
 });
 
-export type SlotContract = z.infer<typeof SlotContractSchema>;
+export type LegacySlotContract = z.infer<typeof LegacySlotContractSchema>;
+
+/** @deprecated Prefer `LegacySlotContractSchema` */
+export const SlotContractSchema = LegacySlotContractSchema;
+/** @deprecated Prefer `LegacySlotContract` or `EditorSlotContract` */
+export type SlotContract = LegacySlotContract;

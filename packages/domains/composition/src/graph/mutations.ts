@@ -122,6 +122,35 @@ export function addChildNode(
 }
 
 /**
+ * Sets or clears `contentBinding` on a node (e.g. v0.4 “expose as slot”).
+ */
+export function setNodeContentBinding(
+  composition: PageComposition,
+  nodeId: string,
+  contentBinding: CompositionNode["contentBinding"],
+): Result<PageComposition, "INVALID_NODE"> {
+  const node = composition.nodes[nodeId];
+  if (!node) {
+    return err("INVALID_NODE");
+  }
+  const nextNode: CompositionNode = {
+    ...node,
+    contentBinding,
+  };
+  const nextNodes = { ...composition.nodes, [nodeId]: nextNode };
+  const assembled: PageComposition = {
+    rootId: composition.rootId,
+    nodes: nextNodes,
+    styleBindings: { ...composition.styleBindings },
+  };
+  const parsed = PageCompositionSchema.safeParse(assembled);
+  if (!parsed.success) {
+    return err("INVALID_NODE");
+  }
+  return ok(parsed.data);
+}
+
+/**
  * Moves an existing subtree to `targetParentId` at `index` (0-based in the
  * target's child list after the node is removed from its current parent).
  */

@@ -3,7 +3,6 @@
   "references": [
     { "path": "./packages/kernel" },
     { "path": "./packages/domains/composition" },
-    { "path": "./packages/domains/content" },
     { "path": "./packages/domains/design-system" },
     { "path": "./packages/domains/publishing" },
     { "path": "./packages/domains/runtime-catalog" },
@@ -15,7 +14,6 @@
     { "path": "./packages/application/builder" },
     { "path": "./packages/application/design-system" },
     { "path": "./packages/application/contract-sync" },
-    { "path": "./packages/application/page-composer" },
     { "path": "./packages/application/publish-flow" },
     { "path": "./packages/runtime/primitives" },
     { "path": "./packages/runtime/code-components" },
@@ -29,7 +27,6 @@
     { "path": "./packages/presentation/shared" },
     { "path": "./packages/presentation/admin-extensions" },
     { "path": "./packages/presentation/builder-ui" },
-    { "path": "./packages/presentation/composer-ui" },
     { "path": "./packages/presentation/preview-ui" },
     { "path": "./apps/gateway" }
   ]

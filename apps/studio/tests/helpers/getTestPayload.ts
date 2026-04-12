@@ -22,6 +22,10 @@ export async function getTestPayload(): Promise<Payload> {
  * `connectWithReconnect` that is never released, so `pool.end()`
  * blocks forever waiting for it. We race against a short timeout
  * to prevent the afterAll hook from timing out.
+ *
+ * `getPayload()` caches instances on `global._payload` (key `default`). After
+ * `pool.end()`, that singleton is unusable — the next `getPayload()` would
+ * still return it and hang. Drop the cache entry so the next seed re-inits.
  */
 export async function closeTestPayload(): Promise<void> {
   if (cached) {
@@ -35,4 +39,8 @@ export async function closeTestPayload(): Promise<void> {
     }
     cached = null;
   }
+  const g = globalThis as typeof globalThis & {
+    _payload?: Map<string, unknown>;
+  };
+  g._payload?.delete("default");
 }

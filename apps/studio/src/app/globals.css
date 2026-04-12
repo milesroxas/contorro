@@ -1,14 +1,22 @@
+/*
+ * Tailwind v4: `@source` paths are relative to this file (`src/app/globals.css`).
+ * Explicit `src/components` + `src/app` + repo packages so utilities emit for Payload admin + shadcn
+ * even when the tool cwd is the monorepo root.
+ */
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Workspace packages ship Tailwind classes; v4 only emits utilities for scanned sources. */
 @source "../../../../packages/presentation/builder-ui/src";
 @source "../../../../packages/presentation/admin-extensions/src";
-/* Studio app (Payload admin components, routes) — required or utilities in src/components / app never emit. */
+@source "../components";
+@source "../app";
 @source "..";
 
-@custom-variant dark (&:is(.dark *));
+/* Payload admin toggles `data-theme` on the root; public site may use `.dark`. */
+@custom-variant dark (
+  &:where([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *)
+);
 
 @theme inline {
   /* Real stacks — avoid self-referential var(--font-sans) (breaks Tailwind font-sans / font-heading). */
@@ -93,7 +101,8 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-.dark {
+.dark,
+:root[data-theme="dark"] {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);

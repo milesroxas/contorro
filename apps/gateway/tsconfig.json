@@ -11,11 +11,10 @@
     { "path": "../../packages/kernel" },
     { "path": "../../packages/config/env" },
     { "path": "../../packages/contracts/zod" },
+    { "path": "../../packages/domains/composition" },
     { "path": "../../packages/application/builder" },
-    { "path": "../../packages/application/page-composer" },
     { "path": "../../packages/application/publish-flow" },
     { "path": "../../packages/application/contract-sync" },
-    { "path": "../../packages/infrastructure/payload-config" },
     { "path": "../../packages/infrastructure/persistence" }
   ]
 }

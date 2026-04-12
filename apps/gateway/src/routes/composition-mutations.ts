@@ -8,16 +8,16 @@ import {
   updateNodeStyleCommand,
 } from "@repo/application-builder";
 import { PageCompositionSchema } from "@repo/contracts-zod";
-import { PayloadCompositionRepository } from "@repo/infrastructure-persistence";
+import { DrizzleCompositionRepository } from "@repo/infrastructure-persistence";
 import { err } from "@repo/kernel";
 import type { MiddlewareHandler } from "hono";
 import { Hono } from "hono";
-import type { TypedUser } from "payload";
 import { z } from "zod";
 
-import { logCatalogActivity } from "../lib/catalog-activity-log.js";
 import { resultToResponse } from "../lib/result-to-response.js";
-import { getPayloadInstance } from "../payload.js";
+import type { GatewayActor } from "../runtime/auth.js";
+import { logCatalogActivitySql } from "../runtime/catalog-log.js";
+import { builderDb, pool } from "../runtime/db.js";
 
 /** Presence entries older than this are ignored (Phase 6 soft lock). */
 const PRESENCE_MAX_AGE_MS = 120_000;
@@ -41,17 +41,17 @@ const saveDraftBody = z.object({
   ifMatchUpdatedAt: z.string().nullable().optional(),
 });
 
-/** Shared composition HTTP API — used by designer builder and editor composer (different auth middleware). */
+/** Shared composition HTTP API — designer builder (`/api/gateway/builder`). */
 export function createCompositionMutationRouter(middleware: MiddlewareHandler) {
   const r = new Hono();
   r.use(middleware);
 
+  const repo = () => new DrizzleCompositionRepository(builderDb);
+
   r.get("/compositions/:id", async (c) => {
-    const payload = await getPayloadInstance();
-    const repo = new PayloadCompositionRepository(payload);
     const id = c.req.param("id");
     const actor = c.get("actor");
-    const loaded = await getCompositionQuery(repo, {
+    const loaded = await getCompositionQuery(repo(), {
       compositionId: id,
       actor,
     });
@@ -72,10 +72,8 @@ export function createCompositionMutationRouter(middleware: MiddlewareHandler) {
     if (!body.success) {
       return resultToResponse(c, err("VALIDATION_ERROR"));
     }
-    const payload = await getPayloadInstance();
-    const repo = new PayloadCompositionRepository(payload);
     const id = c.req.param("id");
-    const result = await addNodeCommand(repo, {
+    const result = await addNodeCommand(repo(), {
       compositionId: id,
       parentId: body.data.parentId,
       definitionKey: body.data.definitionKey,
@@ -85,9 +83,7 @@ export function createCompositionMutationRouter(middleware: MiddlewareHandler) {
   });
 
   r.delete("/compositions/:id/nodes/:nodeId", async (c) => {
-    const payload = await getPayloadInstance();
-    const repo = new PayloadCompositionRepository(payload);
-    const result = await removeNodeCommand(repo, {
+    const result = await removeNodeCommand(repo(), {
       compositionId: c.req.param("id"),
       nodeId: c.req.param("nodeId"),
       actor: c.get("actor"),
@@ -101,9 +97,7 @@ export function createCompositionMutationRouter(middleware: MiddlewareHandler) {
     if (!body.success) {
       return resultToResponse(c, err("VALIDATION_ERROR"));
     }
-    const payload = await getPayloadInstance();
-    const repo = new PayloadCompositionRepository(payload);
-    const result = await updateNodePropsCommand(repo, {
+    const result = await updateNodePropsCommand(repo(), {
       compositionId: c.req.param("id"),
       nodeId: c.req.param("nodeId"),
       patch: body.data.propValues,
@@ -118,9 +112,7 @@ export function createCompositionMutationRouter(middleware: MiddlewareHandler) {
     if (!body.success) {
       return resultToResponse(c, err("VALIDATION_ERROR"));
     }
-    const payload = await getPayloadInstance();
-    const repo = new PayloadCompositionRepository(payload);
-    const result = await updateNodeStyleCommand(repo, {
+    const result = await updateNodeStyleCommand(repo(), {
       compositionId: c.req.param("id"),
       nodeId: c.req.param("nodeId"),
       property: body.data.property,
@@ -136,9 +128,7 @@ export function createCompositionMutationRouter(middleware: MiddlewareHandler) {
     if (!body.success) {
       return resultToResponse(c, err("VALIDATION_ERROR"));
     }
-    const payload = await getPayloadInstance();
-    const repo = new PayloadCompositionRepository(payload);
-    const result = await saveDraftCommand(repo, {
+    const result = await saveDraftCommand(repo(), {
       compositionId: c.req.param("id"),
       composition: body.data.composition,
       ifMatchUpdatedAt: body.data.ifMatchUpdatedAt,
@@ -148,53 +138,39 @@ export function createCompositionMutationRouter(middleware: MiddlewareHandler) {
   });
 
   r.post("/compositions/:id/submit", async (c) => {
-    const payload = await getPayloadInstance();
-    const actor = c.get("actor") as TypedUser;
+    const actor = c.get("actor") as GatewayActor;
     const result = await submitForCatalogCommand(
       {
         trySubmit: async (compositionId, a) => {
+          void a;
           try {
-            const existing = await payload.findByID({
-              collection: "page-compositions",
-              id: compositionId,
-              depth: 0,
-              draft: true,
-              user: a as TypedUser,
-              overrideAccess: false,
-            });
-            if (!existing) {
+            const q = await pool.query<{ id: string }>(
+              "select id::text as id from builder.compositions where id = $1",
+              [compositionId],
+            );
+            if (q.rows.length === 0) {
               return {
                 ok: false as const,
                 error: "COMPOSITION_NOT_FOUND" as const,
               };
             }
             const submittedAt = new Date().toISOString();
-            await payload.update({
-              collection: "page-compositions",
-              id: compositionId,
-              data: {
-                catalogSubmittedAt: submittedAt,
-                catalogReviewStatus: "submitted",
-              },
-              draft: true,
-              user: a as TypedUser,
-              overrideAccess: false,
-            });
-            await logCatalogActivity(payload, {
+            await pool.query(
+              `update builder.compositions
+               set catalog_submitted_at = $1::timestamptz,
+                   catalog_review_status = 'submitted',
+                   updated_at = now()
+               where id = $2`,
+              [submittedAt, compositionId],
+            );
+            await logCatalogActivitySql(pool, {
               resourceType: "pageComposition",
               resourceId: compositionId,
               action: "submit",
-              actorId: (a as { id: unknown }).id as string | number,
+              actorId: actor.id,
             });
-            return { ok: true as const, submittedAt: submittedAt };
-          } catch (e) {
-            const name =
-              typeof e === "object" && e !== null && "name" in e
-                ? String((e as { name: unknown }).name)
-                : "";
-            if (name === "Forbidden" || name === "ForbiddenError") {
-              return { ok: false as const, error: "FORBIDDEN" as const };
-            }
+            return { ok: true as const, submittedAt };
+          } catch {
             return {
               ok: false as const,
               error: "PERSISTENCE_ERROR" as const,
@@ -208,101 +184,67 @@ export function createCompositionMutationRouter(middleware: MiddlewareHandler) {
   });
 
   r.get("/compositions/:id/presence", async (c) => {
-    const payload = await getPayloadInstance();
     const id = c.req.param("id");
-    const actor = c.get("actor") as TypedUser;
+    const actor = c.get("actor") as GatewayActor;
     const since = new Date(Date.now() - PRESENCE_MAX_AGE_MS);
-    const found = await payload.find({
-      collection: "composition-presence",
-      where: {
-        and: [
-          { composition: { equals: id } },
-          { updatedAt: { greater_than: since.toISOString() } },
-          { holder: { not_equals: actor.id } },
-        ],
-      },
-      depth: 1,
-      limit: 20,
-      user: actor,
-      overrideAccess: false,
-    });
-    const others = found.docs.map((doc) => {
-      const h = doc.holder;
-      const userId =
-        typeof h === "object" && h !== null && "id" in h
-          ? String((h as { id: unknown }).id)
-          : "";
-      const email =
-        typeof h === "object" && h !== null && "email" in h
-          ? String((h as { email?: unknown }).email ?? "")
-          : "";
-      return { userId, email };
-    });
+    const compId = Number.parseInt(id, 10);
+    if (!Number.isFinite(compId)) {
+      return c.json({ data: { others: [] } });
+    }
+    const found = await pool.query<{ user_id: string; email: string }>(
+      `select u.id::text as user_id, u.email as email
+       from composition_presence cp
+       join users u on u.id = cp.holder_id
+       where cp.composition_id = $1
+         and cp.updated_at > $2::timestamptz
+         and cp.holder_id <> $3`,
+      [compId, since.toISOString(), actor.id],
+    );
+    const others = found.rows.map((row) => ({
+      userId: row.user_id,
+      email: row.email,
+    }));
     return c.json({ data: { others } });
   });
 
   r.post("/compositions/:id/presence", async (c) => {
-    const payload = await getPayloadInstance();
     const id = c.req.param("id");
-    const actor = c.get("actor") as TypedUser;
-    const existing = await payload.find({
-      collection: "composition-presence",
-      where: {
-        and: [
-          { composition: { equals: id } },
-          { holder: { equals: actor.id } },
-        ],
-      },
-      limit: 1,
-      user: actor,
-      overrideAccess: false,
-    });
-    if (existing.docs[0]) {
-      await payload.update({
-        collection: "composition-presence",
-        id: String(existing.docs[0].id),
-        data: {},
-        user: actor,
-        overrideAccess: false,
-      });
+    const actor = c.get("actor") as GatewayActor;
+    const compId = Number.parseInt(id, 10);
+    if (!Number.isFinite(compId)) {
+      return resultToResponse(c, err("VALIDATION_ERROR"));
+    }
+    const existing = await pool.query<{ id: number }>(
+      `select id from composition_presence
+       where composition_id = $1 and holder_id = $2 limit 1`,
+      [compId, actor.id],
+    );
+    if (existing.rows[0]) {
+      await pool.query(
+        "update composition_presence set updated_at = now() where id = $1",
+        [existing.rows[0].id],
+      );
     } else {
-      await payload.create({
-        collection: "composition-presence",
-        data: {
-          composition: id,
-          holder: actor.id,
-        },
-        user: actor,
-        overrideAccess: false,
-      });
+      await pool.query(
+        `insert into composition_presence (composition_id, holder_id, updated_at, created_at)
+         values ($1, $2, now(), now())`,
+        [compId, actor.id],
+      );
     }
     return c.json({ data: { ok: true as const } });
   });
 
   r.delete("/compositions/:id/presence", async (c) => {
-    const payload = await getPayloadInstance();
     const id = c.req.param("id");
-    const actor = c.get("actor") as TypedUser;
-    const existing = await payload.find({
-      collection: "composition-presence",
-      where: {
-        and: [
-          { composition: { equals: id } },
-          { holder: { equals: actor.id } },
-        ],
-      },
-      limit: 1,
-      user: actor,
-      overrideAccess: false,
-    });
-    if (existing.docs[0]) {
-      await payload.delete({
-        collection: "composition-presence",
-        id: String(existing.docs[0].id),
-        user: actor,
-        overrideAccess: false,
-      });
+    const actor = c.get("actor") as GatewayActor;
+    const compId = Number.parseInt(id, 10);
+    if (!Number.isFinite(compId)) {
+      return resultToResponse(c, err("VALIDATION_ERROR"));
     }
+    await pool.query(
+      "delete from composition_presence where composition_id = $1 and holder_id = $2",
+      [compId, actor.id],
+    );
     return c.json({ data: { ok: true as const } });
   });
 

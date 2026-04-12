@@ -18,17 +18,20 @@
     "@payloadcms/db-postgres": "3.82.1",
     "@payloadcms/richtext-lexical": "3.82.1",
     "@repo/application-design-system": "workspace:*",
-    "@repo/application-page-composer": "workspace:*",
+    "@repo/contracts-zod": "workspace:*",
     "@repo/domains-composition": "workspace:*",
-    "@repo/domains-content": "workspace:*",
     "@repo/domains-design-system": "workspace:*",
     "@repo/domains-publishing": "workspace:*",
     "@repo/domains-runtime-catalog": "workspace:*",
     "@repo/domains-user-access": "workspace:*",
     "@repo/infrastructure-event-bus": "workspace:*",
-    "@repo/kernel": "workspace:*"
+    "@repo/kernel": "workspace:*",
+    "pg": "^8.13.0"
   },
   "peerDependencies": {
     "payload": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.0"
   }
 }

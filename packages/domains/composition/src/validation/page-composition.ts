@@ -59,6 +59,22 @@ export function validatePageCompositionInvariants(
     }
   }
 
+  const slotNames = new Set<string>();
+  for (const node of Object.values(nodes)) {
+    const cb = node.contentBinding;
+    if (cb?.source === "slot" && cb.slot) {
+      if (cb.key !== cb.slot.name) {
+        return err(
+          `slot contentBinding key "${cb.key}" must match slot.name "${cb.slot.name}"`,
+        );
+      }
+      if (slotNames.has(cb.slot.name)) {
+        return err(`duplicate slot name "${cb.slot.name}"`);
+      }
+      slotNames.add(cb.slot.name);
+    }
+  }
+
   for (const [id, node] of Object.entries(nodes)) {
     if (id === rootId) {
       continue;

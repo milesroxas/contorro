@@ -1,10 +1,10 @@
 # Cursor agent instructions
 
-Treat **`docs/architecture-spec.md`** as the source of truth for layout, boundaries, tooling, and delivery. If instructions here conflict with the spec, follow the spec or propose an intentional spec update.
+Treat **this file** as the source of truth for layout, boundaries, tooling, and delivery. Use **[`docs/app/README.md`](docs/app/README.md)** for a concise map of what is implemented (apps, domains, gateway routes, infra). If instructions conflict, follow this document or update it deliberately in a dedicated change.
 
 ## Product and stack
 
-Multi-surface authoring: Payload for content, auth, and admin; a visual builder and page composer on top. Studio is **Next.js + Payload**; builder mutations go through a **Hono gateway** (same-origin under `/api/gateway/*` in early phases). Primary DB is **Postgres** (Neon in production; Docker locally).
+Multi-surface authoring: Payload for content, auth, and admin; a **designer builder** (composition tree) on top. Studio is **Next.js + Payload**; builder and related APIs go through a **Hono gateway** (same-origin under `/api/gateway/*`). Primary DB is **Postgres** (Neon in production; Docker locally).
 
 ## Layer rules (non-negotiable)
 
@@ -23,25 +23,25 @@ Multi-surface authoring: Payload for content, auth, and admin; a visual builder 
 
 ## Monorepo layout (high level)
 
-- **Collections and globals** are defined under **`packages/infrastructure/payload-config`** (`collections/`, `globals/`, hooks, `base-config`, `studio-config`, `headless-config`). `apps/studio` assembles `buildConfig` (secrets, DB, Lexical, importMap paths); it does not duplicate collection modules as the source of truth.
+- **Collections and globals** are defined under **`packages/infrastructure/payload-config`** (`collections/`, `globals/`, hooks, `base-config`, `studio-config`). `apps/studio` assembles `buildConfig` (secrets, DB, Lexical, importMap paths); it does not duplicate collection modules as the source of truth.
 - **`@payload-config`** is **Next.js-only**. No shared `packages/*` may import it; apps compose config from infrastructure exports.
-- **Workspace and globs** match `pnpm-workspace.yaml` and the dependency tree in the architecture spec—use `workspace:*` for internal packages; place deps in the package that imports them.
+- **Workspace and globs** match `pnpm-workspace.yaml`—use `workspace:*` for internal packages; place deps in the package that imports them.
 
 ## Application and API patterns
 
-- Commands and queries return **`AsyncResult<T, E>`** (or `Result` where synchronous); **avoid throwing** for expected failures. Map results to HTTP in the gateway with a **stable JSON envelope** (success `data`, errors `error.code` and status codes) as described in the spec’s gateway section.
+- Commands and queries return **`AsyncResult<T, E>`** (or `Result` where synchronous); **avoid throwing** for expected failures. Map results to HTTP in the gateway with a **stable JSON envelope** (success `data`, errors `error.code` and status codes).
 - Validate command input with **Zod** before calling application services.
-- Gateway uses **headless** Payload config; **migrations run from `apps/studio` only**—gateway is a DB consumer.
+- The gateway does **not** run Payload; it uses Postgres (pool / Drizzle for builder) and JWT auth. **Migrations run from `apps/studio` only**—gateway is a DB consumer.
 
 ## Tooling
 
 - **Lint/format:** **Biome only** at repo root (`pnpm lint` / `biome check .`). Do not introduce ESLint or Prettier as project linters.
-- **Typecheck:** Follow root scripts: composite packages emit; CI uses the repo’s typecheck workflow as defined in the spec.
+- **Typecheck:** Follow root `package.json` scripts: composite packages emit; then `tsc --noEmit` in `apps/studio`.
 
 ## Testing and local dev
 
-- **Integration tests** that hit persistence expect **Postgres**; start DB (`pnpm db:up` or equivalent) and set env per `apps/studio/.env.example` / spec.
-- Prefer **co-located** tests (`*.test ts`) as in the spec’s testing section; respect layer-appropriate test types (unit vs integration vs E2E).
+- **Integration tests** that hit persistence expect **Postgres**; start DB (`pnpm db:up` or equivalent) and set env per `apps/studio/.env.example`.
+- Prefer **co-located** tests; respect layer-appropriate test types (unit vs integration vs E2E).
 
 ## When working inside `apps/studio`
 

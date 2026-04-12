@@ -2,10 +2,11 @@ import type { CollectionConfig } from "payload";
 
 import { componentAuthoringAccess } from "../access/composition-access.js";
 
-/** Idempotent publish job records (Phase 6). */
+/** Idempotent publish job records. */
 export const PublishJobs: CollectionConfig = {
   slug: "publish-jobs",
   admin: {
+    hidden: true,
     useAsTitle: "idempotencyKey",
     defaultColumns: ["kind", "status", "idempotencyKey", "createdAt"],
     description: "Deduped publish operations; succeeded + same key is a no-op.",

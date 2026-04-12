@@ -1,6 +1,7 @@
 import type { PageComposition } from "@repo/contracts-zod";
 
 const base = "/api/gateway/builder";
+const studioBuilder = "/api/builder";
 
 export type GatewayCompositionResponse = {
   data: {
@@ -26,6 +27,39 @@ export async function fetchComposition(
   return json.data;
 }
 
+async function postPersistPageComposition(
+  compositionId: string,
+  body: {
+    composition: PageComposition;
+    ifMatchUpdatedAt?: string | null;
+    intent: "draft" | "publish";
+  },
+): Promise<string> {
+  const res = await fetch(`${studioBuilder}/compositions/${compositionId}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    let code: string | undefined;
+    try {
+      const j = (await res.json()) as { error?: { code?: string } };
+      code = j.error?.code;
+    } catch {
+      code = undefined;
+    }
+    if (res.status === 409 || code === "COMPOSITION_CONFLICT") {
+      throw new Error(
+        "This template was saved elsewhere. Reload the builder and try again.",
+      );
+    }
+    throw new Error(`save failed: ${res.status}`);
+  }
+  const json = (await res.json()) as GatewaySaveResponse;
+  return json.data.updatedAt;
+}
+
 export async function postDraft(
   compositionId: string,
   body: {
@@ -33,17 +67,23 @@ export async function postDraft(
     ifMatchUpdatedAt?: string | null;
   },
 ): Promise<string> {
-  const res = await fetch(`${base}/compositions/${compositionId}/draft`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+  return postPersistPageComposition(compositionId, {
+    ...body,
+    intent: "draft",
   });
-  if (!res.ok) {
-    throw new Error(`save failed: ${res.status}`);
-  }
-  const json = (await res.json()) as GatewaySaveResponse;
-  return json.data.updatedAt;
+}
+
+export async function postPublish(
+  compositionId: string,
+  body: {
+    composition: PageComposition;
+    ifMatchUpdatedAt?: string | null;
+  },
+): Promise<string> {
+  return postPersistPageComposition(compositionId, {
+    ...body,
+    intent: "publish",
+  });
 }
 
 export async function postAddNode(

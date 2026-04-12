@@ -1,6 +1,6 @@
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
-import { createPagesBeforeValidateHandler } from "@repo/application-page-composer";
 import type { CollectionConfig } from "payload";
+import { createPagesBeforeValidateHandler } from "../collection-hooks/page-and-component-validation.js";
 
 const pageMetadataLexical = lexicalEditor();
 
@@ -41,7 +41,7 @@ export const Pages: CollectionConfig = {
     useAsTitle: "title",
     defaultColumns: ["title", "slug", "_status", "updatedAt"],
     description:
-      "Public site page: references a page composition. Lexical fields are for page-level metadata only (SEO, social).",
+      "Public site page: choose a page template from the builder and/or stack designer blocks. Lexical below is for SEO/social metadata only.",
     preview: (doc) => previewUrlForDoc(doc),
   },
   access: {
@@ -67,7 +67,80 @@ export const Pages: CollectionConfig = {
       name: "pageComposition",
       type: "relationship",
       relationTo: "page-compositions",
-      required: true,
+      label: "Page template",
+      admin: {
+        description:
+          "Full-page layout authored in the builder. Slots marked on the template appear as fields below.",
+      },
+    },
+    {
+      name: "templateSlotValues",
+      type: "json",
+      label: "Template slots",
+      defaultValue: {},
+      admin: {
+        description:
+          "Fill content for slots exposed on the page template. Edit structure and slots in the builder.",
+        condition: (data) => {
+          const row = data as {
+            pageComposition?: unknown;
+            version?: { pageComposition?: unknown };
+          };
+          const p = row.pageComposition ?? row.version?.pageComposition;
+          return p !== null && p !== undefined && p !== "";
+        },
+        components: {
+          Field: "/components/admin/PageTemplateSlotValuesField",
+        },
+      },
+    },
+    {
+      name: "content",
+      type: "array",
+      label: "Blocks",
+      labels: {
+        singular: "Block",
+        plural: "Blocks",
+      },
+      admin: {
+        description:
+          "Designer blocks: pick a published component per row (same slot model as templates). Optional if a page template above already defines the layout.",
+        initCollapsed: false,
+        isSortable: true,
+        components: {
+          RowLabel: "/components/admin/BlocksRowLabel",
+        },
+      },
+      fields: [
+        {
+          name: "componentDefinition",
+          type: "relationship",
+          relationTo: "component-definitions",
+          required: true,
+          label: "Block",
+          admin: {
+            description:
+              "Blocks marked visible in the catalog. Pick the block type first.",
+          },
+          filterOptions: () => ({
+            visibleInEditorCatalog: { equals: true },
+          }),
+        },
+        {
+          name: "slotValues",
+          type: "json",
+          label: false,
+          required: true,
+          defaultValue: {},
+          admin: {
+            description:
+              "Filled from the component’s slot contract (managed in the design system).",
+            components: {
+              Field: "/components/admin/DesignerSlotValuesField",
+            },
+          },
+        },
+      ],
     },
     {
       name: "seoDescription",

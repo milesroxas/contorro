@@ -1,5 +1,5 @@
-import { createComponentRevisionBeforeValidateHandler } from "@repo/application-page-composer";
 import type { CollectionConfig } from "payload";
+import { createComponentRevisionBeforeValidateHandler } from "../collection-hooks/page-and-component-validation.js";
 
 import { componentAuthoringAccess } from "../access/composition-access.js";
 import { authenticatedAccess } from "../access/design-system-access.js";
@@ -9,8 +9,11 @@ const beforeValidate = createComponentRevisionBeforeValidateHandler();
 export const ComponentRevisions: CollectionConfig = {
   slug: "component-revisions",
   admin: {
+    hidden: true,
     useAsTitle: "label",
     defaultColumns: ["definition", "label", "status", "updatedAt"],
+    description:
+      "Internal workflow documents (draft → publish). Designers use the builder and gateway; published data lives on component definitions.",
   },
   access: {
     read: authenticatedAccess,
@@ -39,6 +42,14 @@ export const ComponentRevisions: CollectionConfig = {
       type: "json",
     },
     {
+      name: "composition",
+      type: "json",
+      admin: {
+        description:
+          "Component template composition (v0.4). Promoted to the definition on publish.",
+      },
+    },
+    {
       name: "status",
       type: "select",
       required: true,
@@ -56,7 +67,7 @@ export const ComponentRevisions: CollectionConfig = {
       defaultValue: false,
       admin: {
         description:
-          "Breaking contract changes require dependency impact acknowledgment before publish (Phase 6).",
+          "Breaking contract changes require dependency impact acknowledgment before publish.",
       },
     },
     {

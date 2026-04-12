@@ -59,10 +59,8 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
     components: {
-      afterNavLinks: [
-        "/components/admin/BuilderNavLink",
-        "/components/admin/ComposerNavLink",
-      ],
+      providers: ["/components/admin/PayloadAdminTheme"],
+      afterNavLinks: ["/components/admin/BuilderNavLink"],
       beforeDashboard: [
         "/components/admin/DesignSystemPreviewCallout",
         "/components/admin/PageCompositionOpenBuilder",
@@ -71,10 +69,6 @@ export default buildConfig({
         builder: {
           Component: "/components/admin/BuilderView",
           path: "/builder",
-        },
-        composer: {
-          Component: "/components/admin/ComposerView",
-          path: "/composer",
         },
       },
     },

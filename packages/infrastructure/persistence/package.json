@@ -17,13 +17,14 @@
   "dependencies": {
     "@repo/contracts-zod": "workspace:*",
     "@repo/domains-composition": "workspace:*",
-    "@repo/domains-content": "workspace:*",
     "@repo/domains-design-system": "workspace:*",
     "@repo/domains-publishing": "workspace:*",
     "@repo/domains-runtime-catalog": "workspace:*",
-    "@repo/kernel": "workspace:*"
+    "@repo/kernel": "workspace:*",
+    "drizzle-orm": "^0.44.0",
+    "pg": "^8.13.0"
   },
-  "peerDependencies": {
-    "payload": "^3.0.0"
+  "devDependencies": {
+    "@types/pg": "^8.11.0"
   }
 }

@@ -2,14 +2,15 @@ import type { CollectionConfig } from "payload";
 
 import { composerAuthoringAccess } from "../access/composition-access.js";
 
-/** Soft lock / presence — Phase 6. */
+/** Soft lock while a user has a page template open in the builder. */
 export const CompositionPresence: CollectionConfig = {
   slug: "composition-presence",
   admin: {
+    hidden: true,
     useAsTitle: "id",
     defaultColumns: ["composition", "holder", "updatedAt"],
     description:
-      "Heartbeat while a user has a composition open in the builder/composer.",
+      "Heartbeat while a user has a page template open in the builder.",
   },
   access: {
     read: composerAuthoringAccess,

@@ -4,6 +4,8 @@ import { login } from "../helpers/login";
 import { cleanupTestUser, seedTestUser, testUser } from "../helpers/seedUser";
 
 test.describe("Admin Panel", () => {
+  test.describe.configure({ mode: "serial" });
+
   let page: Page;
 
   test.beforeAll(async ({ browser }) => {

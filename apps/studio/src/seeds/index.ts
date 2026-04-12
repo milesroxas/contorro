@@ -1,3 +1,4 @@
+import { deleteBuilderCompositionBySlug } from "@repo/infrastructure-payload-config";
 import { getPayload } from "payload";
 
 import config from "../payload.config.js";
@@ -8,11 +9,16 @@ export const SEED_PAGE_SLUG = "local-seed-page";
 export const SEED_TEMPLATE_SLUG = "local-seed-template";
 export const SEED_TOKEN_SCOPE_KEY = "local-seed";
 
-/** `component-revisions` — stable labels for idempotent delete/recreate. */
+/** `component-revisions` — stable labels for idempotent delete/recreate (gateway workflow; hidden in admin). */
 export const SEED_REVISION_STACK_LABEL = "Local seed · Stack revision";
 export const SEED_REVISION_TEXT_LABEL = "Local seed · Text revision";
+export const SEED_PAGE_DESIGNER_SLUG = "local-seed-designer";
 
-const SEED_COMPONENT_KEYS = ["primitive.stack", "primitive.text"] as const;
+const SEED_COMPONENT_KEYS = [
+  "primitive.stack",
+  "primitive.text",
+  "seed.card",
+] as const;
 
 const seedPassword = process.env.SEED_PASSWORD ?? "test";
 
@@ -43,7 +49,7 @@ const stackDefinition = {
       justify: { valueType: "string" as const },
     },
   },
-  slotContract: { slots: {} },
+  slotContract: { slots: [] },
 };
 
 const textDefinition = {
@@ -52,10 +58,76 @@ const textDefinition = {
       content: { valueType: "string" as const },
     },
   },
-  slotContract: { slots: {} },
+  slotContract: { slots: [] },
 };
 
-/** Matches Phase 4 E2E shape — stack + text for composer/builder testing. */
+const seedCardSlotContract = {
+  slots: [
+    {
+      name: "headline",
+      type: "text" as const,
+      required: true,
+      label: "Headline",
+    },
+  ],
+};
+
+const seedCardComposition = {
+  rootId: "card-root",
+  nodes: {
+    "card-root": {
+      id: "card-root",
+      kind: "primitive" as const,
+      definitionKey: "primitive.stack",
+      parentId: null,
+      childIds: ["card-text"],
+      propValues: {
+        direction: "column",
+        gap: "8px",
+        align: "stretch",
+        justify: "flex-start",
+      },
+    },
+    "card-text": {
+      id: "card-text",
+      kind: "text" as const,
+      definitionKey: "primitive.text",
+      parentId: "card-root",
+      childIds: [],
+      propValues: { content: "" },
+      contentBinding: {
+        source: "slot" as const,
+        key: "headline",
+        slot: {
+          name: "headline",
+          type: "text" as const,
+          required: true,
+          label: "Headline",
+        },
+      },
+    },
+  },
+  styleBindings: {},
+};
+
+/**
+ * Designer block (`seed.card`): `propContract.fields` is intentionally empty — there are no
+ * block-level prop keys in the PropContract sense; layout/text defaults live on nodes in
+ * `composition`. What editors fill in Payload is **slots** (`slotContract` + slot
+ * bindings in the tree), surfaced as block `slotValues` / `SlotValuesInputs` — not
+ * `propContract`. Compare `stackDefinition` / `textDefinition` for non-empty primitive
+ * `propContract` (catalog / tooling).
+ */
+const cardDefinition = {
+  propContract: { fields: {} },
+  slotContract: seedCardSlotContract,
+  composition: seedCardComposition,
+};
+
+/**
+ * Page template tree for builder/admin: stack + inline text + one slot-driven text node.
+ * Slots must use `contentBinding.source === "slot"` with `key === slot.name` (domain invariant).
+ */
 const seedComposition = {
   rootId: "stack-root",
   nodes: {
@@ -64,7 +136,7 @@ const seedComposition = {
       kind: "primitive" as const,
       definitionKey: "primitive.stack",
       parentId: null,
-      childIds: ["text-1"],
+      childIds: ["text-1", "text-hero"],
       propValues: {
         direction: "column",
         gap: "8px",
@@ -79,6 +151,26 @@ const seedComposition = {
       parentId: "stack-root",
       childIds: [],
       propValues: { content: "Hello from the local seed composition." },
+    },
+    "text-hero": {
+      id: "text-hero",
+      kind: "text" as const,
+      definitionKey: "primitive.text",
+      parentId: "stack-root",
+      childIds: [],
+      propValues: { content: "" },
+      contentBinding: {
+        source: "slot" as const,
+        key: "hero-headline",
+        slot: {
+          name: "hero-headline",
+          type: "text" as const,
+          required: true,
+          label: "Hero headline",
+          description:
+            "Filled via Pages → Template slots (maps to this template).",
+        },
+      },
     },
   },
   styleBindings: {},
@@ -103,6 +195,11 @@ async function seed(): Promise<void> {
       overrideAccess: true,
     });
     await payload.delete({
+      collection: "pages",
+      where: { slug: { equals: SEED_PAGE_DESIGNER_SLUG } },
+      overrideAccess: true,
+    });
+    await payload.delete({
       collection: "templates",
       where: { slug: { equals: SEED_TEMPLATE_SLUG } },
       overrideAccess: true,
@@ -112,6 +209,7 @@ async function seed(): Promise<void> {
       where: { slug: { equals: SEED_PAGE_COMPOSITION_SLUG } },
       overrideAccess: true,
     });
+    await deleteBuilderCompositionBySlug(SEED_PAGE_COMPOSITION_SLUG);
 
     await payload.delete({
       collection: "component-revisions",
@@ -119,6 +217,7 @@ async function seed(): Promise<void> {
         or: [
           { label: { equals: SEED_REVISION_STACK_LABEL } },
           { label: { equals: SEED_REVISION_TEXT_LABEL } },
+          { label: { equals: "Local seed · Card (published)" } },
         ],
       },
       overrideAccess: true,
@@ -244,7 +343,7 @@ async function seed(): Promise<void> {
       data: {
         key: "primitive.stack",
         displayName: "Stack (primitive)",
-        visibleInEditorCatalog: true,
+        visibleInEditorCatalog: false,
         ...stackDefinition,
       },
       overrideAccess: true,
@@ -255,8 +354,19 @@ async function seed(): Promise<void> {
       data: {
         key: "primitive.text",
         displayName: "Text (primitive)",
-        visibleInEditorCatalog: true,
+        visibleInEditorCatalog: false,
         ...textDefinition,
+      },
+      overrideAccess: true,
+    });
+
+    const cardDef = await payload.create({
+      collection: "component-definitions",
+      data: {
+        key: "seed.card",
+        displayName: "Seed Card (designer block demo)",
+        visibleInEditorCatalog: true,
+        ...cardDefinition,
       },
       overrideAccess: true,
     });
@@ -285,14 +395,37 @@ async function seed(): Promise<void> {
       overrideAccess: true,
     });
 
+    await payload.create({
+      collection: "component-revisions",
+      data: {
+        definition: cardDef.id,
+        label: "Local seed · Card (published)",
+        status: "published",
+        propContract: cardDefinition.propContract,
+        slotContract: cardDefinition.slotContract,
+        composition: seedCardComposition,
+      },
+      overrideAccess: true,
+    });
+
     const composition = await payload.create({
       collection: "page-compositions",
       data: {
         title: "Local seed (builder / composer)",
         slug: SEED_PAGE_COMPOSITION_SLUG,
         composition: seedComposition,
+        catalogReviewStatus: "approved",
+        catalogSubmittedAt: "2026-04-01T12:00:00.000Z",
       },
       draft: true,
+      overrideAccess: true,
+    });
+
+    await payload.update({
+      collection: "page-compositions",
+      id: composition.id,
+      data: {},
+      draft: false,
       overrideAccess: true,
     });
 
@@ -322,6 +455,18 @@ async function seed(): Promise<void> {
         title: "Local seed page",
         slug: SEED_PAGE_SLUG,
         pageComposition: composition.id,
+        templateSlotValues: {
+          "hero-headline": "Welcome — local seed page (template slot).",
+        },
+        content: [
+          {
+            componentDefinition: cardDef.id,
+            slotValues: {
+              headline:
+                "Designer block on the same page as the template (combined).",
+            },
+          },
+        ],
       },
       draft: true,
       overrideAccess: true,
@@ -330,8 +475,29 @@ async function seed(): Promise<void> {
     await payload.update({
       collection: "pages",
       id: page.id,
-      data: {},
-      draft: false,
+      data: { _status: "published" },
+      overrideAccess: true,
+    });
+
+    const designerPage = await payload.create({
+      collection: "pages",
+      data: {
+        title: "Local seed designer block",
+        slug: SEED_PAGE_DESIGNER_SLUG,
+        content: [
+          {
+            componentDefinition: cardDef.id,
+            slotValues: { headline: "Hello World" },
+          },
+        ],
+      },
+      draft: true,
+      overrideAccess: true,
+    });
+    await payload.update({
+      collection: "pages",
+      id: designerPage.id,
+      data: { _status: "published" },
       overrideAccess: true,
     });
 
@@ -347,7 +513,12 @@ async function seed(): Promise<void> {
       `  Page composition: ${SEED_PAGE_COMPOSITION_SLUG} (id: ${compositionId})`,
     );
     console.log(`  Template:         ${SEED_TEMPLATE_SLUG}`);
-    console.log(`  Page (published): ${SEED_PAGE_SLUG}`);
+    console.log(
+      `  Page (published): ${SEED_PAGE_SLUG} (template slot hero-headline + seed.card block)`,
+    );
+    console.log(
+      `  Designer page:    ${SEED_PAGE_DESIGNER_SLUG} (blocks only, no template)`,
+    );
     console.log(`  Token set:        ${SEED_TOKEN_SCOPE_KEY} (published)`);
     console.log(
       "  Design system:    global defaultTokenSet + activeBrandKey set",
@@ -356,7 +527,10 @@ async function seed(): Promise<void> {
       "  Token overrides:  color.surface.primary, space.scale.2 (on local-seed set)",
     );
     console.log(
-      "  Comp revisions:   Stack (draft), Text (published) — see admin → component-revisions",
+      "  Editor block catalog: seed.card only (primitives are builder-only, not in picker)",
+    );
+    console.log(
+      "  Comp revisions:     Stack (draft), Text + Card (published) — workflow only; defs hold published composition",
     );
     console.log(`\n  Log in (all use password: ${seedPassword}):`);
     for (const [label, u] of Object.entries(SEED_USERS)) {

@@ -74,13 +74,18 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
   const composition = useBuilder((s) => s.composition);
   const selectedNodeId = useBuilder((s) => s.selectedNodeId);
   const dirty = useBuilder((s) => s.dirty);
+  const saving = useBuilder((s) => s.saving);
   const error = useBuilder((s) => s.error);
   const selectNode = useBuilder((s) => s.selectNode);
   const addPrimitive = useBuilder((s) => s.addPrimitive);
   const moveNode = useBuilder((s) => s.moveNode);
   const setTextContent = useBuilder((s) => s.setTextContent);
+  const patchNodeProps = useBuilder((s) => s.patchNodeProps);
   const setBackgroundToken = useBuilder((s) => s.setBackgroundToken);
+  const setNodeSlotBinding = useBuilder((s) => s.setNodeSlotBinding);
   const saveDraft = useBuilder((s) => s.saveDraft);
+  const publish = useBuilder((s) => s.publish);
+  const cancel = useBuilder((s) => s.cancel);
   const removeNode = useBuilder((s) => s.removeNode);
 
   useEffect(() => {
@@ -186,7 +191,10 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
         <DraftSaveBar
           dirty={dirty}
           error={error}
-          onSave={() => void saveDraft()}
+          onCancel={() => cancel()}
+          onPublish={() => void publish()}
+          onSaveDraft={() => void saveDraft()}
+          saving={saving}
         />
         <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 auto-rows-[minmax(0,1fr)] gap-3 p-3 lg:auto-rows-auto lg:grid-cols-[minmax(0,220px)_1fr_minmax(0,280px)] lg:grid-rows-1">
           <div className="flex min-h-0 min-w-0 flex-col gap-3">
@@ -229,6 +237,16 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
                   onTextChange={(c) => {
                     if (selectedNodeId) {
                       setTextContent(selectedNodeId, c);
+                    }
+                  }}
+                  patchNodeProps={(patch) => {
+                    if (selectedNodeId) {
+                      patchNodeProps(selectedNodeId, patch);
+                    }
+                  }}
+                  setNodeSlotBinding={(slot) => {
+                    if (selectedNodeId) {
+                      setNodeSlotBinding(selectedNodeId, slot);
                     }
                   }}
                 />

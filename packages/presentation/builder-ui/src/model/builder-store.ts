@@ -1,14 +1,19 @@
-import type { PageComposition } from "@repo/contracts-zod";
+import type { PageComposition, SlotDefinition } from "@repo/contracts-zod";
 import {
   addChildNode,
   moveNode as moveNodeInComposition,
   removeSubtree,
+  setNodeContentBinding,
   setNodeTokenStyle,
   updateNodePropValues,
 } from "@repo/domains-composition";
 import { createSafeStore } from "@repo/presentation-shared";
 
-import { fetchComposition, postDraft } from "../lib/builder-api.js";
+import {
+  fetchComposition,
+  postDraft,
+  postPublish,
+} from "../lib/builder-api.js";
 import { prepareForSave } from "../lib/persist.js";
 
 export type BuilderStoreState = {
@@ -17,8 +22,10 @@ export type BuilderStoreState = {
   updatedAt: string | null;
   selectedNodeId: string | null;
   dirty: boolean;
+  saving: boolean;
   error: string | null;
   load: () => Promise<void>;
+  cancel: () => void;
   selectNode: (id: string | null) => void;
   addPrimitive: (
     parentId: string,
@@ -28,8 +35,11 @@ export type BuilderStoreState = {
   moveNode: (nodeId: string, targetParentId: string, index: number) => void;
   removeNode: (nodeId: string) => void;
   setTextContent: (nodeId: string, content: string) => void;
+  patchNodeProps: (nodeId: string, patch: Record<string, unknown>) => void;
   setBackgroundToken: (nodeId: string, token: string) => void;
+  setNodeSlotBinding: (nodeId: string, slot: SlotDefinition | null) => void;
   saveDraft: () => Promise<void>;
+  publish: () => Promise<void>;
 };
 
 export function createBuilderStore(compositionId: string) {
@@ -39,7 +49,12 @@ export function createBuilderStore(compositionId: string) {
     updatedAt: null,
     selectedNodeId: null,
     dirty: false,
+    saving: false,
     error: null,
+
+    cancel: () => {
+      void get().load();
+    },
 
     load: async () => {
       set({ error: null });
@@ -133,6 +148,18 @@ export function createBuilderStore(compositionId: string) {
       set({ composition: next.value, dirty: true });
     },
 
+    patchNodeProps: (nodeId, patch) => {
+      const { composition } = get();
+      if (!composition) {
+        return;
+      }
+      const next = updateNodePropValues(composition, nodeId, patch);
+      if (!next.ok) {
+        return;
+      }
+      set({ composition: next.value, dirty: true });
+    },
+
     setBackgroundToken: (nodeId, token) => {
       const { composition } = get();
       if (!composition) {
@@ -145,9 +172,25 @@ export function createBuilderStore(compositionId: string) {
       set({ composition: next.value, dirty: true });
     },
 
-    saveDraft: async () => {
-      const { composition, updatedAt, compositionId: id } = get();
+    setNodeSlotBinding: (nodeId, slot) => {
+      const { composition } = get();
       if (!composition) {
+        return;
+      }
+      const binding =
+        slot === null
+          ? undefined
+          : { source: "slot" as const, key: slot.name, slot };
+      const next = setNodeContentBinding(composition, nodeId, binding);
+      if (!next.ok) {
+        return;
+      }
+      set({ composition: next.value, dirty: true });
+    },
+
+    saveDraft: async () => {
+      const { composition, updatedAt, compositionId: id, saving } = get();
+      if (!composition || saving) {
         return;
       }
       const prep = prepareForSave(composition);
@@ -155,7 +198,7 @@ export function createBuilderStore(compositionId: string) {
         set({ error: "Invalid composition" });
         return;
       }
-      set({ error: null });
+      set({ error: null, saving: true });
       try {
         const nextUpdated = await postDraft(id, {
           composition: prep.data,
@@ -166,6 +209,34 @@ export function createBuilderStore(compositionId: string) {
         set({
           error: e instanceof Error ? e.message : "save failed",
         });
+      } finally {
+        set({ saving: false });
+      }
+    },
+
+    publish: async () => {
+      const { composition, updatedAt, compositionId: id, saving } = get();
+      if (!composition || saving) {
+        return;
+      }
+      const prep = prepareForSave(composition);
+      if (!prep.ok) {
+        set({ error: "Invalid composition" });
+        return;
+      }
+      set({ error: null, saving: true });
+      try {
+        const nextUpdated = await postPublish(id, {
+          composition: prep.data,
+          ifMatchUpdatedAt: updatedAt,
+        });
+        set({ updatedAt: nextUpdated, dirty: false });
+      } catch (e) {
+        set({
+          error: e instanceof Error ? e.message : "publish failed",
+        });
+      } finally {
+        set({ saving: false });
       }
     },
   }));

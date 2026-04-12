@@ -1,5 +1,9 @@
-import { createPageCompositionBeforeValidateHandler } from "@repo/application-page-composer";
 import type { CollectionConfig } from "payload";
+import { createPageCompositionBeforeValidateHandler } from "../collection-hooks/page-and-component-validation.js";
+import {
+  syncBuilderCompositionAfterChange,
+  syncBuilderCompositionAfterDelete,
+} from "../hooks/sync-builder-composition.js";
 
 import { composerAuthoringAccess } from "../access/composition-access.js";
 import { authenticatedAccess } from "../access/design-system-access.js";
@@ -9,6 +13,10 @@ const beforeValidate = createPageCompositionBeforeValidateHandler();
 
 export const PageCompositions: CollectionConfig = {
   slug: "page-compositions",
+  labels: {
+    singular: "Page template",
+    plural: "Page templates",
+  },
   versions: {
     drafts: true,
   },
@@ -16,7 +24,7 @@ export const PageCompositions: CollectionConfig = {
     useAsTitle: "title",
     defaultColumns: ["title", "slug", "_status", "updatedAt"],
     description:
-      "Page composition tree (Phase 2). Lexical is not used for body layout.",
+      "Full-page layouts from the builder. Site pages and reusable Templates reference these documents.",
   },
   access: {
     read: authenticatedAccess,
@@ -48,7 +56,7 @@ export const PageCompositions: CollectionConfig = {
       admin: {
         readOnly: true,
         description:
-          "Set when the designer submits this composition for catalog review (gateway POST …/submit).",
+          "Set when the designer submits this template for catalog review.",
       },
     },
     {
@@ -64,11 +72,13 @@ export const PageCompositions: CollectionConfig = {
       ],
       admin: {
         description:
-          "Catalog approval gate (Phase 6). Page publish is blocked while submitted or rejected until approved.",
+          "Catalog approval gate: publishing can be blocked while submitted or rejected.",
       },
     },
   ],
   hooks: {
     beforeValidate: [beforeValidate],
+    afterChange: [syncBuilderCompositionAfterChange],
+    afterDelete: [syncBuilderCompositionAfterDelete],
   },
 };

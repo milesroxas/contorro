@@ -1,4 +1,4 @@
-# Postgres only (see docs/architecture-spec.md local dev section).
+# Postgres only (see AGENTS.md and docs/app/system-runtime.md).
 # Project name fixes container/volume scope; host port defaults to 54332 so :5432 can stay free.
 name: contorro
 
