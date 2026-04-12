@@ -252,6 +252,9 @@ export interface DesignTokenOverride {
 export interface Component {
   id: number;
   displayName: string;
+  /**
+   * Stable id derived from the title when the component is created. Shown for reference only.
+   */
   key: string;
   propContract:
     | {
@@ -286,29 +289,6 @@ export interface Component {
     | number
     | boolean
     | null;
-  /**
-   * When on, editors can add this block on pages. Turn off to hide it from the picker without deleting the component.
-   */
-  visibleInEditorCatalog?: boolean | null;
-  /**
-   * Set when this component is submitted for catalog review (builder or admin).
-   */
-  catalogSubmittedAt?: string | null;
-  /**
-   * Catalog approval gate: publishing can be blocked while submitted or rejected.
-   */
-  catalogReviewStatus: 'none' | 'submitted' | 'approved' | 'rejected';
-  /**
-   * Breaking contract changes require dependency impact acknowledgment before publish.
-   */
-  isBreakingChange?: boolean | null;
-  /**
-   * Set when an approver acknowledges impacted pages (gateway or admin).
-   */
-  dependencyImpactAcknowledgedAt?: string | null;
-  /**
-   * Last user who saved this document.
-   */
   lastTouchedBy?: (number | null) | User;
   folder?: (number | null) | FolderInterface;
   updatedAt: string;
@@ -739,11 +719,6 @@ export interface ComponentsSelect<T extends boolean = true> {
   propContract?: T;
   editorFields?: T;
   composition?: T;
-  visibleInEditorCatalog?: T;
-  catalogSubmittedAt?: T;
-  catalogReviewStatus?: T;
-  isBreakingChange?: T;
-  dependencyImpactAcknowledgedAt?: T;
   lastTouchedBy?: T;
   folder?: T;
   updatedAt?: T;

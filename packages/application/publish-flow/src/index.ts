@@ -11,7 +11,6 @@ export {
   makePublishJobIdempotencyKey,
   collectDefinitionKeysFromPageComposition,
   pageCompositionUsesDefinitionKey,
-  breakingChangePublishAllowed,
   canApproveRevision,
   canPublishRevision,
   canSubmitRevision,

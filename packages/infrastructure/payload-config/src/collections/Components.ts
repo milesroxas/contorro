@@ -24,7 +24,7 @@ export const Components: CollectionConfig = {
   admin: {
     group: "Layout & library",
     useAsTitle: "displayName",
-    defaultColumns: ["displayName", "_status", "updatedAt", "lastTouchedBy"],
+    defaultColumns: ["displayName", "key", "_status", "updatedAt"],
     description:
       "Reusable blocks for pages. Compose in the visual builder; publish when ready.",
     listSearchableFields: ["displayName", "key"],
@@ -48,6 +48,11 @@ export const Components: CollectionConfig = {
       required: true,
       unique: true,
       index: true,
+      admin: {
+        readOnly: true,
+        description:
+          "Stable id derived from the title when the component is created. Shown for reference only.",
+      },
     },
     {
       name: "propContract",
@@ -72,64 +77,11 @@ export const Components: CollectionConfig = {
       },
     },
     {
-      name: "visibleInEditorCatalog",
-      type: "checkbox",
-      label: "Show in editor catalog",
-      defaultValue: false,
-      admin: {
-        description:
-          "When on, editors can add this block on pages. Turn off to hide it from the picker without deleting the component.",
-      },
-    },
-    {
-      name: "catalogSubmittedAt",
-      type: "date",
-      admin: {
-        readOnly: true,
-        description:
-          "Set when this component is submitted for catalog review (builder or admin).",
-      },
-    },
-    {
-      name: "catalogReviewStatus",
-      type: "select",
-      required: true,
-      defaultValue: "none",
-      options: [
-        { label: "None", value: "none" },
-        { label: "Submitted", value: "submitted" },
-        { label: "Approved", value: "approved" },
-        { label: "Rejected", value: "rejected" },
-      ],
-      admin: {
-        description:
-          "Catalog approval gate: publishing can be blocked while submitted or rejected.",
-      },
-    },
-    {
-      name: "isBreakingChange",
-      type: "checkbox",
-      defaultValue: false,
-      admin: {
-        description:
-          "Breaking contract changes require dependency impact acknowledgment before publish.",
-      },
-    },
-    {
-      name: "dependencyImpactAcknowledgedAt",
-      type: "date",
-      admin: {
-        description:
-          "Set when an approver acknowledges impacted pages (gateway or admin).",
-      },
-    },
-    {
       name: "lastTouchedBy",
       type: "relationship",
       relationTo: "users",
       admin: {
-        readOnly: true,
-        description: "Last user who saved this document.",
+        hidden: true,
       },
     },
   ],

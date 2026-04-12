@@ -13,6 +13,11 @@ import {
 import type { CollectionBeforeValidateHook } from "payload";
 import { APIError } from "payload";
 
+import {
+  ensureUniqueComponentKey,
+  slugifyComponentKeyFromTitle,
+} from "../utils/component-key-from-title.js";
+
 function relationshipId(ref: unknown): number | undefined {
   if (typeof ref === "number" && Number.isFinite(ref)) {
     return ref;
@@ -221,9 +226,38 @@ export function createPagesBeforeValidateHandler(): CollectionBeforeValidateHook
 }
 
 export function createComponentsBeforeValidateHandler(): CollectionBeforeValidateHook {
-  return ({ data, operation, originalDoc }) => {
+  return async ({ data, operation, originalDoc, req }) => {
     if (!data) {
       return data;
+    }
+
+    const next = { ...(data as Record<string, unknown>) };
+    if (typeof next.displayName === "string") {
+      next.displayName = next.displayName.trim();
+    }
+
+    if (
+      operation === "update" &&
+      originalDoc &&
+      typeof originalDoc === "object"
+    ) {
+      const prevKey = (originalDoc as { key?: unknown }).key;
+      if (typeof prevKey === "string") {
+        next.key = prevKey;
+      }
+    } else if (operation === "create") {
+      const explicit = typeof next.key === "string" ? next.key.trim() : "";
+      if (explicit.startsWith("primitive.")) {
+        next.key = explicit;
+      } else {
+        const title =
+          typeof next.displayName === "string" ? next.displayName : "";
+        if (title === "") {
+          throw new APIError("Title is required", 400);
+        }
+        const base = slugifyComponentKeyFromTitle(title);
+        next.key = await ensureUniqueComponentKey(req.payload, base);
+      }
     }
 
     const merged: Record<string, unknown> =
@@ -231,8 +265,8 @@ export function createComponentsBeforeValidateHandler(): CollectionBeforeValidat
       originalDoc !== undefined &&
       originalDoc !== null &&
       typeof originalDoc === "object"
-        ? { ...(originalDoc as Record<string, unknown>), ...data }
-        : { ...(data as Record<string, unknown>) };
+        ? { ...(originalDoc as Record<string, unknown>), ...next }
+        : next;
 
     const row = merged as {
       propContract?: unknown;
@@ -258,7 +292,7 @@ export function createComponentsBeforeValidateHandler(): CollectionBeforeValidat
         throw new APIError(inv.error, 400);
       }
       return {
-        ...data,
+        ...next,
         propContract: p.data,
         composition: comp.data,
         editorFields: editorFieldsContractFromComposition(comp.data),
@@ -271,7 +305,7 @@ export function createComponentsBeforeValidateHandler(): CollectionBeforeValidat
     }
 
     return {
-      ...data,
+      ...next,
       propContract: p.data,
       editorFields: s.data,
     };

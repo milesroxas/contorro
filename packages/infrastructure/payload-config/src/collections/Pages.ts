@@ -124,7 +124,7 @@ export const Pages: CollectionConfig = {
               "Choose a component from the catalog (Components collection).",
           },
           filterOptions: () => ({
-            visibleInEditorCatalog: { equals: true },
+            _status: { equals: "published" },
           }),
         },
         {

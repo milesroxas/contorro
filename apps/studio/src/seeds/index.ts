@@ -14,7 +14,7 @@ const SEED_COMPONENT_KEYS = [
   "primitive.stack",
   "primitive.text",
   "primitive.slot",
-  "seed.card",
+  "seed-card-designer-block-demo",
 ] as const;
 
 const seedPassword = process.env.SEED_PASSWORD ?? "test";
@@ -117,7 +117,7 @@ const seedCardComposition = {
 };
 
 /**
- * Designer block (`seed.card`): `propContract.fields` is intentionally empty — there are no
+ * Designer block (seed card demo): `propContract.fields` is intentionally empty — there are no
  * block-level prop keys in the PropContract sense; layout/text defaults live on nodes in
  * `composition`. What editors fill in Payload are **CMS editor fields** (`editorFields` +
  * `contentBinding.source === "editor"`), surfaced as `editorFieldValues` — not
@@ -342,8 +342,6 @@ async function seed(): Promise<void> {
       data: {
         key: "primitive.stack",
         displayName: "Stack (primitive)",
-        visibleInEditorCatalog: false,
-        catalogReviewStatus: "none",
         ...stackDefinition,
       },
       overrideAccess: true,
@@ -362,8 +360,6 @@ async function seed(): Promise<void> {
       data: {
         key: "primitive.text",
         displayName: "Text (primitive)",
-        visibleInEditorCatalog: false,
-        catalogReviewStatus: "none",
         ...textDefinition,
       },
       overrideAccess: true,
@@ -382,8 +378,6 @@ async function seed(): Promise<void> {
       data: {
         key: "primitive.slot",
         displayName: "Slot (primitive)",
-        visibleInEditorCatalog: false,
-        catalogReviewStatus: "none",
         ...slotDefinition,
       },
       overrideAccess: true,
@@ -399,10 +393,7 @@ async function seed(): Promise<void> {
     const cardCreated = await payload.create({
       collection: "components",
       data: {
-        key: "seed.card",
         displayName: "Seed Card (designer block demo)",
-        visibleInEditorCatalog: true,
-        catalogReviewStatus: "none",
         ...cardDefinition,
       },
       draft: true,
@@ -503,7 +494,7 @@ async function seed(): Promise<void> {
       `  Page template:      ${SEED_PAGE_COMPOSITION_SLUG} (id: ${compositionId})`,
     );
     console.log(
-      `  Page (published): ${SEED_PAGE_SLUG} (template CMS field hero-headline + seed.card in layout slot main)`,
+      `  Page (published): ${SEED_PAGE_SLUG} (template CMS field hero-headline + seed card block in layout slot main)`,
     );
     console.log(
       `  Designer page:    ${SEED_PAGE_DESIGNER_SLUG} (blocks only, no template)`,
@@ -516,7 +507,7 @@ async function seed(): Promise<void> {
       "  Token overrides:  color.surface.primary, space.scale.2 (on local-seed set)",
     );
     console.log(
-      "  Editor block catalog: seed.card only (primitives are builder-only, not in picker)",
+      "  Editor block catalog: published components with a template (primitives are builder-only)",
     );
     console.log(
       "  Comp revisions:     Stack (draft), Text + Card (published) — workflow only; defs hold published composition",

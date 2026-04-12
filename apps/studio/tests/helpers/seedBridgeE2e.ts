@@ -75,10 +75,7 @@ export async function seedBridgePublicPage(): Promise<void> {
     collection: "components",
     draft: true,
     data: {
-      key: BRIDGE_E2E_COMPONENT_KEY,
       displayName: "E2E bridge card",
-      visibleInEditorCatalog: true,
-      catalogReviewStatus: "none",
       propContract: { fields: {} },
       editorFields: cardEditorFieldsManifest,
       composition: cardComposition,

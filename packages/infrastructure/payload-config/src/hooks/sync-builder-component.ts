@@ -47,11 +47,6 @@ export const syncBuilderComponentAfterChange: CollectionAfterChangeHook =
     }
     const title = String((doc as { displayName?: unknown }).displayName ?? "");
     const composition = (doc as { composition?: unknown }).composition;
-    const catalogSubmittedAt = (doc as { catalogSubmittedAt?: unknown })
-      .catalogSubmittedAt;
-    const catalogReviewStatus = String(
-      (doc as { catalogReviewStatus?: unknown }).catalogReviewStatus ?? "none",
-    );
     const row = doc as { updatedAt?: unknown; createdAt?: unknown };
     const updatedAt = isoTimestamp(row.updatedAt);
     const createdAt = isoTimestamp(row.createdAt ?? row.updatedAt);
@@ -78,12 +73,8 @@ export const syncBuilderComponentAfterChange: CollectionAfterChangeHook =
         title || "Untitled",
         bid,
         JSON.stringify(composition),
-        catalogSubmittedAt instanceof Date
-          ? catalogSubmittedAt.toISOString()
-          : typeof catalogSubmittedAt === "string"
-            ? catalogSubmittedAt
-            : null,
-        catalogReviewStatus,
+        null,
+        "none",
         createdAt,
         updatedAt,
       ],

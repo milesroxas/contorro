@@ -5,7 +5,6 @@ export {
 } from "./catalog-review-status.js";
 export { makePublishJobIdempotencyKey } from "./publish-job-idempotency.js";
 export {
-  breakingChangePublishAllowed,
   canApproveRevision,
   canPublishRevision,
   canSubmitRevision,

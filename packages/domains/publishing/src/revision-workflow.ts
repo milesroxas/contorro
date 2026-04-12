@@ -23,17 +23,3 @@ export function canApproveRevision(status: RevisionWorkflowStatus): boolean {
 export function canPublishRevision(status: RevisionWorkflowStatus): boolean {
   return status === "approved";
 }
-
-export function breakingChangePublishAllowed(
-  isBreakingChange: boolean,
-  dependencyImpactAcknowledgedAt: string | null | undefined,
-): boolean {
-  if (!isBreakingChange) {
-    return true;
-  }
-  return (
-    dependencyImpactAcknowledgedAt !== undefined &&
-    dependencyImpactAcknowledgedAt !== null &&
-    dependencyImpactAcknowledgedAt.length > 0
-  );
-}

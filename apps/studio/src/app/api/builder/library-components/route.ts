@@ -35,10 +35,7 @@ export async function GET(request: Request) {
     limit: 500,
     sort: "displayName",
     where: {
-      and: [
-        { visibleInEditorCatalog: { equals: true } },
-        { _status: { equals: "published" } },
-      ],
+      _status: { equals: "published" },
     },
     user,
     overrideAccess: false,

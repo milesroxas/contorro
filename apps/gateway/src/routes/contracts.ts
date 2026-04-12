@@ -25,7 +25,7 @@ contractsRouter.get(
       const found = await pool.query<Record<string, unknown>>(
         `select id, key, prop_contract as "propContract", editor_fields as "editorFields",
                 composition as "composition"
-         from component_definitions where key = $1 limit 1`,
+         from components where key = $1 limit 1`,
         [key],
       );
       doc = found.rows[0];
@@ -78,7 +78,7 @@ contractsRouter.post(
         prop_contract: unknown;
         editor_fields: unknown;
       }>(
-        "select id, prop_contract, editor_fields from component_definitions where key = $1 limit 1",
+        "select id, prop_contract, editor_fields from components where key = $1 limit 1",
         [key],
       );
       const row = found.rows[0];
@@ -109,7 +109,7 @@ contractsRouter.post(
 
     try {
       await pool.query(
-        "update component_definitions set prop_contract = $1::jsonb, editor_fields = $2::jsonb, updated_at = now() where id = $3",
+        "update components set prop_contract = $1::jsonb, editor_fields = $2::jsonb, updated_at = now() where id = $3",
         [
           JSON.stringify(data.propContract),
           JSON.stringify(data.editorFields),

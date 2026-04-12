@@ -17,6 +17,7 @@ import * as migration_20260412_210000_editor_fields_terminology from "./20260412
 import * as migration_20260412_220000_pages_content_layout_slot_id from "./20260412_220000_pages_content_layout_slot_id";
 import * as migration_20260412_230000_backfill_builder_from_component_revisions from "./20260412_230000_backfill_builder_from_component_revisions";
 import * as migration_20260412_240000_components_collection_payload_folders from "./20260412_240000_components_collection_payload_folders";
+import * as migration_20260412_250000_simplify_components_columns from "./20260412_250000_simplify_components_columns";
 
 export const migrations = [
   {
@@ -113,5 +114,10 @@ export const migrations = [
     up: migration_20260412_240000_components_collection_payload_folders.up,
     down: migration_20260412_240000_components_collection_payload_folders.down,
     name: "20260412_240000_components_collection_payload_folders",
+  },
+  {
+    up: migration_20260412_250000_simplify_components_columns.up,
+    down: migration_20260412_250000_simplify_components_columns.down,
+    name: "20260412_250000_simplify_components_columns",
   },
 ];

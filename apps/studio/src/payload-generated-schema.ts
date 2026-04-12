@@ -71,18 +71,10 @@ export const enum__design_token_sets_v_version_status = pgEnum(
   "enum__design_token_sets_v_version_status",
   ["draft", "published"],
 );
-export const enum_components_catalog_review_status = pgEnum(
-  "enum_components_catalog_review_status",
-  ["none", "submitted", "approved", "rejected"],
-);
 export const enum_components_status = pgEnum("enum_components_status", [
   "draft",
   "published",
 ]);
-export const enum__components_v_version_catalog_review_status = pgEnum(
-  "enum__components_v_version_catalog_review_status",
-  ["none", "submitted", "approved", "rejected"],
-);
 export const enum__components_v_version_status = pgEnum(
   "enum__components_v_version_status",
   ["draft", "published"],
@@ -420,20 +412,6 @@ export const components = pgTable(
     propContract: jsonb("prop_contract"),
     editorFields: jsonb("editor_fields"),
     composition: jsonb("composition"),
-    visibleInEditorCatalog: boolean("visible_in_editor_catalog").default(false),
-    catalogSubmittedAt: timestamp("catalog_submitted_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3,
-    }),
-    catalogReviewStatus: enum_components_catalog_review_status(
-      "catalog_review_status",
-    ).default("none"),
-    isBreakingChange: boolean("is_breaking_change").default(false),
-    dependencyImpactAcknowledgedAt: timestamp(
-      "dependency_impact_acknowledged_at",
-      { mode: "string", withTimezone: true, precision: 3 },
-    ),
     lastTouchedBy: integer("last_touched_by_id").references(() => users.id, {
       onDelete: "set null",
     }),
@@ -478,25 +456,6 @@ export const _components_v = pgTable(
     version_propContract: jsonb("version_prop_contract"),
     version_editorFields: jsonb("version_editor_fields"),
     version_composition: jsonb("version_composition"),
-    version_visibleInEditorCatalog: boolean(
-      "version_visible_in_editor_catalog",
-    ).default(false),
-    version_catalogSubmittedAt: timestamp("version_catalog_submitted_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3,
-    }),
-    version_catalogReviewStatus:
-      enum__components_v_version_catalog_review_status(
-        "version_catalog_review_status",
-      ).default("none"),
-    version_isBreakingChange: boolean("version_is_breaking_change").default(
-      false,
-    ),
-    version_dependencyImpactAcknowledgedAt: timestamp(
-      "version_dependency_impact_acknowledged_at",
-      { mode: "string", withTimezone: true, precision: 3 },
-    ),
     version_lastTouchedBy: integer("version_last_touched_by_id").references(
       () => users.id,
       {
@@ -1681,9 +1640,7 @@ type DatabaseSchema = {
   enum_design_token_sets_status: typeof enum_design_token_sets_status;
   enum__design_token_sets_v_version_tokens_category: typeof enum__design_token_sets_v_version_tokens_category;
   enum__design_token_sets_v_version_status: typeof enum__design_token_sets_v_version_status;
-  enum_components_catalog_review_status: typeof enum_components_catalog_review_status;
   enum_components_status: typeof enum_components_status;
-  enum__components_v_version_catalog_review_status: typeof enum__components_v_version_catalog_review_status;
   enum__components_v_version_status: typeof enum__components_v_version_status;
   enum_page_compositions_catalog_review_status: typeof enum_page_compositions_catalog_review_status;
   enum_page_compositions_status: typeof enum_page_compositions_status;
