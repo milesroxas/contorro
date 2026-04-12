@@ -1,7 +1,6 @@
 import type { CollectionConfig } from "payload";
 import { CatalogActivity } from "./CatalogActivity.js";
-import { ComponentDefinitions } from "./ComponentDefinitions.js";
-import { ComponentRevisions } from "./ComponentRevisions.js";
+import { Components } from "./Components.js";
 import { CompositionPresence } from "./CompositionPresence.js";
 import { DesignTokenOverrides } from "./DesignTokenOverrides.js";
 import { DesignTokenSets } from "./DesignTokenSets.js";
@@ -17,8 +16,7 @@ export const collections: CollectionConfig[] = [
   Media,
   DesignTokenSets,
   DesignTokenOverrides,
-  ComponentDefinitions,
-  ComponentRevisions,
+  Components,
   PageCompositions,
   Pages,
   ReleaseSnapshots,
@@ -29,8 +27,7 @@ export const collections: CollectionConfig[] = [
 
 export {
   CatalogActivity,
-  ComponentDefinitions,
-  ComponentRevisions,
+  Components,
   CompositionPresence,
   DesignTokenOverrides,
   DesignTokenSets,

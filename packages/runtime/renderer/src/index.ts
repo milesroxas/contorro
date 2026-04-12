@@ -1,4 +1,7 @@
-export { renderComposition } from "./render-composition.js";
+export {
+  renderComposition,
+  type RenderCompositionOptions,
+} from "./render-composition.js";
 export {
   resolveStyleBinding,
   type ResolvedStyle,

@@ -1,7 +1,36 @@
 import { z } from "zod";
 
-import { SlotDefinitionSchema } from "./slot-editor.js";
+import { EditorFieldSpecSchema } from "./editor-fields.js";
 import { StyleBindingSchema } from "./style-binding.js";
+
+/** Legacy `contentBinding.source === "slot"` → `"editor"` (CMS fields, not layout slots). */
+function migrateContentBinding(raw: unknown): unknown {
+  if (!raw || typeof raw !== "object") {
+    return raw;
+  }
+  const r = raw as Record<string, unknown>;
+  if (r.source === "slot") {
+    return {
+      source: "editor",
+      key: r.key,
+      editorField: r.slot,
+    };
+  }
+  return raw;
+}
+
+const ContentBindingInnerSchema = z.object({
+  source: z.enum(["inline", "field", "global", "editor"]),
+  key: z.string(),
+  editorField: EditorFieldSpecSchema.optional(),
+});
+
+export const ContentBindingSchema = z.preprocess(
+  migrateContentBinding,
+  ContentBindingInnerSchema,
+);
+
+export type ContentBinding = z.infer<typeof ContentBindingInnerSchema>;
 
 /** §5.4 — composition node kinds */
 export const NodeKindSchema = z.enum([
@@ -24,15 +53,10 @@ export const CompositionNodeSchema = z.object({
   childIds: z.array(z.string()),
   styleBindingId: z.string().optional(),
   propValues: z.record(z.string(), z.unknown()).optional(),
+  /** Layout slots: named regions where child components are placed (node ids). */
   slotValues: z.record(z.string(), z.array(z.string())).optional(),
-  contentBinding: z
-    .object({
-      source: z.enum(["inline", "field", "global", "slot"]),
-      key: z.string(),
-      /** Present when `source` is `slot` — editor fill-in contract (v0.4). */
-      slot: SlotDefinitionSchema.optional(),
-    })
-    .optional(),
+  /** Inline vs CMS-driven content; `editor` + `editorField` = Payload-managed fields. */
+  contentBinding: ContentBindingSchema.optional(),
   visibility: z.object({ hidden: z.boolean() }).optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
@@ -81,5 +105,5 @@ export type LegacySlotContract = z.infer<typeof LegacySlotContractSchema>;
 
 /** @deprecated Prefer `LegacySlotContractSchema` */
 export const SlotContractSchema = LegacySlotContractSchema;
-/** @deprecated Prefer `LegacySlotContract` or `EditorSlotContract` */
+/** @deprecated Prefer `LegacySlotContract` */
 export type SlotContract = LegacySlotContract;

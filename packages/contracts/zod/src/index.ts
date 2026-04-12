@@ -1,5 +1,6 @@
 export {
   CompositionNodeSchema,
+  ContentBindingSchema,
   LegacySlotContractSchema,
   NodeKindSchema,
   PageCompositionSchema,
@@ -7,6 +8,7 @@ export {
   PropFieldSpecSchema,
   SlotContractSchema,
   type CompositionNode,
+  type ContentBinding,
   type LegacySlotContract,
   type NodeKind,
   type PageComposition,
@@ -26,13 +28,13 @@ export {
 } from "./design-system.js";
 export { StyleBindingSchema, type StyleBinding } from "./style-binding.js";
 export {
-  EDITOR_SLOT_TYPES,
-  EditorSlotContractSchema,
-  SlotDefinitionSchema,
-  type EditorSlotContract,
-  type SlotDefinition,
-} from "./slot-editor.js";
+  EDITOR_FIELD_TYPES,
+  EditorFieldSpecSchema,
+  EditorFieldsContractSchema,
+  type EditorFieldSpec,
+  type EditorFieldsContract,
+} from "./editor-fields.js";
 export {
-  normalizeSlotContract,
-  parseEditorSlotContract,
-} from "./normalize-slot-contract.js";
+  normalizeEditorFieldsContract,
+  parseEditorFieldsContract,
+} from "./normalize-editor-fields.js";

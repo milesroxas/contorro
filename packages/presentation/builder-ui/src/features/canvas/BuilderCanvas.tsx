@@ -16,7 +16,7 @@ import { createPortal } from "react-dom";
 import { ScrollArea } from "../../components/scroll-area.js";
 import { cn } from "../../lib/cn.js";
 import { PrimitiveNodeContextMenu } from "../context-menu/PrimitiveNodeContextMenu.js";
-import { InsertionDropSlot } from "../dnd/InsertionDropSlot.js";
+import { InsertionDropZone } from "../dnd/InsertionDropZone.js";
 
 const TOKEN_META = [] as TokenMeta[];
 
@@ -113,12 +113,12 @@ function ContainerDropZone({
       style={layout}
     >
       {childIds.length === 0 ? (
-        <InsertionDropSlot parentId={node.id} slotIndex={0} variant="empty" />
+        <InsertionDropZone parentId={node.id} insertIndex={0} variant="empty" />
       ) : (
         <div className="flex min-h-0 w-full min-w-0 flex-col">
-          <InsertionDropSlot
+          <InsertionDropZone
             parentId={node.id}
-            slotIndex={0}
+            insertIndex={0}
             variant="between"
           />
           {children}
@@ -158,9 +158,9 @@ function ContainerChildList({
             registry={registry}
             selectedNodeId={selectedNodeId}
           />
-          <InsertionDropSlot
+          <InsertionDropZone
             parentId={parentNode.id}
-            slotIndex={i + 1}
+            insertIndex={i + 1}
             variant="between"
           />
         </Fragment>
@@ -315,17 +315,40 @@ function CanvasNode({
 
   let primitive: React.ReactNode;
 
-  if (node.definitionKey === "primitive.text") {
+  if (node.definitionKey === "primitive.slot") {
+    const slotId =
+      typeof node.propValues?.slotId === "string" &&
+      node.propValues.slotId.trim() !== ""
+        ? node.propValues.slotId.trim()
+        : "main";
+    primitive = (
+      <Cmp className={className} node={node} style={style}>
+        <div
+          className={cn(
+            "flex min-h-[4.5rem] w-full flex-col justify-center rounded-md border-2 border-dashed border-primary/35 bg-muted/25 px-3 py-4 text-center text-xs text-muted-foreground dark:bg-muted/15",
+          )}
+        >
+          <span className="font-medium text-foreground">Layout slot</span>
+          <span className="mt-1 font-mono text-[0.65rem] text-muted-foreground">
+            {slotId}
+          </span>
+          <span className="mt-2 text-[0.6rem] leading-snug text-muted-foreground">
+            Page blocks fill this region on the live site.
+          </span>
+        </div>
+      </Cmp>
+    );
+  } else if (node.definitionKey === "primitive.text") {
     const raw =
       typeof node.propValues?.content === "string"
         ? node.propValues.content
         : "";
     const cb = node.contentBinding;
     let fromBinding = "";
-    if (cb?.source === "slot" && cb.slot) {
+    if (cb?.source === "editor" && cb.editorField) {
       fromBinding =
-        typeof cb.slot.defaultValue === "string"
-          ? cb.slot.defaultValue
+        typeof cb.editorField.defaultValue === "string"
+          ? cb.editorField.defaultValue
           : `[${cb.key}]`;
     } else if (cb) {
       fromBinding = `[${cb.key}]`;

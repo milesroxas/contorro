@@ -2,10 +2,10 @@
 
 import {
   type CompositionNode,
-  EDITOR_SLOT_TYPES,
+  EDITOR_FIELD_TYPES,
+  type EditorFieldSpec,
+  EditorFieldSpecSchema,
   type PageComposition,
-  type SlotDefinition,
-  SlotDefinitionSchema,
 } from "@repo/contracts-zod";
 import { useEffect, useId, useState } from "react";
 
@@ -34,17 +34,17 @@ function readBackgroundToken(
 function TextPrimitiveInspector({
   node,
   content,
-  slotBound,
-  exposeSlot,
+  fieldBound,
+  exposeToEditors,
   onTextChange,
-  setNodeSlotBinding,
+  setNodeEditorFieldBinding,
 }: {
   node: CompositionNode;
   content: string;
-  slotBound: SlotDefinition | undefined;
-  exposeSlot: boolean;
+  fieldBound: EditorFieldSpec | undefined;
+  exposeToEditors: boolean;
   onTextChange: (content: string) => void;
-  setNodeSlotBinding: (slot: SlotDefinition | null) => void;
+  setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
   const baseId = useId();
   const contentId = `${baseId}-content`;
@@ -54,35 +54,35 @@ function TextPrimitiveInspector({
   const slotDefaultId = `${baseId}-slot-default`;
   const slotTypeId = `${baseId}-slot-type`;
 
-  const [nameDraft, setNameDraft] = useState(() => slotBound?.name ?? "");
-  const [labelDraft, setLabelDraft] = useState(() => slotBound?.label ?? "");
-  const [slotError, setSlotError] = useState<string | null>(null);
+  const [nameDraft, setNameDraft] = useState(() => fieldBound?.name ?? "");
+  const [labelDraft, setLabelDraft] = useState(() => fieldBound?.label ?? "");
+  const [fieldError, setFieldError] = useState<string | null>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: sync drafts from committed slot fields only; slotBound identity changes every parent render
+  // biome-ignore lint/correctness/useExhaustiveDependencies: sync drafts from committed slot fields only; fieldBound identity changes every parent render
   useEffect(() => {
-    if (!exposeSlot) {
+    if (!exposeToEditors) {
       setNameDraft("");
       setLabelDraft("");
-      setSlotError(null);
+      setFieldError(null);
       return;
     }
-    if (!slotBound) {
+    if (!fieldBound) {
       return;
     }
-    setNameDraft(slotBound.name);
-    setLabelDraft(slotBound.label);
-    setSlotError(null);
-  }, [node.id, exposeSlot, slotBound?.name, slotBound?.label]);
+    setNameDraft(fieldBound.name);
+    setLabelDraft(fieldBound.label);
+    setFieldError(null);
+  }, [node.id, exposeToEditors, fieldBound?.name, fieldBound?.label]);
 
-  function applySlot(next: SlotDefinition) {
-    const parsed = SlotDefinitionSchema.safeParse(next);
+  function applyEditorField(next: EditorFieldSpec) {
+    const parsed = EditorFieldSpecSchema.safeParse(next);
     if (!parsed.success) {
-      const msg = parsed.error.issues[0]?.message ?? "Invalid slot";
-      setSlotError(msg);
+      const msg = parsed.error.issues[0]?.message ?? "Invalid editor field";
+      setFieldError(msg);
       return;
     }
-    setSlotError(null);
-    setNodeSlotBinding(parsed.data);
+    setFieldError(null);
+    setNodeEditorFieldBinding(parsed.data);
   }
 
   return (
@@ -101,11 +101,11 @@ function TextPrimitiveInspector({
       </div>
       <div className="flex items-center gap-2">
         <Checkbox
-          checked={exposeSlot}
+          checked={exposeToEditors}
           id={exposeId}
           onChange={(e) => {
             if (e.target.checked) {
-              applySlot({
+              applyEditorField({
                 name: "content",
                 type: "text",
                 required: false,
@@ -113,42 +113,42 @@ function TextPrimitiveInspector({
                 defaultValue: content,
               });
             } else {
-              setSlotError(null);
-              setNodeSlotBinding(null);
+              setFieldError(null);
+              setNodeEditorFieldBinding(null);
             }
           }}
         />
         <Label className="text-xs font-normal" htmlFor={exposeId}>
-          Expose as slot
+          Expose to CMS editors
         </Label>
       </div>
-      {exposeSlot && slotBound ? (
+      {exposeToEditors && fieldBound ? (
         <div className="space-y-3 rounded-md border border-border/60 p-3">
           <div className="space-y-2">
             <Label
               className="text-xs text-muted-foreground"
               htmlFor={slotNameId}
             >
-              Slot name (kebab-case)
+              Field name (kebab-case)
             </Label>
             <Input
-              aria-invalid={Boolean(slotError)}
+              aria-invalid={Boolean(fieldError)}
               className="h-8 text-xs"
               data-testid="inspector-slot-name"
               id={slotNameId}
               onBlur={() => {
-                if (!slotBound) {
+                if (!fieldBound) {
                   return;
                 }
                 const trimmed = nameDraft.trim();
-                applySlot({
-                  ...slotBound,
+                applyEditorField({
+                  ...fieldBound,
                   name: trimmed,
                 });
               }}
               onChange={(e) => {
                 setNameDraft(e.target.value);
-                setSlotError(null);
+                setFieldError(null);
               }}
               placeholder="hero-title"
               spellCheck={false}
@@ -167,19 +167,19 @@ function TextPrimitiveInspector({
               className="h-8 text-xs"
               id={slotLabelId}
               onBlur={() => {
-                if (!slotBound) {
+                if (!fieldBound) {
                   return;
                 }
                 const label = labelDraft.trim() || "Content";
-                applySlot({
-                  ...slotBound,
+                applyEditorField({
+                  ...fieldBound,
                   label,
                 });
                 setLabelDraft(label);
               }}
               onChange={(e) => {
                 setLabelDraft(e.target.value);
-                setSlotError(null);
+                setFieldError(null);
               }}
               type="text"
               value={labelDraft}
@@ -200,18 +200,18 @@ function TextPrimitiveInspector({
               data-testid="inspector-slot-type"
               id={slotTypeId}
               onChange={(e) => {
-                const type = e.target.value as SlotDefinition["type"];
-                if (!slotBound) {
+                const type = e.target.value as EditorFieldSpec["type"];
+                if (!fieldBound) {
                   return;
                 }
-                applySlot({
-                  ...slotBound,
+                applyEditorField({
+                  ...fieldBound,
                   type,
                 });
               }}
-              value={slotBound.type}
+              value={fieldBound.type}
             >
-              {EDITOR_SLOT_TYPES.map((t) => (
+              {EDITOR_FIELD_TYPES.map((t) => (
                 <option key={t} value={t}>
                   {t}
                 </option>
@@ -220,14 +220,14 @@ function TextPrimitiveInspector({
           </div>
           <div className="flex items-center gap-2">
             <Checkbox
-              checked={slotBound.required}
+              checked={fieldBound.required}
               id={`${baseId}-req`}
               onChange={(e) => {
-                if (!slotBound) {
+                if (!fieldBound) {
                   return;
                 }
-                applySlot({
-                  ...slotBound,
+                applyEditorField({
+                  ...fieldBound,
                   required: e.target.checked,
                 });
               }}
@@ -247,25 +247,25 @@ function TextPrimitiveInspector({
               className="h-8 text-xs"
               id={slotDefaultId}
               onChange={(e) => {
-                if (!slotBound) {
+                if (!fieldBound) {
                   return;
                 }
-                applySlot({
-                  ...slotBound,
+                applyEditorField({
+                  ...fieldBound,
                   defaultValue: e.target.value,
                 });
               }}
               type="text"
               value={
-                typeof slotBound.defaultValue === "string"
-                  ? slotBound.defaultValue
+                typeof fieldBound.defaultValue === "string"
+                  ? fieldBound.defaultValue
                   : ""
               }
             />
           </div>
-          {slotError ? (
+          {fieldError ? (
             <p className="text-xs text-destructive" role="alert">
-              {slotError}
+              {fieldError}
             </p>
           ) : null}
         </div>
@@ -280,14 +280,14 @@ export function PropertyInspector({
   onTextChange,
   onBackgroundToken,
   patchNodeProps,
-  setNodeSlotBinding,
+  setNodeEditorFieldBinding,
 }: {
   composition: PageComposition | null;
   node: CompositionNode | null;
   onTextChange: (content: string) => void;
   onBackgroundToken: (token: string) => void;
   patchNodeProps: (patch: Record<string, unknown>) => void;
-  setNodeSlotBinding: (slot: SlotDefinition | null) => void;
+  setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
   if (!node || !composition) {
     return (
@@ -300,16 +300,19 @@ export function PropertyInspector({
   const isText = node.definitionKey === "primitive.text";
   const isBox = node.definitionKey === "primitive.box";
   const isStack = node.definitionKey === "primitive.stack";
+  const isSlot = node.definitionKey === "primitive.slot";
+  const isLibraryComponent =
+    node.definitionKey === "primitive.libraryComponent";
 
   const content =
     typeof node.propValues?.content === "string" ? node.propValues.content : "";
   const bgToken = readBackgroundToken(composition, node);
 
-  const slotBound =
-    node.contentBinding?.source === "slot"
-      ? node.contentBinding.slot
+  const fieldBound =
+    node.contentBinding?.source === "editor"
+      ? node.contentBinding.editorField
       : undefined;
-  const exposeSlot = Boolean(slotBound);
+  const exposeToEditors = Boolean(fieldBound);
 
   return (
     <div className="space-y-4 text-sm">
@@ -319,17 +322,17 @@ export function PropertyInspector({
       {isText ? (
         <TextPrimitiveInspector
           content={content}
-          exposeSlot={exposeSlot}
+          exposeToEditors={exposeToEditors}
           node={node}
           onTextChange={onTextChange}
-          setNodeSlotBinding={setNodeSlotBinding}
-          slotBound={slotBound}
+          setNodeEditorFieldBinding={setNodeEditorFieldBinding}
+          fieldBound={fieldBound}
         />
       ) : null}
       {isStack ? (
         <div className="space-y-3 border-t border-border/60 pt-3">
           <div className="text-xs font-medium text-foreground">
-            Stack layout
+            Props (stack)
           </div>
           <label className="block space-y-1">
             <span className="text-xs text-muted-foreground">Direction</span>
@@ -406,7 +409,7 @@ export function PropertyInspector({
           </label>
         </div>
       ) : null}
-      {isBox ? (
+      {isBox || isSlot ? (
         <label className="block space-y-1.5">
           <span className="text-xs font-medium text-foreground">
             Background token
@@ -416,13 +419,51 @@ export function PropertyInspector({
               "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm",
               "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
             )}
-            data-testid="inspector-box-background-token"
+            data-testid={
+              isSlot
+                ? "inspector-slot-background-token"
+                : "inspector-box-background-token"
+            }
             onChange={(e) => onBackgroundToken(e.target.value)}
             placeholder="color.surface.primary"
             type="text"
             value={bgToken}
           />
         </label>
+      ) : null}
+      {isSlot ? (
+        <div className="space-y-2 border-t border-border/60 pt-3">
+          <div className="text-xs font-medium text-foreground">Slot id</div>
+          <Input
+            data-testid="inspector-slot-id"
+            onChange={(e) => patchNodeProps({ slotId: e.target.value })}
+            placeholder="main"
+            type="text"
+            value={
+              typeof node.propValues?.slotId === "string"
+                ? node.propValues.slotId
+                : ""
+            }
+          />
+          <p className="text-[0.65rem] leading-snug text-muted-foreground">
+            Editors assign blocks to this id via Layout slot on each block row.
+            Use a unique id per slot in this template.
+          </p>
+        </div>
+      ) : null}
+      {isLibraryComponent ? (
+        <div className="space-y-2 border-t border-border/60 pt-3">
+          <div className="text-xs font-medium text-foreground">Component</div>
+          <p className="text-[0.65rem] leading-snug text-muted-foreground">
+            Pulled from Components. On the live site the published layout for
+            this key is rendered here.
+          </p>
+          <div className="rounded-md border border-border bg-muted/30 px-2 py-1.5 font-mono text-xs text-foreground">
+            {typeof node.propValues?.componentKey === "string"
+              ? node.propValues.componentKey
+              : "—"}
+          </div>
+        </div>
       ) : null}
     </div>
   );

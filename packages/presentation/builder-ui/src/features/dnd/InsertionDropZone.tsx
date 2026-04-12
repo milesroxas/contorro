@@ -7,26 +7,26 @@ import { cn } from "../../lib/cn.js";
 export type InsertDropData = {
   kind: "insert";
   parentId: string;
-  slotIndex: number;
+  insertIndex: number;
 };
 
-export function InsertionDropSlot({
+export function InsertionDropZone({
   parentId,
-  slotIndex,
+  insertIndex,
   variant,
   className,
 }: {
   parentId: string;
-  slotIndex: number;
+  insertIndex: number;
   variant: "between" | "empty";
   className?: string;
 }) {
   const { setNodeRef, isOver } = useDroppable({
-    id: `insert:${parentId}:${slotIndex}`,
+    id: `insert:${parentId}:${insertIndex}`,
     data: {
       kind: "insert",
       parentId,
-      slotIndex,
+      insertIndex,
     } satisfies InsertDropData,
   });
 

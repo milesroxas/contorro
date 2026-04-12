@@ -1,0 +1,11 @@
+export function formatUpdatedAt(iso?: string): string {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  } catch {
+    return "";
+  }
+}

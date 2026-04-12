@@ -3,10 +3,12 @@ import type { RuntimeRegistry } from "@repo/domains-runtime-catalog";
 import { Box } from "./box.js";
 import { Grid } from "./grid.js";
 import { Image } from "./image.js";
+import { LibraryComponent } from "./library-component.js";
+import { Slot } from "./slot.js";
 import { Stack } from "./stack.js";
 import { Text } from "./text.js";
 
-export { Box, Grid, Image, Stack, Text };
+export { Box, Grid, Image, LibraryComponent, Slot, Stack, Text };
 
 /** Default `definitionKey` → primitive mapping (Phase 2). */
 export const defaultPrimitiveRegistry: RuntimeRegistry = {
@@ -15,4 +17,6 @@ export const defaultPrimitiveRegistry: RuntimeRegistry = {
   "primitive.stack": Stack,
   "primitive.grid": Grid,
   "primitive.image": Image,
+  "primitive.slot": Slot,
+  "primitive.libraryComponent": LibraryComponent,
 };

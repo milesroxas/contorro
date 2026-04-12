@@ -29,29 +29,50 @@ const studioBase = buildStudioConfig({
 
 const collectionsWithStudioAdmin = (studioBase.collections ?? []).map(
   (collection) => {
-    if (collection.slug !== "page-compositions") {
-      return collection;
-    }
-    return {
-      ...collection,
-      admin: {
-        ...collection.admin,
-        components: {
-          ...collection.admin?.components,
-          edit: {
-            ...collection.admin?.components?.edit,
-            beforeDocumentControls: [
-              "/components/admin/PageCompositionOpenBuilder",
-            ],
+    if (collection.slug === "page-compositions") {
+      return {
+        ...collection,
+        admin: {
+          ...collection.admin,
+          components: {
+            ...collection.admin?.components,
+            edit: {
+              ...collection.admin?.components?.edit,
+              beforeDocumentControls: [
+                "/components/admin/PageCompositionOpenBuilder",
+              ],
+            },
           },
         },
-      },
-    };
+      };
+    }
+    if (collection.slug === "components") {
+      return {
+        ...collection,
+        admin: {
+          ...collection.admin,
+          components: {
+            ...collection.admin?.components,
+            edit: {
+              ...collection.admin?.components?.edit,
+              beforeDocumentControls: [
+                "/components/admin/ComponentOpenBuilder",
+              ],
+            },
+          },
+        },
+      };
+    }
+    return collection;
   },
 );
 
 export default buildConfig({
   ...studioBase,
+  folders: {
+    browseByFolder: true,
+    collectionSpecific: true,
+  },
   collections: collectionsWithStudioAdmin,
   admin: {
     user: Users.slug,

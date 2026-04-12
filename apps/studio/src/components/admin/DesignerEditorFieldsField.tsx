@@ -7,32 +7,34 @@ import {
   useFormFields,
 } from "@payloadcms/ui/forms/Form";
 import {
+  type EditorFieldSpec,
   PageCompositionSchema,
-  type SlotDefinition,
-  normalizeSlotContract,
+  normalizeEditorFieldsContract,
 } from "@repo/contracts-zod";
-import { slotDefinitionsFromComposition } from "@repo/domains-composition";
+import { editorFieldSpecsFromComposition } from "@repo/domains-composition";
 import type { FormState, JSONFieldClientProps } from "payload";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Label } from "@/components/ui/label";
 
-import { SlotValuesInputs } from "./SlotValuesInputs";
+import { EditorFieldsInputs } from "./EditorFieldsInputs";
 
 type FormFieldsTuple = [FormState, (action: never) => void];
 
 type ComponentDefinitionDoc = {
   id?: number;
   composition?: unknown;
-  slotContract?: unknown;
+  editorFields?: unknown;
 };
 
-function siblingPathForComponentDefinition(slotValuesPath: string): string {
-  if (!slotValuesPath.endsWith("slotValues")) {
-    return slotValuesPath;
+function siblingPathForComponentDefinition(
+  editorFieldValuesPath: string,
+): string {
+  if (!editorFieldValuesPath.endsWith("editorFieldValues")) {
+    return editorFieldValuesPath;
   }
-  const cut = "slotValues".length;
-  return `${slotValuesPath.slice(0, -cut)}componentDefinition`;
+  const cut = "editorFieldValues".length;
+  return `${editorFieldValuesPath.slice(0, -cut)}componentDefinition`;
 }
 
 function isPresentRelationshipValue(v: unknown): boolean {
@@ -40,23 +42,25 @@ function isPresentRelationshipValue(v: unknown): boolean {
 }
 
 /**
- * Pair `*.componentDefinition` form keys with this row’s `*.slotValues` path (draft/version skew).
+ * Pair `*.componentDefinition` form keys with this row’s `*.editorFieldValues` path (draft/version skew).
  */
-function componentDefinitionFieldPairsSlotValuesPath(
+function componentDefinitionFieldPairsEditorFieldValuesPath(
   componentDefinitionFieldKey: string,
-  slotValuesPath: string,
+  editorFieldValuesPath: string,
 ): boolean {
   const expectedSlotPath =
     componentDefinitionFieldKey === "componentDefinition"
-      ? "slotValues"
+      ? "editorFieldValues"
       : componentDefinitionFieldKey.replace(
           /\.componentDefinition$/,
-          ".slotValues",
+          ".editorFieldValues",
         );
-  if (expectedSlotPath === slotValuesPath) {
+  if (expectedSlotPath === editorFieldValuesPath) {
     return true;
   }
-  const mTop = /^content\.(\d+)\.slotValues$/.exec(slotValuesPath);
+  const mTop = /^content\.(\d+)\.editorFieldValues$/.exec(
+    editorFieldValuesPath,
+  );
   if (
     mTop &&
     componentDefinitionFieldKey ===
@@ -64,7 +68,9 @@ function componentDefinitionFieldPairsSlotValuesPath(
   ) {
     return true;
   }
-  const mVer = /^version\.content\.(\d+)\.slotValues$/.exec(slotValuesPath);
+  const mVer = /^version\.content\.(\d+)\.editorFieldValues$/.exec(
+    editorFieldValuesPath,
+  );
   if (
     mVer &&
     componentDefinitionFieldKey === `content.${mVer[1]}.componentDefinition`
@@ -75,14 +81,14 @@ function componentDefinitionFieldPairsSlotValuesPath(
 }
 
 /**
- * Resolves `componentDefinition` for this `slotValues` field. Drafts may split keys across
- * `content.N.*` and `version.content.N.*` (same idea as `PageTemplateSlotValuesField`).
+ * Resolves `componentDefinition` for this `editorFieldValues` field. Drafts may split keys across
+ * `content.N.*` and `version.content.N.*` (same idea as `PageTemplateEditorFieldsField`).
  */
 function componentDefinitionValueFromFormState(
-  slotValuesPath: string,
+  editorFieldValuesPath: string,
   fields: FormState,
 ): unknown {
-  const expectedKey = siblingPathForComponentDefinition(slotValuesPath);
+  const expectedKey = siblingPathForComponentDefinition(editorFieldValuesPath);
   const direct = fields[expectedKey]?.value as unknown;
   if (isPresentRelationshipValue(direct)) {
     return direct;
@@ -95,7 +101,12 @@ function componentDefinitionValueFromFormState(
     return rank(a) - rank(b);
   });
   for (const key of keys) {
-    if (!componentDefinitionFieldPairsSlotValuesPath(key, slotValuesPath)) {
+    if (
+      !componentDefinitionFieldPairsEditorFieldValuesPath(
+        key,
+        editorFieldValuesPath,
+      )
+    ) {
       continue;
     }
     const v = fields[key]?.value as unknown;
@@ -108,19 +119,23 @@ function componentDefinitionValueFromFormState(
 
 function componentDefinitionFromGetDataByPath(
   ctx: { getDataByPath?: (path: string) => unknown } | undefined,
-  slotValuesPath: string,
+  editorFieldValuesPath: string,
 ): unknown {
   if (!ctx?.getDataByPath) {
     return undefined;
   }
   const tryPaths: string[] = [
-    siblingPathForComponentDefinition(slotValuesPath),
+    siblingPathForComponentDefinition(editorFieldValuesPath),
   ];
-  const mTop = /^content\.(\d+)\.slotValues$/.exec(slotValuesPath);
+  const mTop = /^content\.(\d+)\.editorFieldValues$/.exec(
+    editorFieldValuesPath,
+  );
   if (mTop) {
     tryPaths.push(`version.content.${mTop[1]}.componentDefinition`);
   }
-  const mVer = /^version\.content\.(\d+)\.slotValues$/.exec(slotValuesPath);
+  const mVer = /^version\.content\.(\d+)\.editorFieldValues$/.exec(
+    editorFieldValuesPath,
+  );
   if (mVer) {
     tryPaths.push(`content.${mVer[1]}.componentDefinition`);
   }
@@ -139,12 +154,14 @@ function componentDefinitionFromGetDataByPath(
 
 function componentDefinitionFromDocumentData(
   data: unknown,
-  slotValuesPath: string,
+  editorFieldValuesPath: string,
 ): unknown {
   if (!data || typeof data !== "object") {
     return undefined;
   }
-  const m = /^(?:version\.)?content\.(\d+)\.slotValues$/.exec(slotValuesPath);
+  const m = /^(?:version\.)?content\.(\d+)\.editorFieldValues$/.exec(
+    editorFieldValuesPath,
+  );
   if (!m) {
     return undefined;
   }
@@ -153,7 +170,7 @@ function componentDefinitionFromDocumentData(
     content?: unknown[];
     version?: { content?: unknown[] };
   };
-  const underVersion = slotValuesPath.startsWith("version.");
+  const underVersion = editorFieldValuesPath.startsWith("version.");
   const block = underVersion ? row.version?.content?.[i] : row.content?.[i];
   if (block && typeof block === "object" && block !== null) {
     const cd = (block as { componentDefinition?: unknown }).componentDefinition;
@@ -165,7 +182,7 @@ function componentDefinitionFromDocumentData(
 }
 
 function resolveComponentDefinitionRef(args: {
-  slotValuesPath: string;
+  editorFieldValuesPath: string;
   fields: FormState;
   documentForm: { getDataByPath?: (path: string) => unknown } | undefined;
   form: { getDataByPath?: (path: string) => unknown } | undefined;
@@ -173,32 +190,41 @@ function resolveComponentDefinitionRef(args: {
   savedDocumentData: unknown;
 }): unknown {
   const {
-    slotValuesPath,
+    editorFieldValuesPath,
     fields,
     documentForm,
     form,
     getData,
     savedDocumentData,
   } = args;
-  let raw = componentDefinitionValueFromFormState(slotValuesPath, fields);
+  let raw = componentDefinitionValueFromFormState(
+    editorFieldValuesPath,
+    fields,
+  );
   if (isPresentRelationshipValue(raw)) {
     return raw;
   }
-  raw = componentDefinitionFromGetDataByPath(documentForm, slotValuesPath);
+  raw = componentDefinitionFromGetDataByPath(
+    documentForm,
+    editorFieldValuesPath,
+  );
   if (isPresentRelationshipValue(raw)) {
     return raw;
   }
-  raw = componentDefinitionFromGetDataByPath(form, slotValuesPath);
+  raw = componentDefinitionFromGetDataByPath(form, editorFieldValuesPath);
   if (isPresentRelationshipValue(raw)) {
     return raw;
   }
   if (typeof getData === "function") {
-    raw = componentDefinitionFromDocumentData(getData(), slotValuesPath);
+    raw = componentDefinitionFromDocumentData(getData(), editorFieldValuesPath);
     if (isPresentRelationshipValue(raw)) {
       return raw;
     }
   }
-  raw = componentDefinitionFromDocumentData(savedDocumentData, slotValuesPath);
+  raw = componentDefinitionFromDocumentData(
+    savedDocumentData,
+    editorFieldValuesPath,
+  );
   if (isPresentRelationshipValue(raw)) {
     return raw;
   }
@@ -230,7 +256,7 @@ function extractDefinitionId(raw: unknown): number | undefined {
 }
 
 /** Replaces the JSON editor with inputs derived from the selected component’s slot contract. */
-function DesignerSlotValuesField(props: JSONFieldClientProps) {
+function DesignerEditorFieldsField(props: JSONFieldClientProps) {
   const { path, field } = props;
 
   /**
@@ -270,7 +296,7 @@ function DesignerSlotValuesField(props: JSONFieldClientProps) {
               ? form.getData
               : undefined;
         return resolveComponentDefinitionRef({
-          slotValuesPath: fieldPath,
+          editorFieldValuesPath: fieldPath,
           fields,
           documentForm,
           form,
@@ -321,7 +347,7 @@ function DesignerSlotValuesField(props: JSONFieldClientProps) {
 
     void (async () => {
       try {
-        const res = await fetch(`/api/component-definitions/${defId}?depth=0`, {
+        const res = await fetch(`/api/components/${defId}?depth=0`, {
           credentials: "include",
         });
         if (!res.ok) {
@@ -347,7 +373,7 @@ function DesignerSlotValuesField(props: JSONFieldClientProps) {
     };
   }, [defId]);
 
-  const slots: SlotDefinition[] = useMemo(() => {
+  const editorFields: EditorFieldSpec[] = useMemo(() => {
     if (!effectiveDoc) {
       return [];
     }
@@ -355,10 +381,11 @@ function DesignerSlotValuesField(props: JSONFieldClientProps) {
     if (rawComp !== undefined && rawComp !== null) {
       const comp = PageCompositionSchema.safeParse(rawComp);
       if (comp.success) {
-        return slotDefinitionsFromComposition(comp.data);
+        return editorFieldSpecsFromComposition(comp.data);
       }
     }
-    return normalizeSlotContract(effectiveDoc.slotContract).slots;
+    return normalizeEditorFieldsContract(effectiveDoc.editorFields)
+      .editorFields;
   }, [effectiveDoc]);
 
   const current = useMemo(() => {
@@ -368,7 +395,7 @@ function DesignerSlotValuesField(props: JSONFieldClientProps) {
     return {};
   }, [value]);
 
-  const patchSlot = useCallback(
+  const patchField = useCallback(
     (name: string, next: unknown) => {
       slotMapRef.current = { ...slotMapRef.current, [name]: next };
       setValue(slotMapRef.current);
@@ -392,11 +419,11 @@ function DesignerSlotValuesField(props: JSONFieldClientProps) {
     );
   }
 
-  if (slots.length === 0) {
+  if (editorFields.length === 0) {
     return (
       <p className="rounded-none border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
         {effectiveDoc
-          ? "This component has no editor slots yet. Expose slots on nodes in the builder, then publish."
+          ? "This component has no CMS fields yet. Expose content as editor-managed fields in the builder, then publish."
           : "Loading block…"}
       </p>
     );
@@ -407,14 +434,14 @@ function DesignerSlotValuesField(props: JSONFieldClientProps) {
       {field?.label ? (
         <Label className="text-sm font-medium">{String(field.label)}</Label>
       ) : null}
-      <SlotValuesInputs
+      <EditorFieldsInputs
         current={current}
         disabled={disabled}
-        patchSlot={patchSlot}
-        slots={slots}
+        fields={editorFields}
+        patchField={patchField}
       />
     </div>
   );
 }
 
-export default DesignerSlotValuesField;
+export default DesignerEditorFieldsField;

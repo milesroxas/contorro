@@ -7,54 +7,56 @@ import {
   useFormFields,
 } from "@payloadcms/ui/forms/Form";
 import {
+  type EditorFieldSpec,
   type PageComposition,
   PageCompositionSchema,
-  type SlotDefinition,
 } from "@repo/contracts-zod";
-import { slotDefinitionsFromComposition } from "@repo/domains-composition";
+import { editorFieldSpecsFromComposition } from "@repo/domains-composition";
 import type { FormState, JSONFieldClientProps } from "payload";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Label } from "@/components/ui/label";
 
-import { SlotValuesInputs } from "./SlotValuesInputs";
+import { EditorFieldsInputs } from "./EditorFieldsInputs";
 
 type FormFieldsTuple = [FormState, (action: never) => void];
 
-function siblingPathForPageComposition(templateSlotValuesPath: string): string {
-  if (!templateSlotValuesPath.endsWith("templateSlotValues")) {
-    return templateSlotValuesPath;
+function siblingPathForPageComposition(
+  templateEditorFieldsPath: string,
+): string {
+  if (!templateEditorFieldsPath.endsWith("templateEditorFields")) {
+    return templateEditorFieldsPath;
   }
-  const cut = "templateSlotValues".length;
-  return `${templateSlotValuesPath.slice(0, -cut)}pageComposition`;
+  const cut = "templateEditorFields".length;
+  return `${templateEditorFieldsPath.slice(0, -cut)}pageComposition`;
 }
 
 /** Pair `*.pageComposition` form keys with this field’s path (handles draft/version path skew). */
-function pageCompositionFieldPairsTemplateSlotPath(
+function pageCompositionFieldPairsTemplateEditorFieldsPath(
   pageCompositionFieldKey: string,
-  templateSlotValuesPath: string,
+  templateEditorFieldsPath: string,
 ): boolean {
   const expectedPair =
     pageCompositionFieldKey === "pageComposition"
-      ? "templateSlotValues"
+      ? "templateEditorFields"
       : pageCompositionFieldKey.replace(
           /\.pageComposition$/,
-          ".templateSlotValues",
+          ".templateEditorFields",
         );
-  if (expectedPair === templateSlotValuesPath) {
+  if (expectedPair === templateEditorFieldsPath) {
     return true;
   }
-  // Drafts: Payload often keeps this JSON field at top-level `templateSlotValues` while
+  // Drafts: Payload often keeps this JSON field at top-level `templateEditorFields` while
   // the relationship value only appears under `version.pageComposition` in form state.
   if (
-    templateSlotValuesPath === "templateSlotValues" &&
+    templateEditorFieldsPath === "templateEditorFields" &&
     pageCompositionFieldKey === "version.pageComposition"
   ) {
     return true;
   }
-  // Inverse: relationship stays at top-level `pageComposition` while slot JSON is only under `version.templateSlotValues`.
+  // Inverse: relationship stays at top-level `pageComposition` while slot JSON is only under `version.templateEditorFields`.
   return (
-    templateSlotValuesPath === "version.templateSlotValues" &&
+    templateEditorFieldsPath === "version.templateEditorFields" &&
     pageCompositionFieldKey === "pageComposition"
   );
 }
@@ -84,15 +86,15 @@ function extractPageCompositionId(raw: unknown): number | undefined {
 }
 
 /**
- * Resolves `pageComposition` for this `templateSlotValues` field. Drafts use
- * `version.pageComposition` / `version.templateSlotValues`; we pair keys explicitly
+ * Resolves `pageComposition` for this `templateEditorFields` field. Drafts use
+ * `version.pageComposition` / `version.templateEditorFields`; we pair keys explicitly
  * instead of taking the first `*.pageComposition` in the form (which can be wrong or empty).
  */
 function pageCompositionValueFromFormState(
-  templateSlotValuesPath: string,
+  templateEditorFieldsPath: string,
   fields: FormState,
 ): unknown {
-  const expectedKey = siblingPathForPageComposition(templateSlotValuesPath);
+  const expectedKey = siblingPathForPageComposition(templateEditorFieldsPath);
   const direct = fields[expectedKey]?.value as unknown;
   if (direct !== undefined && direct !== null && direct !== "") {
     return direct;
@@ -102,7 +104,10 @@ function pageCompositionValueFromFormState(
       continue;
     }
     if (
-      !pageCompositionFieldPairsTemplateSlotPath(key, templateSlotValuesPath)
+      !pageCompositionFieldPairsTemplateEditorFieldsPath(
+        key,
+        templateEditorFieldsPath,
+      )
     ) {
       continue;
     }
@@ -157,7 +162,7 @@ function pageCompositionFromGetDataByPath(
 }
 
 function resolvePageCompositionRef(args: {
-  templateSlotValuesPath: string;
+  templateEditorFieldsPath: string;
   fields: FormState;
   documentForm: { getDataByPath?: (path: string) => unknown } | undefined;
   form: { getDataByPath?: (path: string) => unknown } | undefined;
@@ -165,7 +170,7 @@ function resolvePageCompositionRef(args: {
   savedDocumentData: unknown;
 }): unknown {
   const {
-    templateSlotValuesPath,
+    templateEditorFieldsPath,
     fields,
     documentForm,
     form,
@@ -173,7 +178,7 @@ function resolvePageCompositionRef(args: {
     savedDocumentData,
   } = args;
   let raw: unknown = pageCompositionValueFromFormState(
-    templateSlotValuesPath,
+    templateEditorFieldsPath,
     fields,
   );
   if (isPresentRelationshipValue(raw)) {
@@ -233,7 +238,7 @@ function parseEmbeddedPageComposition(raw: unknown): PageComposition | null {
 }
 
 /** Slot fill-in for the selected page template (builder tree). */
-function PageTemplateSlotValuesField(props: JSONFieldClientProps) {
+function PageTemplateEditorFieldsField(props: JSONFieldClientProps) {
   const { path, field } = props;
 
   const {
@@ -269,7 +274,7 @@ function PageTemplateSlotValuesField(props: JSONFieldClientProps) {
               ? form.getData
               : undefined;
         return resolvePageCompositionRef({
-          templateSlotValuesPath: fieldPath,
+          templateEditorFieldsPath: fieldPath,
           fields,
           documentForm,
           form,
@@ -293,17 +298,19 @@ function PageTemplateSlotValuesField(props: JSONFieldClientProps) {
   );
 
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [remoteSlots, setRemoteSlots] = useState<SlotDefinition[] | null>(null);
+  const [remoteEditorFields, setRemoteEditorFields] = useState<
+    EditorFieldSpec[] | null
+  >(null);
 
   useEffect(() => {
     if (embeddedTree !== null) {
-      setRemoteSlots(null);
+      setRemoteEditorFields(null);
       setLoadError(null);
       return;
     }
 
     if (compositionId === undefined) {
-      setRemoteSlots(null);
+      setRemoteEditorFields(null);
       setLoadError(null);
       return;
     }
@@ -334,16 +341,16 @@ function PageTemplateSlotValuesField(props: JSONFieldClientProps) {
         const parsed = PageCompositionSchema.safeParse(raw);
         if (!cancelled) {
           if (!parsed.success) {
-            setRemoteSlots([]);
+            setRemoteEditorFields([]);
             setLoadError("Invalid page template tree.");
             return;
           }
-          setRemoteSlots(slotDefinitionsFromComposition(parsed.data));
+          setRemoteEditorFields(editorFieldSpecsFromComposition(parsed.data));
           setLoadError(null);
         }
       } catch (e) {
         if (!cancelled) {
-          setRemoteSlots([]);
+          setRemoteEditorFields([]);
           setLoadError(
             e instanceof Error ? e.message : "Failed to load page template",
           );
@@ -356,12 +363,12 @@ function PageTemplateSlotValuesField(props: JSONFieldClientProps) {
     };
   }, [embeddedTree, compositionId]);
 
-  const slots: SlotDefinition[] = useMemo(() => {
+  const editorFields: EditorFieldSpec[] = useMemo(() => {
     if (embeddedTree !== null) {
-      return slotDefinitionsFromComposition(embeddedTree);
+      return editorFieldSpecsFromComposition(embeddedTree);
     }
-    return remoteSlots ?? [];
-  }, [embeddedTree, remoteSlots]);
+    return remoteEditorFields ?? [];
+  }, [embeddedTree, remoteEditorFields]);
 
   const current = useMemo(() => {
     if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -370,7 +377,7 @@ function PageTemplateSlotValuesField(props: JSONFieldClientProps) {
     return {};
   }, [value]);
 
-  const patchSlot = useCallback(
+  const patchField = useCallback(
     (name: string, next: unknown) => {
       slotMapRef.current = { ...slotMapRef.current, [name]: next };
       setValue(slotMapRef.current);
@@ -383,7 +390,7 @@ function PageTemplateSlotValuesField(props: JSONFieldClientProps) {
   if (!hasTemplate) {
     return (
       <p className="rounded-none border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-        Select a page template above to edit its slots.
+        Select a page template above to edit CMS fields.
       </p>
     );
   }
@@ -396,11 +403,11 @@ function PageTemplateSlotValuesField(props: JSONFieldClientProps) {
     );
   }
 
-  if (slots.length === 0) {
+  if (editorFields.length === 0) {
     return (
       <p className="rounded-none border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-        This page template has no exposed slots yet. Mark nodes as slots in the
-        builder.
+        This page template has no CMS fields yet. In the builder, expose text
+        (or other primitives) as editor-managed fields.
       </p>
     );
   }
@@ -410,14 +417,14 @@ function PageTemplateSlotValuesField(props: JSONFieldClientProps) {
       {field?.label ? (
         <Label className="text-sm font-medium">{String(field.label)}</Label>
       ) : null}
-      <SlotValuesInputs
+      <EditorFieldsInputs
         current={current}
         disabled={disabled}
-        patchSlot={patchSlot}
-        slots={slots}
+        fields={editorFields}
+        patchField={patchField}
       />
     </div>
   );
 }
 
-export default PageTemplateSlotValuesField;
+export default PageTemplateEditorFieldsField;

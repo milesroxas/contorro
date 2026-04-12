@@ -70,17 +70,17 @@ export const Pages: CollectionConfig = {
       label: "Page template",
       admin: {
         description:
-          "Full-page layout authored in the builder. Slots marked on the template appear as fields below.",
+          "Full-page layout from the builder. Layout slots (where components go) and props are authored there; CMS fields exposed on the template appear below.",
       },
     },
     {
-      name: "templateSlotValues",
+      name: "templateEditorFields",
       type: "json",
-      label: "Template slots",
+      label: "Template CMS fields",
       defaultValue: {},
       admin: {
         description:
-          "Fill content for slots exposed on the page template. Edit structure and slots in the builder.",
+          "Values for CMS-managed fields exposed on the page template (defined in the builder). Distinct from Blocks and from component props.",
         condition: (data) => {
           const row = data as {
             pageComposition?: unknown;
@@ -90,7 +90,7 @@ export const Pages: CollectionConfig = {
           return p !== null && p !== undefined && p !== "";
         },
         components: {
-          Field: "/components/admin/PageTemplateSlotValuesField",
+          Field: "/components/admin/PageTemplateEditorFieldsField",
         },
       },
     },
@@ -104,10 +104,11 @@ export const Pages: CollectionConfig = {
       },
       admin: {
         description:
-          "Designer blocks: pick a published component per row (same slot model as the page template). Optional if a page template above already defines the layout.",
+          "Stack components on the page. When the page template has more than one layout region, pick which region each block belongs to.",
         initCollapsed: false,
         isSortable: true,
         components: {
+          Field: "/components/admin/PageContentBlocksField",
           RowLabel: "/components/admin/BlocksRowLabel",
         },
       },
@@ -115,28 +116,41 @@ export const Pages: CollectionConfig = {
         {
           name: "componentDefinition",
           type: "relationship",
-          relationTo: "component-definitions",
+          relationTo: "components",
           required: true,
-          label: "Block",
+          label: "Component",
           admin: {
             description:
-              "Blocks marked visible in the catalog. Pick the block type first.",
+              "Choose a component from the catalog (Components collection).",
           },
           filterOptions: () => ({
             visibleInEditorCatalog: { equals: true },
           }),
         },
         {
-          name: "slotValues",
+          name: "layoutSlotId",
+          type: "text",
+          label: "Layout slot",
+          defaultValue: "main",
+          admin: {
+            description:
+              "When the template has several slots, choose which region this block fills (ids match the builder Slot primitives).",
+            components: {
+              Field: "/components/admin/LayoutSlotIdField",
+            },
+          },
+        },
+        {
+          name: "editorFieldValues",
           type: "json",
           label: false,
           required: true,
           defaultValue: {},
           admin: {
             description:
-              "Filled from the component’s slot contract (managed in the design system).",
+              "CMS field values for this block (manifest from the component template).",
             components: {
-              Field: "/components/admin/DesignerSlotValuesField",
+              Field: "/components/admin/DesignerEditorFieldsField",
             },
           },
         },

@@ -8,9 +8,11 @@ import { useSearchParams } from "next/navigation";
 import { formatAdminURL } from "payload/shared";
 import { Suspense } from "react";
 
+import BuilderHub from "@/components/admin/BuilderHub";
 import { Button } from "@/components/ui/button";
 
 const PAGE_COMPOSITIONS_SLUG = "page-compositions";
+const COMPONENTS_SLUG = "components";
 
 function BuilderViewInner() {
   const { user } = useAuth();
@@ -18,6 +20,11 @@ function BuilderViewInner() {
   const sp = useSearchParams();
   const compositionId = sp.get("composition") ?? "";
   const adminRoute = config.routes?.admin ?? "/admin";
+  const isComponentComposition =
+    compositionId.startsWith("cmp-") && compositionId.length > 4;
+  const componentPayloadId = isComponentComposition
+    ? compositionId.slice(4)
+    : "";
 
   const role =
     user && typeof user === "object" && "role" in user
@@ -37,24 +44,20 @@ function BuilderViewInner() {
   }
 
   if (!compositionId) {
-    return (
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center text-muted-foreground">
-        <p className="max-w-md text-pretty">
-          Open from Page compositions: append{" "}
-          <code className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-sm text-foreground">
-            ?composition=&lt;id&gt;
-          </code>{" "}
-          to this URL.
-        </p>
-      </div>
-    );
+    return <BuilderHub />;
   }
 
   const entryHref = formatAdminURL({
     adminRoute,
-    path: `/collections/${PAGE_COMPOSITIONS_SLUG}/${encodeURIComponent(compositionId)}`,
+    path: isComponentComposition
+      ? `/collections/${COMPONENTS_SLUG}/${encodeURIComponent(componentPayloadId)}`
+      : `/collections/${PAGE_COMPOSITIONS_SLUG}/${encodeURIComponent(compositionId)}`,
     relative: true,
   });
+
+  const backLabel = isComponentComposition
+    ? "Back to component"
+    : "Back to page template";
 
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
@@ -72,7 +75,7 @@ function BuilderViewInner() {
                 className="size-4"
                 data-icon="inline-start"
               />
-              Back to page composition
+              {backLabel}
             </Link>
           </Button>
         </div>
@@ -87,7 +90,7 @@ function BuilderViewInner() {
 /** Payload admin custom view — architecture spec Phase 3. */
 export default function BuilderView() {
   return (
-    <div className="dark flex min-h-dvh w-full min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
+    <div className="flex min-h-dvh w-full min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
       <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
         <Suspense
           fallback={

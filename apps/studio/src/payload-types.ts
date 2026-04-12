@@ -71,8 +71,7 @@ export interface Config {
     media: Media;
     'design-token-sets': DesignTokenSet;
     'design-token-overrides': DesignTokenOverride;
-    'component-definitions': ComponentDefinition;
-    'component-revisions': ComponentRevision;
+    components: Component;
     'page-compositions': PageComposition;
     pages: Page;
     'release-snapshots': ReleaseSnapshot;
@@ -80,18 +79,22 @@ export interface Config {
     'catalog-activity': CatalogActivity;
     'composition-presence': CompositionPresence;
     'payload-kv': PayloadKv;
+    'payload-folders': FolderInterface;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    'payload-folders': {
+      documentsAndFolders: 'payload-folders' | 'components';
+    };
+  };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'design-token-sets': DesignTokenSetsSelect<false> | DesignTokenSetsSelect<true>;
     'design-token-overrides': DesignTokenOverridesSelect<false> | DesignTokenOverridesSelect<true>;
-    'component-definitions': ComponentDefinitionsSelect<false> | ComponentDefinitionsSelect<true>;
-    'component-revisions': ComponentRevisionsSelect<false> | ComponentRevisionsSelect<true>;
+    components: ComponentsSelect<false> | ComponentsSelect<true>;
     'page-compositions': PageCompositionsSelect<false> | PageCompositionsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     'release-snapshots': ReleaseSnapshotsSelect<false> | ReleaseSnapshotsSelect<true>;
@@ -99,6 +102,7 @@ export interface Config {
     'catalog-activity': CatalogActivitySelect<false> | CatalogActivitySelect<true>;
     'composition-presence': CompositionPresenceSelect<false> | CompositionPresenceSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -240,15 +244,15 @@ export interface DesignTokenOverride {
   createdAt: string;
 }
 /**
- * Published block types: contracts and template composition editors use on pages. Drafts are authored as component revisions (hidden) and promoted here when published from the builder.
+ * Reusable blocks for pages. Compose in the visual builder; publish when ready.
  *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "component-definitions".
+ * via the `definition` "components".
  */
-export interface ComponentDefinition {
+export interface Component {
   id: number;
-  key: string;
   displayName: string;
+  key: string;
   propContract:
     | {
         [k: string]: unknown;
@@ -258,7 +262,10 @@ export interface ComponentDefinition {
     | number
     | boolean
     | null;
-  slotContract:
+  /**
+   * CMS-editable fields derived from the composition tree. Distinct from propContract (component props).
+   */
+  editorFields:
     | {
         [k: string]: unknown;
       }
@@ -268,7 +275,7 @@ export interface ComponentDefinition {
     | boolean
     | null;
   /**
-   * Published template tree (v0.4). Copied from the revision on publish; used when rendering DesignerComponent blocks.
+   * Template tree (v0.4). Edited in the visual builder; publishing updates the live catalog.
    */
   composition?:
     | {
@@ -280,53 +287,17 @@ export interface ComponentDefinition {
     | boolean
     | null;
   /**
-   * When enabled, site editors can pick this block on pages. Publishing a revision from the builder sets this on; turn off to hide without deleting.
+   * When on, editors can add this block on pages. Turn off to hide it from the picker without deleting the component.
    */
   visibleInEditorCatalog?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * Internal workflow documents (draft → publish). Designers use the builder and gateway; published data lives on component definitions.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "component-revisions".
- */
-export interface ComponentRevision {
-  id: number;
-  definition: number | ComponentDefinition;
-  label: string;
-  propContract?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  slotContract?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
   /**
-   * Component template composition (v0.4). Promoted to the definition on publish.
+   * Set when this component is submitted for catalog review (builder or admin).
    */
-  composition?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  status: 'draft' | 'submitted' | 'approved' | 'published';
+  catalogSubmittedAt?: string | null;
+  /**
+   * Catalog approval gate: publishing can be blocked while submitted or rejected.
+   */
+  catalogReviewStatus: 'none' | 'submitted' | 'approved' | 'rejected';
   /**
    * Breaking contract changes require dependency impact acknowledgment before publish.
    */
@@ -335,6 +306,38 @@ export interface ComponentRevision {
    * Set when an approver acknowledges impacted pages (gateway or admin).
    */
   dependencyImpactAcknowledgedAt?: string | null;
+  /**
+   * Last user who saved this document.
+   */
+  lastTouchedBy?: (number | null) | User;
+  folder?: (number | null) | FolderInterface;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-folders".
+ */
+export interface FolderInterface {
+  id: number;
+  name: string;
+  folder?: (number | null) | FolderInterface;
+  documentsAndFolders?: {
+    docs?: (
+      | {
+          relationTo?: 'payload-folders';
+          value: number | FolderInterface;
+        }
+      | {
+          relationTo?: 'components';
+          value: number | Component;
+        }
+    )[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  folderType?: 'components'[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -380,13 +383,13 @@ export interface Page {
   title: string;
   slug: string;
   /**
-   * Full-page layout authored in the builder. Slots marked on the template appear as fields below.
+   * Full-page layout from the builder. Layout slots (where components go) and props are authored there; CMS fields exposed on the template appear below.
    */
   pageComposition?: (number | null) | PageComposition;
   /**
-   * Fill content for slots exposed on the page template. Edit structure and slots in the builder.
+   * Values for CMS-managed fields exposed on the page template (defined in the builder). Distinct from Blocks and from component props.
    */
-  templateSlotValues?:
+  templateEditorFields?:
     | {
         [k: string]: unknown;
       }
@@ -396,18 +399,22 @@ export interface Page {
     | boolean
     | null;
   /**
-   * Designer blocks: pick a published component per row (same slot model as the page template). Optional if a page template above already defines the layout.
+   * Stack components on the page. When the page template has more than one layout region, pick which region each block belongs to.
    */
   content?:
     | {
         /**
-         * Blocks marked visible in the catalog. Pick the block type first.
+         * Choose a component from the catalog (Components collection).
          */
-        componentDefinition: number | ComponentDefinition;
+        componentDefinition: number | Component;
         /**
-         * Filled from the component’s slot contract (managed in the design system).
+         * When the template has several slots, choose which region this block fills (ids match the builder Slot primitives).
          */
-        slotValues:
+        layoutSlotId?: string | null;
+        /**
+         * CMS field values for this block (manifest from the component template).
+         */
+        editorFieldValues:
           | {
               [k: string]: unknown;
             }
@@ -490,10 +497,10 @@ export interface ReleaseSnapshot {
 export interface PublishJob {
   id: number;
   idempotencyKey: string;
-  kind: 'page_publish' | 'component_revision_publish' | 'rollback';
+  kind: 'page_publish' | 'component_publish' | 'rollback';
   status: 'pending' | 'succeeded' | 'failed';
   targetPage?: (number | null) | Page;
-  targetRevision?: (number | null) | ComponentRevision;
+  targetComponent?: (number | null) | Component;
   releaseSnapshot?: (number | null) | ReleaseSnapshot;
   errorMessage?: string | null;
   updatedAt: string;
@@ -577,12 +584,8 @@ export interface PayloadLockedDocument {
         value: number | DesignTokenOverride;
       } | null)
     | ({
-        relationTo: 'component-definitions';
-        value: number | ComponentDefinition;
-      } | null)
-    | ({
-        relationTo: 'component-revisions';
-        value: number | ComponentRevision;
+        relationTo: 'components';
+        value: number | Component;
       } | null)
     | ({
         relationTo: 'page-compositions';
@@ -607,6 +610,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'composition-presence';
         value: number | CompositionPresence;
+      } | null)
+    | ({
+        relationTo: 'payload-folders';
+        value: number | FolderInterface;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -724,33 +731,24 @@ export interface DesignTokenOverridesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "component-definitions_select".
+ * via the `definition` "components_select".
  */
-export interface ComponentDefinitionsSelect<T extends boolean = true> {
-  key?: T;
+export interface ComponentsSelect<T extends boolean = true> {
   displayName?: T;
+  key?: T;
   propContract?: T;
-  slotContract?: T;
+  editorFields?: T;
   composition?: T;
   visibleInEditorCatalog?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "component-revisions_select".
- */
-export interface ComponentRevisionsSelect<T extends boolean = true> {
-  definition?: T;
-  label?: T;
-  propContract?: T;
-  slotContract?: T;
-  composition?: T;
-  status?: T;
+  catalogSubmittedAt?: T;
+  catalogReviewStatus?: T;
   isBreakingChange?: T;
   dependencyImpactAcknowledgedAt?: T;
+  lastTouchedBy?: T;
+  folder?: T;
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -774,12 +772,13 @@ export interface PagesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   pageComposition?: T;
-  templateSlotValues?: T;
+  templateEditorFields?: T;
   content?:
     | T
     | {
         componentDefinition?: T;
-        slotValues?: T;
+        layoutSlotId?: T;
+        editorFieldValues?: T;
         id?: T;
       };
   seoDescription?: T;
@@ -808,7 +807,7 @@ export interface PublishJobsSelect<T extends boolean = true> {
   kind?: T;
   status?: T;
   targetPage?: T;
-  targetRevision?: T;
+  targetComponent?: T;
   releaseSnapshot?: T;
   errorMessage?: T;
   updatedAt?: T;
@@ -844,6 +843,18 @@ export interface CompositionPresenceSelect<T extends boolean = true> {
 export interface PayloadKvSelect<T extends boolean = true> {
   key?: T;
   data?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-folders_select".
+ */
+export interface PayloadFoldersSelect<T extends boolean = true> {
+  name?: T;
+  folder?: T;
+  documentsAndFolders?: T;
+  folderType?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

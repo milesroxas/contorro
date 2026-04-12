@@ -32,8 +32,8 @@ export const PublishJobs: CollectionConfig = {
       options: [
         { label: "Page publish", value: "page_publish" },
         {
-          label: "Component revision publish",
-          value: "component_revision_publish",
+          label: "Component publish",
+          value: "component_publish",
         },
         { label: "Rollback", value: "rollback" },
       ],
@@ -55,9 +55,9 @@ export const PublishJobs: CollectionConfig = {
       relationTo: "pages",
     },
     {
-      name: "targetRevision",
+      name: "targetComponent",
       type: "relationship",
-      relationTo: "component-revisions",
+      relationTo: "components",
     },
     {
       name: "releaseSnapshot",

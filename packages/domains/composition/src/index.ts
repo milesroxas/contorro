@@ -3,7 +3,9 @@ export type {
   CompositionRepository,
   LoadedComposition,
 } from "./ports/composition-repository.js";
+export { defaultEmptyPageComposition } from "./default-empty-page-composition.js";
 export { clonePageCompositionWithNewIds } from "./graph/clone-composition.js";
+export { expandLibraryComponentNodes } from "./graph/expand-library-component-nodes.js";
 export {
   addChildNode,
   moveNode,
@@ -14,15 +16,22 @@ export {
 } from "./graph/mutations.js";
 export { validatePageCompositionInvariants } from "./validation/page-composition.js";
 export {
-  editorSlotContractFromComposition,
-  resolveEditorSlotContractForDefinition,
-  slotDefinitionsFromComposition,
-} from "./slot-definitions.js";
+  editorFieldSpecsFromComposition,
+  editorFieldsContractFromComposition,
+  resolveEditorFieldsContractForDefinition,
+} from "./editor-fields-from-composition.js";
 export {
-  slotContractBreakingChanges,
-  type SlotContractBreakingReason,
-} from "./slot-contract-diff.js";
+  editorFieldsContractBreakingChanges,
+  type EditorFieldsContractBreakingReason,
+} from "./editor-fields-contract-diff.js";
 export {
-  mergeSlotValuesIntoComposition,
-  validateEditorSlotValues,
-} from "./graph/slot-substitution.js";
+  mergeEditorFieldValuesIntoComposition,
+  validateEditorFieldValues,
+} from "./editor-field-values.js";
+export {
+  DEFAULT_LAYOUT_SLOT_ID,
+  collectLayoutSlotIds,
+  compositionUsesLayoutSlots,
+  normalizedLayoutSlotId,
+  orderedLayoutSlotIds,
+} from "./layout-slot.js";

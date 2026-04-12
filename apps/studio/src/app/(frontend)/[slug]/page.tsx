@@ -1,8 +1,13 @@
 import { compileTokenSet } from "@repo/config-tailwind";
-import { PageCompositionSchema } from "@repo/contracts-zod";
 import {
-  mergeSlotValuesIntoComposition,
-  slotDefinitionsFromComposition,
+  type PageComposition,
+  PageCompositionSchema,
+} from "@repo/contracts-zod";
+import {
+  compositionUsesLayoutSlots,
+  editorFieldSpecsFromComposition,
+  expandLibraryComponentNodes,
+  mergeEditorFieldValuesIntoComposition,
 } from "@repo/domains-composition";
 import { defaultPrimitiveRegistry } from "@repo/runtime-primitives";
 import { renderComposition } from "@repo/runtime-renderer";
@@ -13,8 +18,8 @@ import { getPayload } from "payload";
 import type { ReactNode } from "react";
 
 import { loadPublishedTokenSetForPreview } from "@/lib/load-published-token-set";
-import { renderDesignerContentBlocks } from "@/lib/render-designer-content";
-import { resolveImageSlotValuesForRender } from "@/lib/resolve-slot-values-for-render";
+import { renderDesignerContentBlocksBySlot } from "@/lib/render-designer-content";
+import { resolveImageEditorFieldValuesForRender } from "@/lib/resolve-editor-field-image-values";
 import config from "@/payload.config";
 
 export const dynamic = "force-dynamic";
@@ -91,47 +96,77 @@ export default async function SitePage({ params }: Props) {
 
   const compiled = compileTokenSet({ tokens });
 
-  const designerSections = hasBlocks
-    ? await renderDesignerContentBlocks(
-        payload,
-        blocksRaw,
-        compiled.tokenMetadata,
-      )
-    : [];
-
-  let compositionTree: ReactNode = null;
+  let templateTree: PageComposition | null = null;
   if (hasPageComposition && compositionDoc) {
     const parsed = PageCompositionSchema.safeParse(compositionDoc.composition);
-    if (!parsed.success) {
-      if (!hasBlocks) {
-        notFound();
-      }
-    } else {
-      let tree = parsed.data;
-      const tmpl = (page as { templateSlotValues?: Record<string, unknown> })
-        .templateSlotValues;
-      if (
-        tmpl &&
-        typeof tmpl === "object" &&
-        !Array.isArray(tmpl) &&
-        Object.keys(tmpl).length > 0
-      ) {
-        const slotDefs = slotDefinitionsFromComposition(tree);
-        const resolved = await resolveImageSlotValuesForRender(
-          payload,
-          slotDefs,
-          tmpl,
-        );
-        tree = mergeSlotValuesIntoComposition(tree, resolved);
-      }
-      compositionTree = renderComposition(
-        tree,
-        defaultPrimitiveRegistry,
-        compiled.tokenMetadata,
-      );
+    if (parsed.success) {
+      templateTree = parsed.data;
+    } else if (!hasBlocks) {
+      notFound();
     }
   } else if (!hasBlocks) {
     notFound();
+  }
+
+  let slotContent: Record<string, ReactNode> | undefined;
+  let designerSections: ReactNode[] = [];
+  if (hasBlocks) {
+    const r = await renderDesignerContentBlocksBySlot(
+      payload,
+      blocksRaw,
+      compiled.tokenMetadata,
+      templateTree,
+    );
+    const uses =
+      templateTree !== null && compositionUsesLayoutSlots(templateTree);
+    if (uses) {
+      slotContent = r.slotContent;
+      designerSections = r.orphanSections;
+    } else {
+      designerSections = [...Object.values(r.slotContent), ...r.orphanSections];
+    }
+  }
+
+  let compositionTree: ReactNode = null;
+  if (hasPageComposition && compositionDoc && templateTree) {
+    let tree = await expandLibraryComponentNodes(templateTree, async (key) => {
+      const found = await payload.find({
+        collection: "components",
+        where: { key: { equals: key } },
+        depth: 0,
+        draft: isEnabled,
+        limit: 1,
+        overrideAccess: true,
+      });
+      const doc = found.docs[0] as { composition?: unknown } | undefined;
+      if (!doc?.composition) {
+        return null;
+      }
+      const parsed = PageCompositionSchema.safeParse(doc.composition);
+      return parsed.success ? parsed.data : null;
+    });
+    const tmpl = (page as { templateEditorFields?: Record<string, unknown> })
+      .templateEditorFields;
+    if (
+      tmpl &&
+      typeof tmpl === "object" &&
+      !Array.isArray(tmpl) &&
+      Object.keys(tmpl).length > 0
+    ) {
+      const fieldSpecs = editorFieldSpecsFromComposition(tree);
+      const resolved = await resolveImageEditorFieldValuesForRender(
+        payload,
+        fieldSpecs,
+        tmpl,
+      );
+      tree = mergeEditorFieldValuesIntoComposition(tree, resolved);
+    }
+    compositionTree = renderComposition(
+      tree,
+      defaultPrimitiveRegistry,
+      compiled.tokenMetadata,
+      slotContent !== undefined ? { slotContent } : undefined,
+    );
   }
 
   return (

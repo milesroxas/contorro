@@ -1,9 +1,9 @@
 import {
-  parsePropSlotContractImport,
+  editorFieldsContractToJsonSchema2020,
+  parsePropEditorFieldsImport,
   propContractToJsonSchema2020,
-  slotContractToJsonSchema2020,
 } from "@repo/application-contract-sync";
-import { resolveEditorSlotContractForDefinition } from "@repo/domains-composition";
+import { resolveEditorFieldsContractForDefinition } from "@repo/domains-composition";
 import { err } from "@repo/kernel";
 import { Hono } from "hono";
 
@@ -23,7 +23,7 @@ contractsRouter.get(
     let doc: Record<string, unknown> | undefined;
     try {
       const found = await pool.query<Record<string, unknown>>(
-        `select id, key, prop_contract as "propContract", slot_contract as "slotContract",
+        `select id, key, prop_contract as "propContract", editor_fields as "editorFields",
                 composition as "composition"
          from component_definitions where key = $1 limit 1`,
         [key],
@@ -36,20 +36,18 @@ contractsRouter.get(
       return resultToResponse(c, err("NOT_FOUND"));
     }
 
-    const slotResolved = resolveEditorSlotContractForDefinition({
+    const resolved = resolveEditorFieldsContractForDefinition({
       composition: doc.composition,
-      slotContract: doc.slotContract,
+      editorFields: doc.editorFields,
     });
 
     return c.json({
       data: {
         key: typeof doc.key === "string" ? doc.key : key,
         propContract: doc.propContract as unknown,
-        slotContract: slotResolved.ok
-          ? slotResolved.contract
-          : doc.slotContract,
+        editorFields: resolved.ok ? resolved.contract : doc.editorFields,
         propContractJsonSchema: propContractToJsonSchema2020(),
-        slotContractJsonSchema: slotContractToJsonSchema2020(),
+        editorFieldsJsonSchema: editorFieldsContractToJsonSchema2020(),
       },
     });
   },
@@ -66,21 +64,21 @@ contractsRouter.post(
     } catch {
       return resultToResponse(c, err("VALIDATION_ERROR"));
     }
-    const parsed = parsePropSlotContractImport(raw);
+    const parsed = parsePropEditorFieldsImport(raw);
     if (!parsed.ok) {
       return resultToResponse(c, err("VALIDATION_ERROR"));
     }
 
     let doc:
-      | { id: number; propContract?: unknown; slotContract?: unknown }
+      | { id: number; propContract?: unknown; editorFields?: unknown }
       | undefined;
     try {
       const found = await pool.query<{
         id: number;
         prop_contract: unknown;
-        slot_contract: unknown;
+        editor_fields: unknown;
       }>(
-        "select id, prop_contract, slot_contract from component_definitions where key = $1 limit 1",
+        "select id, prop_contract, editor_fields from component_definitions where key = $1 limit 1",
         [key],
       );
       const row = found.rows[0];
@@ -88,7 +86,7 @@ contractsRouter.post(
         doc = {
           id: row.id,
           propContract: row.prop_contract,
-          slotContract: row.slot_contract,
+          editorFields: row.editor_fields,
         };
       }
     } catch {
@@ -103,18 +101,18 @@ contractsRouter.post(
         parsed.value.propContract !== undefined
           ? parsed.value.propContract
           : doc.propContract,
-      slotContract:
-        parsed.value.slotContract !== undefined
-          ? parsed.value.slotContract
-          : doc.slotContract,
+      editorFields:
+        parsed.value.editorFields !== undefined
+          ? parsed.value.editorFields
+          : doc.editorFields,
     };
 
     try {
       await pool.query(
-        "update component_definitions set prop_contract = $1::jsonb, slot_contract = $2::jsonb, updated_at = now() where id = $3",
+        "update component_definitions set prop_contract = $1::jsonb, editor_fields = $2::jsonb, updated_at = now() where id = $3",
         [
           JSON.stringify(data.propContract),
-          JSON.stringify(data.slotContract),
+          JSON.stringify(data.editorFields),
           doc.id,
         ],
       );

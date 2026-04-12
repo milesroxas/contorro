@@ -1,9 +1,11 @@
 import type { Icon } from "@tabler/icons-react";
 import {
   IconBox,
+  IconComponents,
   IconLayoutGrid,
   IconLayoutList,
   IconPhoto,
+  IconSection,
   IconTypography,
 } from "@tabler/icons-react";
 
@@ -13,6 +15,7 @@ export const PRIMITIVE_KEYS = [
   "primitive.stack",
   "primitive.grid",
   "primitive.image",
+  "primitive.slot",
 ] as const;
 
 const META: Record<string, { label: string; Icon: Icon }> = {
@@ -21,6 +24,11 @@ const META: Record<string, { label: string; Icon: Icon }> = {
   "primitive.stack": { label: "Stack", Icon: IconLayoutList },
   "primitive.grid": { label: "Grid", Icon: IconLayoutGrid },
   "primitive.image": { label: "Image", Icon: IconPhoto },
+  "primitive.slot": { label: "Slot", Icon: IconSection },
+  "primitive.libraryComponent": {
+    label: "Library block",
+    Icon: IconComponents,
+  },
 };
 
 export function getPrimitiveDisplay(definitionKey: string): {

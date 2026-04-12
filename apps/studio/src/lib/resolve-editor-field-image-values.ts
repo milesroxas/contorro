@@ -1,21 +1,21 @@
-import type { SlotDefinition } from "@repo/contracts-zod";
+import type { EditorFieldSpec } from "@repo/contracts-zod";
 import type { Payload } from "payload";
 
 /**
- * Resolves image slot values from Media IDs to URLs for `mergeSlotValuesIntoComposition`.
+ * Resolves image editor-field values from Media IDs to URLs for `mergeEditorFieldValuesIntoComposition`.
  */
-export async function resolveImageSlotValuesForRender(
+export async function resolveImageEditorFieldValuesForRender(
   payload: Payload,
-  slots: SlotDefinition[],
+  fields: EditorFieldSpec[],
   rawValues: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
   const resolved: Record<string, unknown> = { ...rawValues };
 
-  for (const slot of slots) {
-    if (slot.type !== "image") {
+  for (const field of fields) {
+    if (field.type !== "image") {
       continue;
     }
-    const raw = rawValues[slot.name];
+    const raw = rawValues[field.name];
     const mid =
       typeof raw === "number"
         ? raw
@@ -38,9 +38,9 @@ export async function resolveImageSlotValuesForRender(
         typeof (media as { url: unknown }).url === "string"
           ? (media as { url: string }).url
           : "";
-      resolved[slot.name] = url;
+      resolved[field.name] = url;
     } catch {
-      resolved[slot.name] = "";
+      resolved[field.name] = "";
     }
   }
 

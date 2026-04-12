@@ -4,8 +4,8 @@ import { getTestPayload } from "./getTestPayload.js";
 export const BRIDGE_E2E_PAGE_SLUG = "e2e-bridge-public";
 export const BRIDGE_E2E_COMPONENT_KEY = "e2e-bridge-card";
 
-const cardSlotContract = {
-  slots: [
+const cardEditorFieldsManifest = {
+  editorFields: [
     {
       name: "headline",
       type: "text" as const,
@@ -39,9 +39,9 @@ const cardComposition = {
       childIds: [],
       propValues: { content: "" },
       contentBinding: {
-        source: "slot" as const,
+        source: "editor" as const,
         key: "headline",
-        slot: {
+        editorField: {
           name: "headline",
           type: "text" as const,
           required: true,
@@ -54,7 +54,7 @@ const cardComposition = {
 };
 
 /**
- * Seeds a published page whose only body is a designer `content` array row with slot
+ * Seeds a published page whose only body is a designer `content` array row with editor-field
  * substitution (Section D.5 — public render path).
  */
 export async function seedBridgePublicPage(): Promise<void> {
@@ -66,21 +66,31 @@ export async function seedBridgePublicPage(): Promise<void> {
     overrideAccess: true,
   });
   await payload.delete({
-    collection: "component-definitions",
+    collection: "components",
     where: { key: { equals: BRIDGE_E2E_COMPONENT_KEY } },
     overrideAccess: true,
   });
 
   const def = await payload.create({
-    collection: "component-definitions",
+    collection: "components",
+    draft: true,
     data: {
       key: BRIDGE_E2E_COMPONENT_KEY,
       displayName: "E2E bridge card",
       visibleInEditorCatalog: true,
+      catalogReviewStatus: "none",
       propContract: { fields: {} },
-      slotContract: cardSlotContract,
+      editorFields: cardEditorFieldsManifest,
       composition: cardComposition,
     },
+    overrideAccess: true,
+  });
+
+  await payload.update({
+    collection: "components",
+    id: def.id,
+    data: {},
+    draft: false,
     overrideAccess: true,
   });
 
@@ -92,7 +102,7 @@ export async function seedBridgePublicPage(): Promise<void> {
       content: [
         {
           componentDefinition: def.id,
-          slotValues: { headline: "Hello World" },
+          editorFieldValues: { headline: "Hello World" },
         },
       ],
     },
@@ -117,7 +127,7 @@ export async function cleanupBridgeE2e(): Promise<void> {
   });
 
   await payload.delete({
-    collection: "component-definitions",
+    collection: "components",
     where: { key: { equals: BRIDGE_E2E_COMPONENT_KEY } },
     overrideAccess: true,
   });

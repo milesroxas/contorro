@@ -19,6 +19,7 @@ import {
   numeric,
   boolean,
   jsonb,
+  type AnyPgColumn,
   pgEnum,
 } from "@payloadcms/db-postgres/drizzle/pg-core";
 import { sql, relations } from "@payloadcms/db-postgres/drizzle";
@@ -70,9 +71,21 @@ export const enum__design_token_sets_v_version_status = pgEnum(
   "enum__design_token_sets_v_version_status",
   ["draft", "published"],
 );
-export const enum_component_revisions_status = pgEnum(
-  "enum_component_revisions_status",
-  ["draft", "submitted", "approved", "published"],
+export const enum_components_catalog_review_status = pgEnum(
+  "enum_components_catalog_review_status",
+  ["none", "submitted", "approved", "rejected"],
+);
+export const enum_components_status = pgEnum("enum_components_status", [
+  "draft",
+  "published",
+]);
+export const enum__components_v_version_catalog_review_status = pgEnum(
+  "enum__components_v_version_catalog_review_status",
+  ["none", "submitted", "approved", "rejected"],
+);
+export const enum__components_v_version_status = pgEnum(
+  "enum__components_v_version_status",
+  ["draft", "published"],
 );
 export const enum_page_compositions_catalog_review_status = pgEnum(
   "enum_page_compositions_catalog_review_status",
@@ -100,7 +113,7 @@ export const enum__pages_v_version_status = pgEnum(
 );
 export const enum_publish_jobs_kind = pgEnum("enum_publish_jobs_kind", [
   "page_publish",
-  "component_revision_publish",
+  "component_publish",
   "rollback",
 ]);
 export const enum_publish_jobs_status = pgEnum("enum_publish_jobs_status", [
@@ -115,6 +128,10 @@ export const enum_catalog_activity_resource_type = pgEnum(
 export const enum_catalog_activity_action = pgEnum(
   "enum_catalog_activity_action",
   ["submit", "approve", "reject", "publish", "rollback", "presence"],
+);
+export const enum_payload_folders_folder_type = pgEnum(
+  "enum_payload_folders_folder_type",
+  ["components"],
 );
 
 export const users_sessions = pgTable(
@@ -394,59 +411,35 @@ export const design_token_overrides = pgTable(
   ],
 );
 
-export const component_definitions = pgTable(
-  "component_definitions",
+export const components = pgTable(
+  "components",
   {
     id: serial("id").primaryKey(),
-    key: varchar("key").notNull(),
-    displayName: varchar("display_name").notNull(),
-    propContract: jsonb("prop_contract").notNull(),
-    slotContract: jsonb("slot_contract").notNull(),
+    displayName: varchar("display_name"),
+    key: varchar("key"),
+    propContract: jsonb("prop_contract"),
+    editorFields: jsonb("editor_fields"),
     composition: jsonb("composition"),
     visibleInEditorCatalog: boolean("visible_in_editor_catalog").default(false),
-    updatedAt: timestamp("updated_at", {
+    catalogSubmittedAt: timestamp("catalog_submitted_at", {
       mode: "string",
       withTimezone: true,
       precision: 3,
-    })
-      .defaultNow()
-      .notNull(),
-    createdAt: timestamp("created_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3,
-    })
-      .defaultNow()
-      .notNull(),
-  },
-  (columns) => [
-    uniqueIndex("component_definitions_key_idx").on(columns.key),
-    index("component_definitions_updated_at_idx").on(columns.updatedAt),
-    index("component_definitions_created_at_idx").on(columns.createdAt),
-  ],
-);
-
-export const component_revisions = pgTable(
-  "component_revisions",
-  {
-    id: serial("id").primaryKey(),
-    definition: integer("definition_id")
-      .notNull()
-      .references(() => component_definitions.id, {
-        onDelete: "set null",
-      }),
-    label: varchar("label").notNull(),
-    propContract: jsonb("prop_contract"),
-    slotContract: jsonb("slot_contract"),
-    composition: jsonb("composition"),
-    status: enum_component_revisions_status("status")
-      .notNull()
-      .default("draft"),
+    }),
+    catalogReviewStatus: enum_components_catalog_review_status(
+      "catalog_review_status",
+    ).default("none"),
     isBreakingChange: boolean("is_breaking_change").default(false),
     dependencyImpactAcknowledgedAt: timestamp(
       "dependency_impact_acknowledged_at",
       { mode: "string", withTimezone: true, precision: 3 },
     ),
+    lastTouchedBy: integer("last_touched_by_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    folder: integer("folder_id").references(() => payload_folders.id, {
+      onDelete: "set null",
+    }),
     updatedAt: timestamp("updated_at", {
       mode: "string",
       withTimezone: true,
@@ -461,11 +454,110 @@ export const component_revisions = pgTable(
     })
       .defaultNow()
       .notNull(),
+    _status: enum_components_status("_status").default("draft"),
   },
   (columns) => [
-    index("component_revisions_definition_idx").on(columns.definition),
-    index("component_revisions_updated_at_idx").on(columns.updatedAt),
-    index("component_revisions_created_at_idx").on(columns.createdAt),
+    uniqueIndex("components_key_idx").on(columns.key),
+    index("components_last_touched_by_idx").on(columns.lastTouchedBy),
+    index("components_folder_idx").on(columns.folder),
+    index("components_updated_at_idx").on(columns.updatedAt),
+    index("components_created_at_idx").on(columns.createdAt),
+    index("components__status_idx").on(columns._status),
+  ],
+);
+
+export const _components_v = pgTable(
+  "_components_v",
+  {
+    id: serial("id").primaryKey(),
+    parent: integer("parent_id").references(() => components.id, {
+      onDelete: "set null",
+    }),
+    version_displayName: varchar("version_display_name"),
+    version_key: varchar("version_key"),
+    version_propContract: jsonb("version_prop_contract"),
+    version_editorFields: jsonb("version_editor_fields"),
+    version_composition: jsonb("version_composition"),
+    version_visibleInEditorCatalog: boolean(
+      "version_visible_in_editor_catalog",
+    ).default(false),
+    version_catalogSubmittedAt: timestamp("version_catalog_submitted_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_catalogReviewStatus:
+      enum__components_v_version_catalog_review_status(
+        "version_catalog_review_status",
+      ).default("none"),
+    version_isBreakingChange: boolean("version_is_breaking_change").default(
+      false,
+    ),
+    version_dependencyImpactAcknowledgedAt: timestamp(
+      "version_dependency_impact_acknowledged_at",
+      { mode: "string", withTimezone: true, precision: 3 },
+    ),
+    version_lastTouchedBy: integer("version_last_touched_by_id").references(
+      () => users.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    version_folder: integer("version_folder_id").references(
+      () => payload_folders.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    version_updatedAt: timestamp("version_updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_createdAt: timestamp("version_created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version__status:
+      enum__components_v_version_status("version__status").default("draft"),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    latest: boolean("latest"),
+  },
+  (columns) => [
+    index("_components_v_parent_idx").on(columns.parent),
+    index("_components_v_version_version_key_idx").on(columns.version_key),
+    index("_components_v_version_version_last_touched_by_idx").on(
+      columns.version_lastTouchedBy,
+    ),
+    index("_components_v_version_version_folder_idx").on(
+      columns.version_folder,
+    ),
+    index("_components_v_version_version_updated_at_idx").on(
+      columns.version_updatedAt,
+    ),
+    index("_components_v_version_version_created_at_idx").on(
+      columns.version_createdAt,
+    ),
+    index("_components_v_version_version__status_idx").on(
+      columns.version__status,
+    ),
+    index("_components_v_created_at_idx").on(columns.createdAt),
+    index("_components_v_updated_at_idx").on(columns.updatedAt),
+    index("_components_v_latest_idx").on(columns.latest),
   ],
 );
 
@@ -584,12 +676,13 @@ export const pages_content = pgTable(
     _parentID: integer("_parent_id").notNull(),
     id: varchar("id").primaryKey(),
     componentDefinition: integer("component_definition_id").references(
-      () => component_definitions.id,
+      () => components.id,
       {
         onDelete: "set null",
       },
     ),
-    slotValues: jsonb("slot_values").default(sql`'{}'::jsonb`),
+    layoutSlotId: varchar("layout_slot_id").default("main"),
+    editorFieldValues: jsonb("editor_field_values").default(sql`'{}'::jsonb`),
   },
   (columns) => [
     index("pages_content_order_idx").on(columns._order),
@@ -617,7 +710,9 @@ export const pages = pgTable(
         onDelete: "set null",
       },
     ),
-    templateSlotValues: jsonb("template_slot_values").default(sql`'{}'::jsonb`),
+    templateEditorFields: jsonb("template_editor_fields").default(
+      sql`'{}'::jsonb`,
+    ),
     seoDescription: jsonb("seo_description"),
     socialShareText: jsonb("social_share_text"),
     updatedAt: timestamp("updated_at", {
@@ -652,12 +747,13 @@ export const _pages_v_version_content = pgTable(
     _parentID: integer("_parent_id").notNull(),
     id: serial("id").primaryKey(),
     componentDefinition: integer("component_definition_id").references(
-      () => component_definitions.id,
+      () => components.id,
       {
         onDelete: "set null",
       },
     ),
-    slotValues: jsonb("slot_values").default(sql`'{}'::jsonb`),
+    layoutSlotId: varchar("layout_slot_id").default("main"),
+    editorFieldValues: jsonb("editor_field_values").default(sql`'{}'::jsonb`),
     _uuid: varchar("_uuid"),
   },
   (columns) => [
@@ -689,9 +785,9 @@ export const _pages_v = pgTable(
         onDelete: "set null",
       },
     ),
-    version_templateSlotValues: jsonb("version_template_slot_values").default(
-      sql`'{}'::jsonb`,
-    ),
+    version_templateEditorFields: jsonb(
+      "version_template_editor_fields",
+    ).default(sql`'{}'::jsonb`),
     version_seoDescription: jsonb("version_seo_description"),
     version_socialShareText: jsonb("version_social_share_text"),
     version_updatedAt: timestamp("version_updated_at", {
@@ -787,8 +883,8 @@ export const publish_jobs = pgTable(
     targetPage: integer("target_page_id").references(() => pages.id, {
       onDelete: "set null",
     }),
-    targetRevision: integer("target_revision_id").references(
-      () => component_revisions.id,
+    targetComponent: integer("target_component_id").references(
+      () => components.id,
       {
         onDelete: "set null",
       },
@@ -818,7 +914,7 @@ export const publish_jobs = pgTable(
   (columns) => [
     uniqueIndex("publish_jobs_idempotency_key_idx").on(columns.idempotencyKey),
     index("publish_jobs_target_page_idx").on(columns.targetPage),
-    index("publish_jobs_target_revision_idx").on(columns.targetRevision),
+    index("publish_jobs_target_component_idx").on(columns.targetComponent),
     index("publish_jobs_release_snapshot_idx").on(columns.releaseSnapshot),
     index("publish_jobs_updated_at_idx").on(columns.updatedAt),
     index("publish_jobs_created_at_idx").on(columns.createdAt),
@@ -907,6 +1003,59 @@ export const payload_kv = pgTable(
   (columns) => [uniqueIndex("payload_kv_key_idx").on(columns.key)],
 );
 
+export const payload_folders_folder_type = pgTable(
+  "payload_folders_folder_type",
+  {
+    order: integer("order").notNull(),
+    parent: integer("parent_id").notNull(),
+    value: enum_payload_folders_folder_type("value"),
+    id: serial("id").primaryKey(),
+  },
+  (columns) => [
+    index("payload_folders_folder_type_order_idx").on(columns.order),
+    index("payload_folders_folder_type_parent_idx").on(columns.parent),
+    foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [payload_folders.id],
+      name: "payload_folders_folder_type_parent_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const payload_folders = pgTable(
+  "payload_folders",
+  {
+    id: serial("id").primaryKey(),
+    name: varchar("name").notNull(),
+    folder: integer("folder_id").references(
+      (): AnyPgColumn => payload_folders.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => [
+    index("payload_folders_name_idx").on(columns.name),
+    index("payload_folders_folder_idx").on(columns.folder),
+    index("payload_folders_updated_at_idx").on(columns.updatedAt),
+    index("payload_folders_created_at_idx").on(columns.createdAt),
+  ],
+);
+
 export const payload_locked_documents = pgTable(
   "payload_locked_documents",
   {
@@ -945,14 +1094,14 @@ export const payload_locked_documents_rels = pgTable(
     mediaID: integer("media_id"),
     "design-token-setsID": integer("design_token_sets_id"),
     "design-token-overridesID": integer("design_token_overrides_id"),
-    "component-definitionsID": integer("component_definitions_id"),
-    "component-revisionsID": integer("component_revisions_id"),
+    componentsID: integer("components_id"),
     "page-compositionsID": integer("page_compositions_id"),
     pagesID: integer("pages_id"),
     "release-snapshotsID": integer("release_snapshots_id"),
     "publish-jobsID": integer("publish_jobs_id"),
     "catalog-activityID": integer("catalog_activity_id"),
     "composition-presenceID": integer("composition_presence_id"),
+    "payload-foldersID": integer("payload_folders_id"),
   },
   (columns) => [
     index("payload_locked_documents_rels_order_idx").on(columns.order),
@@ -966,11 +1115,8 @@ export const payload_locked_documents_rels = pgTable(
     index("payload_locked_documents_rels_design_token_overrides_id_idx").on(
       columns["design-token-overridesID"],
     ),
-    index("payload_locked_documents_rels_component_definitions_id_idx").on(
-      columns["component-definitionsID"],
-    ),
-    index("payload_locked_documents_rels_component_revisions_id_idx").on(
-      columns["component-revisionsID"],
+    index("payload_locked_documents_rels_components_id_idx").on(
+      columns.componentsID,
     ),
     index("payload_locked_documents_rels_page_compositions_id_idx").on(
       columns["page-compositionsID"],
@@ -987,6 +1133,9 @@ export const payload_locked_documents_rels = pgTable(
     ),
     index("payload_locked_documents_rels_composition_presence_id_idx").on(
       columns["composition-presenceID"],
+    ),
+    index("payload_locked_documents_rels_payload_folders_id_idx").on(
+      columns["payload-foldersID"],
     ),
     foreignKey({
       columns: [columns["parent"]],
@@ -1014,14 +1163,9 @@ export const payload_locked_documents_rels = pgTable(
       name: "payload_locked_documents_rels_design_token_overrides_fk",
     }).onDelete("cascade"),
     foreignKey({
-      columns: [columns["component-definitionsID"]],
-      foreignColumns: [component_definitions.id],
-      name: "payload_locked_documents_rels_component_definitions_fk",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [columns["component-revisionsID"]],
-      foreignColumns: [component_revisions.id],
-      name: "payload_locked_documents_rels_component_revisions_fk",
+      columns: [columns["componentsID"]],
+      foreignColumns: [components.id],
+      name: "payload_locked_documents_rels_components_fk",
     }).onDelete("cascade"),
     foreignKey({
       columns: [columns["page-compositionsID"]],
@@ -1052,6 +1196,11 @@ export const payload_locked_documents_rels = pgTable(
       columns: [columns["composition-presenceID"]],
       foreignColumns: [composition_presence.id],
       name: "payload_locked_documents_rels_composition_presence_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["payload-foldersID"]],
+      foreignColumns: [payload_folders.id],
+      name: "payload_locked_documents_rels_payload_folders_fk",
     }).onDelete("cascade"),
   ],
 );
@@ -1234,20 +1383,35 @@ export const relations_design_token_overrides = relations(
     }),
   }),
 );
-export const relations_component_definitions = relations(
-  component_definitions,
-  () => ({}),
-);
-export const relations_component_revisions = relations(
-  component_revisions,
-  ({ one }) => ({
-    definition: one(component_definitions, {
-      fields: [component_revisions.definition],
-      references: [component_definitions.id],
-      relationName: "definition",
-    }),
+export const relations_components = relations(components, ({ one }) => ({
+  lastTouchedBy: one(users, {
+    fields: [components.lastTouchedBy],
+    references: [users.id],
+    relationName: "lastTouchedBy",
   }),
-);
+  folder: one(payload_folders, {
+    fields: [components.folder],
+    references: [payload_folders.id],
+    relationName: "folder",
+  }),
+}));
+export const relations__components_v = relations(_components_v, ({ one }) => ({
+  parent: one(components, {
+    fields: [_components_v.parent],
+    references: [components.id],
+    relationName: "parent",
+  }),
+  version_lastTouchedBy: one(users, {
+    fields: [_components_v.version_lastTouchedBy],
+    references: [users.id],
+    relationName: "version_lastTouchedBy",
+  }),
+  version_folder: one(payload_folders, {
+    fields: [_components_v.version_folder],
+    references: [payload_folders.id],
+    relationName: "version_folder",
+  }),
+}));
 export const relations_page_compositions = relations(
   page_compositions,
   () => ({}),
@@ -1268,9 +1432,9 @@ export const relations_pages_content = relations(pages_content, ({ one }) => ({
     references: [pages.id],
     relationName: "content",
   }),
-  componentDefinition: one(component_definitions, {
+  componentDefinition: one(components, {
     fields: [pages_content.componentDefinition],
-    references: [component_definitions.id],
+    references: [components.id],
     relationName: "componentDefinition",
   }),
 }));
@@ -1292,9 +1456,9 @@ export const relations__pages_v_version_content = relations(
       references: [_pages_v.id],
       relationName: "version_content",
     }),
-    componentDefinition: one(component_definitions, {
+    componentDefinition: one(components, {
       fields: [_pages_v_version_content.componentDefinition],
-      references: [component_definitions.id],
+      references: [components.id],
       relationName: "componentDefinition",
     }),
   }),
@@ -1335,10 +1499,10 @@ export const relations_publish_jobs = relations(publish_jobs, ({ one }) => ({
     references: [pages.id],
     relationName: "targetPage",
   }),
-  targetRevision: one(component_revisions, {
-    fields: [publish_jobs.targetRevision],
-    references: [component_revisions.id],
-    relationName: "targetRevision",
+  targetComponent: one(components, {
+    fields: [publish_jobs.targetComponent],
+    references: [components.id],
+    relationName: "targetComponent",
   }),
   releaseSnapshot: one(release_snapshots, {
     fields: [publish_jobs.releaseSnapshot],
@@ -1372,6 +1536,29 @@ export const relations_composition_presence = relations(
   }),
 );
 export const relations_payload_kv = relations(payload_kv, () => ({}));
+export const relations_payload_folders_folder_type = relations(
+  payload_folders_folder_type,
+  ({ one }) => ({
+    parent: one(payload_folders, {
+      fields: [payload_folders_folder_type.parent],
+      references: [payload_folders.id],
+      relationName: "folderType",
+    }),
+  }),
+);
+export const relations_payload_folders = relations(
+  payload_folders,
+  ({ one, many }) => ({
+    folder: one(payload_folders, {
+      fields: [payload_folders.folder],
+      references: [payload_folders.id],
+      relationName: "folder",
+    }),
+    folderType: many(payload_folders_folder_type, {
+      relationName: "folderType",
+    }),
+  }),
+);
 export const relations_payload_locked_documents_rels = relations(
   payload_locked_documents_rels,
   ({ one }) => ({
@@ -1400,15 +1587,10 @@ export const relations_payload_locked_documents_rels = relations(
       references: [design_token_overrides.id],
       relationName: "design-token-overrides",
     }),
-    "component-definitionsID": one(component_definitions, {
-      fields: [payload_locked_documents_rels["component-definitionsID"]],
-      references: [component_definitions.id],
-      relationName: "component-definitions",
-    }),
-    "component-revisionsID": one(component_revisions, {
-      fields: [payload_locked_documents_rels["component-revisionsID"]],
-      references: [component_revisions.id],
-      relationName: "component-revisions",
+    componentsID: one(components, {
+      fields: [payload_locked_documents_rels.componentsID],
+      references: [components.id],
+      relationName: "components",
     }),
     "page-compositionsID": one(page_compositions, {
       fields: [payload_locked_documents_rels["page-compositionsID"]],
@@ -1439,6 +1621,11 @@ export const relations_payload_locked_documents_rels = relations(
       fields: [payload_locked_documents_rels["composition-presenceID"]],
       references: [composition_presence.id],
       relationName: "composition-presence",
+    }),
+    "payload-foldersID": one(payload_folders, {
+      fields: [payload_locked_documents_rels["payload-foldersID"]],
+      references: [payload_folders.id],
+      relationName: "payload-folders",
     }),
   }),
 );
@@ -1494,7 +1681,10 @@ type DatabaseSchema = {
   enum_design_token_sets_status: typeof enum_design_token_sets_status;
   enum__design_token_sets_v_version_tokens_category: typeof enum__design_token_sets_v_version_tokens_category;
   enum__design_token_sets_v_version_status: typeof enum__design_token_sets_v_version_status;
-  enum_component_revisions_status: typeof enum_component_revisions_status;
+  enum_components_catalog_review_status: typeof enum_components_catalog_review_status;
+  enum_components_status: typeof enum_components_status;
+  enum__components_v_version_catalog_review_status: typeof enum__components_v_version_catalog_review_status;
+  enum__components_v_version_status: typeof enum__components_v_version_status;
   enum_page_compositions_catalog_review_status: typeof enum_page_compositions_catalog_review_status;
   enum_page_compositions_status: typeof enum_page_compositions_status;
   enum__page_compositions_v_version_catalog_review_status: typeof enum__page_compositions_v_version_catalog_review_status;
@@ -1505,6 +1695,7 @@ type DatabaseSchema = {
   enum_publish_jobs_status: typeof enum_publish_jobs_status;
   enum_catalog_activity_resource_type: typeof enum_catalog_activity_resource_type;
   enum_catalog_activity_action: typeof enum_catalog_activity_action;
+  enum_payload_folders_folder_type: typeof enum_payload_folders_folder_type;
   users_sessions: typeof users_sessions;
   users: typeof users;
   media: typeof media;
@@ -1513,8 +1704,8 @@ type DatabaseSchema = {
   _design_token_sets_v_version_tokens: typeof _design_token_sets_v_version_tokens;
   _design_token_sets_v: typeof _design_token_sets_v;
   design_token_overrides: typeof design_token_overrides;
-  component_definitions: typeof component_definitions;
-  component_revisions: typeof component_revisions;
+  components: typeof components;
+  _components_v: typeof _components_v;
   page_compositions: typeof page_compositions;
   _page_compositions_v: typeof _page_compositions_v;
   pages_content: typeof pages_content;
@@ -1526,6 +1717,8 @@ type DatabaseSchema = {
   catalog_activity: typeof catalog_activity;
   composition_presence: typeof composition_presence;
   payload_kv: typeof payload_kv;
+  payload_folders_folder_type: typeof payload_folders_folder_type;
+  payload_folders: typeof payload_folders;
   payload_locked_documents: typeof payload_locked_documents;
   payload_locked_documents_rels: typeof payload_locked_documents_rels;
   payload_preferences: typeof payload_preferences;
@@ -1540,8 +1733,8 @@ type DatabaseSchema = {
   relations__design_token_sets_v_version_tokens: typeof relations__design_token_sets_v_version_tokens;
   relations__design_token_sets_v: typeof relations__design_token_sets_v;
   relations_design_token_overrides: typeof relations_design_token_overrides;
-  relations_component_definitions: typeof relations_component_definitions;
-  relations_component_revisions: typeof relations_component_revisions;
+  relations_components: typeof relations_components;
+  relations__components_v: typeof relations__components_v;
   relations_page_compositions: typeof relations_page_compositions;
   relations__page_compositions_v: typeof relations__page_compositions_v;
   relations_pages_content: typeof relations_pages_content;
@@ -1553,6 +1746,8 @@ type DatabaseSchema = {
   relations_catalog_activity: typeof relations_catalog_activity;
   relations_composition_presence: typeof relations_composition_presence;
   relations_payload_kv: typeof relations_payload_kv;
+  relations_payload_folders_folder_type: typeof relations_payload_folders_folder_type;
+  relations_payload_folders: typeof relations_payload_folders;
   relations_payload_locked_documents_rels: typeof relations_payload_locked_documents_rels;
   relations_payload_locked_documents: typeof relations_payload_locked_documents;
   relations_payload_preferences_rels: typeof relations_payload_preferences_rels;

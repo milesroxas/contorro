@@ -4,7 +4,6 @@ import { logger } from "hono/logger";
 
 import { builderRouter } from "./routes/builder.js";
 import { contractsRouter } from "./routes/contracts.js";
-import { publishingRouter } from "./routes/publishing.js";
 import { pool } from "./runtime/db.js";
 
 export const gatewayApp = new Hono()
@@ -15,5 +14,4 @@ export const gatewayApp = new Hono()
     return c.json(ok({ status: "ok" as const, db: "reachable" as const }));
   })
   .route("/builder", builderRouter)
-  .route("/contracts", contractsRouter)
-  .route("/publishing", publishingRouter);
+  .route("/contracts", contractsRouter);

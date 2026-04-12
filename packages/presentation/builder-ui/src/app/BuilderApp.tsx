@@ -15,9 +15,10 @@ import { useEffect, useMemo, useState } from "react";
 import { BuilderPanel } from "../components/builder-panel.js";
 import { ScrollArea } from "../components/scroll-area.js";
 import { BuilderCanvas } from "../features/canvas/BuilderCanvas.js";
-import type { InsertDropData } from "../features/dnd/InsertionDropSlot.js";
+import type { InsertDropData } from "../features/dnd/InsertionDropZone.js";
 import { DraftSaveBar } from "../features/draft-save/DraftSaveBar.js";
 import { NodeTree } from "../features/node-tree/NodeTree.js";
+import { LibraryComponentCatalog } from "../features/primitive-catalog/LibraryComponentCatalog.js";
 import { PrimitiveCatalog } from "../features/primitive-catalog/PrimitiveCatalog.js";
 import { PropertyInspector } from "../features/property-inspector/PropertyInspector.js";
 import { cn } from "../lib/cn.js";
@@ -29,10 +30,12 @@ function BuilderDragPreview({
   activeNodeId,
   activePaletteKey,
   display,
+  paletteSubtitle,
 }: {
   display: ReturnType<typeof getPrimitiveDisplay>;
   activePaletteKey: string | null;
   activeNodeId: string | null;
+  paletteSubtitle: string | null;
 }) {
   const { Icon, label } = display;
   return (
@@ -46,7 +49,7 @@ function BuilderDragPreview({
         <div className="text-sm font-semibold capitalize">{label}</div>
         {activePaletteKey ? (
           <div className="mt-0.5 text-xs text-muted-foreground">
-            Add to page
+            {paletteSubtitle ?? "Add to layout"}
           </div>
         ) : activeNodeId ? (
           <div className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
@@ -69,6 +72,7 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
   );
 
   const [activePaletteKey, setActivePaletteKey] = useState<string | null>(null);
+  const [paletteSubtitle, setPaletteSubtitle] = useState<string | null>(null);
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
 
   const composition = useBuilder((s) => s.composition);
@@ -82,7 +86,9 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
   const setTextContent = useBuilder((s) => s.setTextContent);
   const patchNodeProps = useBuilder((s) => s.patchNodeProps);
   const setBackgroundToken = useBuilder((s) => s.setBackgroundToken);
-  const setNodeSlotBinding = useBuilder((s) => s.setNodeSlotBinding);
+  const setNodeEditorFieldBinding = useBuilder(
+    (s) => s.setNodeEditorFieldBinding,
+  );
   const saveDraft = useBuilder((s) => s.saveDraft);
   const publish = useBuilder((s) => s.publish);
   const cancel = useBuilder((s) => s.cancel);
@@ -96,20 +102,26 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
     const d = event.active.data.current;
     if (d?.kind === "palette" && typeof d.definitionKey === "string") {
       setActivePaletteKey(d.definitionKey);
+      setPaletteSubtitle(
+        typeof d.displayName === "string" ? d.displayName : null,
+      );
       setActiveNodeId(null);
       return;
     }
     if (d?.kind === "node" && typeof d.nodeId === "string") {
       setActiveNodeId(d.nodeId);
       setActivePaletteKey(null);
+      setPaletteSubtitle(null);
       return;
     }
     setActivePaletteKey(null);
+    setPaletteSubtitle(null);
     setActiveNodeId(null);
   };
 
   const onDragEnd = (event: DragEndEvent) => {
     setActivePaletteKey(null);
+    setPaletteSubtitle(null);
     setActiveNodeId(null);
     if (!composition) {
       return;
@@ -124,15 +136,20 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
       return;
     }
 
-    const { parentId, slotIndex } = overData;
+    const { parentId, insertIndex } = overData;
     const activeData = active.data.current;
 
     if (
       activeData?.kind === "palette" &&
       typeof activeData.definitionKey === "string"
     ) {
-      const idx = computeInsertIndex(composition, parentId, slotIndex, null);
-      addPrimitive(parentId, activeData.definitionKey, idx);
+      const idx = computeInsertIndex(composition, parentId, insertIndex, null);
+      const libKey =
+        activeData.definitionKey === "primitive.libraryComponent" &&
+        typeof activeData.libraryComponentKey === "string"
+          ? activeData.libraryComponentKey
+          : undefined;
+      addPrimitive(parentId, activeData.definitionKey, idx, libKey);
       return;
     }
 
@@ -141,13 +158,19 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
       if (nodeId === composition.rootId) {
         return;
       }
-      const idx = computeInsertIndex(composition, parentId, slotIndex, nodeId);
+      const idx = computeInsertIndex(
+        composition,
+        parentId,
+        insertIndex,
+        nodeId,
+      );
       moveNode(nodeId, parentId, idx);
     }
   };
 
   const onDragCancel = () => {
     setActivePaletteKey(null);
+    setPaletteSubtitle(null);
     setActiveNodeId(null);
   };
 
@@ -201,6 +224,9 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
             <BuilderPanel title="Primitives">
               <PrimitiveCatalog embedded />
             </BuilderPanel>
+            <BuilderPanel title="Library">
+              <LibraryComponentCatalog embedded />
+            </BuilderPanel>
             <BuilderPanel className="flex-[1.25_1_0%]" title="Layers">
               <NodeTree
                 composition={composition}
@@ -244,9 +270,9 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
                       patchNodeProps(selectedNodeId, patch);
                     }
                   }}
-                  setNodeSlotBinding={(slot) => {
+                  setNodeEditorFieldBinding={(field) => {
                     if (selectedNodeId) {
-                      setNodeSlotBinding(selectedNodeId, slot);
+                      setNodeEditorFieldBinding(selectedNodeId, field);
                     }
                   }}
                 />
@@ -261,6 +287,7 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
             activeNodeId={activeNodeId}
             activePaletteKey={activePaletteKey}
             display={overlayDisplay}
+            paletteSubtitle={paletteSubtitle}
           />
         ) : null}
       </DragOverlay>

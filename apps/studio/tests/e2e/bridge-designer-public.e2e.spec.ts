@@ -7,7 +7,7 @@ import {
 } from "../helpers/seedBridgeE2e";
 
 /**
- * Restructure §D.5 — public route renders designer blocks with slot substitution.
+ * Restructure §D.5 — public route renders designer blocks with CMS editor-field substitution.
  * Data is created via Payload Local API (same contract as the seed script); the
  * browser assertion covers the Next.js page + renderer path.
  */
@@ -21,7 +21,7 @@ test.describe("v0.4 — Designer bridge (public render)", () => {
     await closeTestPayload();
   });
 
-  test("published page shows substituted slot text from designer block", async ({
+  test("published page shows substituted CMS field text from designer block", async ({
     page,
   }) => {
     await page.goto(`/${BRIDGE_E2E_PAGE_SLUG}`);

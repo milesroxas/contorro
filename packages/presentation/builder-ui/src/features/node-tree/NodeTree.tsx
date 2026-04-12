@@ -13,7 +13,7 @@ import { Button } from "../../components/ui/button.js";
 import { cn } from "../../lib/cn.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
 import { PrimitiveNodeContextMenu } from "../context-menu/PrimitiveNodeContextMenu.js";
-import { InsertionDropSlot } from "../dnd/InsertionDropSlot.js";
+import { InsertionDropZone } from "../dnd/InsertionDropZone.js";
 import { NodeDragHandle } from "../dnd/NodeDragHandle.js";
 
 const CONTAINER_KEYS = new Set([
@@ -170,9 +170,9 @@ function LayerSubtree({
       {isContainer ? (
         <ul className={layerTreeNestedListClass(isRoot)}>
           <li className="list-none !m-0 !p-0 !pl-0">
-            <InsertionDropSlot
+            <InsertionDropZone
               parentId={nodeId}
-              slotIndex={0}
+              insertIndex={0}
               variant="between"
             />
           </li>
@@ -186,9 +186,9 @@ function LayerSubtree({
                 selectedNodeId={selectedNodeId}
               />
               <li className="list-none !m-0 !p-0 !pl-0">
-                <InsertionDropSlot
+                <InsertionDropZone
                   parentId={nodeId}
-                  slotIndex={i + 1}
+                  insertIndex={i + 1}
                   variant="between"
                 />
               </li>

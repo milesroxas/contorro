@@ -1,35 +1,38 @@
-import type { EditorSlotContract, PageComposition } from "@repo/contracts-zod";
+import type {
+  EditorFieldsContract,
+  PageComposition,
+} from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
 import { type Result, err, ok } from "@repo/kernel";
 
 /**
- * Validates editor-supplied slot values against a published slot contract (required slots).
+ * Validates CMS-supplied values against required editor fields.
  */
-export function validateEditorSlotValues(
-  contract: EditorSlotContract,
+export function validateEditorFieldValues(
+  contract: EditorFieldsContract,
   values: Record<string, unknown> | null | undefined,
 ): Result<void, string> {
   const map =
     values !== null && values !== undefined && typeof values === "object"
       ? (values as Record<string, unknown>)
       : {};
-  for (const slot of contract.slots) {
-    if (!slot.required) {
+  for (const field of contract.editorFields) {
+    if (!field.required) {
       continue;
     }
-    const v = map[slot.name];
+    const v = map[field.name];
     if (v === undefined || v === null || v === "") {
-      return err(`Missing required slot "${slot.name}"`);
+      return err(`Missing required editor field "${field.name}"`);
     }
   }
   return ok(undefined);
 }
 
 /**
- * Applies resolved slot values onto a template composition (mutates propValues on slotted nodes).
- * Image slots expect `resolvedValues[name]` to be a URL string (resolved in the app layer).
+ * Applies resolved editor field values onto a template composition (mutates propValues on bound nodes).
+ * Image fields expect `resolvedValues[name]` to be a URL string (resolved in the app layer).
  */
-export function mergeSlotValuesIntoComposition(
+export function mergeEditorFieldValuesIntoComposition(
   composition: PageComposition,
   resolvedValues: Record<string, unknown>,
 ): PageComposition {
@@ -37,15 +40,15 @@ export function mergeSlotValuesIntoComposition(
 
   for (const [id, node] of Object.entries(composition.nodes)) {
     const cb = node.contentBinding;
-    if (cb?.source !== "slot" || !cb.slot) {
+    if (cb?.source !== "editor" || !cb.editorField) {
       continue;
     }
-    const name = cb.slot.name;
+    const name = cb.editorField.name;
     const raw = resolvedValues[name];
-    const fallback = cb.slot.defaultValue;
+    const fallback = cb.editorField.defaultValue;
     const effective = raw !== undefined && raw !== null ? raw : fallback;
 
-    const t = cb.slot.type;
+    const t = cb.editorField.type;
     const prev = node.propValues ?? {};
     let patch: Record<string, unknown> = { ...prev };
 

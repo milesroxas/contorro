@@ -13,11 +13,20 @@ const PRIMITIVE_KEYS = new Set([
   "primitive.stack",
   "primitive.grid",
   "primitive.image",
+  "primitive.slot",
+  /** Placeholder for a published library component; expanded at render (see `expandLibraryComponentNodes`). */
+  "primitive.libraryComponent",
 ]);
 
 function inferKind(definitionKey: string): CompositionNode["kind"] {
   if (definitionKey === "primitive.text") {
     return "text";
+  }
+  if (definitionKey === "primitive.slot") {
+    return "slot";
+  }
+  if (definitionKey === "primitive.libraryComponent") {
+    return "designerComponent";
   }
   return "primitive";
 }
@@ -56,18 +65,29 @@ function pruneStyleBindings(
 
 /**
  * Adds a new primitive node as the last child of `parentId`.
+ * For `primitive.libraryComponent`, pass `libraryComponentKey` (definition `key` in Payload).
  */
 export function addChildNode(
   composition: PageComposition,
   parentId: string,
   definitionKey: string,
   insertIndex?: number,
+  options?: { libraryComponentKey?: string },
 ): Result<PageComposition, "INVALID_NODE"> {
   if (!PRIMITIVE_KEYS.has(definitionKey)) {
     return err("INVALID_NODE");
   }
+  if (definitionKey === "primitive.libraryComponent") {
+    const k = options?.libraryComponentKey?.trim();
+    if (!k) {
+      return err("INVALID_NODE");
+    }
+  }
   const parent = composition.nodes[parentId];
   if (!parent) {
+    return err("INVALID_NODE");
+  }
+  if (parent.definitionKey === "primitive.slot") {
     return err("INVALID_NODE");
   }
 
@@ -80,16 +100,20 @@ export function addChildNode(
     parentId,
     childIds: [],
     propValues:
-      definitionKey === "primitive.stack"
-        ? {
-            direction: "column",
-            gap: "8px",
-            align: "stretch",
-            justify: "flex-start",
-          }
-        : definitionKey === "primitive.text"
-          ? { content: "" }
-          : {},
+      definitionKey === "primitive.libraryComponent"
+        ? { componentKey: options?.libraryComponentKey?.trim() ?? "" }
+        : definitionKey === "primitive.stack"
+          ? {
+              direction: "column",
+              gap: "8px",
+              align: "stretch",
+              justify: "flex-start",
+            }
+          : definitionKey === "primitive.text"
+            ? { content: "" }
+            : definitionKey === "primitive.slot"
+              ? { slotId: "main" }
+              : {},
   };
 
   const siblings = [...parent.childIds];
@@ -122,7 +146,7 @@ export function addChildNode(
 }
 
 /**
- * Sets or clears `contentBinding` on a node (e.g. v0.4 “expose as slot”).
+ * Sets or clears `contentBinding` on a node (e.g. expose text to CMS editors).
  */
 export function setNodeContentBinding(
   composition: PageComposition,
@@ -170,6 +194,9 @@ export function moveNode(
 
   const targetParent = composition.nodes[targetParentId];
   if (!targetParent) {
+    return err("INVALID_NODE");
+  }
+  if (targetParent.definitionKey === "primitive.slot") {
     return err("INVALID_NODE");
   }
 

@@ -8,14 +8,12 @@ export const SEED_PAGE_COMPOSITION_SLUG = "local-seed";
 export const SEED_PAGE_SLUG = "local-seed-page";
 export const SEED_TOKEN_SCOPE_KEY = "local-seed";
 
-/** `component-revisions` — stable labels for idempotent delete/recreate (gateway workflow; hidden in admin). */
-export const SEED_REVISION_STACK_LABEL = "Local seed · Stack revision";
-export const SEED_REVISION_TEXT_LABEL = "Local seed · Text revision";
 export const SEED_PAGE_DESIGNER_SLUG = "local-seed-designer";
 
 const SEED_COMPONENT_KEYS = [
   "primitive.stack",
   "primitive.text",
+  "primitive.slot",
   "seed.card",
 ] as const;
 
@@ -48,7 +46,7 @@ const stackDefinition = {
       justify: { valueType: "string" as const },
     },
   },
-  slotContract: { slots: [] },
+  editorFields: { editorFields: [] },
 };
 
 const textDefinition = {
@@ -57,11 +55,20 @@ const textDefinition = {
       content: { valueType: "string" as const },
     },
   },
-  slotContract: { slots: [] },
+  editorFields: { editorFields: [] },
 };
 
-const seedCardSlotContract = {
-  slots: [
+const slotDefinition = {
+  propContract: {
+    fields: {
+      slotId: { valueType: "string" as const },
+    },
+  },
+  editorFields: { editorFields: [] },
+};
+
+const seedCardEditorFieldsManifest = {
+  editorFields: [
     {
       name: "headline",
       type: "text" as const,
@@ -95,9 +102,9 @@ const seedCardComposition = {
       childIds: [],
       propValues: { content: "" },
       contentBinding: {
-        source: "slot" as const,
+        source: "editor" as const,
         key: "headline",
-        slot: {
+        editorField: {
           name: "headline",
           type: "text" as const,
           required: true,
@@ -112,20 +119,21 @@ const seedCardComposition = {
 /**
  * Designer block (`seed.card`): `propContract.fields` is intentionally empty — there are no
  * block-level prop keys in the PropContract sense; layout/text defaults live on nodes in
- * `composition`. What editors fill in Payload is **slots** (`slotContract` + slot
- * bindings in the tree), surfaced as block `slotValues` / `SlotValuesInputs` — not
+ * `composition`. What editors fill in Payload are **CMS editor fields** (`editorFields` +
+ * `contentBinding.source === "editor"`), surfaced as `editorFieldValues` — not
  * `propContract`. Compare `stackDefinition` / `textDefinition` for non-empty primitive
  * `propContract` (catalog / tooling).
  */
 const cardDefinition = {
   propContract: { fields: {} },
-  slotContract: seedCardSlotContract,
+  editorFields: seedCardEditorFieldsManifest,
   composition: seedCardComposition,
 };
 
 /**
- * Page template tree for builder/admin: stack + inline text + one slot-driven text node.
- * Slots must use `contentBinding.source === "slot"` with `key === slot.name` (domain invariant).
+ * Page template tree for builder/admin: stack + inline text + layout slot (page blocks) + CMS text.
+ * Editor fields must use `contentBinding.source === "editor"` with `key === editorField.name`.
+ * Blocks target a slot via `layoutSlotId` matching `primitive.slot` `propValues.slotId`.
  */
 const seedComposition = {
   rootId: "stack-root",
@@ -135,7 +143,7 @@ const seedComposition = {
       kind: "primitive" as const,
       definitionKey: "primitive.stack",
       parentId: null,
-      childIds: ["text-1", "text-hero"],
+      childIds: ["text-1", "text-hero", "slot-main"],
       propValues: {
         direction: "column",
         gap: "8px",
@@ -159,17 +167,25 @@ const seedComposition = {
       childIds: [],
       propValues: { content: "" },
       contentBinding: {
-        source: "slot" as const,
+        source: "editor" as const,
         key: "hero-headline",
-        slot: {
+        editorField: {
           name: "hero-headline",
           type: "text" as const,
           required: true,
           label: "Hero headline",
           description:
-            "Filled via Pages → Template slots (maps to this page template).",
+            "Filled via Pages → Template CMS fields (maps to this page template).",
         },
       },
+    },
+    "slot-main": {
+      id: "slot-main",
+      kind: "slot" as const,
+      definitionKey: "primitive.slot",
+      parentId: "stack-root",
+      childIds: [],
+      propValues: { slotId: "main" },
     },
   },
   styleBindings: {},
@@ -205,21 +221,9 @@ async function seed(): Promise<void> {
     });
     await deleteBuilderCompositionBySlug(SEED_PAGE_COMPOSITION_SLUG);
 
-    await payload.delete({
-      collection: "component-revisions",
-      where: {
-        or: [
-          { label: { equals: SEED_REVISION_STACK_LABEL } },
-          { label: { equals: SEED_REVISION_TEXT_LABEL } },
-          { label: { equals: "Local seed · Card (published)" } },
-        ],
-      },
-      overrideAccess: true,
-    });
-
     for (const key of SEED_COMPONENT_KEYS) {
       await payload.delete({
-        collection: "component-definitions",
+        collection: "components",
         where: { key: { equals: key } },
         overrideAccess: true,
       });
@@ -332,73 +336,84 @@ async function seed(): Promise<void> {
       overrideAccess: true,
     });
 
-    const stackDef = await payload.create({
-      collection: "component-definitions",
+    const stackRow = await payload.create({
+      collection: "components",
+      draft: true,
       data: {
         key: "primitive.stack",
         displayName: "Stack (primitive)",
         visibleInEditorCatalog: false,
+        catalogReviewStatus: "none",
         ...stackDefinition,
       },
       overrideAccess: true,
     });
+    await payload.update({
+      collection: "components",
+      id: stackRow.id,
+      data: {},
+      draft: false,
+      overrideAccess: true,
+    });
 
-    const textDef = await payload.create({
-      collection: "component-definitions",
+    const textRow = await payload.create({
+      collection: "components",
+      draft: true,
       data: {
         key: "primitive.text",
         displayName: "Text (primitive)",
         visibleInEditorCatalog: false,
+        catalogReviewStatus: "none",
         ...textDefinition,
       },
       overrideAccess: true,
     });
+    await payload.update({
+      collection: "components",
+      id: textRow.id,
+      data: {},
+      draft: false,
+      overrideAccess: true,
+    });
 
-    const cardDef = await payload.create({
-      collection: "component-definitions",
+    const slotRow = await payload.create({
+      collection: "components",
+      draft: true,
+      data: {
+        key: "primitive.slot",
+        displayName: "Slot (primitive)",
+        visibleInEditorCatalog: false,
+        catalogReviewStatus: "none",
+        ...slotDefinition,
+      },
+      overrideAccess: true,
+    });
+    await payload.update({
+      collection: "components",
+      id: slotRow.id,
+      data: {},
+      draft: false,
+      overrideAccess: true,
+    });
+
+    const cardCreated = await payload.create({
+      collection: "components",
       data: {
         key: "seed.card",
         displayName: "Seed Card (designer block demo)",
         visibleInEditorCatalog: true,
+        catalogReviewStatus: "none",
         ...cardDefinition,
       },
+      draft: true,
       overrideAccess: true,
     });
 
-    await payload.create({
-      collection: "component-revisions",
-      data: {
-        definition: stackDef.id,
-        label: SEED_REVISION_STACK_LABEL,
-        status: "draft",
-        propContract: stackDefinition.propContract,
-        slotContract: stackDefinition.slotContract,
-      },
-      overrideAccess: true,
-    });
-
-    await payload.create({
-      collection: "component-revisions",
-      data: {
-        definition: textDef.id,
-        label: SEED_REVISION_TEXT_LABEL,
-        status: "published",
-        propContract: textDefinition.propContract,
-        slotContract: textDefinition.slotContract,
-      },
-      overrideAccess: true,
-    });
-
-    await payload.create({
-      collection: "component-revisions",
-      data: {
-        definition: cardDef.id,
-        label: "Local seed · Card (published)",
-        status: "published",
-        propContract: cardDefinition.propContract,
-        slotContract: cardDefinition.slotContract,
-        composition: seedCardComposition,
-      },
+    await payload.update({
+      collection: "components",
+      id: cardCreated.id,
+      data: {},
+      draft: false,
       overrideAccess: true,
     });
 
@@ -429,13 +444,14 @@ async function seed(): Promise<void> {
         title: "Local seed page",
         slug: SEED_PAGE_SLUG,
         pageComposition: composition.id,
-        templateSlotValues: {
-          "hero-headline": "Welcome — local seed page (template slot).",
+        templateEditorFields: {
+          "hero-headline": "Welcome — local seed page (template CMS field).",
         },
         content: [
           {
-            componentDefinition: cardDef.id,
-            slotValues: {
+            componentDefinition: cardCreated.id,
+            layoutSlotId: "main",
+            editorFieldValues: {
               headline:
                 "Designer block on the same page as the template (combined).",
             },
@@ -460,8 +476,8 @@ async function seed(): Promise<void> {
         slug: SEED_PAGE_DESIGNER_SLUG,
         content: [
           {
-            componentDefinition: cardDef.id,
-            slotValues: { headline: "Hello World" },
+            componentDefinition: cardCreated.id,
+            editorFieldValues: { headline: "Hello World" },
           },
         ],
       },
@@ -487,7 +503,7 @@ async function seed(): Promise<void> {
       `  Page template:      ${SEED_PAGE_COMPOSITION_SLUG} (id: ${compositionId})`,
     );
     console.log(
-      `  Page (published): ${SEED_PAGE_SLUG} (template slot hero-headline + seed.card block)`,
+      `  Page (published): ${SEED_PAGE_SLUG} (template CMS field hero-headline + seed.card in layout slot main)`,
     );
     console.log(
       `  Designer page:    ${SEED_PAGE_DESIGNER_SLUG} (blocks only, no template)`,

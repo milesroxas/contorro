@@ -8,10 +8,10 @@ export function Text({ node, className, style }: RuntimePrimitiveProps) {
       : undefined;
   const cb = node.contentBinding;
   let fallback = "";
-  if (cb?.source === "slot" && cb.slot) {
+  if (cb?.source === "editor" && cb.editorField) {
     fallback =
-      typeof cb.slot.defaultValue === "string"
-        ? cb.slot.defaultValue
+      typeof cb.editorField.defaultValue === "string"
+        ? cb.editorField.defaultValue
         : `[${cb.key}]`;
   } else if (cb) {
     fallback = `[${cb.key}]`;

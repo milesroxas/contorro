@@ -1,6 +1,5 @@
 import type { PageComposition } from "@repo/contracts-zod";
 
-const base = "/api/gateway/builder";
 const studioBuilder = "/api/builder";
 
 export type GatewayCompositionResponse = {
@@ -17,15 +16,20 @@ export type GatewaySaveResponse = {
 export async function fetchComposition(
   compositionId: string,
 ): Promise<GatewayCompositionResponse["data"]> {
-  const res = await fetch(`${base}/compositions/${compositionId}`, {
-    credentials: "include",
-  });
+  const res = await fetch(
+    `${studioBuilder}/compositions/${encodeURIComponent(compositionId)}`,
+    {
+      credentials: "include",
+    },
+  );
   if (!res.ok) {
     throw new Error(`load failed: ${res.status}`);
   }
   const json = (await res.json()) as GatewayCompositionResponse;
   return json.data;
 }
+
+const gatewayBuilder = "/api/gateway/builder";
 
 async function postPersistPageComposition(
   compositionId: string,
@@ -35,12 +39,15 @@ async function postPersistPageComposition(
     intent: "draft" | "publish";
   },
 ): Promise<string> {
-  const res = await fetch(`${studioBuilder}/compositions/${compositionId}`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  const res = await fetch(
+    `${studioBuilder}/compositions/${encodeURIComponent(compositionId)}`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
   if (!res.ok) {
     let code: string | undefined;
     try {
@@ -91,12 +98,15 @@ export async function postAddNode(
   parentId: string,
   definitionKey: string,
 ): Promise<string> {
-  const res = await fetch(`${base}/compositions/${compositionId}/nodes`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ parentId, definitionKey }),
-  });
+  const res = await fetch(
+    `${gatewayBuilder}/compositions/${encodeURIComponent(compositionId)}/nodes`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ parentId, definitionKey }),
+    },
+  );
   if (!res.ok) {
     throw new Error(`add node failed: ${res.status}`);
   }
@@ -110,7 +120,7 @@ export async function patchNodeProps(
   propValues: Record<string, unknown>,
 ): Promise<string> {
   const res = await fetch(
-    `${base}/compositions/${compositionId}/nodes/${nodeId}`,
+    `${gatewayBuilder}/compositions/${encodeURIComponent(compositionId)}/nodes/${encodeURIComponent(nodeId)}`,
     {
       method: "PATCH",
       credentials: "include",
@@ -132,7 +142,7 @@ export async function patchNodeStyle(
   token: string,
 ): Promise<string> {
   const res = await fetch(
-    `${base}/compositions/${compositionId}/nodes/${nodeId}/style`,
+    `${gatewayBuilder}/compositions/${encodeURIComponent(compositionId)}/nodes/${encodeURIComponent(nodeId)}/style`,
     {
       method: "PATCH",
       credentials: "include",

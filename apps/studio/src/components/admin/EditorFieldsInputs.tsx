@@ -1,6 +1,6 @@
 "use client";
 
-import type { SlotDefinition } from "@repo/contracts-zod";
+import type { EditorFieldSpec } from "@repo/contracts-zod";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -9,9 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  slots: SlotDefinition[];
+  fields: EditorFieldSpec[];
   current: Record<string, unknown>;
-  patchSlot: (name: string, next: unknown) => void;
+  patchField: (name: string, next: unknown) => void;
   /** Form processing / initializing — matches Payload field disabled state. */
   disabled?: boolean;
 };
@@ -25,22 +25,22 @@ function RequiredMark() {
   );
 }
 
-/** Shared slot editors for designer block contracts and page-template composition slots. */
-export function SlotValuesInputs({
-  slots,
+/** CMS field editors for page templates and designer blocks (not layout slots / not props). */
+export function EditorFieldsInputs({
+  fields,
   current,
-  patchSlot,
+  patchField,
   disabled = false,
 }: Props) {
   return (
     <div className="space-y-4">
-      {slots.map((slot) => {
-        const id = `slot-${slot.name}`;
-        const v = current[slot.name];
-        const label = slot.label || slot.name;
-        const desc = slot.description;
+      {fields.map((field) => {
+        const id = `editor-field-${field.name}`;
+        const v = current[field.name];
+        const label = field.label || field.name;
+        const desc = field.description;
 
-        if (slot.type === "boolean") {
+        if (field.type === "boolean") {
           const checked = Boolean(v);
           return (
             <div
@@ -48,14 +48,14 @@ export function SlotValuesInputs({
                 "flex items-start gap-2.5 rounded-none border border-border/60 bg-muted/20 px-3 py-2.5",
                 disabled && "opacity-60",
               )}
-              key={slot.name}
+              key={field.name}
             >
               <Checkbox
                 checked={checked}
                 disabled={disabled}
                 id={id}
                 onCheckedChange={(state) => {
-                  patchSlot(slot.name, state === true);
+                  patchField(field.name, state === true);
                 }}
               />
               <div className="grid min-w-0 gap-1 pt-0.5 leading-none">
@@ -64,7 +64,7 @@ export function SlotValuesInputs({
                   htmlFor={id}
                 >
                   {label}
-                  {slot.required ? <RequiredMark /> : null}
+                  {field.required ? <RequiredMark /> : null}
                 </Label>
                 {desc ? (
                   <p className="text-xs leading-relaxed text-muted-foreground">
@@ -76,13 +76,13 @@ export function SlotValuesInputs({
           );
         }
 
-        if (slot.type === "number") {
+        if (field.type === "number") {
           const n = typeof v === "number" ? v : v === "" ? 0 : Number(v);
           return (
-            <div className="space-y-1.5" key={slot.name}>
+            <div className="space-y-1.5" key={field.name}>
               <Label htmlFor={id}>
                 {label}
-                {slot.required ? <RequiredMark /> : null}
+                {field.required ? <RequiredMark /> : null}
               </Label>
               {desc ? (
                 <p className="text-xs text-muted-foreground">{desc}</p>
@@ -93,8 +93,8 @@ export function SlotValuesInputs({
                 inputMode="decimal"
                 onChange={(e) => {
                   const num = Number(e.target.value);
-                  patchSlot(
-                    slot.name,
+                  patchField(
+                    field.name,
                     e.target.value === "" || Number.isNaN(num) ? "" : num,
                   );
                 }}
@@ -105,7 +105,7 @@ export function SlotValuesInputs({
           );
         }
 
-        if (slot.type === "image") {
+        if (field.type === "image") {
           const mediaId =
             typeof v === "number"
               ? v
@@ -113,10 +113,10 @@ export function SlotValuesInputs({
                 ? Number.parseInt(v, 10)
                 : "";
           return (
-            <div className="space-y-1.5" key={slot.name}>
+            <div className="space-y-1.5" key={field.name}>
               <Label htmlFor={id}>
                 {label}
-                {slot.required ? <RequiredMark /> : null}
+                {field.required ? <RequiredMark /> : null}
               </Label>
               {desc ? (
                 <p className="text-xs text-muted-foreground">{desc}</p>
@@ -131,11 +131,11 @@ export function SlotValuesInputs({
                 onChange={(e) => {
                   const t = e.target.value.trim();
                   if (t === "") {
-                    patchSlot(slot.name, "");
+                    patchField(field.name, "");
                     return;
                   }
                   const parsed = Number.parseInt(t, 10);
-                  patchSlot(slot.name, Number.isFinite(parsed) ? parsed : t);
+                  patchField(field.name, Number.isFinite(parsed) ? parsed : t);
                 }}
                 type="text"
                 value={mediaId === "" ? "" : String(mediaId)}
@@ -144,13 +144,13 @@ export function SlotValuesInputs({
           );
         }
 
-        if (slot.type === "richText") {
+        if (field.type === "richText") {
           const text = typeof v === "string" ? v : v != null ? String(v) : "";
           return (
-            <div className="space-y-1.5" key={slot.name}>
+            <div className="space-y-1.5" key={field.name}>
               <Label htmlFor={id}>
                 {label}
-                {slot.required ? <RequiredMark /> : null}
+                {field.required ? <RequiredMark /> : null}
               </Label>
               {desc ? (
                 <p className="text-xs text-muted-foreground">{desc}</p>
@@ -158,7 +158,7 @@ export function SlotValuesInputs({
               <Textarea
                 disabled={disabled}
                 id={id}
-                onChange={(e) => patchSlot(slot.name, e.target.value)}
+                onChange={(e) => patchField(field.name, e.target.value)}
                 rows={5}
                 value={text}
               />
@@ -166,13 +166,13 @@ export function SlotValuesInputs({
           );
         }
 
-        if (slot.type === "link") {
+        if (field.type === "link") {
           const href = typeof v === "string" ? v : v != null ? String(v) : "";
           return (
-            <div className="space-y-1.5" key={slot.name}>
+            <div className="space-y-1.5" key={field.name}>
               <Label htmlFor={id}>
                 {label}
-                {slot.required ? <RequiredMark /> : null}
+                {field.required ? <RequiredMark /> : null}
               </Label>
               {desc ? (
                 <p className="text-xs text-muted-foreground">{desc}</p>
@@ -181,7 +181,7 @@ export function SlotValuesInputs({
                 autoComplete="url"
                 disabled={disabled}
                 id={id}
-                onChange={(e) => patchSlot(slot.name, e.target.value)}
+                onChange={(e) => patchField(field.name, e.target.value)}
                 placeholder="https://"
                 type="url"
                 value={href}
@@ -192,10 +192,10 @@ export function SlotValuesInputs({
 
         const str = typeof v === "string" ? v : v != null ? String(v) : "";
         return (
-          <div className="space-y-1.5" key={slot.name}>
+          <div className="space-y-1.5" key={field.name}>
             <Label htmlFor={id}>
               {label}
-              {slot.required ? <RequiredMark /> : null}
+              {field.required ? <RequiredMark /> : null}
             </Label>
             {desc ? (
               <p className="text-xs text-muted-foreground">{desc}</p>
@@ -203,7 +203,7 @@ export function SlotValuesInputs({
             <Input
               disabled={disabled}
               id={id}
-              onChange={(e) => patchSlot(slot.name, e.target.value)}
+              onChange={(e) => patchField(field.name, e.target.value)}
               type="text"
               value={str}
             />

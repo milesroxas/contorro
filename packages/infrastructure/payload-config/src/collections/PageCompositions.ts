@@ -21,6 +21,7 @@ export const PageCompositions: CollectionConfig = {
     drafts: true,
   },
   admin: {
+    group: "Layout & library",
     useAsTitle: "title",
     defaultColumns: ["title", "slug", "_status", "updatedAt"],
     description:

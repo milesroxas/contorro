@@ -13,6 +13,10 @@ import * as migration_20260412_170000_pages_template_slot_values from "./2026041
 import * as migration_20260412_180000_backfill_visible_catalog_from_published_revisions from "./20260412_180000_backfill_visible_catalog_from_published_revisions";
 import * as migration_20260412_190000_builder_mirror_updated_at_from_page_compositions from "./20260412_190000_builder_mirror_updated_at_from_page_compositions";
 import * as migration_20260412_200000_drop_templates_collection from "./20260412_200000_drop_templates_collection";
+import * as migration_20260412_210000_editor_fields_terminology from "./20260412_210000_editor_fields_terminology";
+import * as migration_20260412_220000_pages_content_layout_slot_id from "./20260412_220000_pages_content_layout_slot_id";
+import * as migration_20260412_230000_backfill_builder_from_component_revisions from "./20260412_230000_backfill_builder_from_component_revisions";
+import * as migration_20260412_240000_components_collection_payload_folders from "./20260412_240000_components_collection_payload_folders";
 
 export const migrations = [
   {
@@ -89,5 +93,25 @@ export const migrations = [
     up: migration_20260412_200000_drop_templates_collection.up,
     down: migration_20260412_200000_drop_templates_collection.down,
     name: "20260412_200000_drop_templates_collection",
+  },
+  {
+    up: migration_20260412_210000_editor_fields_terminology.up,
+    down: migration_20260412_210000_editor_fields_terminology.down,
+    name: "20260412_210000_editor_fields_terminology",
+  },
+  {
+    up: migration_20260412_220000_pages_content_layout_slot_id.up,
+    down: migration_20260412_220000_pages_content_layout_slot_id.down,
+    name: "20260412_220000_pages_content_layout_slot_id",
+  },
+  {
+    up: migration_20260412_230000_backfill_builder_from_component_revisions.up,
+    down: migration_20260412_230000_backfill_builder_from_component_revisions.down,
+    name: "20260412_230000_backfill_builder_from_component_revisions",
+  },
+  {
+    up: migration_20260412_240000_components_collection_payload_folders.up,
+    down: migration_20260412_240000_components_collection_payload_folders.down,
+    name: "20260412_240000_components_collection_payload_folders",
   },
 ];

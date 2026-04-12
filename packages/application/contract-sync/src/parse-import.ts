@@ -1,18 +1,18 @@
 import {
-  type EditorSlotContract,
+  type EditorFieldsContract,
   type PropContract,
   PropContractSchema,
-  parseEditorSlotContract,
+  parseEditorFieldsContract,
 } from "@repo/contracts-zod";
 import { type Result, err, ok } from "@repo/kernel";
 
 export type ParseContractImportError = "VALIDATION_ERROR";
 
 /** Validates optional JSON bodies for POST …/contracts/components/:key/schema (Phase 5). */
-export function parsePropSlotContractImport(
+export function parsePropEditorFieldsImport(
   raw: unknown,
 ): Result<
-  { propContract?: PropContract; slotContract?: EditorSlotContract },
+  { propContract?: PropContract; editorFields?: EditorFieldsContract },
   ParseContractImportError
 > {
   if (typeof raw !== "object" || raw === null) {
@@ -20,7 +20,7 @@ export function parsePropSlotContractImport(
   }
   const o = raw as Record<string, unknown>;
   let propContract: PropContract | undefined;
-  let slotContract: EditorSlotContract | undefined;
+  let editorFields: EditorFieldsContract | undefined;
   if ("propContract" in o && o.propContract !== undefined) {
     const p = PropContractSchema.safeParse(o.propContract);
     if (!p.success) {
@@ -28,15 +28,16 @@ export function parsePropSlotContractImport(
     }
     propContract = p.data;
   }
-  if ("slotContract" in o && o.slotContract !== undefined) {
-    const s = parseEditorSlotContract(o.slotContract);
+  const rawEditor = o.editorFields ?? o.slotContract;
+  if (rawEditor !== undefined) {
+    const s = parseEditorFieldsContract(rawEditor);
     if (!s.ok) {
       return err("VALIDATION_ERROR");
     }
-    slotContract = s.data;
+    editorFields = s.data;
   }
-  if (propContract === undefined && slotContract === undefined) {
+  if (propContract === undefined && editorFields === undefined) {
     return err("VALIDATION_ERROR");
   }
-  return ok({ propContract, slotContract });
+  return ok({ propContract, editorFields });
 }

@@ -1,6 +1,8 @@
 import type { PageComposition } from "@repo/contracts-zod";
 import { type Result, err, ok } from "@repo/kernel";
 
+import { normalizedLayoutSlotId } from "../layout-slot.js";
+
 /**
  * Graph invariants beyond Zod: single root, parent/child agreement, style binding alignment.
  */
@@ -59,19 +61,37 @@ export function validatePageCompositionInvariants(
     }
   }
 
-  const slotNames = new Set<string>();
-  for (const node of Object.values(nodes)) {
-    const cb = node.contentBinding;
-    if (cb?.source === "slot" && cb.slot) {
-      if (cb.key !== cb.slot.name) {
+  const layoutSlotIds = new Map<string, string>();
+  for (const [id, node] of Object.entries(nodes)) {
+    if (node.definitionKey === "primitive.slot") {
+      if (node.childIds.length > 0) {
         return err(
-          `slot contentBinding key "${cb.key}" must match slot.name "${cb.slot.name}"`,
+          `layout slot node "${id}" must not contain builder children`,
         );
       }
-      if (slotNames.has(cb.slot.name)) {
-        return err(`duplicate slot name "${cb.slot.name}"`);
+      const sid = normalizedLayoutSlotId(node);
+      if (layoutSlotIds.has(sid)) {
+        return err(
+          `duplicate layout slot id "${sid}" (nodes "${layoutSlotIds.get(sid)}" and "${id}")`,
+        );
       }
-      slotNames.add(cb.slot.name);
+      layoutSlotIds.set(sid, id);
+    }
+  }
+
+  const editorFieldNames = new Set<string>();
+  for (const node of Object.values(nodes)) {
+    const cb = node.contentBinding;
+    if (cb?.source === "editor" && cb.editorField) {
+      if (cb.key !== cb.editorField.name) {
+        return err(
+          `editor contentBinding key "${cb.key}" must match editorField.name "${cb.editorField.name}"`,
+        );
+      }
+      if (editorFieldNames.has(cb.editorField.name)) {
+        return err(`duplicate editor field name "${cb.editorField.name}"`);
+      }
+      editorFieldNames.add(cb.editorField.name);
     }
   }
 

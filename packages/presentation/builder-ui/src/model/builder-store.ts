@@ -1,4 +1,4 @@
-import type { PageComposition, SlotDefinition } from "@repo/contracts-zod";
+import type { EditorFieldSpec, PageComposition } from "@repo/contracts-zod";
 import {
   addChildNode,
   moveNode as moveNodeInComposition,
@@ -31,13 +31,17 @@ export type BuilderStoreState = {
     parentId: string,
     definitionKey: string,
     insertIndex?: number,
+    libraryComponentKey?: string,
   ) => void;
   moveNode: (nodeId: string, targetParentId: string, index: number) => void;
   removeNode: (nodeId: string) => void;
   setTextContent: (nodeId: string, content: string) => void;
   patchNodeProps: (nodeId: string, patch: Record<string, unknown>) => void;
   setBackgroundToken: (nodeId: string, token: string) => void;
-  setNodeSlotBinding: (nodeId: string, slot: SlotDefinition | null) => void;
+  setNodeEditorFieldBinding: (
+    nodeId: string,
+    field: EditorFieldSpec | null,
+  ) => void;
   saveDraft: () => Promise<void>;
   publish: () => Promise<void>;
 };
@@ -75,7 +79,12 @@ export function createBuilderStore(compositionId: string) {
 
     selectNode: (id) => set({ selectedNodeId: id }),
 
-    addPrimitive: (parentId, definitionKey, insertIndex) => {
+    addPrimitive: (
+      parentId,
+      definitionKey,
+      insertIndex,
+      libraryComponentKey,
+    ) => {
       const { composition } = get();
       if (!composition) {
         return;
@@ -86,6 +95,7 @@ export function createBuilderStore(compositionId: string) {
         parentId,
         definitionKey,
         insertIndex,
+        libraryComponentKey !== undefined ? { libraryComponentKey } : undefined,
       );
       if (!next.ok) {
         return;
@@ -172,15 +182,15 @@ export function createBuilderStore(compositionId: string) {
       set({ composition: next.value, dirty: true });
     },
 
-    setNodeSlotBinding: (nodeId, slot) => {
+    setNodeEditorFieldBinding: (nodeId, field) => {
       const { composition } = get();
       if (!composition) {
         return;
       }
       const binding =
-        slot === null
+        field === null
           ? undefined
-          : { source: "slot" as const, key: slot.name, slot };
+          : { source: "editor" as const, key: field.name, editorField: field };
       const next = setNodeContentBinding(composition, nodeId, binding);
       if (!next.ok) {
         return;
