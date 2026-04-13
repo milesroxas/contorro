@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 /**
- * Phase 6 load test: concurrent POSTs to builder draft endpoint.
- * Requires GATEWAY_ORIGIN (e.g. http://localhost:3001), BUILDER_COOKIE (session), COMPOSITION_ID.
+ * Concurrent POSTs to canonical studio builder draft endpoint.
+ * Requires STUDIO_ORIGIN (e.g. http://localhost:3001), BUILDER_COOKIE (session), COMPOSITION_ID.
  * Run manually against a dev stack — not part of default CI.
  */
-const origin = process.env.GATEWAY_ORIGIN ?? "http://127.0.0.1:3001";
+const origin = process.env.STUDIO_ORIGIN ?? "http://127.0.0.1:3001";
 const cookie = process.env.BUILDER_COOKIE;
 const compositionId = process.env.COMPOSITION_ID;
 const concurrent = Number.parseInt(process.env.CONCURRENT ?? "50", 10);
 
 if (!cookie || !compositionId) {
   console.error(
-    "Set BUILDER_COOKIE and COMPOSITION_ID (and optionally GATEWAY_ORIGIN, CONCURRENT).",
+    "Set BUILDER_COOKIE and COMPOSITION_ID (and optionally STUDIO_ORIGIN, CONCURRENT).",
   );
   process.exit(1);
 }
@@ -31,11 +31,12 @@ const body = JSON.stringify({
     styleBindings: {},
   },
   ifMatchUpdatedAt: null,
+  intent: "draft",
 });
 
 async function one(i) {
   const res = await fetch(
-    `${origin}/api/gateway/builder/compositions/${encodeURIComponent(compositionId)}/draft`,
+    `${origin}/api/builder/compositions/${encodeURIComponent(compositionId)}`,
     {
       method: "POST",
       headers: {

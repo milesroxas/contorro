@@ -86,36 +86,37 @@ export async function seedBridgePublicPage(): Promise<void> {
   await payload.update({
     collection: "components",
     id: def.id,
-    data: {},
+    data: { _status: "published" },
     draft: false,
     overrideAccess: true,
   });
 
-  const draftPage = await payload.create({
+  const publishedComponent = await payload.findByID({
+    collection: "components",
+    id: def.id,
+    draft: false,
+    overrideAccess: true,
+  });
+
+  await payload.create({
     collection: "pages",
     data: {
       title: "E2E bridge public",
       slug: BRIDGE_E2E_PAGE_SLUG,
+      _status: "published",
       contentSlots: [
         {
           slotId: "main",
           blocks: [
             {
-              componentDefinition: def.id,
+              componentDefinition: publishedComponent.id,
               editorFieldValues: { headline: "Hello World" },
             },
           ],
         },
       ],
     },
-    draft: true,
-    overrideAccess: true,
-  });
-
-  await payload.update({
-    collection: "pages",
-    id: draftPage.id,
-    data: { _status: "published" },
+    draft: false,
     overrideAccess: true,
   });
 }

@@ -24,13 +24,13 @@ import {
 import type { ArrayFieldClientComponent, FormState } from "payload";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { contentSlotsArrayFromDocumentLike } from "@/lib/page-content-slots-form.js";
+import { contentSlotsArrayFromDocumentLike } from "@/lib/page-content-slots-form";
 import {
   extractPageCompositionId,
   pageCompositionFromDocumentData,
   pageCompositionLooseFromFields,
   parseEmbeddedPageComposition,
-} from "./page-composition-form-state.js";
+} from "./page-composition-form-state";
 
 type FormFieldsTuple = [FormState, (action: never) => void];
 

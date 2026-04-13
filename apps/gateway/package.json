@@ -22,19 +22,15 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
-    "@repo/application-builder": "workspace:*",
-    "@repo/application-publish-flow": "workspace:*",
     "@repo/application-contract-sync": "workspace:*",
     "@repo/config-env": "workspace:*",
-    "@repo/contracts-zod": "workspace:*",
     "@repo/domains-composition": "workspace:*",
     "@repo/infrastructure-persistence": "workspace:*",
     "@repo/kernel": "workspace:*",
     "dotenv": "16.4.7",
     "hono": "^4.6.0",
     "jose": "^6.0.0",
-    "pg": "^8.13.0",
-    "zod": "^4.0.0"
+    "pg": "^8.13.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

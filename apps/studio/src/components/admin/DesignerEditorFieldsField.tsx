@@ -21,7 +21,7 @@ import {
   extractDefinitionId,
   normalizeEditorFieldValuesPath,
   resolveComponentDefinitionRef,
-} from "@/lib/designer-editor-fields-resolution.js";
+} from "@/lib/designer-editor-fields-resolution";
 
 import { EditorFieldsInputs } from "./EditorFieldsInputs";
 
