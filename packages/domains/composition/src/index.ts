@@ -4,6 +4,13 @@ export type {
   LoadedComposition,
 } from "./ports/composition-repository.js";
 export { defaultEmptyPageComposition } from "./default-empty-page-composition.js";
+export {
+  builderNewCompositionSessionId,
+  isBuilderNewComponentSessionId,
+  isBuilderNewCompositionSessionId,
+  parseBuilderNewCompositionSessionId,
+  type NewBuilderCompositionKind,
+} from "./builder-composition-session.js";
 export { clonePageCompositionWithNewIds } from "./graph/clone-composition.js";
 export { expandLibraryComponentNodes } from "./graph/expand-library-component-nodes.js";
 export {

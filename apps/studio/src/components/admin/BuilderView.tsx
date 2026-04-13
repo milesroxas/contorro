@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth, useConfig } from "@payloadcms/ui";
+import { isBuilderNewComponentSessionId } from "@repo/domains-composition";
 import { isBuilderComponentRowId } from "@repo/infrastructure-payload-config/builder-row-id";
 import { BuilderApp } from "@repo/presentation-builder-ui";
 import { useSearchParams } from "next/navigation";
@@ -16,7 +17,7 @@ function BuilderViewInner() {
   const adminRoute = config.routes?.admin ?? "/admin";
   const isComponentComposition =
     isBuilderComponentRowId(compositionId) ||
-    compositionId.startsWith("new:component:");
+    isBuilderNewComponentSessionId(compositionId);
 
   const role =
     user && typeof user === "object" && "role" in user

@@ -6,7 +6,10 @@ import {
 import { type TokenMeta, compileTokenSet } from "@repo/config-tailwind";
 import type { PageComposition } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
-import { defaultEmptyPageComposition } from "@repo/domains-composition";
+import {
+  defaultEmptyPageComposition,
+  parseBuilderNewCompositionSessionId,
+} from "@repo/domains-composition";
 import {
   componentIdFromBuilderRowId,
   isBuilderComponentRowId,
@@ -17,18 +20,6 @@ import { getPayload } from "payload";
 import { payloadBuilderMutationRepository } from "@/app/api/builder/_lib/payload-builder-mutation-repository";
 import { loadPublishedTokenSetForPreview } from "@/lib/load-published-token-set";
 import config from "@/payload.config";
-
-function parseNewCompositionSessionId(
-  value: string,
-): { kind: "template" | "component" } | null {
-  if (value.startsWith("new:template:")) {
-    return { kind: "template" };
-  }
-  if (value.startsWith("new:component:")) {
-    return { kind: "component" };
-  }
-  return null;
-}
 
 async function designTokensForBuilder(payload: Payload): Promise<{
   tokenMetadata: TokenMeta[];
@@ -86,7 +77,7 @@ export async function GET(
     );
   }
 
-  const newSession = parseNewCompositionSessionId(id);
+  const newSession = parseBuilderNewCompositionSessionId(id);
   if (newSession) {
     const designTokens = await designTokensForBuilder(payload);
     return Response.json({
@@ -289,7 +280,7 @@ export async function POST(
   const ifMatchUpdatedAt = matchRaw as string | null | undefined;
   const nextName = typeof body.name === "string" ? body.name.trim() : "";
 
-  const newSession = parseNewCompositionSessionId(id);
+  const newSession = parseBuilderNewCompositionSessionId(id);
   if (newSession) {
     const repo = payloadBuilderMutationRepository(payload, user);
     const created = await createCompositionEntryCommand(repo, {

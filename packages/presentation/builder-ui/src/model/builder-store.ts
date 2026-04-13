@@ -6,6 +6,7 @@ import type {
 } from "@repo/contracts-zod";
 import {
   addChildNode,
+  isBuilderNewCompositionSessionId,
   moveNode as moveNodeInComposition,
   removeSubtree,
   setNodeContentBinding,
@@ -328,7 +329,9 @@ export function createBuilderStore(compositionId: string) {
       try {
         const saved = await postDraft(id, {
           composition: prep.data,
-          ifMatchUpdatedAt: id.startsWith("new:") ? null : updatedAt,
+          ifMatchUpdatedAt: isBuilderNewCompositionSessionId(id)
+            ? null
+            : updatedAt,
           name: get().name,
         });
         set({ compositionId: saved.id, updatedAt: saved.updatedAt, dirty: false });
@@ -360,7 +363,9 @@ export function createBuilderStore(compositionId: string) {
       try {
         const saved = await postPublish(id, {
           composition: prep.data,
-          ifMatchUpdatedAt: id.startsWith("new:") ? null : updatedAt,
+          ifMatchUpdatedAt: isBuilderNewCompositionSessionId(id)
+            ? null
+            : updatedAt,
           name: get().name,
         });
         set({ compositionId: saved.id, updatedAt: saved.updatedAt, dirty: false });
@@ -384,7 +389,7 @@ export function createBuilderStore(compositionId: string) {
       if (!trimmed || renaming || trimmed === name) {
         return;
       }
-      if (id.startsWith("new:")) {
+      if (isBuilderNewCompositionSessionId(id)) {
         set({ name: trimmed });
         return;
       }

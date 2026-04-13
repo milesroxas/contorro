@@ -1,4 +1,5 @@
 import { getPayload } from "payload";
+import { builderNewCompositionSessionId } from "@repo/domains-composition";
 
 import config from "@/payload.config";
 
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
   const body = raw && typeof raw === "object" ? (raw as CreateBody) : {};
   const unsafeKind = typeof body.kind === "string" ? body.kind.trim() : "";
   const kind = unsafeKind === "component" ? "component" : "template";
-  const tempId = `new:${kind}:${crypto.randomUUID()}`;
+  const tempId = builderNewCompositionSessionId(kind);
 
   return Response.json({
     data: {

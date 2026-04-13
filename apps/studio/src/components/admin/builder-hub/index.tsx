@@ -9,7 +9,10 @@ import {
   IconRefresh,
   IconSearch,
 } from "@tabler/icons-react";
-import { builderRowIdForComponent } from "@repo/infrastructure-payload-config/builder-row-id";
+import {
+  builderRowIdForComponent,
+} from "@repo/infrastructure-payload-config/builder-row-id";
+import { builderNewCompositionSessionId } from "@repo/domains-composition";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatAdminURL } from "payload/shared";
@@ -62,7 +65,7 @@ export default function BuilderHub() {
   const [componentSearch, setComponentSearch] = useState("");
 
   const createTemplateAndOpenBuilder = useCallback(() => {
-    const tempId = `new:template:${crypto.randomUUID()}`;
+    const tempId = builderNewCompositionSessionId("template");
     const builderHref = formatAdminURL({
       adminRoute,
       path: `/builder?composition=${encodeURIComponent(tempId)}`,
@@ -72,7 +75,7 @@ export default function BuilderHub() {
   }, [adminRoute, router]);
 
   const createComponentAndOpenBuilder = useCallback(() => {
-    const tempId = `new:component:${crypto.randomUUID()}`;
+    const tempId = builderNewCompositionSessionId("component");
     const builderHref = formatAdminURL({
       adminRoute,
       path: `/builder?composition=${encodeURIComponent(tempId)}`,
