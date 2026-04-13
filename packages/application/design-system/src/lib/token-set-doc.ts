@@ -12,6 +12,7 @@ export type DesignTokenSetPayloadDoc = {
   tokens?: Array<{
     id?: string | null;
     key?: string | null;
+    mode?: "light" | "dark" | string | null;
     category?: string | null;
     resolvedValue?: string | null;
   }> | null;
@@ -22,11 +23,15 @@ export function toDesignTokenSetAggregate(
   doc: DesignTokenSetPayloadDoc,
 ): DesignTokenSet {
   const tokens =
-    doc.tokens?.map((t) => ({
-      key: String(t.key ?? ""),
-      category: String(t.category ?? ""),
-      resolvedValue: String(t.resolvedValue ?? ""),
-    })) ?? [];
+    doc.tokens?.map((t) => {
+      const mode: "light" | "dark" = t.mode === "dark" ? "dark" : "light";
+      return {
+        key: String(t.key ?? ""),
+        mode,
+        category: String(t.category ?? ""),
+        resolvedValue: String(t.resolvedValue ?? ""),
+      };
+    }) ?? [];
 
   return createDesignTokenSet({
     id: doc.id != null ? String(doc.id) : "",

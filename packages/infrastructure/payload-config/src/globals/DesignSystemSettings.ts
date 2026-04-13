@@ -25,5 +25,21 @@ export const DesignSystemSettings: GlobalConfig = {
       name: "activeBrandKey",
       type: "text",
     },
+    {
+      name: "activeColorMode",
+      type: "select",
+      required: true,
+      defaultValue: "light",
+      options: [
+        {
+          label: "Light",
+          value: "light",
+        },
+        {
+          label: "Dark",
+          value: "dark",
+        },
+      ],
+    },
   ],
 };

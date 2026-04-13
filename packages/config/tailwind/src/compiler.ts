@@ -24,25 +24,63 @@ export function tokenKeyToCssVar(key: string): string {
 export function compileTokenSet(
   tokenSet: Pick<DesignTokenSet, "tokens">,
 ): CompiledTokenOutput {
-  const cssLines: string[] = [];
+  const themeLines: string[] = [];
+  const lightLines: string[] = [];
+  const darkLines: string[] = [];
   const meta: TokenMeta[] = [];
+  const seenKeys = new Set<string>();
 
   for (const token of tokenSet.tokens) {
-    appendTokenLines(token, cssLines, meta);
+    appendTokenLines(token, themeLines, lightLines, darkLines, meta, seenKeys);
+  }
+
+  const blocks = [`@theme {\n${themeLines.join("\n")}\n}`];
+  if (lightLines.length > 0) {
+    blocks.push(`:root {\n${lightLines.join("\n")}\n}`);
+  }
+  if (darkLines.length > 0) {
+    blocks.push(`.dark {\n${darkLines.join("\n")}\n}`);
   }
 
   return {
-    cssVariables: `@theme {\n${cssLines.join("\n")}\n}`,
+    cssVariables: blocks.join("\n\n"),
     tokenMetadata: meta,
   };
 }
 
 function appendTokenLines(
   token: DesignToken,
-  cssLines: string[],
+  themeLines: string[],
+  lightLines: string[],
+  darkLines: string[],
   meta: TokenMeta[],
+  seenKeys: Set<string>,
 ): void {
-  const varName = tokenKeyToCssVar(token.key);
-  cssLines.push(`  ${varName}: ${token.resolvedValue};`);
-  meta.push({ key: token.key, cssVar: varName, category: token.category });
+  const baseVarName = tokenKeyToCssVar(token.key);
+  const mode = token.mode === "dark" ? "dark" : "light";
+  const modeVarName = `${baseVarName}--${mode}`;
+
+  if (!seenKeys.has(token.key)) {
+    themeLines.push(
+      `  ${baseVarName}: var(${baseVarName}--light, var(${baseVarName}--dark));`,
+    );
+    lightLines.push(
+      `  ${baseVarName}: var(${baseVarName}--light, var(${baseVarName}--dark));`,
+    );
+    darkLines.push(
+      `  ${baseVarName}: var(${baseVarName}--dark, var(${baseVarName}--light));`,
+    );
+    meta.push({
+      key: token.key,
+      cssVar: baseVarName,
+      category: token.category,
+    });
+    seenKeys.add(token.key);
+  }
+
+  if (mode === "dark") {
+    darkLines.push(`  ${modeVarName}: ${token.resolvedValue};`);
+    return;
+  }
+  lightLines.push(`  ${modeVarName}: ${token.resolvedValue};`);
 }

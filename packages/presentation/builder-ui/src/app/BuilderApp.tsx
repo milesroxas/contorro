@@ -26,6 +26,25 @@ import { computeInsertIndex } from "../lib/compute-insert-index.js";
 import { getPrimitiveDisplay } from "../lib/primitive-display.js";
 import { createBuilderStore } from "../model/builder-store.js";
 
+function runtimeCssVariables(cssVariables: string): string {
+  const trimmed = cssVariables.trim();
+  if (trimmed.length === 0) {
+    return "";
+  }
+  // Builder runtime cannot consume Tailwind's @theme directive directly.
+  // Convert each @theme block to :root.
+  const withRuntimeTheme = cssVariables.replace(
+    /@theme\s*\{([\s\S]*?)\}/g,
+    (_match, body) => `:root {${body}\n}`,
+  );
+  // Scope dark-mode token override to builder-only state so parent admin `.dark`
+  // does not force canvas tokens into dark mode.
+  return withRuntimeTheme.replace(
+    /(^|\n)\s*\.dark\s*\{/g,
+    '$1[data-builder-theme="dark"] {',
+  );
+}
+
 function BuilderDragPreview({
   activeNodeId,
   activePaletteKey,
@@ -87,6 +106,10 @@ export function BuilderApp({
   const composition = useBuilder((s) => s.composition);
   const tokenMetadata = useBuilder((s) => s.tokenMetadata);
   const cssVariables = useBuilder((s) => s.cssVariables);
+  const runtimeTokenCss = useMemo(
+    () => runtimeCssVariables(cssVariables),
+    [cssVariables],
+  );
   const name = useBuilder((s) => s.name);
   const selectedNodeId = useBuilder((s) => s.selectedNodeId);
   const dirty = useBuilder((s) => s.dirty);
@@ -277,6 +300,7 @@ export function BuilderApp({
           "flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-sm",
           theme === "dark" && "dark",
         )}
+        data-builder-theme={theme}
         data-testid="builder-app"
       >
         <DraftSaveBar
@@ -324,7 +348,7 @@ export function BuilderApp({
             </BuilderPanel>
           </div>
           <div className="flex min-h-0 min-w-0 flex-col">
-            {cssVariables ? <style>{cssVariables}</style> : null}
+            {runtimeTokenCss ? <style>{runtimeTokenCss}</style> : null}
             <BuilderCanvas
               composition={composition}
               onCanvasBackground={() => selectNode(null)}

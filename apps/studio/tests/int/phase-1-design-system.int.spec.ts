@@ -15,13 +15,22 @@ describe("Phase 1 test gate — token compiler", () => {
       tokens: [
         {
           key: "color.surface.primary",
+          mode: "light",
           category: "color",
           resolvedValue: "#0f172a",
+        },
+        {
+          key: "color.surface.primary",
+          mode: "dark",
+          category: "color",
+          resolvedValue: "#020617",
         },
       ],
     });
     expect(compiled.cssVariables).toMatch(/@theme/);
-    expect(compiled.cssVariables).toContain("--color-surface-primary");
+    expect(compiled.cssVariables).toContain("--color-surface-primary--light");
+    expect(compiled.cssVariables).toContain("--color-surface-primary--dark");
+    expect(compiled.cssVariables).toContain(".dark");
     expect(compiled.tokenMetadata[0]?.key).toBe("color.surface.primary");
   });
 });
@@ -44,6 +53,7 @@ describe("Phase 1 test gate — Postgres + Payload", () => {
           tokens: [
             {
               key: "NOT_A_VALID_KEY",
+              mode: "light",
               category: "color",
               resolvedValue: "#ffffff",
             },
@@ -80,6 +90,7 @@ describe("Phase 1 test gate — Postgres + Payload", () => {
           tokens: [
             {
               key: "color.surface.primary",
+              mode: "light",
               category: "color",
               resolvedValue: "#111111",
             },

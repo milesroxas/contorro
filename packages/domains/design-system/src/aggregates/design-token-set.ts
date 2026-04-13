@@ -33,10 +33,12 @@ export function validateTokensForSave(
     if (!isValidTokenKey(t.key)) {
       return err("INVALID_TOKEN_KEY");
     }
-    if (seen.has(t.key)) {
+    const mode = t.mode === "dark" ? "dark" : "light";
+    const modeKey = `${mode}:${t.key}`;
+    if (seen.has(modeKey)) {
       return err("DUPLICATE_TOKEN_KEY");
     }
-    seen.add(t.key);
+    seen.add(modeKey);
   }
   return ok(undefined);
 }
@@ -51,8 +53,14 @@ export function assertTokenKeyStability(
   if (!previous?.hasBeenPublished) {
     return ok(undefined);
   }
-  const prevKeys = new Set(previous.tokens.map((t) => t.key));
-  const nextKeys = new Set(next.tokens.map((t) => t.key));
+  const prevKeys = new Set(
+    previous.tokens.map(
+      (t) => `${t.mode === "dark" ? "dark" : "light"}:${t.key}`,
+    ),
+  );
+  const nextKeys = new Set(
+    next.tokens.map((t) => `${t.mode === "dark" ? "dark" : "light"}:${t.key}`),
+  );
   if (prevKeys.size !== nextKeys.size) {
     return err("TOKEN_KEY_IMMUTABLE");
   }

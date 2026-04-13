@@ -17,7 +17,7 @@ import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import type { ReactNode } from "react";
 
-import { loadPublishedTokenSetForPreview } from "@/lib/load-published-token-set";
+import { loadDesignSystemRuntimeForPreview } from "@/lib/load-published-token-set";
 import { renderDesignerContentBlocksBySlot } from "@/lib/render-designer-content";
 import { resolveImageEditorFieldValuesForRender } from "@/lib/resolve-editor-field-image-values";
 import config from "@/payload.config";
@@ -93,13 +93,18 @@ export default async function SitePage({ params }: Props) {
     notFound();
   }
 
-  const tokenDoc = await loadPublishedTokenSetForPreview(payload);
+  const runtime = await loadDesignSystemRuntimeForPreview(payload);
+  const tokenDoc = runtime.tokenSet;
   const tokens = tokenDoc
-    ? tokenDoc.tokens.map((t) => ({
-        key: t.key,
-        category: t.category,
-        resolvedValue: t.resolvedValue,
-      }))
+    ? tokenDoc.tokens.map((t) => {
+        const mode: "light" | "dark" = t.mode === "dark" ? "dark" : "light";
+        return {
+          key: t.key,
+          mode,
+          category: t.category,
+          resolvedValue: t.resolvedValue,
+        };
+      })
     : [];
 
   const compiled = compileTokenSet({ tokens });
@@ -178,7 +183,9 @@ export default async function SitePage({ params }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div
+      className={`min-h-screen bg-background text-foreground ${runtime.activeColorMode === "dark" ? "dark" : ""}`}
+    >
       <style>{compiled.cssVariables}</style>
       <article className="mx-auto max-w-5xl p-6">
         {hasBlocks ? (

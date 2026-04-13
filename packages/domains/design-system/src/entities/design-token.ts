@@ -4,6 +4,7 @@
  */
 export type DesignToken = {
   key: string;
+  mode?: "light" | "dark";
   category: string;
   /** Canonical CSS-ready value (e.g. hex color, length with unit). */
   resolvedValue: string;

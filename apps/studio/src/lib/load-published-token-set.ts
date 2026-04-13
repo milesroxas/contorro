@@ -1,17 +1,32 @@
 import type { DesignTokenSet as PayloadDesignTokenSet } from "@/payload-types";
 import type { Payload } from "payload";
 
+type DesignSystemColorMode = "light" | "dark";
+
+export type DesignSystemRuntime = {
+  tokenSet: PayloadDesignTokenSet | null;
+  activeColorMode: DesignSystemColorMode;
+};
+
 /**
  * Resolves a published token set for the design-system preview: global default, else first published set.
  */
 export async function loadPublishedTokenSetForPreview(
   payload: Payload,
 ): Promise<PayloadDesignTokenSet | null> {
+  const runtime = await loadDesignSystemRuntimeForPreview(payload);
+  return runtime.tokenSet;
+}
+
+export async function loadDesignSystemRuntimeForPreview(
+  payload: Payload,
+): Promise<DesignSystemRuntime> {
   const global = await payload.findGlobal({
     slug: "design-system-settings",
     depth: 1,
     overrideAccess: true,
   });
+  const activeColorMode = global.activeColorMode === "dark" ? "dark" : "light";
 
   const rel = global.defaultTokenSet;
   if (
@@ -22,7 +37,10 @@ export async function loadPublishedTokenSetForPreview(
   ) {
     const doc = rel as PayloadDesignTokenSet;
     if (doc._status === "published" && doc.tokens.length > 0) {
-      return doc;
+      return {
+        tokenSet: doc,
+        activeColorMode,
+      };
     }
   }
 
@@ -40,8 +58,14 @@ export async function loadPublishedTokenSetForPreview(
 
   const doc = found.docs[0];
   if (!doc || !doc.tokens?.length) {
-    return null;
+    return {
+      tokenSet: null,
+      activeColorMode,
+    };
   }
 
-  return doc as PayloadDesignTokenSet;
+  return {
+    tokenSet: doc as PayloadDesignTokenSet,
+    activeColorMode,
+  };
 }

@@ -19,22 +19,27 @@ import type { Payload } from "payload";
 import { getPayload } from "payload";
 
 import { payloadBuilderMutationRepository } from "@/app/api/builder/_lib/payload-builder-mutation-repository";
-import { loadPublishedTokenSetForPreview } from "@/lib/load-published-token-set";
+import { loadDesignSystemRuntimeForPreview } from "@/lib/load-published-token-set";
 import config from "@/payload.config";
 
 async function designTokensForBuilder(payload: Payload): Promise<{
   tokenMetadata: TokenMeta[];
   cssVariables: string;
 }> {
-  const doc = await loadPublishedTokenSetForPreview(payload);
+  const runtime = await loadDesignSystemRuntimeForPreview(payload);
+  const doc = runtime.tokenSet;
   if (!doc?.tokens?.length) {
     return { tokenMetadata: [], cssVariables: "" };
   }
-  const tokens = doc.tokens.map((t) => ({
-    key: t.key,
-    category: t.category,
-    resolvedValue: t.resolvedValue,
-  }));
+  const tokens = doc.tokens.map((t) => {
+    const mode: "light" | "dark" = t.mode === "dark" ? "dark" : "light";
+    return {
+      key: t.key,
+      mode,
+      category: t.category,
+      resolvedValue: t.resolvedValue,
+    };
+  });
   const compiled = compileTokenSet({ tokens });
   return {
     tokenMetadata: compiled.tokenMetadata,

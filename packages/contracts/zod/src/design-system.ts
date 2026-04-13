@@ -17,10 +17,13 @@ export const TOKEN_CATEGORY_SCHEMA = z.enum([
 ]);
 
 export type TokenCategory = z.infer<typeof TOKEN_CATEGORY_SCHEMA>;
+export const TOKEN_MODE_SCHEMA = z.enum(["light", "dark"]);
+export type TokenMode = z.infer<typeof TOKEN_MODE_SCHEMA>;
 
 /** Spec §5.3 — key shape `{category}.{name}` or `{category}.{scale}.{name}`. */
 export const DesignTokenSchema = z.object({
   key: z.string().regex(/^[a-z]+(\.[a-z0-9]+)+$/),
+  mode: TOKEN_MODE_SCHEMA.default("light"),
   category: TOKEN_CATEGORY_SCHEMA,
   resolvedValue: z.string().min(1),
 });

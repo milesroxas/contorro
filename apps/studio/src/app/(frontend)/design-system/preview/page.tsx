@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { loadPublishedTokenSetForPreview } from "@/lib/load-published-token-set";
+import { loadDesignSystemRuntimeForPreview } from "@/lib/load-published-token-set";
 import config from "@/payload.config";
 import { compileTokenSet } from "@repo/config-tailwind";
 
@@ -24,7 +24,8 @@ export const metadata = {
 export default async function DesignSystemPreviewPage() {
   const payloadConfig = await config;
   const payload = await getPayload({ config: payloadConfig });
-  const doc = await loadPublishedTokenSetForPreview(payload);
+  const runtime = await loadDesignSystemRuntimeForPreview(payload);
+  const doc = runtime.tokenSet;
 
   if (!doc) {
     return (
@@ -53,17 +54,23 @@ export default async function DesignSystemPreviewPage() {
     );
   }
 
-  const tokens = doc.tokens.map((t) => ({
-    key: t.key,
-    category: t.category,
-    resolvedValue: t.resolvedValue,
-  }));
+  const tokens = doc.tokens.map((t) => {
+    const mode: "light" | "dark" = t.mode === "dark" ? "dark" : "light";
+    return {
+      key: t.key,
+      mode,
+      category: t.category,
+      resolvedValue: t.resolvedValue,
+    };
+  });
 
   const compiled = compileTokenSet({ tokens });
   const primarySurface = tokens.find((t) => t.key === "color.surface.primary");
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 p-8 font-sans">
+    <div
+      className={`mx-auto max-w-4xl space-y-8 p-8 font-sans ${runtime.activeColorMode === "dark" ? "dark" : ""}`}
+    >
       <div>
         <h1 className="font-heading text-2xl font-semibold tracking-tight">
           Design token preview
@@ -74,6 +81,10 @@ export default async function DesignSystemPreviewPage() {
           <code className="rounded bg-muted px-1 py-0.5 text-foreground">
             @repo/config-tailwind
           </code>
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Active mode:{" "}
+          <strong className="text-foreground">{runtime.activeColorMode}</strong>
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">

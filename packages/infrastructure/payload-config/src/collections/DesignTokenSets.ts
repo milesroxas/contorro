@@ -78,6 +78,22 @@ export const DesignTokenSets: CollectionConfig = {
           options: [...tokenCategoryFieldOptions],
         },
         {
+          name: "mode",
+          type: "select",
+          required: true,
+          defaultValue: "light",
+          options: [
+            {
+              label: "Light",
+              value: "light",
+            },
+            {
+              label: "Dark",
+              value: "dark",
+            },
+          ],
+        },
+        {
           name: "resolvedValue",
           type: "text",
           required: true,

@@ -35,16 +35,19 @@ export function createDesignTokenSetBeforeValidateHandler(): CollectionBeforeVal
       for (const row of tokens) {
         const parsed = DesignTokenSchema.safeParse({
           key: row.key,
+          mode: row.mode,
           category: row.category,
           resolvedValue: row.resolvedValue,
         });
         if (!parsed.success) {
           throw new APIError("Invalid design token row", 400);
         }
+        row.mode = parsed.data.mode;
       }
       const domainCheck = validateTokensForSave(
         tokens.map((t) => ({
           key: String(t.key),
+          mode: t.mode === "dark" ? "dark" : "light",
           category: String(t.category),
           resolvedValue: String(t.resolvedValue),
         })),

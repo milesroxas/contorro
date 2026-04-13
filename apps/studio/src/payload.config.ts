@@ -81,7 +81,10 @@ export default buildConfig({
     },
     components: {
       providers: ["/components/admin/PayloadAdminTheme"],
-      afterNavLinks: ["/components/admin/BuilderNavLink"],
+      afterNavLinks: [
+        "/components/admin/BuilderNavLink",
+        "/components/admin/DesignSystemNavLink",
+      ],
       beforeDashboard: [
         "/components/admin/DesignSystemPreviewCallout",
         "/components/admin/PageCompositionOpenBuilder",
@@ -90,6 +93,10 @@ export default buildConfig({
         builder: {
           Component: "/components/admin/BuilderView",
           path: "/builder",
+        },
+        designSystemBuilder: {
+          Component: "/components/admin/DesignSystemBuilderView",
+          path: "/design-system-builder",
         },
       },
     },

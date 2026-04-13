@@ -407,6 +407,7 @@ export interface DesignTokenSet {
       | 'transition'
       | 'breakpoint'
       | 'container';
+    mode: 'light' | 'dark';
     resolvedValue: string;
     id?: string | null;
   }[];
@@ -683,6 +684,7 @@ export interface DesignTokenSetsSelect<T extends boolean = true> {
     | {
         key?: T;
         category?: T;
+        mode?: T;
         resolvedValue?: T;
         id?: T;
       };
@@ -831,6 +833,7 @@ export interface DesignSystemSetting {
   id: number;
   defaultTokenSet?: (number | null) | DesignTokenSet;
   activeBrandKey?: string | null;
+  activeColorMode: 'light' | 'dark';
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -841,6 +844,7 @@ export interface DesignSystemSetting {
 export interface DesignSystemSettingsSelect<T extends boolean = true> {
   defaultTokenSet?: T;
   activeBrandKey?: T;
+  activeColorMode?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
