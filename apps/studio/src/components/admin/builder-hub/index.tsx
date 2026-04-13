@@ -4,7 +4,6 @@ import { useConfig } from "@payloadcms/ui";
 import {
   IconExternalLink,
   IconLayout,
-  IconLoader2,
   IconPlus,
   IconPuzzle,
   IconRefresh,
@@ -61,91 +60,26 @@ export default function BuilderHub() {
   );
   const [templateSearch, setTemplateSearch] = useState("");
   const [componentSearch, setComponentSearch] = useState("");
-  const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
-  const [createTemplateError, setCreateTemplateError] = useState("");
-  const [isCreatingComponent, setIsCreatingComponent] = useState(false);
-  const [createComponentError, setCreateComponentError] = useState("");
 
-  const createTemplateAndOpenBuilder = useCallback(async () => {
-    if (isCreatingTemplate) return;
-    setCreateTemplateError("");
-    setIsCreatingTemplate(true);
+  const createTemplateAndOpenBuilder = useCallback(() => {
+    const tempId = `new:template:${crypto.randomUUID()}`;
+    const builderHref = formatAdminURL({
+      adminRoute,
+      path: `/builder?composition=${encodeURIComponent(tempId)}`,
+      relative: true,
+    });
+    router.push(builderHref);
+  }, [adminRoute, router]);
 
-    try {
-      const res = await fetch("/api/builder/compositions", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "Untitled page template" }),
-      });
-
-      if (!res.ok) {
-        setCreateTemplateError("Could not create template. Try again.");
-        return;
-      }
-
-      const json = (await res.json()) as { data?: { id?: string } };
-      const id = json.data?.id;
-
-      if (!id) {
-        setCreateTemplateError("Could not create template. Try again.");
-        return;
-      }
-
-      const builderHref = formatAdminURL({
-        adminRoute,
-        path: `/builder?composition=${encodeURIComponent(id)}`,
-        relative: true,
-      });
-      router.push(builderHref);
-    } catch {
-      setCreateTemplateError("Could not create template. Try again.");
-    } finally {
-      setIsCreatingTemplate(false);
-    }
-  }, [adminRoute, isCreatingTemplate, router]);
-
-  const createComponentAndOpenBuilder = useCallback(async () => {
-    if (isCreatingComponent) return;
-    setCreateComponentError("");
-    setIsCreatingComponent(true);
-
-    try {
-      const res = await fetch("/api/builder/compositions", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          kind: "component",
-          title: "Untitled component",
-        }),
-      });
-
-      if (!res.ok) {
-        setCreateComponentError("Could not create component. Try again.");
-        return;
-      }
-
-      const json = (await res.json()) as { data?: { id?: string } };
-      const id = json.data?.id;
-
-      if (!id) {
-        setCreateComponentError("Could not create component. Try again.");
-        return;
-      }
-
-      const builderHref = formatAdminURL({
-        adminRoute,
-        path: `/builder?composition=${encodeURIComponent(id)}`,
-        relative: true,
-      });
-      router.push(builderHref);
-    } catch {
-      setCreateComponentError("Could not create component. Try again.");
-    } finally {
-      setIsCreatingComponent(false);
-    }
-  }, [adminRoute, isCreatingComponent, router]);
+  const createComponentAndOpenBuilder = useCallback(() => {
+    const tempId = `new:component:${crypto.randomUUID()}`;
+    const builderHref = formatAdminURL({
+      adminRoute,
+      path: `/builder?composition=${encodeURIComponent(tempId)}`,
+      relative: true,
+    });
+    router.push(builderHref);
+  }, [adminRoute, router]);
 
   const fetchDashboardData = useCallback(async (signal: AbortSignal) => {
     setLoadState("loading");
@@ -289,24 +223,14 @@ export default function BuilderHub() {
           <CardContent className="space-y-3">
             <Button
               className="w-full gap-2 sm:w-auto"
-              disabled={isCreatingTemplate}
               onClick={() => {
-                void createTemplateAndOpenBuilder();
+                createTemplateAndOpenBuilder();
               }}
               type="button"
             >
-              {isCreatingTemplate ? (
-                <IconLoader2 className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <IconPlus className="size-4" aria-hidden />
-              )}
-              {isCreatingTemplate ? "Creating..." : "Create template"}
+              <IconPlus className="size-4" aria-hidden />
+              Create template
             </Button>
-            {createTemplateError ? (
-              <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {createTemplateError}
-              </p>
-            ) : null}
             <Button asChild variant="ghost">
               <Link href={templateCollectionHref} prefetch={false}>
                 Open templates collection
@@ -328,24 +252,14 @@ export default function BuilderHub() {
           <CardContent className="space-y-3">
             <Button
               className="w-full gap-2 sm:w-auto"
-              disabled={isCreatingComponent}
               onClick={() => {
-                void createComponentAndOpenBuilder();
+                createComponentAndOpenBuilder();
               }}
               type="button"
             >
-              {isCreatingComponent ? (
-                <IconLoader2 className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <IconPlus className="size-4" aria-hidden />
-              )}
-              {isCreatingComponent ? "Creating..." : "Create component"}
+              <IconPlus className="size-4" aria-hidden />
+              Create component
             </Button>
-            {createComponentError ? (
-              <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {createComponentError}
-              </p>
-            ) : null}
             <Button asChild variant="ghost">
               <Link href={componentCollectionHref} prefetch={false}>
                 Open components collection

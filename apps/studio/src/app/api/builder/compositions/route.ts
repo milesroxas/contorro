@@ -1,12 +1,9 @@
-import { createCompositionEntryCommand } from "@repo/application-builder";
 import { getPayload } from "payload";
 
-import { payloadBuilderMutationRepository } from "@/app/api/builder/_lib/payload-builder-mutation-repository";
 import config from "@/payload.config";
 
 type CreateBody = {
   kind?: unknown;
-  title?: unknown;
 };
 
 export async function POST(request: Request) {
@@ -42,37 +39,11 @@ export async function POST(request: Request) {
   const body = raw && typeof raw === "object" ? (raw as CreateBody) : {};
   const unsafeKind = typeof body.kind === "string" ? body.kind.trim() : "";
   const kind = unsafeKind === "component" ? "component" : "template";
-  const unsafeTitle = typeof body.title === "string" ? body.title.trim() : "";
-  const title =
-    unsafeTitle === ""
-      ? kind === "component"
-        ? "Untitled component"
-        : "Untitled page template"
-      : unsafeTitle;
-  const repo = payloadBuilderMutationRepository(payload, user);
-  const created = await createCompositionEntryCommand(repo, {
-    kind,
-    title,
-    actor: user,
-  });
-  if (!created.ok) {
-    const status = created.error === "VALIDATION_ERROR" ? 400 : 500;
-    return Response.json(
-      {
-        error: {
-          code:
-            created.error === "VALIDATION_ERROR"
-              ? ("VALIDATION_ERROR" as const)
-              : ("CREATE_FAILED" as const),
-        },
-      },
-      { status },
-    );
-  }
+  const tempId = `new:${kind}:${crypto.randomUUID()}`;
 
   return Response.json({
     data: {
-      id: created.value.compositionId,
+      id: tempId,
     },
   });
 }

@@ -14,7 +14,9 @@ function BuilderViewInner() {
   const sp = useSearchParams();
   const compositionId = sp.get("composition") ?? "";
   const adminRoute = config.routes?.admin ?? "/admin";
-  const isComponentComposition = isBuilderComponentRowId(compositionId);
+  const isComponentComposition =
+    isBuilderComponentRowId(compositionId) ||
+    compositionId.startsWith("new:component:");
 
   const role =
     user && typeof user === "object" && "role" in user

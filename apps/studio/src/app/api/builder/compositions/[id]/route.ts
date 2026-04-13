@@ -1,4 +1,5 @@
 import {
+  createCompositionEntryCommand,
   renameTemplateCommand,
   saveCompositionCommand,
 } from "@repo/application-builder";
@@ -16,6 +17,18 @@ import { getPayload } from "payload";
 import { payloadBuilderMutationRepository } from "@/app/api/builder/_lib/payload-builder-mutation-repository";
 import { loadPublishedTokenSetForPreview } from "@/lib/load-published-token-set";
 import config from "@/payload.config";
+
+function parseNewCompositionSessionId(
+  value: string,
+): { kind: "template" | "component" } | null {
+  if (value.startsWith("new:template:")) {
+    return { kind: "template" };
+  }
+  if (value.startsWith("new:component:")) {
+    return { kind: "component" };
+  }
+  return null;
+}
 
 async function designTokensForBuilder(payload: Payload): Promise<{
   tokenMetadata: TokenMeta[];
@@ -71,6 +84,23 @@ export async function GET(
       { error: { code: "FORBIDDEN" as const } },
       { status: 403 },
     );
+  }
+
+  const newSession = parseNewCompositionSessionId(id);
+  if (newSession) {
+    const designTokens = await designTokensForBuilder(payload);
+    return Response.json({
+      data: {
+        name:
+          newSession.kind === "component"
+            ? "Untitled component"
+            : "Untitled page template",
+        composition: defaultEmptyPageComposition(),
+        updatedAt: "",
+        tokenMetadata: designTokens.tokenMetadata,
+        cssVariables: designTokens.cssVariables,
+      },
+    });
   }
 
   if (isBuilderComponentRowId(id)) {
@@ -228,6 +258,7 @@ export async function POST(
     composition?: unknown;
     ifMatchUpdatedAt?: unknown;
     intent?: unknown;
+    name?: unknown;
   };
   const intent = body.intent;
   if (intent !== "draft" && intent !== "publish") {
@@ -256,6 +287,62 @@ export async function POST(
     );
   }
   const ifMatchUpdatedAt = matchRaw as string | null | undefined;
+  const nextName = typeof body.name === "string" ? body.name.trim() : "";
+
+  const newSession = parseNewCompositionSessionId(id);
+  if (newSession) {
+    const repo = payloadBuilderMutationRepository(payload, user);
+    const created = await createCompositionEntryCommand(repo, {
+      kind: newSession.kind,
+      title:
+        nextName ||
+        (newSession.kind === "component"
+          ? "Untitled component"
+          : "Untitled page template"),
+      actor: user,
+    });
+    if (!created.ok) {
+      const status = created.error === "VALIDATION_ERROR" ? 400 : 500;
+      return Response.json(
+        {
+          error: {
+            code:
+              created.error === "VALIDATION_ERROR"
+                ? ("VALIDATION_ERROR" as const)
+                : ("CREATE_FAILED" as const),
+          },
+        },
+        { status },
+      );
+    }
+
+    const saved = await saveCompositionCommand(repo, {
+      compositionId: created.value.compositionId,
+      composition,
+      ifMatchUpdatedAt: null,
+      intent,
+      actor: user,
+    });
+    if (!saved.ok) {
+      if (saved.error === "VALIDATION_ERROR") {
+        return Response.json(
+          { error: { code: "VALIDATION_ERROR" as const } },
+          { status: 400 },
+        );
+      }
+      return Response.json(
+        { error: { code: "UPDATE_FAILED" as const } },
+        { status: 500 },
+      );
+    }
+
+    return Response.json({
+      data: {
+        id: created.value.compositionId,
+        updatedAt: saved.value.updatedAt,
+      },
+    });
+  }
 
   const repo = payloadBuilderMutationRepository(payload, user);
   const saved = await saveCompositionCommand(repo, {

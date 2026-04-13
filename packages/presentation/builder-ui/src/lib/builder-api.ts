@@ -14,7 +14,7 @@ export type GatewayCompositionResponse = {
 };
 
 export type GatewaySaveResponse = {
-  data: { updatedAt: string };
+  data: { id?: string; updatedAt: string };
 };
 
 export type GatewayRenameResponse = {
@@ -46,8 +46,9 @@ async function postPersistPageComposition(
     composition: PageComposition;
     ifMatchUpdatedAt?: string | null;
     intent: "draft" | "publish";
+    name?: string;
   },
-): Promise<string> {
+): Promise<{ id: string; updatedAt: string }> {
   const res = await fetch(
     `${studioBuilder}/compositions/${encodeURIComponent(compositionId)}`,
     {
@@ -73,7 +74,10 @@ async function postPersistPageComposition(
     throw new Error(`save failed: ${res.status}`);
   }
   const json = (await res.json()) as GatewaySaveResponse;
-  return json.data.updatedAt;
+  return {
+    id: json.data.id ?? compositionId,
+    updatedAt: json.data.updatedAt,
+  };
 }
 
 export async function postDraft(
@@ -81,8 +85,9 @@ export async function postDraft(
   body: {
     composition: PageComposition;
     ifMatchUpdatedAt?: string | null;
+    name?: string;
   },
-): Promise<string> {
+): Promise<{ id: string; updatedAt: string }> {
   return postPersistPageComposition(compositionId, {
     ...body,
     intent: "draft",
@@ -94,8 +99,9 @@ export async function postPublish(
   body: {
     composition: PageComposition;
     ifMatchUpdatedAt?: string | null;
+    name?: string;
   },
-): Promise<string> {
+): Promise<{ id: string; updatedAt: string }> {
   return postPersistPageComposition(compositionId, {
     ...body,
     intent: "publish",

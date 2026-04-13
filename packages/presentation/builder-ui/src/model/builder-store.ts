@@ -128,7 +128,7 @@ export function createBuilderStore(compositionId: string) {
     load: async () => {
       set({ error: null });
       try {
-        const data = await fetchComposition(compositionId);
+        const data = await fetchComposition(get().compositionId);
         set({
           composition: data.composition,
           name: data.name,
@@ -326,11 +326,17 @@ export function createBuilderStore(compositionId: string) {
       }
       set({ error: null, saving: true });
       try {
-        const nextUpdated = await postDraft(id, {
+        const saved = await postDraft(id, {
           composition: prep.data,
-          ifMatchUpdatedAt: updatedAt,
+          ifMatchUpdatedAt: id.startsWith("new:") ? null : updatedAt,
+          name: get().name,
         });
-        set({ updatedAt: nextUpdated, dirty: false });
+        set({ compositionId: saved.id, updatedAt: saved.updatedAt, dirty: false });
+        if (saved.id !== id && typeof window !== "undefined") {
+          const url = new URL(window.location.href);
+          url.searchParams.set("composition", saved.id);
+          window.history.replaceState({}, "", url.toString());
+        }
       } catch (e) {
         set({
           error: e instanceof Error ? e.message : "save failed",
@@ -352,11 +358,17 @@ export function createBuilderStore(compositionId: string) {
       }
       set({ error: null, saving: true });
       try {
-        const nextUpdated = await postPublish(id, {
+        const saved = await postPublish(id, {
           composition: prep.data,
-          ifMatchUpdatedAt: updatedAt,
+          ifMatchUpdatedAt: id.startsWith("new:") ? null : updatedAt,
+          name: get().name,
         });
-        set({ updatedAt: nextUpdated, dirty: false });
+        set({ compositionId: saved.id, updatedAt: saved.updatedAt, dirty: false });
+        if (saved.id !== id && typeof window !== "undefined") {
+          const url = new URL(window.location.href);
+          url.searchParams.set("composition", saved.id);
+          window.history.replaceState({}, "", url.toString());
+        }
       } catch (e) {
         set({
           error: e instanceof Error ? e.message : "publish failed",
@@ -370,6 +382,10 @@ export function createBuilderStore(compositionId: string) {
       const trimmed = nextName.trim();
       const { compositionId: id, renaming, name } = get();
       if (!trimmed || renaming || trimmed === name) {
+        return;
+      }
+      if (id.startsWith("new:")) {
+        set({ name: trimmed });
         return;
       }
       set({ error: null, renaming: true });
