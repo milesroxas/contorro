@@ -21,7 +21,7 @@ export function BuilderPanel({
   title: string;
   children: ReactNode;
   className?: string;
-  /** Scroll viewport padding; default is tuned for dense trees and catalogs. */
+  /** Scroll viewport padding; default is tuned for dense trees. */
   bodyClassName?: string;
 }) {
   return (

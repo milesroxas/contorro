@@ -9,7 +9,7 @@ export const CatalogActivity: CollectionConfig = {
     hidden: true,
     useAsTitle: "action",
     defaultColumns: ["action", "resourceType", "resourceId", "createdAt"],
-    description: "Internal publishing and catalog audit log.",
+    description: "Internal publishing activity log.",
   },
   access: {
     read: authenticatedAccess,

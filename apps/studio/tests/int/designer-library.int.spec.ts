@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { getTestPayload } from "../helpers/getTestPayload.js";
 
-describe("Designer block catalog (components)", () => {
+describe("Designer library (components)", () => {
   it("creates a url key from the title and keeps it stable when the title changes", async () => {
     const payload = await getTestPayload();
     const suffix = Date.now();
-    const displayName = `Int catalog test ${suffix}`;
+    const displayName = `Seed library test ${suffix}`;
 
     const created = await payload.create({
       collection: "components",

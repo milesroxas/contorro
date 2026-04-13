@@ -275,7 +275,7 @@ export default function BuilderHub() {
               }
             />
             <HubChoiceButton
-              description="Library components and catalog entries."
+              description="Components in your library."
               icon={<IconPuzzle className={tileIconClass} aria-hidden />}
               title="Components"
               onClick={() =>

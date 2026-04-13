@@ -4,11 +4,11 @@ import { getPayload } from "payload";
 import config from "../payload.config.js";
 
 /** Stable identifiers — re-run deletes and recreates these documents. */
-export const SEED_PAGE_COMPOSITION_SLUG = "local-seed";
-export const SEED_PAGE_SLUG = "local-seed-page";
-export const SEED_TOKEN_SCOPE_KEY = "local-seed";
+export const SEED_PAGE_COMPOSITION_SLUG = "seed-composition";
+export const SEED_PAGE_SLUG = "seed-page";
+export const SEED_TOKEN_SCOPE_KEY = "seed-tokens";
 
-export const SEED_PAGE_DESIGNER_SLUG = "local-seed-designer";
+export const SEED_PAGE_DESIGNER_SLUG = "seed-designer-page";
 
 const SEED_COMPONENT_KEYS = [
   "primitive.stack",
@@ -122,7 +122,7 @@ const seedCardComposition = {
  * `composition`. What editors fill in Payload are **CMS editor fields** (`editorFields` +
  * `contentBinding.source === "editor"`), surfaced as `editorFieldValues` — not
  * `propContract`. Compare `stackDefinition` / `textDefinition` for non-empty primitive
- * `propContract` (catalog / tooling).
+ * `propContract` (library / tooling).
  */
 const cardDefinition = {
   propContract: { fields: {} },
@@ -157,7 +157,7 @@ const seedComposition = {
       definitionKey: "primitive.text",
       parentId: "stack-root",
       childIds: [],
-      propValues: { content: "Hello from the local seed composition." },
+      propValues: { content: "Hello from the seed page template." },
     },
     "text-hero": {
       id: "text-hero",
@@ -274,7 +274,7 @@ async function seed(): Promise<void> {
     const tokenSet = await payload.create({
       collection: "design-token-sets",
       data: {
-        title: "Local seed tokens",
+        title: "Seed design tokens",
         scopeKey: SEED_TOKEN_SCOPE_KEY,
         tokens: [
           {
@@ -411,7 +411,7 @@ async function seed(): Promise<void> {
     const composition = await payload.create({
       collection: "page-compositions",
       data: {
-        title: "Local seed (builder / composer)",
+        title: "Seed page template",
         slug: SEED_PAGE_COMPOSITION_SLUG,
         composition: seedComposition,
         catalogReviewStatus: "approved",
@@ -432,19 +432,19 @@ async function seed(): Promise<void> {
     const page = await payload.create({
       collection: "pages",
       data: {
-        title: "Local seed page",
+        title: "Seed starter page",
         slug: SEED_PAGE_SLUG,
         pageComposition: composition.id,
         templateEditorFields: {
-          "hero-headline": "Welcome — local seed page (template CMS field).",
+          "hero-headline":
+            "Welcome — this page uses the seed template’s hero field.",
         },
         content: [
           {
             componentDefinition: cardCreated.id,
             layoutSlotId: "main",
             editorFieldValues: {
-              headline:
-                "Designer block on the same page as the template (combined).",
+              headline: "Block and template on one page.",
             },
           },
         ],
@@ -463,7 +463,7 @@ async function seed(): Promise<void> {
     const designerPage = await payload.create({
       collection: "pages",
       data: {
-        title: "Local seed designer block",
+        title: "Seed designer page",
         slug: SEED_PAGE_DESIGNER_SLUG,
         content: [
           {
@@ -491,26 +491,23 @@ async function seed(): Promise<void> {
 
     console.log("\n[seed] Done.\n");
     console.log(
-      `  Page template:      ${SEED_PAGE_COMPOSITION_SLUG} (id: ${compositionId})`,
+      `  Page template:   ${SEED_PAGE_COMPOSITION_SLUG} (id: ${compositionId})`,
     );
     console.log(
-      `  Page (published): ${SEED_PAGE_SLUG} (template CMS field hero-headline + seed card block in layout slot main)`,
+      `  Published page:  ${SEED_PAGE_SLUG} (template hero field + seed card block in main slot)`,
     );
     console.log(
-      `  Designer page:    ${SEED_PAGE_DESIGNER_SLUG} (blocks only, no template)`,
+      `  Designer page:   ${SEED_PAGE_DESIGNER_SLUG} (blocks only, no template)`,
     );
-    console.log(`  Token set:        ${SEED_TOKEN_SCOPE_KEY} (published)`);
+    console.log(`  Token set:         ${SEED_TOKEN_SCOPE_KEY}`);
     console.log(
-      "  Design system:    global defaultTokenSet + activeBrandKey set",
-    );
-    console.log(
-      "  Token overrides:  color.surface.primary, space.scale.2 (on local-seed set)",
+      "  Design system:   default token set and active brand key configured",
     );
     console.log(
-      "  Editor block catalog: published components with a template (primitives are builder-only)",
+      `  Sample overrides: color.surface.primary, space.scale.2 (${SEED_TOKEN_SCOPE_KEY})`,
     );
     console.log(
-      "  Comp revisions:     Stack (draft), Text + Card (published) — workflow only; defs hold published composition",
+      "  Library:         published components with a template appear in the block picker",
     );
     console.log(`\n  Log in (all use password: ${seedPassword}):`);
     for (const [label, u] of Object.entries(SEED_USERS)) {

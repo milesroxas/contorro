@@ -25,7 +25,7 @@ export const PageCompositions: CollectionConfig = {
     useAsTitle: "title",
     defaultColumns: ["title", "slug", "_status", "updatedAt"],
     description:
-      "Reusable full-page layouts from the builder. Pick one when creating a page (Pages → Page template).",
+      "Full-page layouts from the builder. Choose one when you create a page (Pages → Page template).",
   },
   access: {
     read: authenticatedAccess,
@@ -50,14 +50,15 @@ export const PageCompositions: CollectionConfig = {
       name: "composition",
       type: "json",
       required: true,
+      admin: {
+        hidden: true,
+      },
     },
     {
       name: "catalogSubmittedAt",
       type: "date",
       admin: {
-        readOnly: true,
-        description:
-          "Set when the designer submits this template for catalog review.",
+        hidden: true,
       },
     },
     {
@@ -72,8 +73,7 @@ export const PageCompositions: CollectionConfig = {
         { label: "Rejected", value: "rejected" },
       ],
       admin: {
-        description:
-          "Catalog approval gate: publishing can be blocked while submitted or rejected.",
+        hidden: true,
       },
     },
   ],

@@ -9,7 +9,7 @@ export const PublishJobs: CollectionConfig = {
     hidden: true,
     useAsTitle: "idempotencyKey",
     defaultColumns: ["kind", "status", "idempotencyKey", "createdAt"],
-    description: "Deduped publish operations; succeeded + same key is a no-op.",
+    description: "Internal record of publish operations (idempotent).",
   },
   access: {
     read: componentAuthoringAccess,

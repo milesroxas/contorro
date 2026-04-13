@@ -87,7 +87,7 @@ export function LibraryComponentCatalog({
     ) : items.length === 0 ? (
       <div className="text-xs leading-snug text-muted-foreground">
         {loadError ??
-          "No catalog components with a saved layout yet. Publish a component first."}
+          "No library components with a saved layout yet. Publish a component first."}
       </div>
     ) : (
       <div className="grid grid-cols-2 gap-2">

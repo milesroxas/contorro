@@ -191,7 +191,7 @@ export interface Media {
   focalY?: number | null;
 }
 /**
- * Published token sets emit `design-system.token-published` for downstream compilation.
+ * Design tokens for your brands and themes. Publishing updates the active design system.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "design-token-sets".
@@ -244,7 +244,7 @@ export interface DesignTokenOverride {
   createdAt: string;
 }
 /**
- * Reusable blocks for pages. Compose in the visual builder; publish when ready.
+ * Reusable blocks for your library and pages. Author in the builder; publish when ready.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "components".
@@ -265,9 +265,6 @@ export interface Component {
     | number
     | boolean
     | null;
-  /**
-   * CMS-editable fields derived from the composition tree. Distinct from propContract (component props).
-   */
   editorFields:
     | {
         [k: string]: unknown;
@@ -277,9 +274,6 @@ export interface Component {
     | number
     | boolean
     | null;
-  /**
-   * Template tree (v0.4). Edited in the visual builder; publishing updates the live catalog.
-   */
   composition?:
     | {
         [k: string]: unknown;
@@ -322,7 +316,7 @@ export interface FolderInterface {
   createdAt: string;
 }
 /**
- * Reusable full-page layouts from the builder. Pick one when creating a page (Pages → Page template).
+ * Full-page layouts from the builder. Choose one when you create a page (Pages → Page template).
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "page-compositions".
@@ -340,20 +334,14 @@ export interface PageComposition {
     | number
     | boolean
     | null;
-  /**
-   * Set when the designer submits this template for catalog review.
-   */
   catalogSubmittedAt?: string | null;
-  /**
-   * Catalog approval gate: publishing can be blocked while submitted or rejected.
-   */
   catalogReviewStatus: 'none' | 'submitted' | 'approved' | 'rejected';
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
 }
 /**
- * Public site page: choose a page template from the builder and/or stack designer blocks. Lexical below is for SEO/social metadata only.
+ * Site page: add a page template from the builder and/or place library blocks. The rich text fields below are for SEO and social metadata only—not page body content.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pages".
@@ -384,7 +372,7 @@ export interface Page {
   content?:
     | {
         /**
-         * Choose a component from the catalog (Components collection).
+         * Choose a published component from your library.
          */
         componentDefinition: number | Component;
         /**
@@ -469,7 +457,7 @@ export interface ReleaseSnapshot {
   createdAt: string;
 }
 /**
- * Deduped publish operations; succeeded + same key is a no-op.
+ * Internal record of publish operations (idempotent).
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "publish-jobs".
@@ -487,7 +475,7 @@ export interface PublishJob {
   createdAt: string;
 }
 /**
- * Internal publishing and catalog audit log.
+ * Internal publishing activity log.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "catalog-activity".

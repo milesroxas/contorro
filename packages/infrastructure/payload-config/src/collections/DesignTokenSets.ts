@@ -26,7 +26,7 @@ export const DesignTokenSets: CollectionConfig = {
     useAsTitle: "title",
     defaultColumns: ["title", "scopeKey", "_status", "updatedAt"],
     description:
-      "Published token sets emit `design-system.token-published` for downstream compilation.",
+      "Design tokens for your brands and themes. Publishing updates the active design system.",
   },
   access: {
     read: authenticatedAccess,

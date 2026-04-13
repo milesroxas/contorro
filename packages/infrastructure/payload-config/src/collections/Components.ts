@@ -26,7 +26,7 @@ export const Components: CollectionConfig = {
     useAsTitle: "displayName",
     defaultColumns: ["displayName", "key", "_status", "updatedAt"],
     description:
-      "Reusable blocks for pages. Compose in the visual builder; publish when ready.",
+      "Reusable blocks for your library and pages. Author in the builder; publish when ready.",
     listSearchableFields: ["displayName", "key"],
   },
   access: {
@@ -58,22 +58,23 @@ export const Components: CollectionConfig = {
       name: "propContract",
       type: "json",
       required: true,
+      admin: {
+        hidden: true,
+      },
     },
     {
       name: "editorFields",
       type: "json",
       required: true,
       admin: {
-        description:
-          "CMS-editable fields derived from the composition tree. Distinct from propContract (component props).",
+        hidden: true,
       },
     },
     {
       name: "composition",
       type: "json",
       admin: {
-        description:
-          "Template tree (v0.4). Edited in the visual builder; publishing updates the live catalog.",
+        hidden: true,
       },
     },
     {

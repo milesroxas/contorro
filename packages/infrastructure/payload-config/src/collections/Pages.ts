@@ -41,7 +41,7 @@ export const Pages: CollectionConfig = {
     useAsTitle: "title",
     defaultColumns: ["title", "slug", "_status", "updatedAt"],
     description:
-      "Public site page: choose a page template from the builder and/or stack designer blocks. Lexical below is for SEO/social metadata only.",
+      "Site page: add a page template from the builder and/or place library blocks. The rich text fields below are for SEO and social metadata only—not page body content.",
     preview: (doc) => previewUrlForDoc(doc),
   },
   access: {
@@ -120,8 +120,7 @@ export const Pages: CollectionConfig = {
           required: true,
           label: "Component",
           admin: {
-            description:
-              "Choose a component from the catalog (Components collection).",
+            description: "Choose a published component from your library.",
           },
           filterOptions: () => ({
             _status: { equals: "published" },
