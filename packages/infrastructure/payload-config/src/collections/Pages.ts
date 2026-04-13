@@ -96,63 +96,77 @@ export const Pages: CollectionConfig = {
       },
     },
     {
-      name: "content",
+      name: "contentSlots",
       type: "array",
-      label: "Blocks",
+      label: "Layout regions",
       labels: {
-        singular: "Block",
-        plural: "Blocks",
+        singular: "Layout region",
+        plural: "Layout regions",
       },
       admin: {
+        className: "payload-content-slots-field",
         description:
-          "Stack components on the page. When the page template has more than one layout region, pick which region each block belongs to.",
+          "Regions match the selected page template’s layout slots. Add blocks inside each region; reordering regions is disabled.",
         initCollapsed: false,
-        isSortable: true,
+        isSortable: false,
         components: {
-          Field: "/components/admin/PageContentBlocksField",
-          RowLabel: "/components/admin/BlocksRowLabel",
+          Field: "/components/admin/PageContentSlotsField",
+          RowLabel: "/components/admin/ContentSlotRowLabel",
         },
       },
       fields: [
         {
-          name: "componentDefinition",
-          type: "relationship",
-          relationTo: "components",
-          required: true,
-          label: "Component",
-          admin: {
-            description: "Choose a published component from your library.",
-          },
-          filterOptions: () => ({
-            _status: { equals: "published" },
-          }),
-        },
-        {
-          name: "layoutSlotId",
+          name: "slotId",
           type: "text",
-          label: "Layout slot",
-          defaultValue: "main",
+          required: true,
           admin: {
-            description:
-              "When the template has several slots, choose which region this block fills (ids match the builder Slot primitives).",
-            components: {
-              Field: "/components/admin/LayoutSlotIdField",
-            },
+            hidden: true,
           },
         },
         {
-          name: "editorFieldValues",
-          type: "json",
-          label: false,
-          required: true,
-          defaultValue: {},
+          name: "blocks",
+          type: "array",
+          label: "Blocks",
+          labels: {
+            singular: "Block",
+            plural: "Blocks",
+          },
           admin: {
-            description:
-              "CMS field values for this block (manifest from the component template).",
+            initCollapsed: false,
+            isSortable: true,
             components: {
-              Field: "/components/admin/DesignerEditorFieldsField",
+              RowLabel: "/components/admin/BlocksRowLabel",
             },
           },
+          fields: [
+            {
+              name: "componentDefinition",
+              type: "relationship",
+              relationTo: "components",
+              required: true,
+              label: "Component",
+              admin: {
+                description: "Choose a published component from your library.",
+              },
+              filterOptions: () => ({
+                _status: { equals: "published" },
+              }),
+            },
+            {
+              name: "editorFieldValues",
+              type: "json",
+              label: false,
+              required: true,
+              defaultValue: {},
+              admin: {
+                description:
+                  "CMS field values for this block (manifest from the component template).",
+                components: {
+                  Field: "/components/admin/DesignerEditorFieldsField",
+                },
+              },
+            },
+          ],
         },
       ],
     },

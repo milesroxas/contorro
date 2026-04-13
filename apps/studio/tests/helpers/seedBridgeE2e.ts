@@ -96,10 +96,15 @@ export async function seedBridgePublicPage(): Promise<void> {
     data: {
       title: "E2E bridge public",
       slug: BRIDGE_E2E_PAGE_SLUG,
-      content: [
+      contentSlots: [
         {
-          componentDefinition: def.id,
-          editorFieldValues: { headline: "Hello World" },
+          slotId: "main",
+          blocks: [
+            {
+              componentDefinition: def.id,
+              editorFieldValues: { headline: "Hello World" },
+            },
+          ],
         },
       ],
     },

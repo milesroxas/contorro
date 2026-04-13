@@ -70,8 +70,16 @@ export default async function SitePage({ params }: Props) {
     notFound();
   }
 
-  const blocksRaw = (page as { content?: unknown }).content;
-  const hasBlocks = Array.isArray(blocksRaw) && blocksRaw.length > 0;
+  const contentSlots = (page as { contentSlots?: unknown }).contentSlots;
+  const hasBlocks =
+    Array.isArray(contentSlots) &&
+    contentSlots.some(
+      (row) =>
+        row &&
+        typeof row === "object" &&
+        Array.isArray((row as { blocks?: unknown }).blocks) &&
+        (row as { blocks: unknown[] }).blocks.length > 0,
+    );
 
   const rel = page.pageComposition;
   const compositionDoc =
@@ -113,7 +121,7 @@ export default async function SitePage({ params }: Props) {
   if (hasBlocks) {
     const r = await renderDesignerContentBlocksBySlot(
       payload,
-      blocksRaw,
+      contentSlots,
       compiled.tokenMetadata,
       templateTree,
     );

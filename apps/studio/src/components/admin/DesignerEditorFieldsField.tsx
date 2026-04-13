@@ -1,6 +1,6 @@
 "use client";
 
-import { useDocumentInfo, useField } from "@payloadcms/ui";
+import { useDocumentInfo, useField, useFieldPath } from "@payloadcms/ui";
 import {
   useDocumentForm,
   useForm,
@@ -16,6 +16,12 @@ import type { FormState, JSONFieldClientProps } from "payload";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Label } from "@/components/ui/label";
+import {
+  collectBlockPathsForSiblingLookup,
+  extractDefinitionId,
+  normalizeEditorFieldValuesPath,
+  resolveComponentDefinitionRef,
+} from "@/lib/designer-editor-fields-resolution.js";
 
 import { EditorFieldsInputs } from "./EditorFieldsInputs";
 
@@ -27,237 +33,15 @@ type ComponentDefinitionDoc = {
   editorFields?: unknown;
 };
 
-function siblingPathForComponentDefinition(
-  editorFieldValuesPath: string,
-): string {
-  if (!editorFieldValuesPath.endsWith("editorFieldValues")) {
-    return editorFieldValuesPath;
-  }
-  const cut = "editorFieldValues".length;
-  return `${editorFieldValuesPath.slice(0, -cut)}componentDefinition`;
-}
-
-function isPresentRelationshipValue(v: unknown): boolean {
-  return v !== undefined && v !== null && v !== "";
-}
-
-/**
- * Pair `*.componentDefinition` form keys with this row’s `*.editorFieldValues` path (draft/version skew).
- */
-function componentDefinitionFieldPairsEditorFieldValuesPath(
-  componentDefinitionFieldKey: string,
-  editorFieldValuesPath: string,
-): boolean {
-  const expectedSlotPath =
-    componentDefinitionFieldKey === "componentDefinition"
-      ? "editorFieldValues"
-      : componentDefinitionFieldKey.replace(
-          /\.componentDefinition$/,
-          ".editorFieldValues",
-        );
-  if (expectedSlotPath === editorFieldValuesPath) {
-    return true;
-  }
-  const mTop = /^content\.(\d+)\.editorFieldValues$/.exec(
-    editorFieldValuesPath,
-  );
-  if (
-    mTop &&
-    componentDefinitionFieldKey ===
-      `version.content.${mTop[1]}.componentDefinition`
-  ) {
-    return true;
-  }
-  const mVer = /^version\.content\.(\d+)\.editorFieldValues$/.exec(
-    editorFieldValuesPath,
-  );
-  if (
-    mVer &&
-    componentDefinitionFieldKey === `content.${mVer[1]}.componentDefinition`
-  ) {
-    return true;
-  }
-  return false;
-}
-
-/**
- * Resolves `componentDefinition` for this `editorFieldValues` field. Drafts may split keys across
- * `content.N.*` and `version.content.N.*` (same idea as `PageTemplateEditorFieldsField`).
- */
-function componentDefinitionValueFromFormState(
-  editorFieldValuesPath: string,
-  fields: FormState,
-): unknown {
-  const expectedKey = siblingPathForComponentDefinition(editorFieldValuesPath);
-  const direct = fields[expectedKey]?.value as unknown;
-  if (isPresentRelationshipValue(direct)) {
-    return direct;
-  }
-  const keys = Object.keys(fields).filter(
-    (k) => k === "componentDefinition" || k.endsWith(".componentDefinition"),
-  );
-  keys.sort((a, b) => {
-    const rank = (x: string) => (x.startsWith("version.") ? 0 : 1);
-    return rank(a) - rank(b);
-  });
-  for (const key of keys) {
-    if (
-      !componentDefinitionFieldPairsEditorFieldValuesPath(
-        key,
-        editorFieldValuesPath,
-      )
-    ) {
-      continue;
-    }
-    const v = fields[key]?.value as unknown;
-    if (isPresentRelationshipValue(v)) {
-      return v;
-    }
-  }
-  return undefined;
-}
-
-function componentDefinitionFromGetDataByPath(
-  ctx: { getDataByPath?: (path: string) => unknown } | undefined,
-  editorFieldValuesPath: string,
-): unknown {
-  if (!ctx?.getDataByPath) {
-    return undefined;
-  }
-  const tryPaths: string[] = [
-    siblingPathForComponentDefinition(editorFieldValuesPath),
-  ];
-  const mTop = /^content\.(\d+)\.editorFieldValues$/.exec(
-    editorFieldValuesPath,
-  );
-  if (mTop) {
-    tryPaths.push(`version.content.${mTop[1]}.componentDefinition`);
-  }
-  const mVer = /^version\.content\.(\d+)\.editorFieldValues$/.exec(
-    editorFieldValuesPath,
-  );
-  if (mVer) {
-    tryPaths.push(`content.${mVer[1]}.componentDefinition`);
-  }
-  for (const p of tryPaths) {
-    try {
-      const v = ctx.getDataByPath(p);
-      if (isPresentRelationshipValue(v)) {
-        return v;
-      }
-    } catch {
-      /* invalid path */
-    }
-  }
-  return undefined;
-}
-
-function componentDefinitionFromDocumentData(
-  data: unknown,
-  editorFieldValuesPath: string,
-): unknown {
-  if (!data || typeof data !== "object") {
-    return undefined;
-  }
-  const m = /^(?:version\.)?content\.(\d+)\.editorFieldValues$/.exec(
-    editorFieldValuesPath,
-  );
-  if (!m) {
-    return undefined;
-  }
-  const i = Number.parseInt(m[1], 10);
-  const row = data as {
-    content?: unknown[];
-    version?: { content?: unknown[] };
-  };
-  const underVersion = editorFieldValuesPath.startsWith("version.");
-  const block = underVersion ? row.version?.content?.[i] : row.content?.[i];
-  if (block && typeof block === "object" && block !== null) {
-    const cd = (block as { componentDefinition?: unknown }).componentDefinition;
-    if (isPresentRelationshipValue(cd)) {
-      return cd;
-    }
-  }
-  return undefined;
-}
-
-function resolveComponentDefinitionRef(args: {
-  editorFieldValuesPath: string;
-  fields: FormState;
-  documentForm: { getDataByPath?: (path: string) => unknown } | undefined;
-  form: { getDataByPath?: (path: string) => unknown } | undefined;
-  getData: (() => unknown) | undefined;
-  savedDocumentData: unknown;
-}): unknown {
-  const {
-    editorFieldValuesPath,
-    fields,
-    documentForm,
-    form,
-    getData,
-    savedDocumentData,
-  } = args;
-  let raw = componentDefinitionValueFromFormState(
-    editorFieldValuesPath,
-    fields,
-  );
-  if (isPresentRelationshipValue(raw)) {
-    return raw;
-  }
-  raw = componentDefinitionFromGetDataByPath(
-    documentForm,
-    editorFieldValuesPath,
-  );
-  if (isPresentRelationshipValue(raw)) {
-    return raw;
-  }
-  raw = componentDefinitionFromGetDataByPath(form, editorFieldValuesPath);
-  if (isPresentRelationshipValue(raw)) {
-    return raw;
-  }
-  if (typeof getData === "function") {
-    raw = componentDefinitionFromDocumentData(getData(), editorFieldValuesPath);
-    if (isPresentRelationshipValue(raw)) {
-      return raw;
-    }
-  }
-  raw = componentDefinitionFromDocumentData(
-    savedDocumentData,
-    editorFieldValuesPath,
-  );
-  if (isPresentRelationshipValue(raw)) {
-    return raw;
-  }
-  return undefined;
-}
-
-function extractDefinitionId(raw: unknown): number | undefined {
-  if (typeof raw === "number" && Number.isFinite(raw)) {
-    return raw;
-  }
-  if (typeof raw === "string" && /^\d+$/.test(raw)) {
-    return Number.parseInt(raw, 10);
-  }
-  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-    if ("id" in raw) {
-      const id = (raw as { id: unknown }).id;
-      if (typeof id === "number" && Number.isFinite(id)) {
-        return id;
-      }
-      if (typeof id === "string" && /^\d+$/.test(id)) {
-        return Number.parseInt(id, 10);
-      }
-    }
-    if ("value" in raw) {
-      return extractDefinitionId((raw as { value: unknown }).value);
-    }
-  }
-  return undefined;
-}
-
 /** Replaces the JSON editor with inputs derived from the selected component’s slot contract. */
 function DesignerEditorFieldsField(props: JSONFieldClientProps) {
   const { path, field } = props;
+
+  /**
+   * `useField().path` can lag behind after new array rows (e.g. adding a block). Context path stays
+   * aligned with `*.editorFieldValues` for sibling `componentDefinition` resolution.
+   */
+  const pathFromContext = useFieldPath();
 
   /**
    * Prefer `FieldPathContext` (correct in array rows); `path` from props can be stale until
@@ -267,10 +51,36 @@ function DesignerEditorFieldsField(props: JSONFieldClientProps) {
     value: rawValue,
     setValue,
     disabled,
-    path: fieldPath,
+    path: fieldPathFromHook,
   } = useField<Record<string, unknown>>({
     potentiallyStalePath: path,
   });
+
+  const editorFieldValuesPathRaw =
+    typeof pathFromContext === "string" &&
+    pathFromContext.length > 0 &&
+    pathFromContext.includes("editorFieldValues")
+      ? pathFromContext
+      : fieldPathFromHook;
+  const editorFieldValuesPath = useMemo(
+    () =>
+      normalizeEditorFieldValuesPath(
+        typeof editorFieldValuesPathRaw === "string"
+          ? editorFieldValuesPathRaw
+          : path,
+      ),
+    [editorFieldValuesPathRaw, path],
+  );
+
+  const siblingLookupPaths = useMemo(
+    () =>
+      collectBlockPathsForSiblingLookup(
+        path,
+        fieldPathFromHook,
+        typeof pathFromContext === "string" ? pathFromContext : undefined,
+      ),
+    [path, fieldPathFromHook, pathFromContext],
+  );
 
   const form = useForm();
   const documentForm = useDocumentForm();
@@ -295,8 +105,14 @@ function DesignerEditorFieldsField(props: JSONFieldClientProps) {
             : typeof form?.getData === "function"
               ? form.getData
               : undefined;
+        const primaryEditorPath =
+          siblingLookupPaths.find((p) => p === editorFieldValuesPath) ??
+          siblingLookupPaths.find((p) => p.includes("editorFieldValues")) ??
+          siblingLookupPaths[0] ??
+          editorFieldValuesPath;
         return resolveComponentDefinitionRef({
-          editorFieldValuesPath: fieldPath,
+          editorFieldValuesPath: primaryEditorPath,
+          siblingLookupPaths,
           fields,
           documentForm,
           form,
@@ -305,7 +121,13 @@ function DesignerEditorFieldsField(props: JSONFieldClientProps) {
           savedDocumentData,
         });
       },
-      [fieldPath, documentForm, form, savedDocumentData],
+      [
+        editorFieldValuesPath,
+        siblingLookupPaths,
+        documentForm,
+        form,
+        savedDocumentData,
+      ],
     ),
   );
 

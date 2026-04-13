@@ -12,15 +12,10 @@ import {
 import { Button } from "../../components/ui/button.js";
 import { cn } from "../../lib/cn.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
+import { isChildContainerPrimitive } from "../../lib/style-controls.js";
 import { PrimitiveNodeContextMenu } from "../context-menu/PrimitiveNodeContextMenu.js";
 import { InsertionDropZone } from "../dnd/InsertionDropZone.js";
 import { NodeDragHandle } from "../dnd/NodeDragHandle.js";
-
-const CONTAINER_KEYS = new Set([
-  "primitive.box",
-  "primitive.stack",
-  "primitive.grid",
-]);
 
 /**
  * Payload admin base styles add padding on `ul` / `ol`. Reset so this tree’s
@@ -107,7 +102,7 @@ function LayerSubtree({
   const kindSlug = node.definitionKey.replace("primitive.", "");
   const shortId = node.id.slice(0, 6);
   const layerLabel = `${kindSlug} · ${shortId}`;
-  const isContainer = CONTAINER_KEYS.has(node.definitionKey);
+  const isContainer = isChildContainerPrimitive(node.definitionKey);
   const isRoot = nodeId === composition.rootId;
   const selected = selectedNodeId === nodeId;
 

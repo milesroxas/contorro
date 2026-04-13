@@ -5,6 +5,7 @@ import {
 } from "@repo/contracts-zod";
 import {
   editorFieldsContractFromComposition,
+  mergePageContentSlotsToSlotOrder,
   orderedLayoutSlotIds,
   resolveEditorFieldsContractForDefinition,
   validateEditorFieldValues,
@@ -32,6 +33,8 @@ function relationshipId(ref: unknown): number | undefined {
   }
   return undefined;
 }
+
+const DEFAULT_SLOT_ORDER = ["main"] as const;
 
 export function createPageCompositionBeforeValidateHandler(): CollectionBeforeValidateHook {
   return ({ data }) => {
@@ -87,16 +90,12 @@ export function createPagesBeforeValidateHandler(): CollectionBeforeValidateHook
         ? { ...(originalDoc as Record<string, unknown>), ...next }
         : next;
 
-    let effectiveContent: unknown = base.content;
-    const pcForSlots = base.pageComposition;
-    if (
-      Array.isArray(base.content) &&
-      base.content.length > 0 &&
-      pcForSlots !== undefined &&
-      pcForSlots !== null &&
-      pcForSlots !== ""
-    ) {
-      const pcId = relationshipId(pcForSlots);
+    const pc = base.pageComposition;
+    const hasComposition = pc !== undefined && pc !== null && pc !== "";
+
+    let slotOrder: string[] = [...DEFAULT_SLOT_ORDER];
+    if (hasComposition) {
+      const pcId = relationshipId(pc);
       if (pcId !== undefined) {
         const pDoc = await req.payload.findByID({
           collection: "page-compositions",
@@ -108,26 +107,21 @@ export function createPagesBeforeValidateHandler(): CollectionBeforeValidateHook
           const parsed = PageCompositionSchema.safeParse(rawComp);
           if (parsed.success) {
             const slots = orderedLayoutSlotIds(parsed.data);
-            if (slots.length === 1) {
-              const only = slots[0];
-              const normalized = (
-                base.content as Record<string, unknown>[]
-              ).map((row) => ({
-                ...row,
-                layoutSlotId: only,
-              }));
-              next.content = normalized;
-              effectiveContent = normalized;
-            }
+            slotOrder = slots.length > 0 ? slots : [...DEFAULT_SLOT_ORDER];
           }
         }
       }
     }
 
-    const rawContent = effectiveContent;
-    const hasBlocks = Array.isArray(rawContent) && rawContent.length > 0;
-    const pc = base.pageComposition;
-    const hasComposition = pc !== undefined && pc !== null && pc !== "";
+    const normalizedSlots = mergePageContentSlotsToSlotOrder(
+      slotOrder,
+      base.contentSlots,
+    );
+    next.contentSlots = normalizedSlots;
+
+    const hasBlocks = normalizedSlots.some(
+      (row) => Array.isArray(row.blocks) && row.blocks.length > 0,
+    );
 
     if (!hasBlocks && !hasComposition) {
       throw new APIError(
@@ -137,58 +131,57 @@ export function createPagesBeforeValidateHandler(): CollectionBeforeValidateHook
     }
 
     if (hasBlocks) {
-      for (const block of rawContent as {
-        componentDefinition?: unknown;
-        editorFieldValues?: unknown;
-      }[]) {
-        const defRef = block.componentDefinition;
-        const defId =
-          typeof defRef === "object" &&
-          defRef !== null &&
-          "id" in defRef &&
-          typeof (defRef as { id: unknown }).id === "number"
-            ? (defRef as { id: number }).id
-            : typeof defRef === "number"
-              ? defRef
-              : undefined;
-        if (defId === undefined) {
-          throw new APIError(
-            "Designer block: missing component definition.",
-            400,
-          );
-        }
+      for (const slot of normalizedSlots) {
+        for (const block of slot.blocks) {
+          const defRef = block.componentDefinition;
+          const defId =
+            typeof defRef === "object" &&
+            defRef !== null &&
+            "id" in defRef &&
+            typeof (defRef as { id: unknown }).id === "number"
+              ? (defRef as { id: number }).id
+              : typeof defRef === "number"
+                ? defRef
+                : undefined;
+          if (defId === undefined) {
+            throw new APIError(
+              "Designer block: missing component definition.",
+              400,
+            );
+          }
 
-        const doc = await req.payload.findByID({
-          collection: "components",
-          id: defId,
-          depth: 0,
-        });
-        if (!doc) {
-          throw new APIError("Designer block: definition not found.", 400);
-        }
-        if (doc.composition === undefined || doc.composition === null) {
-          throw new APIError(
-            "Designer block: definition has no template composition (publish from the builder or set composition on the definition).",
-            400,
-          );
-        }
+          const doc = await req.payload.findByID({
+            collection: "components",
+            id: defId,
+            depth: 0,
+          });
+          if (!doc) {
+            throw new APIError("Designer block: definition not found.", 400);
+          }
+          if (doc.composition === undefined || doc.composition === null) {
+            throw new APIError(
+              "Designer block: definition has no template composition (publish from the builder or set composition on the definition).",
+              400,
+            );
+          }
 
-        const resolved = resolveEditorFieldsContractForDefinition({
-          composition: doc.composition,
-          editorFields: (doc as { editorFields?: unknown }).editorFields,
-        });
-        if (!resolved.ok) {
-          throw new APIError(
-            "Invalid editor fields manifest on definition.",
-            400,
+          const resolved = resolveEditorFieldsContractForDefinition({
+            composition: doc.composition,
+            editorFields: (doc as { editorFields?: unknown }).editorFields,
+          });
+          if (!resolved.ok) {
+            throw new APIError(
+              "Invalid editor fields manifest on definition.",
+              400,
+            );
+          }
+          const vs = validateEditorFieldValues(
+            resolved.contract,
+            block.editorFieldValues as Record<string, unknown> | undefined,
           );
-        }
-        const vs = validateEditorFieldValues(
-          resolved.contract,
-          block.editorFieldValues as Record<string, unknown> | undefined,
-        );
-        if (!vs.ok) {
-          throw new APIError(vs.error, 400);
+          if (!vs.ok) {
+            throw new APIError(vs.error, 400);
+          }
         }
       }
     }

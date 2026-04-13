@@ -1,0 +1,6 @@
+/* Template-driven layout regions: rows are synced in PageContentSlotsField; hide manual “add row”.
+   Payload’s wrapper uses `field-type array-field` (not `field-type array`). Use `>` only so nested
+   “Blocks” arrays inside each region still show “Add block”. */
+.field-type.array-field.payload-content-slots-field > .array-field__add-row {
+  display: none;
+}

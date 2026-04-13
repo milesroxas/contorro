@@ -28,6 +28,17 @@ export {
 } from "./design-system.js";
 export { StyleBindingSchema, type StyleBinding } from "./style-binding.js";
 export {
+  STYLE_PROPERTY_KEYS,
+  StylePropertySchema,
+  type StyleProperty,
+} from "./style-properties.js";
+export type {
+  OverrideStyleProperty,
+  StyleOverrideValue,
+  StylePropertyEntry,
+  TokenStyleProperty,
+} from "./style-binding.js";
+export {
   EDITOR_FIELD_TYPES,
   EditorFieldSpecSchema,
   EditorFieldsContractSchema,

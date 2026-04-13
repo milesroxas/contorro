@@ -6,6 +6,8 @@ import {
   type EditorFieldSpec,
   EditorFieldSpecSchema,
   type PageComposition,
+  type StyleProperty,
+  type StylePropertyEntry,
 } from "@repo/contracts-zod";
 import { useEffect, useId, useState } from "react";
 
@@ -13,22 +15,24 @@ import { Checkbox } from "../../components/ui/checkbox.js";
 import { Input } from "../../components/ui/input.js";
 import { Label } from "../../components/ui/label.js";
 import { cn } from "../../lib/cn.js";
+import {
+  CONTAINER_STYLE_PROPERTIES,
+  isChildContainerPrimitive,
+} from "../../lib/style-controls.js";
 
-function readBackgroundToken(
+function readStyleProperty(
   composition: PageComposition,
   node: CompositionNode,
-): string {
+  property: StyleProperty,
+): StylePropertyEntry | undefined {
   if (!node.styleBindingId) {
-    return "";
+    return undefined;
   }
   const sb = composition.styleBindings[node.styleBindingId];
   if (!sb) {
-    return "";
+    return undefined;
   }
-  const t = sb.properties.find(
-    (p) => p.type === "token" && p.property === "background",
-  );
-  return t?.type === "token" ? t.token : "";
+  return sb.properties.find((p) => p.property === property);
 }
 
 function TextPrimitiveInspector({
@@ -278,14 +282,16 @@ export function PropertyInspector({
   composition,
   node,
   onTextChange,
-  onBackgroundToken,
+  onNodeStyleToken,
+  onNodeStyleOverride,
   patchNodeProps,
   setNodeEditorFieldBinding,
 }: {
   composition: PageComposition | null;
   node: CompositionNode | null;
   onTextChange: (content: string) => void;
-  onBackgroundToken: (token: string) => void;
+  onNodeStyleToken: (property: StyleProperty, token: string) => void;
+  onNodeStyleOverride: (property: StyleProperty, value: string | null) => void;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
@@ -303,10 +309,13 @@ export function PropertyInspector({
   const isSlot = node.definitionKey === "primitive.slot";
   const isLibraryComponent =
     node.definitionKey === "primitive.libraryComponent";
+  const isContainerPrimitive = isChildContainerPrimitive(node.definitionKey);
 
   const content =
     typeof node.propValues?.content === "string" ? node.propValues.content : "";
-  const bgToken = readBackgroundToken(composition, node);
+  const backgroundStyle = readStyleProperty(composition, node, "background");
+  const bgToken =
+    backgroundStyle?.type === "token" ? backgroundStyle.token : "";
 
   const fieldBound =
     node.contentBinding?.source === "editor"
@@ -424,12 +433,48 @@ export function PropertyInspector({
                 ? "inspector-slot-background-token"
                 : "inspector-box-background-token"
             }
-            onChange={(e) => onBackgroundToken(e.target.value)}
+            onChange={(e) => onNodeStyleToken("background", e.target.value)}
             placeholder="color.surface.primary"
             type="text"
             value={bgToken}
           />
         </label>
+      ) : null}
+      {isContainerPrimitive ? (
+        <div className="space-y-3 border-t border-border/60 pt-3">
+          <div className="text-xs font-medium text-foreground">
+            Layout spacing & size
+          </div>
+          {CONTAINER_STYLE_PROPERTIES.map((property) => {
+            const styleProp = readStyleProperty(composition, node, property);
+            const value =
+              styleProp?.type === "override"
+                ? typeof styleProp.value === "string"
+                  ? styleProp.value
+                  : ""
+                : "";
+            return (
+              <label className="block space-y-1" key={property}>
+                <span className="text-xs text-muted-foreground">{property}</span>
+                <input
+                  className={cn(
+                    "flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs shadow-sm",
+                    "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  )}
+                  onChange={(e) =>
+                    onNodeStyleOverride(
+                      property,
+                      e.target.value.trim() === "" ? null : e.target.value,
+                    )
+                  }
+                  placeholder="e.g. 16px, 100%, auto"
+                  type="text"
+                  value={value}
+                />
+              </label>
+            );
+          })}
+        </div>
       ) : null}
       {isSlot ? (
         <div className="space-y-2 border-t border-border/60 pt-3">

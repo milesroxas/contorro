@@ -1,9 +1,32 @@
+import { type TokenMeta, compileTokenSet } from "@repo/config-tailwind";
 import type { PageComposition } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
 import { defaultEmptyPageComposition } from "@repo/domains-composition";
+import type { Payload } from "payload";
 import { getPayload } from "payload";
 
+import { loadPublishedTokenSetForPreview } from "@/lib/load-published-token-set";
 import config from "@/payload.config";
+
+async function designTokensForBuilder(payload: Payload): Promise<{
+  tokenMetadata: TokenMeta[];
+  cssVariables: string;
+}> {
+  const doc = await loadPublishedTokenSetForPreview(payload);
+  if (!doc?.tokens?.length) {
+    return { tokenMetadata: [], cssVariables: "" };
+  }
+  const tokens = doc.tokens.map((t) => ({
+    key: t.key,
+    category: t.category,
+    resolvedValue: t.resolvedValue,
+  }));
+  const compiled = compileTokenSet({ tokens });
+  return {
+    tokenMetadata: compiled.tokenMetadata,
+    cssVariables: compiled.cssVariables,
+  };
+}
 
 function normalizeUpdatedAt(value: unknown): string {
   if (typeof value === "string") {
@@ -64,6 +87,7 @@ export async function GET(
 
   if (isComponentCompositionId(id)) {
     const componentId = id.slice(4);
+    const designTokens = await designTokensForBuilder(payload);
     let doc: {
       composition?: unknown;
       updatedAt?: unknown;
@@ -109,9 +133,13 @@ export async function GET(
       data: {
         composition,
         updatedAt: responseUpdatedAt(doc.updatedAt),
+        tokenMetadata: designTokens.tokenMetadata,
+        cssVariables: designTokens.cssVariables,
       },
     });
   }
+
+  const designTokens = await designTokensForBuilder(payload);
 
   let doc: { composition?: unknown; updatedAt?: unknown };
   try {
@@ -155,6 +183,8 @@ export async function GET(
     data: {
       composition: parsed.data,
       updatedAt: responseUpdatedAt(doc.updatedAt),
+      tokenMetadata: designTokens.tokenMetadata,
+      cssVariables: designTokens.cssVariables,
     },
   });
 }

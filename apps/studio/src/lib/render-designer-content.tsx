@@ -18,6 +18,54 @@ type DesignerBlock = {
   layoutSlotId?: string | null;
 };
 
+type ContentSlotDoc = {
+  slotId?: string | null;
+  blocks?: DesignerBlock[] | null;
+};
+
+function isNestedContentSlots(raw: unknown): raw is ContentSlotDoc[] {
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return false;
+  }
+  const first = raw[0];
+  return (
+    first !== null &&
+    typeof first === "object" &&
+    !Array.isArray(first) &&
+    Array.isArray((first as ContentSlotDoc).blocks)
+  );
+}
+
+/** Unnests `contentSlots` into flat blocks tagged with `layoutSlotId` for slot injection. */
+export function flattenPageContentSlotsToBlocks(
+  contentSlots: unknown,
+): DesignerBlock[] {
+  if (!isNestedContentSlots(contentSlots)) {
+    return Array.isArray(contentSlots) ? (contentSlots as DesignerBlock[]) : [];
+  }
+  const out: DesignerBlock[] = [];
+  for (const row of contentSlots) {
+    const slotId =
+      typeof row.slotId === "string" && row.slotId.trim() !== ""
+        ? row.slotId.trim()
+        : "main";
+    const blocks = row.blocks;
+    if (!Array.isArray(blocks)) {
+      continue;
+    }
+    for (const b of blocks) {
+      if (!b || typeof b !== "object") {
+        continue;
+      }
+      out.push({
+        ...(b as DesignerBlock),
+        layoutSlotId: slotId,
+      });
+    }
+  }
+  return out;
+}
+
 function blockSlotId(block: DesignerBlock): string {
   const raw = block.layoutSlotId;
   if (typeof raw === "string" && raw.trim() !== "") {
@@ -100,11 +148,12 @@ export type RenderedDesignerBlocksBySlot = {
 /** Renders page `content` blocks, grouped for layout slot injection and orphan fallback. */
 export async function renderDesignerContentBlocksBySlot(
   payload: Payload,
-  blocks: unknown,
+  contentSlots: unknown,
   tokenMeta: TokenMeta[],
   templateComposition: import("@repo/contracts-zod").PageComposition | null,
 ): Promise<RenderedDesignerBlocksBySlot> {
-  if (!Array.isArray(blocks)) {
+  const blocks = flattenPageContentSlotsToBlocks(contentSlots);
+  if (blocks.length === 0) {
     return { slotContent: {}, orphanSections: [] };
   }
 
@@ -117,7 +166,7 @@ export async function renderDesignerContentBlocksBySlot(
   const orphanSections: ReactNode[] = [];
 
   let blockIndex = 0;
-  for (const block of blocks as DesignerBlock[]) {
+  for (const block of blocks) {
     const section = await renderOneBlock(payload, block, tokenMeta, blockIndex);
     blockIndex += 1;
     if (section === null) {
@@ -157,11 +206,16 @@ export async function renderDesignerContentBlocksBySlot(
 /** Renders v0.4 page `content` array blocks (template from definition + editor field substitution). */
 export async function renderDesignerContentBlocks(
   payload: Payload,
-  blocks: unknown,
+  contentSlots: unknown,
   tokenMeta: TokenMeta[],
 ): Promise<ReactNode[]> {
   const { orphanSections, slotContent } =
-    await renderDesignerContentBlocksBySlot(payload, blocks, tokenMeta, null);
+    await renderDesignerContentBlocksBySlot(
+      payload,
+      contentSlots,
+      tokenMeta,
+      null,
+    );
   const legacy = Object.values(slotContent);
   return [...legacy, ...orphanSections];
 }

@@ -1,4 +1,5 @@
-import type { PageComposition } from "@repo/contracts-zod";
+import type { TokenMeta } from "@repo/config-tailwind";
+import type { PageComposition, StyleProperty } from "@repo/contracts-zod";
 
 const studioBuilder = "/api/builder";
 
@@ -6,6 +7,8 @@ export type GatewayCompositionResponse = {
   data: {
     composition: PageComposition;
     updatedAt: string;
+    tokenMetadata: TokenMeta[];
+    cssVariables: string;
   };
 };
 
@@ -138,7 +141,7 @@ export async function patchNodeProps(
 export async function patchNodeStyle(
   compositionId: string,
   nodeId: string,
-  property: string,
+  property: StyleProperty,
   token: string,
 ): Promise<string> {
   const res = await fetch(

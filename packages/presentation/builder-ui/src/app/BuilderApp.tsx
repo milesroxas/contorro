@@ -76,6 +76,8 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
 
   const composition = useBuilder((s) => s.composition);
+  const tokenMetadata = useBuilder((s) => s.tokenMetadata);
+  const cssVariables = useBuilder((s) => s.cssVariables);
   const selectedNodeId = useBuilder((s) => s.selectedNodeId);
   const dirty = useBuilder((s) => s.dirty);
   const saving = useBuilder((s) => s.saving);
@@ -85,7 +87,8 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
   const moveNode = useBuilder((s) => s.moveNode);
   const setTextContent = useBuilder((s) => s.setTextContent);
   const patchNodeProps = useBuilder((s) => s.patchNodeProps);
-  const setBackgroundToken = useBuilder((s) => s.setBackgroundToken);
+  const setNodeStyleToken = useBuilder((s) => s.setNodeStyleToken);
+  const setNodeStyleOverride = useBuilder((s) => s.setNodeStyleOverride);
   const setNodeEditorFieldBinding = useBuilder(
     (s) => s.setNodeEditorFieldBinding,
   );
@@ -237,13 +240,15 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
               />
             </BuilderPanel>
           </div>
-          <div className="flex min-h-0 min-w-0">
+          <div className="flex min-h-0 min-w-0 flex-col">
+            {cssVariables ? <style>{cssVariables}</style> : null}
             <BuilderCanvas
               composition={composition}
               onCanvasBackground={() => selectNode(null)}
               onRemoveNode={removeNode}
               onSelectNode={selectNode}
               selectedNodeId={selectedNodeId}
+              tokenMeta={tokenMetadata}
             />
           </div>
           <div className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-border bg-muted/20 dark:bg-muted/10">
@@ -255,9 +260,14 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
                 <PropertyInspector
                   composition={composition}
                   node={selectedNode}
-                  onBackgroundToken={(t) => {
+                  onNodeStyleToken={(property, token) => {
                     if (selectedNodeId) {
-                      setBackgroundToken(selectedNodeId, t);
+                      setNodeStyleToken(selectedNodeId, property, token);
+                    }
+                  }}
+                  onNodeStyleOverride={(property, value) => {
+                    if (selectedNodeId) {
+                      setNodeStyleOverride(selectedNodeId, property, value);
                     }
                   }}
                   onTextChange={(c) => {

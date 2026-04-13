@@ -1,22 +1,27 @@
 import type { TokenMeta } from "@repo/config-tailwind";
 import { tokenKeyToCssVar } from "@repo/config-tailwind";
-import type { StyleBinding } from "@repo/contracts-zod";
+import type { StyleBinding, StyleProperty } from "@repo/contracts-zod";
 
 export type ResolvedStyle = {
   classes: string;
   inlineStyle: Record<string, string>;
 };
 
-function cssPropName(property: string): string {
-  const map: Record<string, string> = {
+function cssPropName(property: StyleProperty): string {
+  const map: Record<StyleProperty, string> = {
     background: "backgroundColor",
-    backgroundColor: "backgroundColor",
     color: "color",
     padding: "padding",
     margin: "margin",
     gap: "gap",
+    width: "width",
+    height: "height",
+    minWidth: "minWidth",
+    minHeight: "minHeight",
+    maxWidth: "maxWidth",
+    maxHeight: "maxHeight",
   };
-  return map[property] ?? property;
+  return map[property];
 }
 
 /**

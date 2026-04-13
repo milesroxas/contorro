@@ -11,6 +11,7 @@ export {
   moveNode,
   removeSubtree,
   setNodeContentBinding,
+  setNodeOverrideStyle,
   setNodeTokenStyle,
   updateNodePropValues,
 } from "./graph/mutations.js";
@@ -35,3 +36,4 @@ export {
   normalizedLayoutSlotId,
   orderedLayoutSlotIds,
 } from "./layout-slot.js";
+export { mergePageContentSlotsToSlotOrder } from "./page-content-slots.js";

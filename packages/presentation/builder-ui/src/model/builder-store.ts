@@ -1,9 +1,16 @@
-import type { EditorFieldSpec, PageComposition } from "@repo/contracts-zod";
+import type { TokenMeta } from "@repo/config-tailwind";
+import type {
+  EditorFieldSpec,
+  PageComposition,
+  StyleOverrideValue,
+  StyleProperty,
+} from "@repo/contracts-zod";
 import {
   addChildNode,
   moveNode as moveNodeInComposition,
   removeSubtree,
   setNodeContentBinding,
+  setNodeOverrideStyle,
   setNodeTokenStyle,
   updateNodePropValues,
 } from "@repo/domains-composition";
@@ -19,6 +26,8 @@ import { prepareForSave } from "../lib/persist.js";
 export type BuilderStoreState = {
   compositionId: string;
   composition: PageComposition | null;
+  tokenMetadata: TokenMeta[];
+  cssVariables: string;
   updatedAt: string | null;
   selectedNodeId: string | null;
   dirty: boolean;
@@ -37,7 +46,16 @@ export type BuilderStoreState = {
   removeNode: (nodeId: string) => void;
   setTextContent: (nodeId: string, content: string) => void;
   patchNodeProps: (nodeId: string, patch: Record<string, unknown>) => void;
-  setBackgroundToken: (nodeId: string, token: string) => void;
+  setNodeStyleToken: (
+    nodeId: string,
+    property: StyleProperty,
+    token: string,
+  ) => void;
+  setNodeStyleOverride: (
+    nodeId: string,
+    property: StyleProperty,
+    value: StyleOverrideValue | null,
+  ) => void;
   setNodeEditorFieldBinding: (
     nodeId: string,
     field: EditorFieldSpec | null,
@@ -50,6 +68,8 @@ export function createBuilderStore(compositionId: string) {
   return createSafeStore<BuilderStoreState>((set, get) => ({
     compositionId,
     composition: null,
+    tokenMetadata: [],
+    cssVariables: "",
     updatedAt: null,
     selectedNodeId: null,
     dirty: false,
@@ -66,6 +86,8 @@ export function createBuilderStore(compositionId: string) {
         const data = await fetchComposition(compositionId);
         set({
           composition: data.composition,
+          tokenMetadata: data.tokenMetadata,
+          cssVariables: data.cssVariables,
           updatedAt: data.updatedAt,
           dirty: false,
           selectedNodeId: data.composition.rootId,
@@ -170,12 +192,24 @@ export function createBuilderStore(compositionId: string) {
       set({ composition: next.value, dirty: true });
     },
 
-    setBackgroundToken: (nodeId, token) => {
+    setNodeStyleToken: (nodeId, property, token) => {
       const { composition } = get();
       if (!composition) {
         return;
       }
-      const next = setNodeTokenStyle(composition, nodeId, "background", token);
+      const next = setNodeTokenStyle(composition, nodeId, property, token);
+      if (!next.ok) {
+        return;
+      }
+      set({ composition: next.value, dirty: true });
+    },
+
+    setNodeStyleOverride: (nodeId, property, value) => {
+      const { composition } = get();
+      if (!composition) {
+        return;
+      }
+      const next = setNodeOverrideStyle(composition, nodeId, property, value);
       if (!next.ok) {
         return;
       }

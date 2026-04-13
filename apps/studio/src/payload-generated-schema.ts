@@ -14,15 +14,23 @@ import {
   foreignKey,
   integer,
   varchar,
-  timestamp,
-  serial,
-  numeric,
-  boolean,
   jsonb,
+  serial,
+  timestamp,
+  boolean,
+  numeric,
   type AnyPgColumn,
   pgEnum,
 } from "@payloadcms/db-postgres/drizzle/pg-core";
 import { sql, relations } from "@payloadcms/db-postgres/drizzle";
+export const enum_pages_status = pgEnum("enum_pages_status", [
+  "draft",
+  "published",
+]);
+export const enum__pages_v_version_status = pgEnum(
+  "enum__pages_v_version_status",
+  ["draft", "published"],
+);
 export const enum_users_role = pgEnum("enum_users_role", [
   "admin",
   "designer",
@@ -95,14 +103,6 @@ export const enum__page_compositions_v_version_status = pgEnum(
   "enum__page_compositions_v_version_status",
   ["draft", "published"],
 );
-export const enum_pages_status = pgEnum("enum_pages_status", [
-  "draft",
-  "published",
-]);
-export const enum__pages_v_version_status = pgEnum(
-  "enum__pages_v_version_status",
-  ["draft", "published"],
-);
 export const enum_publish_jobs_kind = pgEnum("enum_publish_jobs_kind", [
   "page_publish",
   "component_publish",
@@ -124,6 +124,213 @@ export const enum_catalog_activity_action = pgEnum(
 export const enum_payload_folders_folder_type = pgEnum(
   "enum_payload_folders_folder_type",
   ["components"],
+);
+
+export const pages_content_slots_blocks = pgTable(
+  "pages_content_slots_blocks",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: varchar("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    componentDefinition: integer("component_definition_id").references(
+      () => components.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    editorFieldValues: jsonb("editor_field_values").default(sql`'{}'::jsonb`),
+  },
+  (columns) => [
+    index("pages_content_slots_blocks_order_idx").on(columns._order),
+    index("pages_content_slots_blocks_parent_id_idx").on(columns._parentID),
+    index("pages_content_slots_blocks_component_definition_idx").on(
+      columns.componentDefinition,
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [pages_content_slots.id],
+      name: "pages_content_slots_blocks_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const pages_content_slots = pgTable(
+  "pages_content_slots",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: integer("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    slotId: varchar("slot_id"),
+  },
+  (columns) => [
+    index("pages_content_slots_order_idx").on(columns._order),
+    index("pages_content_slots_parent_id_idx").on(columns._parentID),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [pages.id],
+      name: "pages_content_slots_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const pages = pgTable(
+  "pages",
+  {
+    id: serial("id").primaryKey(),
+    title: varchar("title"),
+    slug: varchar("slug"),
+    pageComposition: integer("page_composition_id").references(
+      () => page_compositions.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    templateEditorFields: jsonb("template_editor_fields").default(
+      sql`'{}'::jsonb`,
+    ),
+    seoDescription: jsonb("seo_description"),
+    socialShareText: jsonb("social_share_text"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    _status: enum_pages_status("_status").default("draft"),
+  },
+  (columns) => [
+    uniqueIndex("pages_slug_idx").on(columns.slug),
+    index("pages_page_composition_idx").on(columns.pageComposition),
+    index("pages_updated_at_idx").on(columns.updatedAt),
+    index("pages_created_at_idx").on(columns.createdAt),
+    index("pages__status_idx").on(columns._status),
+  ],
+);
+
+export const _pages_v_version_content_slots_blocks = pgTable(
+  "_pages_v_version_content_slots_blocks",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: integer("_parent_id").notNull(),
+    id: serial("id").primaryKey(),
+    componentDefinition: integer("component_definition_id").references(
+      () => components.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    editorFieldValues: jsonb("editor_field_values").default(sql`'{}'::jsonb`),
+    _uuid: varchar("_uuid"),
+  },
+  (columns) => [
+    index("_pages_v_version_content_slots_blocks_order_idx").on(columns._order),
+    index("_pages_v_version_content_slots_blocks_parent_id_idx").on(
+      columns._parentID,
+    ),
+    index("_pages_v_version_content_slots_blocks_component_definiti_idx").on(
+      columns.componentDefinition,
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [_pages_v_version_content_slots.id],
+      name: "_pages_v_version_content_slots_blocks_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const _pages_v_version_content_slots = pgTable(
+  "_pages_v_version_content_slots",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: integer("_parent_id").notNull(),
+    id: serial("id").primaryKey(),
+    slotId: varchar("slot_id"),
+    _uuid: varchar("_uuid"),
+  },
+  (columns) => [
+    index("_pages_v_version_content_slots_order_idx").on(columns._order),
+    index("_pages_v_version_content_slots_parent_id_idx").on(columns._parentID),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [_pages_v.id],
+      name: "_pages_v_version_content_slots_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const _pages_v = pgTable(
+  "_pages_v",
+  {
+    id: serial("id").primaryKey(),
+    parent: integer("parent_id").references(() => pages.id, {
+      onDelete: "set null",
+    }),
+    version_title: varchar("version_title"),
+    version_slug: varchar("version_slug"),
+    version_pageComposition: integer("version_page_composition_id").references(
+      () => page_compositions.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    version_templateEditorFields: jsonb(
+      "version_template_editor_fields",
+    ).default(sql`'{}'::jsonb`),
+    version_seoDescription: jsonb("version_seo_description"),
+    version_socialShareText: jsonb("version_social_share_text"),
+    version_updatedAt: timestamp("version_updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_createdAt: timestamp("version_created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version__status:
+      enum__pages_v_version_status("version__status").default("draft"),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    latest: boolean("latest"),
+  },
+  (columns) => [
+    index("_pages_v_parent_idx").on(columns.parent),
+    index("_pages_v_version_version_slug_idx").on(columns.version_slug),
+    index("_pages_v_version_version_page_composition_idx").on(
+      columns.version_pageComposition,
+    ),
+    index("_pages_v_version_version_updated_at_idx").on(
+      columns.version_updatedAt,
+    ),
+    index("_pages_v_version_version_created_at_idx").on(
+      columns.version_createdAt,
+    ),
+    index("_pages_v_version_version__status_idx").on(columns.version__status),
+    index("_pages_v_created_at_idx").on(columns.createdAt),
+    index("_pages_v_updated_at_idx").on(columns.updatedAt),
+    index("_pages_v_latest_idx").on(columns.latest),
+  ],
 );
 
 export const users_sessions = pgTable(
@@ -628,174 +835,6 @@ export const _page_compositions_v = pgTable(
   ],
 );
 
-export const pages_content = pgTable(
-  "pages_content",
-  {
-    _order: integer("_order").notNull(),
-    _parentID: integer("_parent_id").notNull(),
-    id: varchar("id").primaryKey(),
-    componentDefinition: integer("component_definition_id").references(
-      () => components.id,
-      {
-        onDelete: "set null",
-      },
-    ),
-    layoutSlotId: varchar("layout_slot_id").default("main"),
-    editorFieldValues: jsonb("editor_field_values").default(sql`'{}'::jsonb`),
-  },
-  (columns) => [
-    index("pages_content_order_idx").on(columns._order),
-    index("pages_content_parent_id_idx").on(columns._parentID),
-    index("pages_content_component_definition_idx").on(
-      columns.componentDefinition,
-    ),
-    foreignKey({
-      columns: [columns["_parentID"]],
-      foreignColumns: [pages.id],
-      name: "pages_content_parent_id_fk",
-    }).onDelete("cascade"),
-  ],
-);
-
-export const pages = pgTable(
-  "pages",
-  {
-    id: serial("id").primaryKey(),
-    title: varchar("title"),
-    slug: varchar("slug"),
-    pageComposition: integer("page_composition_id").references(
-      () => page_compositions.id,
-      {
-        onDelete: "set null",
-      },
-    ),
-    templateEditorFields: jsonb("template_editor_fields").default(
-      sql`'{}'::jsonb`,
-    ),
-    seoDescription: jsonb("seo_description"),
-    socialShareText: jsonb("social_share_text"),
-    updatedAt: timestamp("updated_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3,
-    })
-      .defaultNow()
-      .notNull(),
-    createdAt: timestamp("created_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3,
-    })
-      .defaultNow()
-      .notNull(),
-    _status: enum_pages_status("_status").default("draft"),
-  },
-  (columns) => [
-    uniqueIndex("pages_slug_idx").on(columns.slug),
-    index("pages_page_composition_idx").on(columns.pageComposition),
-    index("pages_updated_at_idx").on(columns.updatedAt),
-    index("pages_created_at_idx").on(columns.createdAt),
-    index("pages__status_idx").on(columns._status),
-  ],
-);
-
-export const _pages_v_version_content = pgTable(
-  "_pages_v_version_content",
-  {
-    _order: integer("_order").notNull(),
-    _parentID: integer("_parent_id").notNull(),
-    id: serial("id").primaryKey(),
-    componentDefinition: integer("component_definition_id").references(
-      () => components.id,
-      {
-        onDelete: "set null",
-      },
-    ),
-    layoutSlotId: varchar("layout_slot_id").default("main"),
-    editorFieldValues: jsonb("editor_field_values").default(sql`'{}'::jsonb`),
-    _uuid: varchar("_uuid"),
-  },
-  (columns) => [
-    index("_pages_v_version_content_order_idx").on(columns._order),
-    index("_pages_v_version_content_parent_id_idx").on(columns._parentID),
-    index("_pages_v_version_content_component_definition_idx").on(
-      columns.componentDefinition,
-    ),
-    foreignKey({
-      columns: [columns["_parentID"]],
-      foreignColumns: [_pages_v.id],
-      name: "_pages_v_version_content_parent_id_fk",
-    }).onDelete("cascade"),
-  ],
-);
-
-export const _pages_v = pgTable(
-  "_pages_v",
-  {
-    id: serial("id").primaryKey(),
-    parent: integer("parent_id").references(() => pages.id, {
-      onDelete: "set null",
-    }),
-    version_title: varchar("version_title"),
-    version_slug: varchar("version_slug"),
-    version_pageComposition: integer("version_page_composition_id").references(
-      () => page_compositions.id,
-      {
-        onDelete: "set null",
-      },
-    ),
-    version_templateEditorFields: jsonb(
-      "version_template_editor_fields",
-    ).default(sql`'{}'::jsonb`),
-    version_seoDescription: jsonb("version_seo_description"),
-    version_socialShareText: jsonb("version_social_share_text"),
-    version_updatedAt: timestamp("version_updated_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3,
-    }),
-    version_createdAt: timestamp("version_created_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3,
-    }),
-    version__status:
-      enum__pages_v_version_status("version__status").default("draft"),
-    createdAt: timestamp("created_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3,
-    })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3,
-    })
-      .defaultNow()
-      .notNull(),
-    latest: boolean("latest"),
-  },
-  (columns) => [
-    index("_pages_v_parent_idx").on(columns.parent),
-    index("_pages_v_version_version_slug_idx").on(columns.version_slug),
-    index("_pages_v_version_version_page_composition_idx").on(
-      columns.version_pageComposition,
-    ),
-    index("_pages_v_version_version_updated_at_idx").on(
-      columns.version_updatedAt,
-    ),
-    index("_pages_v_version_version_created_at_idx").on(
-      columns.version_createdAt,
-    ),
-    index("_pages_v_version_version__status_idx").on(columns.version__status),
-    index("_pages_v_created_at_idx").on(columns.createdAt),
-    index("_pages_v_updated_at_idx").on(columns.updatedAt),
-    index("_pages_v_latest_idx").on(columns.latest),
-  ],
-);
-
 export const release_snapshots = pgTable(
   "release_snapshots",
   {
@@ -1049,13 +1088,13 @@ export const payload_locked_documents_rels = pgTable(
     order: integer("order"),
     parent: integer("parent_id").notNull(),
     path: varchar("path").notNull(),
+    pagesID: integer("pages_id"),
     usersID: integer("users_id"),
     mediaID: integer("media_id"),
     "design-token-setsID": integer("design_token_sets_id"),
     "design-token-overridesID": integer("design_token_overrides_id"),
     componentsID: integer("components_id"),
     "page-compositionsID": integer("page_compositions_id"),
-    pagesID: integer("pages_id"),
     "release-snapshotsID": integer("release_snapshots_id"),
     "publish-jobsID": integer("publish_jobs_id"),
     "catalog-activityID": integer("catalog_activity_id"),
@@ -1066,6 +1105,7 @@ export const payload_locked_documents_rels = pgTable(
     index("payload_locked_documents_rels_order_idx").on(columns.order),
     index("payload_locked_documents_rels_parent_idx").on(columns.parent),
     index("payload_locked_documents_rels_path_idx").on(columns.path),
+    index("payload_locked_documents_rels_pages_id_idx").on(columns.pagesID),
     index("payload_locked_documents_rels_users_id_idx").on(columns.usersID),
     index("payload_locked_documents_rels_media_id_idx").on(columns.mediaID),
     index("payload_locked_documents_rels_design_token_sets_id_idx").on(
@@ -1080,7 +1120,6 @@ export const payload_locked_documents_rels = pgTable(
     index("payload_locked_documents_rels_page_compositions_id_idx").on(
       columns["page-compositionsID"],
     ),
-    index("payload_locked_documents_rels_pages_id_idx").on(columns.pagesID),
     index("payload_locked_documents_rels_release_snapshots_id_idx").on(
       columns["release-snapshotsID"],
     ),
@@ -1100,6 +1139,11 @@ export const payload_locked_documents_rels = pgTable(
       columns: [columns["parent"]],
       foreignColumns: [payload_locked_documents.id],
       name: "payload_locked_documents_rels_parent_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["pagesID"]],
+      foreignColumns: [pages.id],
+      name: "payload_locked_documents_rels_pages_fk",
     }).onDelete("cascade"),
     foreignKey({
       columns: [columns["usersID"]],
@@ -1130,11 +1174,6 @@ export const payload_locked_documents_rels = pgTable(
       columns: [columns["page-compositionsID"]],
       foreignColumns: [page_compositions.id],
       name: "payload_locked_documents_rels_page_compositions_fk",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [columns["pagesID"]],
-      foreignColumns: [pages.id],
-      name: "payload_locked_documents_rels_pages_fk",
     }).onDelete("cascade"),
     foreignKey({
       columns: [columns["release-snapshotsID"]],
@@ -1275,6 +1314,87 @@ export const design_system_settings = pgTable(
   ],
 );
 
+export const relations_pages_content_slots_blocks = relations(
+  pages_content_slots_blocks,
+  ({ one }) => ({
+    _parentID: one(pages_content_slots, {
+      fields: [pages_content_slots_blocks._parentID],
+      references: [pages_content_slots.id],
+      relationName: "blocks",
+    }),
+    componentDefinition: one(components, {
+      fields: [pages_content_slots_blocks.componentDefinition],
+      references: [components.id],
+      relationName: "componentDefinition",
+    }),
+  }),
+);
+export const relations_pages_content_slots = relations(
+  pages_content_slots,
+  ({ one, many }) => ({
+    _parentID: one(pages, {
+      fields: [pages_content_slots._parentID],
+      references: [pages.id],
+      relationName: "contentSlots",
+    }),
+    blocks: many(pages_content_slots_blocks, {
+      relationName: "blocks",
+    }),
+  }),
+);
+export const relations_pages = relations(pages, ({ one, many }) => ({
+  pageComposition: one(page_compositions, {
+    fields: [pages.pageComposition],
+    references: [page_compositions.id],
+    relationName: "pageComposition",
+  }),
+  contentSlots: many(pages_content_slots, {
+    relationName: "contentSlots",
+  }),
+}));
+export const relations__pages_v_version_content_slots_blocks = relations(
+  _pages_v_version_content_slots_blocks,
+  ({ one }) => ({
+    _parentID: one(_pages_v_version_content_slots, {
+      fields: [_pages_v_version_content_slots_blocks._parentID],
+      references: [_pages_v_version_content_slots.id],
+      relationName: "blocks",
+    }),
+    componentDefinition: one(components, {
+      fields: [_pages_v_version_content_slots_blocks.componentDefinition],
+      references: [components.id],
+      relationName: "componentDefinition",
+    }),
+  }),
+);
+export const relations__pages_v_version_content_slots = relations(
+  _pages_v_version_content_slots,
+  ({ one, many }) => ({
+    _parentID: one(_pages_v, {
+      fields: [_pages_v_version_content_slots._parentID],
+      references: [_pages_v.id],
+      relationName: "version_contentSlots",
+    }),
+    blocks: many(_pages_v_version_content_slots_blocks, {
+      relationName: "blocks",
+    }),
+  }),
+);
+export const relations__pages_v = relations(_pages_v, ({ one, many }) => ({
+  parent: one(pages, {
+    fields: [_pages_v.parent],
+    references: [pages.id],
+    relationName: "parent",
+  }),
+  version_pageComposition: one(page_compositions, {
+    fields: [_pages_v.version_pageComposition],
+    references: [page_compositions.id],
+    relationName: "version_pageComposition",
+  }),
+  version_contentSlots: many(_pages_v_version_content_slots, {
+    relationName: "version_contentSlots",
+  }),
+}));
 export const relations_users_sessions = relations(
   users_sessions,
   ({ one }) => ({
@@ -1385,58 +1505,6 @@ export const relations__page_compositions_v = relations(
     }),
   }),
 );
-export const relations_pages_content = relations(pages_content, ({ one }) => ({
-  _parentID: one(pages, {
-    fields: [pages_content._parentID],
-    references: [pages.id],
-    relationName: "content",
-  }),
-  componentDefinition: one(components, {
-    fields: [pages_content.componentDefinition],
-    references: [components.id],
-    relationName: "componentDefinition",
-  }),
-}));
-export const relations_pages = relations(pages, ({ one, many }) => ({
-  pageComposition: one(page_compositions, {
-    fields: [pages.pageComposition],
-    references: [page_compositions.id],
-    relationName: "pageComposition",
-  }),
-  content: many(pages_content, {
-    relationName: "content",
-  }),
-}));
-export const relations__pages_v_version_content = relations(
-  _pages_v_version_content,
-  ({ one }) => ({
-    _parentID: one(_pages_v, {
-      fields: [_pages_v_version_content._parentID],
-      references: [_pages_v.id],
-      relationName: "version_content",
-    }),
-    componentDefinition: one(components, {
-      fields: [_pages_v_version_content.componentDefinition],
-      references: [components.id],
-      relationName: "componentDefinition",
-    }),
-  }),
-);
-export const relations__pages_v = relations(_pages_v, ({ one, many }) => ({
-  parent: one(pages, {
-    fields: [_pages_v.parent],
-    references: [pages.id],
-    relationName: "parent",
-  }),
-  version_pageComposition: one(page_compositions, {
-    fields: [_pages_v.version_pageComposition],
-    references: [page_compositions.id],
-    relationName: "version_pageComposition",
-  }),
-  version_content: many(_pages_v_version_content, {
-    relationName: "version_content",
-  }),
-}));
 export const relations_release_snapshots = relations(
   release_snapshots,
   ({ one }) => ({
@@ -1526,6 +1594,11 @@ export const relations_payload_locked_documents_rels = relations(
       references: [payload_locked_documents.id],
       relationName: "_rels",
     }),
+    pagesID: one(pages, {
+      fields: [payload_locked_documents_rels.pagesID],
+      references: [pages.id],
+      relationName: "pages",
+    }),
     usersID: one(users, {
       fields: [payload_locked_documents_rels.usersID],
       references: [users.id],
@@ -1555,11 +1628,6 @@ export const relations_payload_locked_documents_rels = relations(
       fields: [payload_locked_documents_rels["page-compositionsID"]],
       references: [page_compositions.id],
       relationName: "page-compositions",
-    }),
-    pagesID: one(pages, {
-      fields: [payload_locked_documents_rels.pagesID],
-      references: [pages.id],
-      relationName: "pages",
     }),
     "release-snapshotsID": one(release_snapshots, {
       fields: [payload_locked_documents_rels["release-snapshotsID"]],
@@ -1635,6 +1703,8 @@ export const relations_design_system_settings = relations(
 );
 
 type DatabaseSchema = {
+  enum_pages_status: typeof enum_pages_status;
+  enum__pages_v_version_status: typeof enum__pages_v_version_status;
   enum_users_role: typeof enum_users_role;
   enum_design_token_sets_tokens_category: typeof enum_design_token_sets_tokens_category;
   enum_design_token_sets_status: typeof enum_design_token_sets_status;
@@ -1646,13 +1716,17 @@ type DatabaseSchema = {
   enum_page_compositions_status: typeof enum_page_compositions_status;
   enum__page_compositions_v_version_catalog_review_status: typeof enum__page_compositions_v_version_catalog_review_status;
   enum__page_compositions_v_version_status: typeof enum__page_compositions_v_version_status;
-  enum_pages_status: typeof enum_pages_status;
-  enum__pages_v_version_status: typeof enum__pages_v_version_status;
   enum_publish_jobs_kind: typeof enum_publish_jobs_kind;
   enum_publish_jobs_status: typeof enum_publish_jobs_status;
   enum_catalog_activity_resource_type: typeof enum_catalog_activity_resource_type;
   enum_catalog_activity_action: typeof enum_catalog_activity_action;
   enum_payload_folders_folder_type: typeof enum_payload_folders_folder_type;
+  pages_content_slots_blocks: typeof pages_content_slots_blocks;
+  pages_content_slots: typeof pages_content_slots;
+  pages: typeof pages;
+  _pages_v_version_content_slots_blocks: typeof _pages_v_version_content_slots_blocks;
+  _pages_v_version_content_slots: typeof _pages_v_version_content_slots;
+  _pages_v: typeof _pages_v;
   users_sessions: typeof users_sessions;
   users: typeof users;
   media: typeof media;
@@ -1665,10 +1739,6 @@ type DatabaseSchema = {
   _components_v: typeof _components_v;
   page_compositions: typeof page_compositions;
   _page_compositions_v: typeof _page_compositions_v;
-  pages_content: typeof pages_content;
-  pages: typeof pages;
-  _pages_v_version_content: typeof _pages_v_version_content;
-  _pages_v: typeof _pages_v;
   release_snapshots: typeof release_snapshots;
   publish_jobs: typeof publish_jobs;
   catalog_activity: typeof catalog_activity;
@@ -1682,6 +1752,12 @@ type DatabaseSchema = {
   payload_preferences_rels: typeof payload_preferences_rels;
   payload_migrations: typeof payload_migrations;
   design_system_settings: typeof design_system_settings;
+  relations_pages_content_slots_blocks: typeof relations_pages_content_slots_blocks;
+  relations_pages_content_slots: typeof relations_pages_content_slots;
+  relations_pages: typeof relations_pages;
+  relations__pages_v_version_content_slots_blocks: typeof relations__pages_v_version_content_slots_blocks;
+  relations__pages_v_version_content_slots: typeof relations__pages_v_version_content_slots;
+  relations__pages_v: typeof relations__pages_v;
   relations_users_sessions: typeof relations_users_sessions;
   relations_users: typeof relations_users;
   relations_media: typeof relations_media;
@@ -1694,10 +1770,6 @@ type DatabaseSchema = {
   relations__components_v: typeof relations__components_v;
   relations_page_compositions: typeof relations_page_compositions;
   relations__page_compositions_v: typeof relations__page_compositions_v;
-  relations_pages_content: typeof relations_pages_content;
-  relations_pages: typeof relations_pages;
-  relations__pages_v_version_content: typeof relations__pages_v_version_content;
-  relations__pages_v: typeof relations__pages_v;
   relations_release_snapshots: typeof relations_release_snapshots;
   relations_publish_jobs: typeof relations_publish_jobs;
   relations_catalog_activity: typeof relations_catalog_activity;

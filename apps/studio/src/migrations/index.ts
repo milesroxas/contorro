@@ -18,6 +18,7 @@ import * as migration_20260412_220000_pages_content_layout_slot_id from "./20260
 import * as migration_20260412_230000_backfill_builder_from_component_revisions from "./20260412_230000_backfill_builder_from_component_revisions";
 import * as migration_20260412_240000_components_collection_payload_folders from "./20260412_240000_components_collection_payload_folders";
 import * as migration_20260412_250000_simplify_components_columns from "./20260412_250000_simplify_components_columns";
+import * as migration_20260412_260000_pages_content_slots_nested from "./20260412_260000_pages_content_slots_nested";
 
 export const migrations = [
   {
@@ -119,5 +120,10 @@ export const migrations = [
     up: migration_20260412_250000_simplify_components_columns.up,
     down: migration_20260412_250000_simplify_components_columns.down,
     name: "20260412_250000_simplify_components_columns",
+  },
+  {
+    up: migration_20260412_260000_pages_content_slots_nested.up,
+    down: migration_20260412_260000_pages_content_slots_nested.down,
+    name: "20260412_260000_pages_content_slots_nested",
   },
 ];

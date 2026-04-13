@@ -15,21 +15,14 @@ import { createPortal } from "react-dom";
 
 import { ScrollArea } from "../../components/scroll-area.js";
 import { cn } from "../../lib/cn.js";
+import { isChildContainerPrimitive } from "../../lib/style-controls.js";
 import { PrimitiveNodeContextMenu } from "../context-menu/PrimitiveNodeContextMenu.js";
 import { InsertionDropZone } from "../dnd/InsertionDropZone.js";
 
-const TOKEN_META = [] as TokenMeta[];
-
 type PrimitiveRegistry = typeof defaultPrimitiveRegistry;
 
-const CONTAINER_KEYS = new Set([
-  "primitive.box",
-  "primitive.stack",
-  "primitive.grid",
-]);
-
 function isContainerNode(node: CompositionNode) {
-  return CONTAINER_KEYS.has(node.definitionKey);
+  return isChildContainerPrimitive(node.definitionKey);
 }
 
 function stackInnerLayout(node: CompositionNode): CSSProperties {
@@ -135,6 +128,7 @@ function ContainerChildList({
   parentNode,
   registry,
   selectedNodeId,
+  tokenMeta,
   onSelectNode,
   onRemoveNode,
 }: {
@@ -143,6 +137,7 @@ function ContainerChildList({
   parentNode: CompositionNode;
   registry: PrimitiveRegistry;
   selectedNodeId: string | null;
+  tokenMeta: TokenMeta[];
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
 }) {
@@ -157,6 +152,7 @@ function ContainerChildList({
             onSelectNode={onSelectNode}
             registry={registry}
             selectedNodeId={selectedNodeId}
+            tokenMeta={tokenMeta}
           />
           <InsertionDropZone
             parentId={parentNode.id}
@@ -262,6 +258,7 @@ function CanvasNode({
   nodeId,
   registry,
   selectedNodeId,
+  tokenMeta,
   onSelectNode,
   onRemoveNode,
 }: {
@@ -269,6 +266,7 @@ function CanvasNode({
   nodeId: string;
   registry: PrimitiveRegistry;
   selectedNodeId: string | null;
+  tokenMeta: TokenMeta[];
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
 }): ReactElement | null {
@@ -288,7 +286,7 @@ function CanvasNode({
   if (node.styleBindingId) {
     const sb = composition.styleBindings[node.styleBindingId];
     if (sb) {
-      const r = resolveStyleBinding(sb, TOKEN_META);
+      const r = resolveStyleBinding(sb, tokenMeta);
       if (r.classes) {
         className = r.classes;
       }
@@ -310,6 +308,7 @@ function CanvasNode({
       parentNode={node}
       registry={registry}
       selectedNodeId={selectedNodeId}
+      tokenMeta={tokenMeta}
     />
   ) : null;
 
@@ -523,12 +522,14 @@ export function BuilderCanvas({
   onSelectNode,
   onRemoveNode,
   onCanvasBackground,
+  tokenMeta = [],
 }: {
   composition: PageComposition;
   selectedNodeId: string | null;
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
   onCanvasBackground?: () => void;
+  tokenMeta?: TokenMeta[];
 }) {
   const registry = defaultPrimitiveRegistry;
 
@@ -540,6 +541,7 @@ export function BuilderCanvas({
       onSelectNode={onSelectNode}
       registry={registry}
       selectedNodeId={selectedNodeId}
+      tokenMeta={tokenMeta}
     />
   );
 

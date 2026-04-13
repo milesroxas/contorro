@@ -172,29 +172,31 @@ export interface Page {
     | boolean
     | null;
   /**
-   * Stack components on the page. When the page template has more than one layout region, pick which region each block belongs to.
+   * Regions match the selected page template’s layout slots. Add blocks inside each region; reordering regions is disabled.
    */
-  content?:
+  contentSlots?:
     | {
-        /**
-         * Choose a published component from your library.
-         */
-        componentDefinition: number | Component;
-        /**
-         * When the template has several slots, choose which region this block fills (ids match the builder Slot primitives).
-         */
-        layoutSlotId?: string | null;
-        /**
-         * CMS field values for this block (manifest from the component template).
-         */
-        editorFieldValues:
+        slotId: string;
+        blocks?:
           | {
-              [k: string]: unknown;
-            }
-          | unknown[]
-          | string
-          | number
-          | boolean
+              /**
+               * Choose a published component from your library.
+               */
+              componentDefinition: number | Component;
+              /**
+               * CMS field values for this block (manifest from the component template).
+               */
+              editorFieldValues:
+                | {
+                    [k: string]: unknown;
+                  }
+                | unknown[]
+                | string
+                | number
+                | boolean
+                | null;
+              id?: string | null;
+            }[]
           | null;
         id?: string | null;
       }[]
@@ -634,12 +636,17 @@ export interface PagesSelect<T extends boolean = true> {
   slug?: T;
   pageComposition?: T;
   templateEditorFields?: T;
-  content?:
+  contentSlots?:
     | T
     | {
-        componentDefinition?: T;
-        layoutSlotId?: T;
-        editorFieldValues?: T;
+        slotId?: T;
+        blocks?:
+          | T
+          | {
+              componentDefinition?: T;
+              editorFieldValues?: T;
+              id?: T;
+            };
         id?: T;
       };
   seoDescription?: T;

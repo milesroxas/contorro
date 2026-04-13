@@ -1,6 +1,8 @@
 import type {
   CompositionNode,
   PageComposition,
+  StyleOverrideValue,
+  StyleProperty,
   StyleBinding,
 } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
@@ -329,39 +331,81 @@ export function updateNodePropValues(
 export function setNodeTokenStyle(
   composition: PageComposition,
   nodeId: string,
-  property: string,
+  property: StyleProperty,
   token: string,
+): Result<PageComposition, "INVALID_NODE"> {
+  if (token.trim() === "") {
+    return upsertNodeStyleProperty(composition, nodeId, property);
+  }
+  return upsertNodeStyleProperty(composition, nodeId, property, {
+    type: "token",
+    property,
+    token: token.trim(),
+  });
+}
+
+/**
+ * Sets or clears a single override-backed style property on a node.
+ */
+export function setNodeOverrideStyle(
+  composition: PageComposition,
+  nodeId: string,
+  property: StyleProperty,
+  value: StyleOverrideValue | null,
+): Result<PageComposition, "INVALID_NODE"> {
+  if (value === null || (typeof value === "string" && value.trim() === "")) {
+    return upsertNodeStyleProperty(composition, nodeId, property);
+  }
+  return upsertNodeStyleProperty(composition, nodeId, property, {
+    type: "override",
+    property,
+    value,
+  });
+}
+
+function upsertNodeStyleProperty(
+  composition: PageComposition,
+  nodeId: string,
+  property: StyleProperty,
+  nextProperty?: StyleBinding["properties"][number],
 ): Result<PageComposition, "INVALID_NODE"> {
   const node = composition.nodes[nodeId];
   if (!node) {
     return err("INVALID_NODE");
   }
 
-  let bindingId = node.styleBindingId;
-  if (!bindingId) {
-    bindingId = makeId();
+  const existingBindingId = node.styleBindingId;
+  const existing =
+    existingBindingId !== undefined
+      ? composition.styleBindings[existingBindingId]
+      : undefined;
+  const filtered = (existing?.properties ?? []).filter(
+    (p) => p.property !== property,
+  );
+  const properties = nextProperty ? [...filtered, nextProperty] : filtered;
+
+  const nextNode: CompositionNode =
+    properties.length > 0
+      ? {
+          ...node,
+          styleBindingId: existingBindingId ?? makeId(),
+        }
+      : {
+          ...node,
+          styleBindingId: undefined,
+        };
+
+  const nextBindings = { ...composition.styleBindings };
+  if (existingBindingId && properties.length === 0) {
+    delete nextBindings[existingBindingId];
+  } else if (nextNode.styleBindingId) {
+    const binding: StyleBinding = {
+      id: nextNode.styleBindingId,
+      nodeId,
+      properties,
+    };
+    nextBindings[nextNode.styleBindingId] = binding;
   }
-
-  const existing = composition.styleBindings[bindingId];
-  const prevProps = existing?.properties ?? [];
-  const filtered = prevProps.filter((p) => p.property !== property);
-  const properties = [...filtered, { type: "token" as const, property, token }];
-
-  const binding: StyleBinding = {
-    id: bindingId,
-    nodeId,
-    properties,
-  };
-
-  const nextNode: CompositionNode = {
-    ...node,
-    styleBindingId: bindingId,
-  };
-
-  const nextBindings = {
-    ...composition.styleBindings,
-    [bindingId]: binding,
-  };
 
   const assembled: PageComposition = {
     rootId: composition.rootId,

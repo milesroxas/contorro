@@ -131,9 +131,9 @@ const cardDefinition = {
 };
 
 /**
- * Page template tree for builder/admin: stack + inline text + layout slot (page blocks) + CMS text.
+ * Page template tree for builder/admin: stack + inline text + two layout slots (page blocks) + CMS text.
  * Editor fields must use `contentBinding.source === "editor"` with `key === editorField.name`.
- * Blocks target a slot via `layoutSlotId` matching `primitive.slot` `propValues.slotId`.
+ * Page blocks live under `contentSlots[].blocks` keyed by `slotId` matching `primitive.slot` `propValues.slotId`.
  */
 const seedComposition = {
   rootId: "stack-root",
@@ -143,7 +143,7 @@ const seedComposition = {
       kind: "primitive" as const,
       definitionKey: "primitive.stack",
       parentId: null,
-      childIds: ["text-1", "text-hero", "slot-main"],
+      childIds: ["text-1", "text-hero", "slot-main", "slot-secondary"],
       propValues: {
         direction: "column",
         gap: "8px",
@@ -187,9 +187,65 @@ const seedComposition = {
       childIds: [],
       propValues: { slotId: "main" },
     },
+    "slot-secondary": {
+      id: "slot-secondary",
+      kind: "slot" as const,
+      definitionKey: "primitive.slot",
+      parentId: "stack-root",
+      childIds: [],
+      propValues: { slotId: "slot2" },
+    },
   },
   styleBindings: {},
 };
+
+const seedPageContentSlots = [
+  {
+    slotId: "main",
+    blocks: [
+      {
+        componentDefinition: null as number | null,
+        editorFieldValues: {
+          headline: "Main slot seeded block headline.",
+        },
+      },
+    ],
+  },
+  {
+    slotId: "slot2",
+    blocks: [
+      {
+        componentDefinition: null as number | null,
+        editorFieldValues: {
+          headline: "Slot2 seeded block headline.",
+        },
+      },
+    ],
+  },
+];
+
+const seedDesignerPageContentSlots = [
+  {
+    slotId: "main",
+    blocks: [
+      {
+        componentDefinition: null as number | null,
+        editorFieldValues: { headline: "Designer page main slot headline." },
+      },
+    ],
+  },
+  {
+    slotId: "slot2",
+    blocks: [
+      {
+        componentDefinition: null as number | null,
+        editorFieldValues: {
+          headline: "Designer page slot2 headline.",
+        },
+      },
+    ],
+  },
+];
 
 async function seed(): Promise<void> {
   const payload = await getPayload({ config });
@@ -408,6 +464,21 @@ async function seed(): Promise<void> {
       overrideAccess: true,
     });
 
+    const pageContentSlots = seedPageContentSlots.map((row) => ({
+      ...row,
+      blocks: row.blocks.map((block) => ({
+        ...block,
+        componentDefinition: cardCreated.id,
+      })),
+    }));
+    const designerPageContentSlots = seedDesignerPageContentSlots.map((row) => ({
+      ...row,
+      blocks: row.blocks.map((block) => ({
+        ...block,
+        componentDefinition: cardCreated.id,
+      })),
+    }));
+
     const composition = await payload.create({
       collection: "page-compositions",
       data: {
@@ -439,24 +510,9 @@ async function seed(): Promise<void> {
           "hero-headline":
             "Welcome — this page uses the seed template’s hero field.",
         },
-        content: [
-          {
-            componentDefinition: cardCreated.id,
-            layoutSlotId: "main",
-            editorFieldValues: {
-              headline: "Block and template on one page.",
-            },
-          },
-        ],
+        contentSlots: pageContentSlots,
       },
       draft: true,
-      overrideAccess: true,
-    });
-
-    await payload.update({
-      collection: "pages",
-      id: page.id,
-      data: { _status: "published" },
       overrideAccess: true,
     });
 
@@ -465,23 +521,11 @@ async function seed(): Promise<void> {
       data: {
         title: "Seed designer page",
         slug: SEED_PAGE_DESIGNER_SLUG,
-        content: [
-          {
-            componentDefinition: cardCreated.id,
-            editorFieldValues: { headline: "Hello World" },
-          },
-        ],
+        contentSlots: designerPageContentSlots,
       },
       draft: true,
       overrideAccess: true,
     });
-    await payload.update({
-      collection: "pages",
-      id: designerPage.id,
-      data: { _status: "published" },
-      overrideAccess: true,
-    });
-
     const base = (process.env.SITE_URL ?? "http://localhost:3000").replace(
       /\/$/,
       "",
@@ -494,7 +538,7 @@ async function seed(): Promise<void> {
       `  Page template:   ${SEED_PAGE_COMPOSITION_SLUG} (id: ${compositionId})`,
     );
     console.log(
-      `  Published page:  ${SEED_PAGE_SLUG} (template hero field + seed card block in main slot)`,
+      `  Seed page:       ${SEED_PAGE_SLUG} (template hero field + seed card blocks in main + slot2)`,
     );
     console.log(
       `  Designer page:   ${SEED_PAGE_DESIGNER_SLUG} (blocks only, no template)`,
