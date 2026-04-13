@@ -11,7 +11,6 @@ export {
   moveNode,
   removeSubtree,
   setNodeContentBinding,
-  setNodeOverrideStyle,
   setNodeTokenStyle,
   updateNodePropValues,
 } from "./graph/mutations.js";

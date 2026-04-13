@@ -15,10 +15,6 @@ import { Checkbox } from "../../components/ui/checkbox.js";
 import { Input } from "../../components/ui/input.js";
 import { Label } from "../../components/ui/label.js";
 import { cn } from "../../lib/cn.js";
-import {
-  CONTAINER_STYLE_PROPERTIES,
-  isChildContainerPrimitive,
-} from "../../lib/style-controls.js";
 
 function readStyleProperty(
   composition: PageComposition,
@@ -283,7 +279,6 @@ export function PropertyInspector({
   node,
   onTextChange,
   onNodeStyleToken,
-  onNodeStyleOverride,
   patchNodeProps,
   setNodeEditorFieldBinding,
 }: {
@@ -291,7 +286,6 @@ export function PropertyInspector({
   node: CompositionNode | null;
   onTextChange: (content: string) => void;
   onNodeStyleToken: (property: StyleProperty, token: string) => void;
-  onNodeStyleOverride: (property: StyleProperty, value: string | null) => void;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
@@ -309,7 +303,6 @@ export function PropertyInspector({
   const isSlot = node.definitionKey === "primitive.slot";
   const isLibraryComponent =
     node.definitionKey === "primitive.libraryComponent";
-  const isContainerPrimitive = isChildContainerPrimitive(node.definitionKey);
 
   const content =
     typeof node.propValues?.content === "string" ? node.propValues.content : "";
@@ -439,44 +432,6 @@ export function PropertyInspector({
             value={bgToken}
           />
         </label>
-      ) : null}
-      {isContainerPrimitive ? (
-        <div className="space-y-3 border-t border-border/60 pt-3">
-          <div className="text-xs font-medium text-foreground">
-            Layout spacing & size
-          </div>
-          {CONTAINER_STYLE_PROPERTIES.map((property) => {
-            const styleProp = readStyleProperty(composition, node, property);
-            const value =
-              styleProp?.type === "override"
-                ? typeof styleProp.value === "string"
-                  ? styleProp.value
-                  : ""
-                : "";
-            return (
-              <label className="block space-y-1" key={property}>
-                <span className="text-xs text-muted-foreground">
-                  {property}
-                </span>
-                <input
-                  className={cn(
-                    "flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs shadow-sm",
-                    "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                  )}
-                  onChange={(e) =>
-                    onNodeStyleOverride(
-                      property,
-                      e.target.value.trim() === "" ? null : e.target.value,
-                    )
-                  }
-                  placeholder="e.g. 16px, 100%, auto"
-                  type="text"
-                  value={value}
-                />
-              </label>
-            );
-          })}
-        </div>
       ) : null}
       {isSlot ? (
         <div className="space-y-2 border-t border-border/60 pt-3">

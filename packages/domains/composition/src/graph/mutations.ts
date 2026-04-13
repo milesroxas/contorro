@@ -2,7 +2,6 @@ import type {
   CompositionNode,
   PageComposition,
   StyleBinding,
-  StyleOverrideValue,
   StyleProperty,
 } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
@@ -341,25 +340,6 @@ export function setNodeTokenStyle(
     type: "token",
     property,
     token: token.trim(),
-  });
-}
-
-/**
- * Sets or clears a single override-backed style property on a node.
- */
-export function setNodeOverrideStyle(
-  composition: PageComposition,
-  nodeId: string,
-  property: StyleProperty,
-  value: StyleOverrideValue | null,
-): Result<PageComposition, "INVALID_NODE"> {
-  if (value === null || (typeof value === "string" && value.trim() === "")) {
-    return upsertNodeStyleProperty(composition, nodeId, property);
-  }
-  return upsertNodeStyleProperty(composition, nodeId, property, {
-    type: "override",
-    property,
-    value,
   });
 }
 

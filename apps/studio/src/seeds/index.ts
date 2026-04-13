@@ -285,22 +285,6 @@ async function seed(): Promise<void> {
       });
     }
 
-    const existingTokenSet = await payload.find({
-      collection: "design-token-sets",
-      where: { scopeKey: { equals: SEED_TOKEN_SCOPE_KEY } },
-      limit: 1,
-      depth: 0,
-      overrideAccess: true,
-    });
-    const priorTokenSetId = existingTokenSet.docs[0]?.id;
-    if (priorTokenSetId !== undefined) {
-      await payload.delete({
-        collection: "design-token-overrides",
-        where: { tokenSet: { equals: priorTokenSetId } },
-        overrideAccess: true,
-      });
-    }
-
     await payload.delete({
       collection: "design-token-sets",
       where: { scopeKey: { equals: SEED_TOKEN_SCOPE_KEY } },
@@ -368,26 +352,6 @@ async function seed(): Promise<void> {
       data: {
         defaultTokenSet: tokenSet.id,
         activeBrandKey: SEED_TOKEN_SCOPE_KEY,
-      },
-      overrideAccess: true,
-    });
-
-    await payload.create({
-      collection: "design-token-overrides",
-      data: {
-        tokenSet: tokenSet.id,
-        tokenKey: "color.surface.primary",
-        override: { hex: "#1e3a5f", alpha: 1 },
-      },
-      overrideAccess: true,
-    });
-
-    await payload.create({
-      collection: "design-token-overrides",
-      data: {
-        tokenSet: tokenSet.id,
-        tokenKey: "space.scale.2",
-        override: { value: 12, unit: "px" },
       },
       overrideAccess: true,
     });
@@ -548,9 +512,6 @@ async function seed(): Promise<void> {
     console.log(`  Token set:         ${SEED_TOKEN_SCOPE_KEY}`);
     console.log(
       "  Design system:   default token set and active brand key configured",
-    );
-    console.log(
-      `  Sample overrides: color.surface.primary, space.scale.2 (${SEED_TOKEN_SCOPE_KEY})`,
     );
     console.log(
       "  Library:         published components with a template appear in the block picker",

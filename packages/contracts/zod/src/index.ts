@@ -33,8 +33,6 @@ export {
   type StyleProperty,
 } from "./style-properties.js";
 export type {
-  OverrideStyleProperty,
-  StyleOverrideValue,
   StylePropertyEntry,
   TokenStyleProperty,
 } from "./style-binding.js";

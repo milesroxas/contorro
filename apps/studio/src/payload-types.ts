@@ -71,7 +71,6 @@ export interface Config {
     users: User;
     media: Media;
     'design-token-sets': DesignTokenSet;
-    'design-token-overrides': DesignTokenOverride;
     components: Component;
     'page-compositions': PageComposition;
     'release-snapshots': ReleaseSnapshot;
@@ -94,7 +93,6 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'design-token-sets': DesignTokenSetsSelect<false> | DesignTokenSetsSelect<true>;
-    'design-token-overrides': DesignTokenOverridesSelect<false> | DesignTokenOverridesSelect<true>;
     components: ComponentsSelect<false> | ComponentsSelect<true>;
     'page-compositions': PageCompositionsSelect<false> | PageCompositionsSelect<true>;
     'release-snapshots': ReleaseSnapshotsSelect<false> | ReleaseSnapshotsSelect<true>;
@@ -417,26 +415,6 @@ export interface DesignTokenSet {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "design-token-overrides".
- */
-export interface DesignTokenOverride {
-  id: number;
-  tokenSet: number | DesignTokenSet;
-  tokenKey: string;
-  override:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
  * Point-in-time page template tree captured when a page goes live.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -552,10 +530,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'design-token-sets';
         value: number | DesignTokenSet;
-      } | null)
-    | ({
-        relationTo: 'design-token-overrides';
-        value: number | DesignTokenOverride;
       } | null)
     | ({
         relationTo: 'components';
@@ -715,17 +689,6 @@ export interface DesignTokenSetsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "design-token-overrides_select".
- */
-export interface DesignTokenOverridesSelect<T extends boolean = true> {
-  tokenSet?: T;
-  tokenKey?: T;
-  override?: T;
-  updatedAt?: T;
-  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

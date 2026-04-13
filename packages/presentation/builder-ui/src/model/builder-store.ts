@@ -2,7 +2,6 @@ import type { TokenMeta } from "@repo/config-tailwind";
 import type {
   EditorFieldSpec,
   PageComposition,
-  StyleOverrideValue,
   StyleProperty,
 } from "@repo/contracts-zod";
 import {
@@ -10,7 +9,6 @@ import {
   moveNode as moveNodeInComposition,
   removeSubtree,
   setNodeContentBinding,
-  setNodeOverrideStyle,
   setNodeTokenStyle,
   updateNodePropValues,
 } from "@repo/domains-composition";
@@ -50,11 +48,6 @@ export type BuilderStoreState = {
     nodeId: string,
     property: StyleProperty,
     token: string,
-  ) => void;
-  setNodeStyleOverride: (
-    nodeId: string,
-    property: StyleProperty,
-    value: StyleOverrideValue | null,
   ) => void;
   setNodeEditorFieldBinding: (
     nodeId: string,
@@ -198,18 +191,6 @@ export function createBuilderStore(compositionId: string) {
         return;
       }
       const next = setNodeTokenStyle(composition, nodeId, property, token);
-      if (!next.ok) {
-        return;
-      }
-      set({ composition: next.value, dirty: true });
-    },
-
-    setNodeStyleOverride: (nodeId, property, value) => {
-      const { composition } = get();
-      if (!composition) {
-        return;
-      }
-      const next = setNodeOverrideStyle(composition, nodeId, property, value);
       if (!next.ok) {
         return;
       }

@@ -44,32 +44,6 @@ export function resolveStyleBinding(
       } else {
         inlineStyle[cssName] = `var(${tokenKeyToCssVar(prop.token)})`;
       }
-    } else if (prop.type === "override") {
-      const v = prop.value;
-      const cssName = cssPropName(prop.property);
-      if (
-        typeof v === "object" &&
-        v !== null &&
-        "hex" in v &&
-        typeof (v as { hex: string }).hex === "string"
-      ) {
-        const alpha = (v as { alpha?: number }).alpha;
-        const hex = (v as { hex: string }).hex;
-        inlineStyle[cssName] =
-          alpha !== undefined
-            ? `color-mix(in srgb, ${hex} ${alpha * 100}%, transparent)`
-            : hex;
-      } else if (
-        typeof v === "object" &&
-        v !== null &&
-        "value" in v &&
-        "unit" in v
-      ) {
-        const o = v as { value: number; unit: string };
-        inlineStyle[cssName] = `${o.value}${o.unit}`;
-      } else if (typeof v === "string" || typeof v === "number") {
-        inlineStyle[cssName] = String(v);
-      }
     }
   }
 

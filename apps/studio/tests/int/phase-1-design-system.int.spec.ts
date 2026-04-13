@@ -59,47 +59,6 @@ describe("Phase 1 test gate — Postgres + Payload", () => {
     }
   });
 
-  it("rejects invalid override payloads with APIError status 400", async () => {
-    const set = await payload.create({
-      collection: "design-token-sets",
-      data: {
-        title: "override base",
-        scopeKey: `override-base-${Date.now()}`,
-        tokens: [
-          {
-            key: "color.surface.primary",
-            category: "color",
-            resolvedValue: "#000000",
-          },
-        ],
-        _status: "draft",
-      },
-      overrideAccess: true,
-    });
-
-    try {
-      await payload.create({
-        collection: "design-token-overrides",
-        data: {
-          tokenSet: set.id,
-          tokenKey: "color.surface.primary",
-          override: { not: "a valid override shape" },
-        },
-        overrideAccess: true,
-      });
-      expect.fail("expected APIError");
-    } catch (e) {
-      expect(e).toBeInstanceOf(APIError);
-      expect((e as APIError).status).toBe(400);
-    }
-
-    await payload.delete({
-      collection: "design-token-sets",
-      id: set.id,
-      overrideAccess: true,
-    });
-  });
-
   it("creates a draft token set, publishes it, and emits TokenPublished once", async () => {
     const received: TokenPublishedPayload[] = [];
     const unsubscribe = defaultInProcessEventBus.subscribe(

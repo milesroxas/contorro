@@ -88,7 +88,6 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
   const setTextContent = useBuilder((s) => s.setTextContent);
   const patchNodeProps = useBuilder((s) => s.patchNodeProps);
   const setNodeStyleToken = useBuilder((s) => s.setNodeStyleToken);
-  const setNodeStyleOverride = useBuilder((s) => s.setNodeStyleOverride);
   const setNodeEditorFieldBinding = useBuilder(
     (s) => s.setNodeEditorFieldBinding,
   );
@@ -263,11 +262,6 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
                   onNodeStyleToken={(property, token) => {
                     if (selectedNodeId) {
                       setNodeStyleToken(selectedNodeId, property, token);
-                    }
-                  }}
-                  onNodeStyleOverride={(property, value) => {
-                    if (selectedNodeId) {
-                      setNodeStyleOverride(selectedNodeId, property, value);
                     }
                   }}
                   onTextChange={(c) => {
