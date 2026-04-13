@@ -2,11 +2,22 @@
 
 import type { EditorFieldSpec } from "@repo/contracts-zod";
 
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
 
 type Props = {
   fields: EditorFieldSpec[];
@@ -15,6 +26,77 @@ type Props = {
   /** Form processing / initializing — matches Payload field disabled state. */
   disabled?: boolean;
 };
+
+type MediaRecord = {
+  id: number;
+  url: string;
+  alt: string;
+};
+
+type MediaListItem = {
+  id: number;
+  url: string;
+  alt: string;
+  filename?: string;
+};
+
+async function uploadMediaFile(file: File, alt: string): Promise<MediaRecord> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("alt", alt.trim() || file.name);
+  const res = await fetch("/api/media", {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+  if (!res.ok) {
+    throw new Error(`Upload failed (${res.status})`);
+  }
+  const json = (await res.json()) as {
+    doc?: { id?: unknown; url?: unknown; alt?: unknown };
+    id?: unknown;
+    url?: unknown;
+    alt?: unknown;
+  };
+  const doc =
+    json.doc && typeof json.doc === "object" && !Array.isArray(json.doc)
+      ? json.doc
+      : json;
+  if (typeof doc.id !== "number" || typeof doc.url !== "string") {
+    throw new Error("Invalid upload response");
+  }
+  return {
+    id: doc.id,
+    url: doc.url,
+    alt: typeof doc.alt === "string" ? doc.alt : "",
+  };
+}
+
+async function fetchMediaRecords(): Promise<MediaListItem[]> {
+  const res = await fetch("/api/media?depth=0&limit=50&sort=-updatedAt", {
+    credentials: "include",
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to load media (${res.status})`);
+  }
+  const json = (await res.json()) as {
+    docs?: Array<{
+      id?: unknown;
+      url?: unknown;
+      alt?: unknown;
+      filename?: unknown;
+    }>;
+  };
+  const docs = Array.isArray(json.docs) ? json.docs : [];
+  return docs
+    .map((doc) => ({
+      id: typeof doc.id === "number" ? doc.id : Number.NaN,
+      url: typeof doc.url === "string" ? doc.url : "",
+      alt: typeof doc.alt === "string" ? doc.alt : "",
+      filename: typeof doc.filename === "string" ? doc.filename : "",
+    }))
+    .filter((doc) => Number.isFinite(doc.id) && doc.url.length > 0);
+}
 
 function RequiredMark() {
   return (
@@ -32,6 +114,36 @@ export function EditorFieldsInputs({
   patchField,
   disabled = false,
 }: Props) {
+  const [imageBusy, setImageBusy] = useState<Record<string, boolean>>({});
+  const [imageError, setImageError] = useState<Record<string, string | null>>(
+    {},
+  );
+  const [mediaPickerField, setMediaPickerField] = useState<string | null>(null);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [mediaDocs, setMediaDocs] = useState<MediaListItem[]>([]);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaLoadError, setMediaLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!mediaPickerOpen) {
+      return;
+    }
+    setMediaLoading(true);
+    setMediaLoadError(null);
+    void fetchMediaRecords()
+      .then((docs) => {
+        setMediaDocs(docs);
+      })
+      .catch((err) => {
+        setMediaLoadError(
+          err instanceof Error ? err.message : "Failed to load media entries",
+        );
+      })
+      .finally(() => {
+        setMediaLoading(false);
+      });
+  }, [mediaPickerOpen]);
+
   return (
     <div className="space-y-4">
       {fields.map((field) => {
@@ -121,25 +233,131 @@ export function EditorFieldsInputs({
               {desc ? (
                 <p className="text-xs text-muted-foreground">{desc}</p>
               ) : null}
-              <p className="text-xs text-muted-foreground">
-                Choose a file in Media, then enter its numeric ID.
-              </p>
+              <div className="flex items-center gap-2">
+                <Input
+                  disabled={disabled}
+                  id={id}
+                  inputMode="numeric"
+                  onChange={(e) => {
+                    const t = e.target.value.trim();
+                    if (t === "") {
+                      patchField(field.name, "");
+                      return;
+                    }
+                    const parsed = Number.parseInt(t, 10);
+                    patchField(
+                      field.name,
+                      Number.isFinite(parsed) ? parsed : t,
+                    );
+                  }}
+                  type="text"
+                  value={mediaId === "" ? "" : String(mediaId)}
+                />
+                <Sheet
+                  onOpenChange={(open) => {
+                    setMediaPickerOpen(open);
+                    if (open) {
+                      setMediaPickerField(field.name);
+                    } else if (mediaPickerField === field.name) {
+                      setMediaPickerField(null);
+                    }
+                  }}
+                  open={mediaPickerOpen && mediaPickerField === field.name}
+                >
+                  <SheetTrigger asChild>
+                    <Button disabled={disabled} type="button" variant="outline">
+                      Browse
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent>
+                    <SheetHeader>
+                      <SheetTitle>Select media</SheetTitle>
+                      <SheetDescription>
+                        Pick an existing Payload media record.
+                      </SheetDescription>
+                    </SheetHeader>
+                    <div className="space-y-2 overflow-y-auto">
+                      {mediaLoading ? (
+                        <p className="text-sm text-muted-foreground">
+                          Loading…
+                        </p>
+                      ) : mediaLoadError ? (
+                        <p className="text-sm text-destructive">
+                          {mediaLoadError}
+                        </p>
+                      ) : mediaDocs.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          No media entries found.
+                        </p>
+                      ) : (
+                        mediaDocs.map((media) => (
+                          <button
+                            className="w-full rounded-md border border-border/60 p-2 text-left hover:bg-muted/50"
+                            key={media.id}
+                            onClick={() => {
+                              patchField(field.name, media.id);
+                              setMediaPickerOpen(false);
+                            }}
+                            type="button"
+                          >
+                            <div className="text-sm font-medium">
+                              {media.alt || media.filename || media.url}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              ID {media.id}
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                    <div className="pt-3">
+                      <SheetClose asChild>
+                        <Button type="button" variant="outline">
+                          Close
+                        </Button>
+                      </SheetClose>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
+              <Label htmlFor={`${id}-upload`}>Upload image</Label>
               <Input
-                disabled={disabled}
-                id={id}
-                inputMode="numeric"
+                accept="image/*"
+                disabled={disabled || imageBusy[field.name]}
+                id={`${id}-upload`}
                 onChange={(e) => {
-                  const t = e.target.value.trim();
-                  if (t === "") {
-                    patchField(field.name, "");
+                  const file = e.target.files?.[0];
+                  if (!file) {
                     return;
                   }
-                  const parsed = Number.parseInt(t, 10);
-                  patchField(field.name, Number.isFinite(parsed) ? parsed : t);
+                  setImageBusy((prev) => ({ ...prev, [field.name]: true }));
+                  setImageError((prev) => ({ ...prev, [field.name]: null }));
+                  void uploadMediaFile(file, file.name)
+                    .then((media) => {
+                      patchField(field.name, media.id);
+                    })
+                    .catch((err) => {
+                      setImageError((prev) => ({
+                        ...prev,
+                        [field.name]:
+                          err instanceof Error ? err.message : "Upload failed",
+                      }));
+                    })
+                    .finally(() => {
+                      setImageBusy((prev) => ({
+                        ...prev,
+                        [field.name]: false,
+                      }));
+                      e.target.value = "";
+                    });
                 }}
-                type="text"
-                value={mediaId === "" ? "" : String(mediaId)}
+                type="file"
               />
+              {imageError[field.name] ? (
+                <p className="text-xs text-destructive">
+                  {imageError[field.name]}
+                </p>
+              ) : null}
             </div>
           );
         }

@@ -38,7 +38,7 @@ function LibraryPaletteTile({ item }: { item: Item }) {
         className="size-7 text-muted-foreground"
         stroke={1.25}
       />
-      <span className="line-clamp-2 min-h-[2.25rem] text-[0.65rem] font-medium text-foreground">
+      <span className="line-clamp-2 min-h-[2.25rem] text-sm font-medium text-foreground">
         {item.displayName}
       </span>
     </button>
@@ -83,9 +83,9 @@ export function LibraryComponentCatalog({
 
   const grid =
     items === null ? (
-      <div className="text-xs text-muted-foreground">Loading…</div>
+      <div className="text-sm text-muted-foreground">Loading…</div>
     ) : items.length === 0 ? (
-      <div className="text-xs leading-snug text-muted-foreground">
+      <div className="text-sm leading-snug text-muted-foreground">
         {loadError ??
           "No library components with a saved layout yet. Publish a component first."}
       </div>
@@ -103,7 +103,7 @@ export function LibraryComponentCatalog({
 
   return (
     <div className="rounded-lg border border-border bg-muted/15 p-3 dark:bg-muted/10">
-      <div className="mb-2.5 text-[0.65rem] font-semibold tracking-wide text-muted-foreground uppercase">
+      <div className="mb-2.5 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
         Components
       </div>
       {grid}

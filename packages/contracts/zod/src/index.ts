@@ -26,7 +26,13 @@ export {
   type DesignTokenInput,
   type TokenCategory,
 } from "./design-system.js";
-export { StyleBindingSchema, type StyleBinding } from "./style-binding.js";
+export {
+  SIZE_UTILITY_VALUES,
+  SPACING_UTILITY_VALUES,
+  StyleBindingSchema,
+  utilityValuesForStyleProperty,
+  type StyleBinding,
+} from "./style-binding.js";
 export {
   STYLE_PROPERTY_KEYS,
   StylePropertySchema,
@@ -35,6 +41,7 @@ export {
 export type {
   StylePropertyEntry,
   TokenStyleProperty,
+  UtilityStyleProperty,
 } from "./style-binding.js";
 export {
   EDITOR_FIELD_TYPES,

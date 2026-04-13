@@ -7,13 +7,27 @@ export function Box({
   className,
   style,
 }: RuntimePrimitiveProps) {
+  const rawTag = node.propValues?.tag;
+  const tag =
+    rawTag === "header" ||
+    rawTag === "main" ||
+    rawTag === "footer" ||
+    rawTag === "section" ||
+    rawTag === "article" ||
+    rawTag === "aside" ||
+    rawTag === "nav"
+      ? rawTag
+      : "div";
+
+  const Tag = tag;
+
   return (
-    <div
+    <Tag
       className={className}
       data-definition={node.definitionKey}
       style={style}
     >
       {children}
-    </div>
+    </Tag>
   );
 }

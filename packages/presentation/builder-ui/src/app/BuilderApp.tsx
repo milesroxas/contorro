@@ -1,19 +1,20 @@
 "use client";
 
 import {
+  type CollisionDetection,
   DndContext,
   type DragEndEvent,
   DragOverlay,
   type DragStartEvent,
   PointerSensor,
-  closestCorners,
+  closestCenter,
+  pointerWithin,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 
 import { BuilderPanel } from "../components/builder-panel.js";
-import { ScrollArea } from "../components/scroll-area.js";
 import { BuilderCanvas } from "../features/canvas/BuilderCanvas.js";
 import type { InsertDropData } from "../features/dnd/InsertionDropZone.js";
 import { DraftSaveBar } from "../features/draft-save/DraftSaveBar.js";
@@ -44,6 +45,22 @@ function runtimeCssVariables(cssVariables: string): string {
     '$1[data-builder-theme="dark"] {',
   );
 }
+
+const pointerFirstCollisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length > 0) {
+    return pointerCollisions;
+  }
+  return closestCenter(args);
+};
+
+type ResizeSide = "left" | "right";
+
+const MIN_LEFT_PANEL_WIDTH = 240;
+const MAX_LEFT_PANEL_WIDTH = 520;
+const MIN_RIGHT_PANEL_WIDTH = 300;
+const MAX_RIGHT_PANEL_WIDTH = 640;
+const MIN_CENTER_WIDTH = 420;
 
 function BuilderDragPreview({
   activeNodeId,
@@ -102,6 +119,16 @@ export function BuilderApp({
   const [paletteSubtitle, setPaletteSubtitle] = useState<string | null>(null);
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [leftPanelWidth, setLeftPanelWidth] = useState(300);
+  const [rightPanelWidth, setRightPanelWidth] = useState(360);
+  const [isResizingPanels, setIsResizingPanels] = useState(false);
+  const layoutRef = useRef<HTMLDivElement | null>(null);
+  const resizeStateRef = useRef<{
+    side: ResizeSide;
+    startX: number;
+    leftWidth: number;
+    rightWidth: number;
+  } | null>(null);
 
   const composition = useBuilder((s) => s.composition);
   const tokenMetadata = useBuilder((s) => s.tokenMetadata);
@@ -123,7 +150,7 @@ export function BuilderApp({
   const moveNode = useBuilder((s) => s.moveNode);
   const setTextContent = useBuilder((s) => s.setTextContent);
   const patchNodeProps = useBuilder((s) => s.patchNodeProps);
-  const setNodeStyleToken = useBuilder((s) => s.setNodeStyleToken);
+  const setNodeStyleEntry = useBuilder((s) => s.setNodeStyleEntry);
   const setNodeEditorFieldBinding = useBuilder(
     (s) => s.setNodeEditorFieldBinding,
   );
@@ -187,6 +214,65 @@ export function BuilderApp({
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [redo, undo]);
+
+  useEffect(() => {
+    const onPointerMove = (event: PointerEvent) => {
+      const state = resizeStateRef.current;
+      const layout = layoutRef.current;
+      if (!state || !layout) {
+        return;
+      }
+      const deltaX = event.clientX - state.startX;
+      const availableWidth = layout.getBoundingClientRect().width;
+      if (state.side === "left") {
+        const maxLeft = Math.min(
+          MAX_LEFT_PANEL_WIDTH,
+          availableWidth - state.rightWidth - MIN_CENTER_WIDTH,
+        );
+        const next = Math.max(
+          MIN_LEFT_PANEL_WIDTH,
+          Math.min(maxLeft, state.leftWidth + deltaX),
+        );
+        setLeftPanelWidth(next);
+        return;
+      }
+
+      const maxRight = Math.min(
+        MAX_RIGHT_PANEL_WIDTH,
+        availableWidth - state.leftWidth - MIN_CENTER_WIDTH,
+      );
+      const next = Math.max(
+        MIN_RIGHT_PANEL_WIDTH,
+        Math.min(maxRight, state.rightWidth - deltaX),
+      );
+      setRightPanelWidth(next);
+    };
+
+    const stopResize = () => {
+      resizeStateRef.current = null;
+      setIsResizingPanels(false);
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", stopResize);
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", stopResize);
+    };
+  }, []);
+
+  const startResize = (side: ResizeSide, clientX: number) => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      return;
+    }
+    resizeStateRef.current = {
+      side,
+      startX: clientX,
+      leftWidth: leftPanelWidth,
+      rightWidth: rightPanelWidth,
+    };
+    setIsResizingPanels(true);
+  };
 
   const onDragStart = (event: DragStartEvent) => {
     const d = event.active.data.current;
@@ -289,7 +375,7 @@ export function BuilderApp({
 
   return (
     <DndContext
-      collisionDetection={closestCorners}
+      collisionDetection={pointerFirstCollisionDetection}
       onDragCancel={onDragCancel}
       onDragEnd={onDragEnd}
       onDragStart={onDragStart}
@@ -297,7 +383,7 @@ export function BuilderApp({
     >
       <div
         className={cn(
-          "flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-sm",
+          "flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-sm",
           theme === "dark" && "dark",
         )}
         data-builder-theme={theme}
@@ -329,15 +415,31 @@ export function BuilderApp({
           studioHref={studioHref}
           theme={theme}
         />
-        <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 auto-rows-[minmax(0,1fr)] gap-3 p-3 lg:auto-rows-auto lg:grid-cols-[minmax(0,220px)_1fr_minmax(0,280px)] lg:grid-rows-1">
-          <div className="flex min-h-0 min-w-0 flex-col gap-3">
+        <div
+          className={cn(
+            "grid min-h-0 min-w-0 flex-1 grid-cols-1 auto-rows-fr gap-3 overflow-hidden p-3 lg:auto-rows-auto lg:grid-cols-[minmax(240px,var(--builder-left-panel-width))_6px_minmax(0,1fr)_6px_minmax(300px,var(--builder-right-panel-width))] lg:grid-rows-1",
+            isResizingPanels && "select-none",
+          )}
+          ref={layoutRef}
+          style={
+            {
+              "--builder-left-panel-width": `${leftPanelWidth}px`,
+              "--builder-right-panel-width": `${rightPanelWidth}px`,
+            } as CSSProperties
+          }
+        >
+          <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden">
             <BuilderPanel title="Primitives">
               <PrimitiveCatalog embedded />
             </BuilderPanel>
             <BuilderPanel title="Library">
               <LibraryComponentCatalog embedded />
             </BuilderPanel>
-            <BuilderPanel className="flex-[1.25_1_0%]" title="Layers">
+            <BuilderPanel
+              className="min-h-[16rem] flex-1"
+              contentClassName="flex-1"
+              title="Layers"
+            >
               <NodeTree
                 composition={composition}
                 embedded
@@ -347,6 +449,17 @@ export function BuilderApp({
               />
             </BuilderPanel>
           </div>
+          <button
+            aria-label="Resize left panel"
+            className="group hidden cursor-col-resize items-center justify-center rounded-sm bg-transparent lg:flex"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              startResize("left", event.clientX);
+            }}
+            type="button"
+          >
+            <div className="h-full w-px bg-border/75 transition-colors group-hover:bg-primary/60" />
+          </button>
           <div className="flex min-h-0 min-w-0 flex-col">
             {runtimeTokenCss ? <style>{runtimeTokenCss}</style> : null}
             <BuilderCanvas
@@ -358,40 +471,49 @@ export function BuilderApp({
               tokenMeta={tokenMetadata}
             />
           </div>
-          <div className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-border bg-muted/20 dark:bg-muted/10">
-            <div className="shrink-0 border-b border-border/70 px-3 py-2.5 text-xs font-medium text-muted-foreground">
-              Inspector
-            </div>
-            <ScrollArea className="min-h-0 min-w-0 flex-1">
-              <div className="p-3 pr-2">
-                <PropertyInspector
-                  composition={composition}
-                  node={selectedNode}
-                  tokenMetadata={tokenMetadata}
-                  onNodeStyleToken={(property, token) => {
-                    if (selectedNodeId) {
-                      setNodeStyleToken(selectedNodeId, property, token);
-                    }
-                  }}
-                  onTextChange={(c) => {
-                    if (selectedNodeId) {
-                      setTextContent(selectedNodeId, c);
-                    }
-                  }}
-                  patchNodeProps={(patch) => {
-                    if (selectedNodeId) {
-                      patchNodeProps(selectedNodeId, patch);
-                    }
-                  }}
-                  setNodeEditorFieldBinding={(field) => {
-                    if (selectedNodeId) {
-                      setNodeEditorFieldBinding(selectedNodeId, field);
-                    }
-                  }}
-                />
-              </div>
-            </ScrollArea>
-          </div>
+          <button
+            aria-label="Resize inspector panel"
+            className="group hidden cursor-col-resize items-center justify-center rounded-sm bg-transparent lg:flex"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              startResize("right", event.clientX);
+            }}
+            type="button"
+          >
+            <div className="h-full w-px bg-border/75 transition-colors group-hover:bg-primary/60" />
+          </button>
+          <BuilderPanel
+            className="min-h-0 min-w-0 rounded-md bg-muted/20 dark:bg-muted/10"
+            collapsible={false}
+            contentClassName="flex-1"
+            title="Inspector"
+          >
+            <PropertyInspector
+              composition={composition}
+              node={selectedNode}
+              tokenMetadata={tokenMetadata}
+              onNodeStyleEntry={(property, entry) => {
+                if (selectedNodeId) {
+                  setNodeStyleEntry(selectedNodeId, property, entry);
+                }
+              }}
+              onTextChange={(c) => {
+                if (selectedNodeId) {
+                  setTextContent(selectedNodeId, c);
+                }
+              }}
+              patchNodeProps={(patch) => {
+                if (selectedNodeId) {
+                  patchNodeProps(selectedNodeId, patch);
+                }
+              }}
+              setNodeEditorFieldBinding={(field) => {
+                if (selectedNodeId) {
+                  setNodeEditorFieldBinding(selectedNodeId, field);
+                }
+              }}
+            />
+          </BuilderPanel>
         </div>
       </div>
       <DragOverlay dropAnimation={null}>

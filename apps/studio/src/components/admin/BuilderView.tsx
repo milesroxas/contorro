@@ -56,8 +56,8 @@ function BuilderViewInner() {
 /** Payload admin custom view — architecture spec Phase 3. */
 export default function BuilderView() {
   return (
-    <div className="flex min-h-dvh w-full min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
-      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
+    <div className="flex h-dvh max-h-dvh w-full min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
+      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden">
         <Suspense
           fallback={
             <div className="flex min-h-0 flex-1 items-center justify-center p-6 text-muted-foreground">

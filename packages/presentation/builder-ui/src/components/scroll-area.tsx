@@ -22,7 +22,7 @@ function ScrollArea({
       data-slot="scroll-area"
       {...props}
     >
-      <ScrollAreaViewport className="h-full w-full rounded-[inherit] [&>div]:block! [&>div]:h-full [&>div]:min-h-0">
+      <ScrollAreaViewport className="size-full rounded-[inherit]">
         {children}
       </ScrollAreaViewport>
       <ScrollBar />
@@ -39,11 +39,9 @@ function ScrollBar({
   return (
     <ScrollAreaScrollbar
       className={cn(
-        "flex touch-none select-none transition-colors",
-        orientation === "vertical" &&
-          "h-full w-2.5 border-l border-l-transparent p-px",
-        orientation === "horizontal" &&
-          "h-2.5 flex-col border-t border-t-transparent p-px",
+        "flex touch-none select-none transition-colors data-[state=hidden]:opacity-0 data-[state=visible]:opacity-100",
+        "data-[orientation=vertical]:h-full data-[orientation=vertical]:w-2.5 data-[orientation=vertical]:border-l data-[orientation=vertical]:border-l-transparent data-[orientation=vertical]:p-px",
+        "data-[orientation=horizontal]:h-2.5 data-[orientation=horizontal]:flex-col data-[orientation=horizontal]:border-t data-[orientation=horizontal]:border-t-transparent data-[orientation=horizontal]:p-px",
         className,
       )}
       data-slot="scroll-area-scrollbar"

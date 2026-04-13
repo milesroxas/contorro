@@ -8,7 +8,7 @@ import {
 import { defaultPrimitiveRegistry } from "@repo/runtime-primitives";
 import { renderComposition } from "@repo/runtime-renderer";
 import type { Payload } from "payload";
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 
 import { resolveImageEditorFieldValuesForRender } from "@/lib/resolve-editor-field-image-values";
 
@@ -128,13 +128,9 @@ async function renderOneBlock(
   );
 
   return (
-    <section
-      className="designer-component-block mb-8"
-      data-definition-id={defId}
-      key={`designer-${defId}-${blockIndex}`}
-    >
+    <Fragment key={`designer-${defId}-${blockIndex}`}>
       {renderComposition(merged, defaultPrimitiveRegistry, tokenMeta)}
-    </section>
+    </Fragment>
   );
 }
 

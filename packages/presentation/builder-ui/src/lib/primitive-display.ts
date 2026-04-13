@@ -3,6 +3,8 @@ import type { Icon } from "@tabler/icons-react";
 import {
   IconBox,
   IconComponents,
+  IconH1,
+  IconHandClick,
   IconLayoutGrid,
   IconLayoutList,
   IconPhoto,
@@ -15,6 +17,8 @@ export const PRIMITIVE_KEYS = BUILDER_PALETTE_PRIMITIVE_KEYS;
 const META: Record<string, { label: string; Icon: Icon }> = {
   "primitive.box": { label: "Box", Icon: IconBox },
   "primitive.text": { label: "Text", Icon: IconTypography },
+  "primitive.heading": { label: "Heading", Icon: IconH1 },
+  "primitive.button": { label: "Button", Icon: IconHandClick },
   "primitive.stack": { label: "Stack", Icon: IconLayoutList },
   "primitive.grid": { label: "Grid", Icon: IconLayoutGrid },
   "primitive.image": { label: "Image", Icon: IconPhoto },

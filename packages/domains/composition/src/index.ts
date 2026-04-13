@@ -4,6 +4,8 @@ export type {
   LoadedComposition,
 } from "./ports/composition-repository.js";
 export { defaultEmptyPageComposition } from "./default-empty-page-composition.js";
+export { defaultPageTemplateComposition } from "./default-page-template-composition.js";
+export { normalizeTemplateShell } from "./normalize-template-shell.js";
 export {
   builderNewCompositionSessionId,
   isBuilderNewComponentSessionId,
@@ -18,6 +20,7 @@ export {
   moveNode,
   removeSubtree,
   setNodeContentBinding,
+  setNodeStyleProperty,
   setNodeTokenStyle,
   updateNodePropValues,
 } from "./graph/mutations.js";
@@ -55,7 +58,10 @@ export {
 } from "./primitives.js";
 export {
   findInvalidStyleTokens,
+  stylePropertiesBySectionForDefinitionKey,
+  styleSectionForProperty,
   stylePropertiesForDefinitionKey,
   stylePropertyLabel,
   type InvalidStyleTokenIssue,
+  type StyleSectionId,
 } from "./style-authoring.js";

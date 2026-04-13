@@ -9,28 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { cn } from "../../lib/cn.js";
-
-const btnSecondary = cn(
-  "inline-flex h-8 items-center justify-center rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground shadow-sm",
-  "transition-colors hover:bg-muted",
-  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-  "disabled:pointer-events-none disabled:opacity-40",
-);
-
-const btnPrimary = cn(
-  "inline-flex h-8 items-center justify-center rounded-md border border-transparent bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm",
-  "transition-colors hover:bg-primary/90",
-  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-  "disabled:pointer-events-none disabled:opacity-40",
-);
-
-const btnGhost = cn(
-  "inline-flex h-8 items-center justify-center rounded-md border border-transparent px-3 text-xs font-medium text-muted-foreground",
-  "transition-colors hover:bg-muted hover:text-foreground",
-  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-  "disabled:pointer-events-none disabled:opacity-40",
-);
+import { Button } from "../../components/ui/button.js";
 
 export function DraftSaveBar({
   name,
@@ -81,28 +60,29 @@ export function DraftSaveBar({
 
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-muted/20 px-4 py-3 dark:bg-muted/10">
-      <a className={btnGhost} href={studioHref}>
-        Studio
-      </a>
-      <button
+      <Button asChild size="sm" variant="ghost">
+        <a href={studioHref}>Studio</a>
+      </Button>
+      <Button
         aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-        className={btnGhost}
         onClick={onToggleTheme}
+        size="sm"
         title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
         type="button"
+        variant="ghost"
       >
         {theme === "dark" ? (
           <IconSunHigh className="size-4" />
         ) : (
           <IconMoonStars className="size-4" />
         )}
-      </button>
+      </Button>
       <div className="h-5 w-px bg-border" />
       {editingName && canEditName ? (
         <>
           <input
             aria-label="Template name"
-            className="h-8 min-w-[220px] max-w-[38vw] rounded-md border border-border bg-background px-2.5 text-xs text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-8 min-w-[220px] max-w-[38vw] rounded-md border border-border bg-background px-2.5 text-sm text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onChange={(e) => setDraftName(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -118,88 +98,94 @@ export function DraftSaveBar({
             }}
             value={draftName}
           />
-          <button
-            className={btnSecondary}
+          <Button
             disabled={!hasNameChanges || renaming}
             onClick={() => {
               void onRename(draftName.trim());
               setEditingName(false);
             }}
+            size="sm"
             type="button"
+            variant="ghost"
           >
             Save name
-          </button>
-          <button
-            className={btnGhost}
+          </Button>
+          <Button
             disabled={renaming}
             onClick={() => {
               setDraftName(name);
               setEditingName(false);
             }}
+            size="sm"
             type="button"
+            variant="ghost"
           >
             Cancel
-          </button>
+          </Button>
         </>
       ) : (
         <>
-          <p className="max-w-[32vw] truncate text-xs font-medium text-foreground">
+          <p className="max-w-[32vw] truncate text-sm font-medium text-foreground">
             {name || "Untitled template"}
           </p>
           {canEditName ? (
-            <button
+            <Button
               aria-label="Rename template"
-              className={btnGhost}
               disabled={renaming}
               onClick={() => setEditingName(true)}
+              size="sm"
               type="button"
+              variant="ghost"
             >
               <IconPencil className="size-4" />
               <span className="sr-only">Rename template</span>
-            </button>
+            </Button>
           ) : null}
         </>
       )}
       <div className="min-w-0 flex-1" />
-      <button
+      <Button
         aria-label="Undo"
-        className={btnGhost}
         disabled={!canUndo || saving}
         onClick={() => onUndo()}
+        size="sm"
         title="Undo (Cmd/Ctrl+Z)"
         type="button"
+        variant="ghost"
       >
         <IconArrowBackUp className="size-4" />
-      </button>
-      <button
+      </Button>
+      <Button
         aria-label="Redo"
-        className={btnGhost}
         disabled={!canRedo || saving}
         onClick={() => onRedo()}
+        size="sm"
         title="Redo (Shift+Cmd/Ctrl+Z)"
         type="button"
+        variant="ghost"
       >
         <IconArrowForwardUp className="size-4" />
-      </button>
+      </Button>
       <div className="h-5 w-px bg-border" />
-      <button
-        className={btnSecondary}
+      <Button
         data-testid="save-draft"
         disabled={!dirty || saving}
         onClick={() => onSaveDraft()}
+        size="sm"
         type="button"
+        variant="ghost"
       >
         Save draft
-      </button>
-      <button
-        className={btnPrimary}
+      </Button>
+      <Button
         data-testid="publish-builder"
         disabled={!dirty || saving}
         onClick={() => onPublish()}
+        size="sm"
         type="button"
       >
         Save &amp; publish
-      </button>
+      </Button>
       {dirty ? (
         <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
           Unsaved changes

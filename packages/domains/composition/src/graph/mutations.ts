@@ -3,6 +3,7 @@ import type {
   PageComposition,
   StyleBinding,
   StyleProperty,
+  StylePropertyEntry,
 } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
 import { makeId } from "@repo/kernel";
@@ -313,11 +314,26 @@ export function setNodeTokenStyle(
   });
 }
 
+/**
+ * Sets or clears a single style property entry on a node.
+ */
+export function setNodeStyleProperty(
+  composition: PageComposition,
+  nodeId: string,
+  property: StyleProperty,
+  entry: StylePropertyEntry | null,
+): Result<PageComposition, "INVALID_NODE"> {
+  if (entry === null) {
+    return upsertNodeStyleProperty(composition, nodeId, property);
+  }
+  return upsertNodeStyleProperty(composition, nodeId, property, entry);
+}
+
 function upsertNodeStyleProperty(
   composition: PageComposition,
   nodeId: string,
   property: StyleProperty,
-  nextProperty?: StyleBinding["properties"][number],
+  nextProperty?: StylePropertyEntry,
 ): Result<PageComposition, "INVALID_NODE"> {
   const node = composition.nodes[nodeId];
   if (!node) {

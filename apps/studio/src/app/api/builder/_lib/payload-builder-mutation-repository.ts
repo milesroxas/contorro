@@ -1,4 +1,7 @@
-import { defaultEmptyPageComposition } from "@repo/domains-composition";
+import {
+  defaultEmptyPageComposition,
+  defaultPageTemplateComposition,
+} from "@repo/domains-composition";
 import {
   builderRowIdForComponent,
   componentIdFromBuilderRowId,
@@ -116,7 +119,8 @@ export function payloadBuilderMutationRepository(
           id: compositionId,
           data: {
             title: name,
-            composition: existing.composition ?? defaultEmptyPageComposition(),
+            composition:
+              existing.composition ?? defaultPageTemplateComposition(),
           },
           draft: true,
           user,
@@ -140,7 +144,7 @@ export function payloadBuilderMutationRepository(
           data: {
             title,
             slug,
-            composition: defaultEmptyPageComposition(),
+            composition: defaultPageTemplateComposition(),
           },
           draft: true,
           user,

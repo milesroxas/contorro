@@ -21,7 +21,12 @@ export async function resolveImageEditorFieldValuesForRender(
         ? raw
         : typeof raw === "string" && /^\d+$/.test(raw)
           ? Number.parseInt(raw, 10)
-          : undefined;
+          : raw &&
+              typeof raw === "object" &&
+              "id" in raw &&
+              typeof (raw as { id: unknown }).id === "number"
+            ? (raw as { id: number }).id
+            : undefined;
     if (mid === undefined) {
       continue;
     }

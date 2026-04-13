@@ -16,7 +16,7 @@ const buttonVariants = cva(
       size: {
         default: "h-10 px-4 py-2",
         sm: "h-9 rounded-md px-3",
-        tree: "h-7 min-h-7 gap-1 rounded-md px-1 text-left text-[11px] font-normal leading-tight",
+        tree: "h-7 min-h-7 gap-1 rounded-md px-1 text-left text-sm font-normal leading-tight",
       },
     },
     defaultVariants: {

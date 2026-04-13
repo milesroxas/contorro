@@ -1,12 +1,33 @@
 import type { PageComposition, StyleProperty } from "@repo/contracts-zod";
 
 const EMPTY_STYLE_PROPERTIES: readonly StyleProperty[] = [];
+const STYLE_SECTION_ORDER = ["color", "layout", "spacing", "size"] as const;
+export type StyleSectionId = (typeof STYLE_SECTION_ORDER)[number];
 
 const BOX_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "background",
   "color",
+  "display",
+  "flexDirection",
+  "flexWrap",
+  "justifyContent",
+  "alignItems",
+  "alignSelf",
+  "flex",
+  "flexGrow",
+  "flexShrink",
+  "flexBasis",
+  "order",
   "padding",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
   "margin",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
   "gap",
   "width",
   "height",
@@ -19,6 +40,46 @@ const BOX_STYLE_PROPERTIES: readonly StyleProperty[] = [
 const TEXT_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "color",
   "margin",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
+  "width",
+  "height",
+  "minWidth",
+  "minHeight",
+  "maxWidth",
+  "maxHeight",
+];
+
+const HEADING_STYLE_PROPERTIES: readonly StyleProperty[] = [
+  "color",
+  "margin",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
+  "width",
+  "height",
+  "minWidth",
+  "minHeight",
+  "maxWidth",
+  "maxHeight",
+];
+
+const BUTTON_STYLE_PROPERTIES: readonly StyleProperty[] = [
+  "background",
+  "color",
+  "padding",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+  "margin",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
   "width",
   "height",
   "minWidth",
@@ -29,6 +90,10 @@ const TEXT_STYLE_PROPERTIES: readonly StyleProperty[] = [
 
 const IMAGE_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "margin",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
   "width",
   "height",
   "minWidth",
@@ -40,7 +105,15 @@ const IMAGE_STYLE_PROPERTIES: readonly StyleProperty[] = [
 const SLOT_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "background",
   "padding",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
   "margin",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
   "width",
   "height",
   "minWidth",
@@ -51,6 +124,10 @@ const SLOT_STYLE_PROPERTIES: readonly StyleProperty[] = [
 
 const LIBRARY_COMPONENT_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "margin",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
   "width",
   "height",
   "minWidth",
@@ -62,8 +139,27 @@ const LIBRARY_COMPONENT_STYLE_PROPERTIES: readonly StyleProperty[] = [
 const STYLE_PROPERTY_LABELS: Record<StyleProperty, string> = {
   background: "Background",
   color: "Text color",
+  display: "Display",
+  flexDirection: "Flex direction",
+  flexWrap: "Flex wrap",
+  justifyContent: "Justify content",
+  alignItems: "Align items",
+  alignSelf: "Align self",
+  flex: "Flex",
+  flexGrow: "Flex grow",
+  flexShrink: "Flex shrink",
+  flexBasis: "Flex basis",
+  order: "Order",
   padding: "Padding",
+  paddingTop: "Padding top",
+  paddingRight: "Padding right",
+  paddingBottom: "Padding bottom",
+  paddingLeft: "Padding left",
   margin: "Margin",
+  marginTop: "Margin top",
+  marginRight: "Margin right",
+  marginBottom: "Margin bottom",
+  marginLeft: "Margin left",
   gap: "Gap",
   width: "Width",
   height: "Height",
@@ -73,9 +169,44 @@ const STYLE_PROPERTY_LABELS: Record<StyleProperty, string> = {
   maxHeight: "Max height",
 };
 
+const STYLE_PROPERTY_SECTIONS: Record<StyleProperty, StyleSectionId> = {
+  background: "color",
+  color: "color",
+  display: "layout",
+  flexDirection: "layout",
+  flexWrap: "layout",
+  justifyContent: "layout",
+  alignItems: "layout",
+  alignSelf: "layout",
+  flex: "layout",
+  flexGrow: "layout",
+  flexShrink: "layout",
+  flexBasis: "layout",
+  order: "layout",
+  padding: "spacing",
+  paddingTop: "spacing",
+  paddingRight: "spacing",
+  paddingBottom: "spacing",
+  paddingLeft: "spacing",
+  margin: "spacing",
+  marginTop: "spacing",
+  marginRight: "spacing",
+  marginBottom: "spacing",
+  marginLeft: "spacing",
+  gap: "spacing",
+  width: "size",
+  height: "size",
+  minWidth: "size",
+  minHeight: "size",
+  maxWidth: "size",
+  maxHeight: "size",
+};
+
 const PRIMITIVE_STYLE_PROPERTIES: Record<string, readonly StyleProperty[]> = {
   "primitive.box": BOX_STYLE_PROPERTIES,
   "primitive.text": TEXT_STYLE_PROPERTIES,
+  "primitive.heading": HEADING_STYLE_PROPERTIES,
+  "primitive.button": BUTTON_STYLE_PROPERTIES,
   "primitive.image": IMAGE_STYLE_PROPERTIES,
   "primitive.slot": SLOT_STYLE_PROPERTIES,
   "primitive.libraryComponent": LIBRARY_COMPONENT_STYLE_PROPERTIES,
@@ -94,6 +225,24 @@ export function stylePropertyLabel(property: StyleProperty): string {
   return STYLE_PROPERTY_LABELS[property];
 }
 
+export function styleSectionForProperty(
+  property: StyleProperty,
+): StyleSectionId {
+  return STYLE_PROPERTY_SECTIONS[property];
+}
+
+export function stylePropertiesBySectionForDefinitionKey(
+  definitionKey: string,
+): ReadonlyArray<{ id: StyleSectionId; properties: readonly StyleProperty[] }> {
+  const properties = stylePropertiesForDefinitionKey(definitionKey);
+  return STYLE_SECTION_ORDER.map((id) => ({
+    id,
+    properties: properties.filter(
+      (property) => STYLE_PROPERTY_SECTIONS[property] === id,
+    ),
+  })).filter((section) => section.properties.length > 0);
+}
+
 export type InvalidStyleTokenIssue = {
   bindingId: string;
   property: StyleProperty;
@@ -108,6 +257,9 @@ export function findInvalidStyleTokens(
 
   for (const sb of Object.values(composition.styleBindings)) {
     for (const prop of sb.properties) {
+      if (prop.type !== "token") {
+        continue;
+      }
       if (!allowedTokenKeys.has(prop.token)) {
         issues.push({
           bindingId: sb.id,

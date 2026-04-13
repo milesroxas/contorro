@@ -8,6 +8,7 @@ import {
   editorFieldSpecsFromComposition,
   expandLibraryComponentNodes,
   mergeEditorFieldValuesIntoComposition,
+  normalizeTemplateShell,
 } from "@repo/domains-composition";
 import { defaultPrimitiveRegistry } from "@repo/runtime-primitives";
 import { renderComposition } from "@repo/runtime-renderer";
@@ -113,7 +114,7 @@ export default async function SitePage({ params }: Props) {
   if (hasPageComposition && compositionDoc) {
     const parsed = PageCompositionSchema.safeParse(compositionDoc.composition);
     if (parsed.success) {
-      templateTree = parsed.data;
+      templateTree = normalizeTemplateShell(parsed.data);
     } else if (!hasBlocks) {
       notFound();
     }
@@ -183,20 +184,16 @@ export default async function SitePage({ params }: Props) {
   }
 
   return (
-    <div
-      className={`min-h-screen bg-background text-foreground ${runtime.activeColorMode === "dark" ? "dark" : ""}`}
-    >
+    <div className={runtime.activeColorMode === "dark" ? "dark" : undefined}>
       <style>{compiled.cssVariables}</style>
-      <article className="mx-auto max-w-5xl p-6">
-        {hasBlocks ? (
-          <>
-            {designerSections}
-            {compositionTree}
-          </>
-        ) : (
-          compositionTree
-        )}
-      </article>
+      {hasBlocks ? (
+        <>
+          {designerSections}
+          {compositionTree}
+        </>
+      ) : (
+        compositionTree
+      )}
     </div>
   );
 }

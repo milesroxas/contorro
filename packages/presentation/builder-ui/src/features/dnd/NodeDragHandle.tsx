@@ -22,7 +22,7 @@ export function NodeDragHandle({
     <button
       aria-label="Drag to move"
       className={cn(
-        "inline-flex h-7 w-4 shrink-0 items-center justify-center rounded-md border border-transparent text-muted-foreground/90",
+        "inline-flex h-8 w-6 shrink-0 items-center justify-center rounded-md border border-transparent text-muted-foreground/90",
         "hover:border-border/60 hover:bg-muted/70 hover:text-foreground",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:outline-none",
         isDragging && "cursor-grabbing",

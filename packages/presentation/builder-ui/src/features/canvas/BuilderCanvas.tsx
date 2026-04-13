@@ -25,13 +25,32 @@ function isContainerNode(node: CompositionNode) {
   return isChildContainerPrimitive(node.definitionKey);
 }
 
-function containerContentLayout(): CSSProperties {
-  return {
-    display: "block",
-    width: "100%",
-    minHeight: "3rem",
-    minWidth: 0,
-  };
+function isTemplateShellSectionTag(tag: unknown): tag is "header" | "main" | "footer" {
+  return tag === "header" || tag === "main" || tag === "footer";
+}
+
+function isTemplateShellRoot(composition: PageComposition): boolean {
+  const root = composition.nodes[composition.rootId];
+  if (!root || root.definitionKey !== "primitive.box") {
+    return false;
+  }
+  const tags = root.childIds
+    .map((childId) => composition.nodes[childId]?.propValues?.tag)
+    .filter(isTemplateShellSectionTag);
+  return tags.includes("header") && tags.includes("main") && tags.includes("footer");
+}
+
+function isLockedTemplateShellSection(
+  composition: PageComposition,
+  node: CompositionNode,
+): boolean {
+  if (!isTemplateShellRoot(composition)) {
+    return false;
+  }
+  if (node.parentId !== composition.rootId) {
+    return false;
+  }
+  return isTemplateShellSectionTag(node.propValues?.tag);
 }
 
 /** `contextmenu` targets may be a Text node (no `Element#closest`). */
@@ -45,40 +64,6 @@ function contextMenuOriginElement(target: EventTarget | null): Element | null {
   return target instanceof Element ? target : null;
 }
 
-function ContainerDropZone({
-  node,
-  children,
-}: {
-  node: CompositionNode;
-  children: React.ReactNode;
-}) {
-  const isBox = node.definitionKey === "primitive.box";
-  const layout = containerContentLayout();
-  const childIds = node.childIds;
-
-  return (
-    <div
-      className={cn("group relative min-w-0")}
-      data-testid={isBox ? `drop-target-box-${node.id}` : undefined}
-      style={layout}
-    >
-      {childIds.length === 0 ? (
-        <InsertionDropZone parentId={node.id} insertIndex={0} variant="empty" />
-      ) : (
-        <div className="flex min-h-0 w-full min-w-0 flex-col">
-          <InsertionDropZone
-            parentId={node.id}
-            insertIndex={0}
-            variant="between"
-          />
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Renders child nodes; used inside ContainerDropZone when non-empty. */
 function ContainerChildList({
   composition,
   childIds,
@@ -98,8 +83,27 @@ function ContainerChildList({
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
 }) {
+  if (childIds.length === 0) {
+    return (
+      <InsertionDropZone
+        insertIndex={0}
+        parentId={parentNode.id}
+        testId={
+          parentNode.definitionKey === "primitive.box"
+            ? `drop-target-box-${parentNode.id}`
+            : undefined
+        }
+        variant="empty"
+      />
+    );
+  }
   return (
     <>
+      <InsertionDropZone
+        parentId={parentNode.id}
+        insertIndex={0}
+        variant="between"
+      />
       {childIds.map((cid, i) => (
         <Fragment key={cid}>
           <CanvasNode
@@ -140,7 +144,7 @@ const NodeChrome = forwardRef<HTMLDivElement, NodeChromeProps>(
         className={cn(
           "min-w-0 flex-1 rounded-[2px] outline-none transition-shadow duration-150",
           selected &&
-            "z-[2] ring-2 ring-ring ring-offset-2 ring-offset-background",
+            "z-2 ring-2 ring-ring ring-offset-2 ring-offset-background",
           className,
         )}
         data-canvas-node=""
@@ -172,9 +176,11 @@ function CanvasNodeFrame({
   children: React.ReactNode;
 }) {
   const isRoot = node.id === composition.rootId;
+  const isLockedSection = isLockedTemplateShellSection(composition, node);
+  const dragDisabled = isRoot || isLockedSection;
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `move:${node.id}`,
-    disabled: isRoot,
+    disabled: dragDisabled,
     data: { kind: "node" as const, nodeId: node.id },
   });
 
@@ -185,27 +191,37 @@ function CanvasNodeFrame({
       className={cn(
         "relative min-w-0",
         isDragging && "opacity-60",
-        !isRoot && "touch-none cursor-grab select-none active:cursor-grabbing",
+        !dragDisabled && "touch-none cursor-grab select-none active:cursor-grabbing",
       )}
       ref={setNodeRef}
-      {...(!isRoot ? listeners : {})}
-      {...(!isRoot ? attributes : {})}
+      {...(!dragDisabled ? listeners : {})}
+      {...(!dragDisabled ? attributes : {})}
     >
-      <PrimitiveNodeContextMenu
-        layerLabel={layerLabel}
-        nodeId={node.id}
-        onRemoveNode={onRemoveNode}
-        onSelectNode={onSelectNode}
-        rootId={composition.rootId}
-      >
+      {dragDisabled ? (
         <NodeChrome
-          className={isRoot ? "cursor-pointer" : "cursor-inherit"}
+          className="cursor-pointer"
           onSelect={() => onSelectNode(node.id)}
           selected={selected}
         >
           {children}
         </NodeChrome>
-      </PrimitiveNodeContextMenu>
+      ) : (
+        <PrimitiveNodeContextMenu
+          layerLabel={layerLabel}
+          nodeId={node.id}
+          onRemoveNode={onRemoveNode}
+          onSelectNode={onSelectNode}
+          rootId={composition.rootId}
+        >
+          <NodeChrome
+            className="cursor-inherit"
+            onSelect={() => onSelectNode(node.id)}
+            selected={selected}
+          >
+            {children}
+          </NodeChrome>
+        </PrimitiveNodeContextMenu>
+      )}
     </div>
   );
 }
@@ -285,10 +301,10 @@ function CanvasNode({
           )}
         >
           <span className="font-medium text-foreground">Layout slot</span>
-          <span className="mt-1 font-mono text-[0.65rem] text-muted-foreground">
+          <span className="mt-1 font-mono text-xs text-muted-foreground">
             {slotId}
           </span>
-          <span className="mt-2 text-[0.6rem] leading-snug text-muted-foreground">
+          <span className="mt-2 text-xs leading-snug text-muted-foreground">
             Page blocks fill this region on the live site.
           </span>
         </div>
@@ -327,11 +343,7 @@ function CanvasNode({
       </span>
     );
   } else {
-    const inner = isContainer ? (
-      <ContainerDropZone node={node}>{childList}</ContainerDropZone>
-    ) : (
-      childList
-    );
+    const inner = childList;
 
     primitive = (
       <Cmp className={className} node={node} style={style}>

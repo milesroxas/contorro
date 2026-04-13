@@ -12,9 +12,85 @@ export type CompiledTokenOutput = {
   tokenMetadata: TokenMeta[];
 };
 
+export type BuilderStyleProperty =
+  | "background"
+  | "color"
+  | "display"
+  | "flexDirection"
+  | "flexWrap"
+  | "justifyContent"
+  | "alignItems"
+  | "alignSelf"
+  | "flex"
+  | "flexGrow"
+  | "flexShrink"
+  | "flexBasis"
+  | "order"
+  | "padding"
+  | "paddingTop"
+  | "paddingRight"
+  | "paddingBottom"
+  | "paddingLeft"
+  | "margin"
+  | "marginTop"
+  | "marginRight"
+  | "marginBottom"
+  | "marginLeft"
+  | "gap"
+  | "width"
+  | "height"
+  | "minWidth"
+  | "minHeight"
+  | "maxWidth"
+  | "maxHeight";
+
+const BUILDER_STYLE_VARIABLES: Record<BuilderStyleProperty, string> = {
+  background: "--builder-style-background",
+  color: "--builder-style-color",
+  display: "--builder-style-display",
+  flexDirection: "--builder-style-flex-direction",
+  flexWrap: "--builder-style-flex-wrap",
+  justifyContent: "--builder-style-justify-content",
+  alignItems: "--builder-style-align-items",
+  alignSelf: "--builder-style-align-self",
+  flex: "--builder-style-flex",
+  flexGrow: "--builder-style-flex-grow",
+  flexShrink: "--builder-style-flex-shrink",
+  flexBasis: "--builder-style-flex-basis",
+  order: "--builder-style-order",
+  padding: "--builder-style-padding",
+  paddingTop: "--builder-style-padding-top",
+  paddingRight: "--builder-style-padding-right",
+  paddingBottom: "--builder-style-padding-bottom",
+  paddingLeft: "--builder-style-padding-left",
+  margin: "--builder-style-margin",
+  marginTop: "--builder-style-margin-top",
+  marginRight: "--builder-style-margin-right",
+  marginBottom: "--builder-style-margin-bottom",
+  marginLeft: "--builder-style-margin-left",
+  gap: "--builder-style-gap",
+  width: "--builder-style-width",
+  height: "--builder-style-height",
+  minWidth: "--builder-style-min-width",
+  minHeight: "--builder-style-min-height",
+  maxWidth: "--builder-style-max-width",
+  maxHeight: "--builder-style-max-height",
+};
+
 /** Maps a design token key to a CSS custom property name (spec §11.3). */
 export function tokenKeyToCssVar(key: string): string {
   return `--${key.replace(/\./g, "-")}`;
+}
+
+function tokenKeyToClassSegment(key: string): string {
+  return key.replace(/[^a-zA-Z0-9_-]/g, "-");
+}
+
+export function styleTokenClassName(
+  property: BuilderStyleProperty,
+  tokenKey: string,
+): string {
+  return `builder-style-token-${property}-${tokenKeyToClassSegment(tokenKey)}`;
 }
 
 /**
@@ -40,6 +116,20 @@ export function compileTokenSet(
   }
   if (darkLines.length > 0) {
     blocks.push(`.dark {\n${darkLines.join("\n")}\n}`);
+  }
+
+  const builderTokenClassLines: string[] = [];
+  for (const token of meta) {
+    for (const [property, cssVariableName] of Object.entries(
+      BUILDER_STYLE_VARIABLES,
+    ) as [BuilderStyleProperty, string][]) {
+      builderTokenClassLines.push(
+        `.${styleTokenClassName(property, token.key)} { ${cssVariableName}: var(${token.cssVar}); }`,
+      );
+    }
+  }
+  if (builderTokenClassLines.length > 0) {
+    blocks.push(builderTokenClassLines.join("\n"));
   }
 
   return {

@@ -24,6 +24,27 @@ const PRIMITIVE_SPECS = [
     defaultPropValues: { content: "" },
   },
   {
+    definitionKey: "primitive.heading",
+    allowsChildren: false,
+    availableInPalette: true,
+    creatableInBuilder: true,
+    defaultPropValues: { content: "Heading", level: "h2" },
+  },
+  {
+    definitionKey: "primitive.button",
+    allowsChildren: false,
+    availableInPalette: true,
+    creatableInBuilder: true,
+    defaultPropValues: {
+      label: "Button",
+      linkType: "url",
+      href: "",
+      collectionSlug: "",
+      entrySlug: "",
+      openInNewTab: false,
+    },
+  },
+  {
     definitionKey: "primitive.image",
     allowsChildren: false,
     availableInPalette: true,

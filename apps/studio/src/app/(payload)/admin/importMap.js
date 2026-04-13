@@ -31,6 +31,7 @@ import { FolderField as FolderField_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@pa
 import { default as default_dda01d5396f5fd2dd9333d25a03955b3 } from '../../../components/admin/ComponentOpenBuilder'
 import { default as default_dc8f9b8e23d55e378685fc46c6b4eb5d } from '../../../components/admin/PageCompositionOpenBuilder'
 import { FolderTypeField as FolderTypeField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
+import { default as default_4a6ee751a613d9923e69a9b97ecaf3b4 } from '../../../components/admin/ThemeModeNavToggle'
 import { default as default_117c7ded6016a73915851ae016af1e96 } from '../../../components/admin/BuilderNavLink'
 import { default as default_e060dfb2bd27a7a6910f929a48bf21b8 } from '../../../components/admin/DesignSystemNavLink'
 import { default as default_55b8bdcdde915bae2246f3a37b9e345d } from '../../../components/admin/DesignSystemPreviewCallout'
@@ -73,6 +74,7 @@ export const importMap = {
   "/components/admin/ComponentOpenBuilder#default": default_dda01d5396f5fd2dd9333d25a03955b3,
   "/components/admin/PageCompositionOpenBuilder#default": default_dc8f9b8e23d55e378685fc46c6b4eb5d,
   "@payloadcms/next/client#FolderTypeField": FolderTypeField_2b8867833a34864a02ddf429b0728a40,
+  "/components/admin/ThemeModeNavToggle#default": default_4a6ee751a613d9923e69a9b97ecaf3b4,
   "/components/admin/BuilderNavLink#default": default_117c7ded6016a73915851ae016af1e96,
   "/components/admin/DesignSystemNavLink#default": default_e060dfb2bd27a7a6910f929a48bf21b8,
   "/components/admin/DesignSystemPreviewCallout#default": default_55b8bdcdde915bae2246f3a37b9e345d,

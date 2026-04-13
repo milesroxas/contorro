@@ -9,12 +9,10 @@ export function Grid({
   style,
 }: RuntimePrimitiveProps) {
   const columns = Number(node.propValues?.columns ?? 1);
-  const gap = (node.propValues?.gap as string | undefined) ?? "0";
 
   const layout: CSSProperties = {
     display: "grid",
     gridTemplateColumns: `repeat(${Number.isFinite(columns) && columns > 0 ? columns : 1}, minmax(0, 1fr))`,
-    gap,
     ...style,
   };
 

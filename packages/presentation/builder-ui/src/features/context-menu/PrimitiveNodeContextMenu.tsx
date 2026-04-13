@@ -39,7 +39,7 @@ export function PrimitiveNodeContextMenu({
     >
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuLabel className="max-w-[240px] truncate font-normal text-xs text-muted-foreground">
+        <ContextMenuLabel className="max-w-[240px] truncate font-normal text-sm text-muted-foreground">
           {layerLabel}
         </ContextMenuLabel>
         <ContextMenuSeparator />

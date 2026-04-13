@@ -42,7 +42,7 @@ function PaletteTile({
         className="size-7 text-muted-foreground"
         stroke={1.25}
       />
-      <span className="text-[0.65rem] font-medium text-foreground capitalize">
+      <span className="text-sm font-medium text-foreground capitalize">
         {label}
       </span>
     </button>
@@ -72,7 +72,7 @@ export function PrimitiveCatalog({ embedded = false }: { embedded?: boolean }) {
 
   return (
     <div className="rounded-lg border border-border bg-muted/15 p-3 dark:bg-muted/10">
-      <div className="mb-2.5 text-[0.65rem] font-semibold tracking-wide text-muted-foreground uppercase">
+      <div className="mb-2.5 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
         Primitives
       </div>
       {grid}

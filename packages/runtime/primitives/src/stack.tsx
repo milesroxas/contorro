@@ -12,7 +12,6 @@ export function Stack({
     (node.propValues?.direction as string | undefined) === "row"
       ? "row"
       : "column";
-  const gap = (node.propValues?.gap as string | undefined) ?? "0";
   const align = (node.propValues?.align as string | undefined) ?? "stretch";
   const justify =
     (node.propValues?.justify as string | undefined) ?? "flex-start";
@@ -22,7 +21,6 @@ export function Stack({
     flexDirection: direction === "row" ? "row" : "column",
     alignItems: align,
     justifyContent: justify,
-    gap,
     ...style,
   };
 

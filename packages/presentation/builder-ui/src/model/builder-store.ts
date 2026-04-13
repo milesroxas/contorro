@@ -3,6 +3,7 @@ import type {
   EditorFieldSpec,
   PageComposition,
   StyleProperty,
+  StylePropertyEntry,
 } from "@repo/contracts-zod";
 import {
   addChildNode,
@@ -10,7 +11,7 @@ import {
   moveNode as moveNodeInComposition,
   removeSubtree,
   setNodeContentBinding,
-  setNodeTokenStyle,
+  setNodeStyleProperty,
   updateNodePropValues,
 } from "@repo/domains-composition";
 import { createSafeStore } from "@repo/presentation-shared";
@@ -54,10 +55,10 @@ export type BuilderStoreState = {
   removeNode: (nodeId: string) => void;
   setTextContent: (nodeId: string, content: string) => void;
   patchNodeProps: (nodeId: string, patch: Record<string, unknown>) => void;
-  setNodeStyleToken: (
+  setNodeStyleEntry: (
     nodeId: string,
     property: StyleProperty,
-    token: string,
+    entry: StylePropertyEntry | null,
   ) => void;
   setNodeEditorFieldBinding: (
     nodeId: string,
@@ -273,20 +274,21 @@ export function createBuilderStore(compositionId: string) {
       });
     },
 
-    setNodeStyleToken: (nodeId, property, token) => {
+    setNodeStyleEntry: (nodeId, property, entry) => {
       const { composition, tokenMetadata } = get();
       if (!composition) {
         return;
       }
-      const normalizedToken = token.trim();
-      if (
-        normalizedToken !== "" &&
-        !tokenMetadata.some((entry) => entry.key === normalizedToken)
-      ) {
-        set({ error: `Unknown token: ${normalizedToken}` });
-        return;
+      if (entry?.type === "token") {
+        const normalizedToken = entry.token.trim();
+        if (
+          !tokenMetadata.some((tokenMeta) => tokenMeta.key === normalizedToken)
+        ) {
+          set({ error: `Unknown token: ${normalizedToken}` });
+          return;
+        }
       }
-      const next = setNodeTokenStyle(composition, nodeId, property, token);
+      const next = setNodeStyleProperty(composition, nodeId, property, entry);
       if (!next.ok) {
         return;
       }

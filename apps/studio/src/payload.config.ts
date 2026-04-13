@@ -85,6 +85,7 @@ export default buildConfig({
         "/components/admin/BuilderNavLink",
         "/components/admin/DesignSystemNavLink",
       ],
+      actions: ["/components/admin/ThemeModeNavToggle"],
       beforeDashboard: [
         "/components/admin/DesignSystemPreviewCallout",
         "/components/admin/PageCompositionOpenBuilder",

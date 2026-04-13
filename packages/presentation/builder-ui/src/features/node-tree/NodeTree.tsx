@@ -2,6 +2,7 @@
 
 import type { PageComposition } from "@repo/contracts-zod";
 import type { Icon } from "@tabler/icons-react";
+import { IconLayoutGrid, IconLayoutList, IconSection } from "@tabler/icons-react";
 import { Fragment } from "react";
 
 import {
@@ -17,16 +18,48 @@ import { PrimitiveNodeContextMenu } from "../context-menu/PrimitiveNodeContextMe
 import { InsertionDropZone } from "../dnd/InsertionDropZone.js";
 import { NodeDragHandle } from "../dnd/NodeDragHandle.js";
 
+function isTemplateShellSectionTag(tag: unknown): tag is "header" | "main" | "footer" {
+  return tag === "header" || tag === "main" || tag === "footer";
+}
+
+function isTemplateShellRoot(composition: PageComposition): boolean {
+  const root = composition.nodes[composition.rootId];
+  if (!root || root.definitionKey !== "primitive.box") {
+    return false;
+  }
+  const tags = root.childIds
+    .map((childId) => composition.nodes[childId]?.propValues?.tag)
+    .filter(isTemplateShellSectionTag);
+  return tags.includes("header") && tags.includes("main") && tags.includes("footer");
+}
+
+function isLockedTemplateShellSection(
+  composition: PageComposition,
+  nodeId: string,
+): boolean {
+  if (!isTemplateShellRoot(composition)) {
+    return false;
+  }
+  const node = composition.nodes[nodeId];
+  if (!node) {
+    return false;
+  }
+  if (node.parentId !== composition.rootId) {
+    return false;
+  }
+  return isTemplateShellSectionTag(node.propValues?.tag);
+}
+
 /**
  * Payload admin base styles add padding on `ul` / `ol`. Reset so this tree’s
  * layout is controlled only here (`!` wins over `payload-default` list rules).
  */
-const layerTreeRootListClass = "list-none space-y-0 !p-0";
+const layerTreeRootListClass = "list-none space-y-0.5 !p-0";
 
 function layerTreeNestedListClass(isRoot: boolean) {
   return cn(
-    "ml-1 list-none space-y-0 border-l border-border/45 !pl-1.5 dark:border-border/30",
-    isRoot ? "mt-2" : "mt-0.5",
+    "ml-2 list-none space-y-0.5 border-l border-border/50 !pl-2 dark:border-border/35",
+    isRoot ? "mt-1.5" : "mt-0",
   );
 }
 
@@ -49,13 +82,13 @@ function RootLayerHeading({
   return (
     <div
       className={cn(
-        "border-b pb-2.5 transition-colors",
+        "border-b pb-2.5 mb-1 transition-colors",
         selected ? "border-primary/40" : "border-border/50",
       )}
     >
       <button
         className={cn(
-          "flex w-full min-w-0 items-center gap-2 rounded-sm px-0 py-1 text-left outline-none transition-colors",
+          "flex w-full min-w-0 items-center gap-2 rounded-sm px-0.5 py-1 text-left outline-none transition-colors",
           "hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           selected ? "text-foreground" : "text-muted-foreground",
         )}
@@ -69,10 +102,10 @@ function RootLayerHeading({
           stroke={1.5}
         />
         <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-foreground">
+          <span className="text-sm font-semibold uppercase tracking-[0.14em] text-foreground">
             {kindTitle}
           </span>
-          <span className="font-mono text-[10px] leading-none text-muted-foreground tabular-nums">
+          <span className="font-mono text-sm leading-none text-muted-foreground tabular-nums">
             {shortId}
           </span>
         </span>
@@ -98,15 +131,36 @@ function LayerSubtree({
   if (!node) {
     return null;
   }
-  const { Icon, label: kindTitle } = getPrimitiveDisplay(node.definitionKey);
-  const kindSlug = node.definitionKey.replace("primitive.", "");
+  const { Icon: defaultIcon, label: defaultKindTitle } = getPrimitiveDisplay(
+    node.definitionKey,
+  );
+  const semanticTag =
+    typeof node.propValues?.tag === "string" ? node.propValues.tag : null;
+  const Icon =
+    semanticTag === "header"
+      ? IconLayoutList
+      : semanticTag === "main"
+        ? IconSection
+        : semanticTag === "footer"
+          ? IconLayoutGrid
+          : defaultIcon;
+  const kindTitle =
+    semanticTag === "header" || semanticTag === "main" || semanticTag === "footer"
+      ? semanticTag
+      : defaultKindTitle;
+  const kindSlug =
+    semanticTag === "header" || semanticTag === "main" || semanticTag === "footer"
+      ? semanticTag
+      : node.definitionKey.replace("primitive.", "");
   const shortId = node.id.slice(0, 6);
   const layerLabel = `${kindSlug} · ${shortId}`;
   const isContainer = isChildContainerPrimitive(node.definitionKey);
   const isRoot = nodeId === composition.rootId;
+  const isLockedSection = isLockedTemplateShellSection(composition, nodeId);
+  const isSectionHeading = isRoot || isLockedSection;
   const selected = selectedNodeId === nodeId;
 
-  const row = isRoot ? (
+  const row = isSectionHeading ? (
     <RootLayerHeading
       Icon={Icon}
       kindTitle={kindTitle}
@@ -118,15 +172,15 @@ function LayerSubtree({
   ) : (
     <div
       className={cn(
-        "flex min-w-0 items-stretch gap-0.5 rounded-md border transition-colors",
+        "flex min-w-0 items-stretch gap-1 rounded-md border px-0.5 py-px transition-colors",
         selected
-          ? "border-border/50 bg-muted/85 text-foreground shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07)] dark:bg-muted/45 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
+          ? "border-border/55 bg-muted/85 text-foreground shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07)] dark:bg-muted/45 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
           : "border-transparent hover:bg-muted/45 dark:hover:bg-muted/25",
       )}
     >
       <NodeDragHandle nodeId={nodeId} />
       <Button
-        className="min-w-0 flex-1 hover:bg-transparent focus-visible:ring-offset-0 [&_svg]:size-3.5"
+        className="min-h-8 min-w-0 flex-1 px-1.5 hover:bg-transparent focus-visible:ring-offset-0 [&_svg]:size-3.5"
         data-testid={`node-tree-${nodeId}`}
         onClick={() => onSelect(nodeId)}
         size="tree"
@@ -143,7 +197,7 @@ function LayerSubtree({
             {kindTitle}
           </span>
           <span className="text-muted-foreground"> · </span>
-          <span className="font-mono text-[10px] text-muted-foreground/95 tabular-nums">
+          <span className="font-mono text-sm text-muted-foreground/95 tabular-nums">
             {shortId}
           </span>
         </span>
@@ -152,20 +206,25 @@ function LayerSubtree({
   );
 
   return (
-    <li className="list-none !m-0 !p-0 !pl-0">
-      <PrimitiveNodeContextMenu
-        layerLabel={layerLabel}
-        nodeId={nodeId}
-        onRemoveNode={onRemoveNode}
-        onSelectNode={onSelect}
-        rootId={composition.rootId}
-      >
-        {row}
-      </PrimitiveNodeContextMenu>
+    <li className="list-none m-0! p-0! pl-0!">
+      {isSectionHeading ? (
+        row
+      ) : (
+        <PrimitiveNodeContextMenu
+          layerLabel={layerLabel}
+          nodeId={nodeId}
+          onRemoveNode={onRemoveNode}
+          onSelectNode={onSelect}
+          rootId={composition.rootId}
+        >
+          {row}
+        </PrimitiveNodeContextMenu>
+      )}
       {isContainer ? (
         <ul className={layerTreeNestedListClass(isRoot)}>
-          <li className="list-none !m-0 !p-0 !pl-0">
+          <li className="list-none m-0! p-0! pl-0!">
             <InsertionDropZone
+              className="py-0"
               parentId={nodeId}
               insertIndex={0}
               variant="between"
@@ -180,7 +239,7 @@ function LayerSubtree({
                 onSelect={onSelect}
                 selectedNodeId={selectedNodeId}
               />
-              <li className="list-none !m-0 !p-0 !pl-0">
+              <li className="list-none m-0! p-0! pl-0!">
                 <InsertionDropZone
                   parentId={nodeId}
                   insertIndex={i + 1}
@@ -208,15 +267,25 @@ export function NodeTree({
   onSelect: (id: string) => void;
   embedded?: boolean;
 }) {
+  const root = composition.nodes[composition.rootId];
+  const templateShell = isTemplateShellRoot(composition);
+  const topLevelIds =
+    templateShell && root
+      ? root.childIds.filter((childId) => composition.nodes[childId])
+      : [composition.rootId];
+
   const tree = (
     <ul className={layerTreeRootListClass}>
-      <LayerSubtree
-        composition={composition}
-        nodeId={composition.rootId}
-        onRemoveNode={onRemoveNode}
-        onSelect={onSelect}
-        selectedNodeId={selectedNodeId}
-      />
+      {topLevelIds.map((nodeId) => (
+        <LayerSubtree
+          composition={composition}
+          key={nodeId}
+          nodeId={nodeId}
+          onRemoveNode={onRemoveNode}
+          onSelect={onSelect}
+          selectedNodeId={selectedNodeId}
+        />
+      ))}
     </ul>
   );
 

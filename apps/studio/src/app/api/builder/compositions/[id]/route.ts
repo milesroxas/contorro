@@ -8,7 +8,9 @@ import type { PageComposition } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
 import {
   defaultEmptyPageComposition,
+  defaultPageTemplateComposition,
   findInvalidStyleTokens,
+  normalizeTemplateShell,
   parseBuilderNewCompositionSessionId,
 } from "@repo/domains-composition";
 import {
@@ -92,7 +94,10 @@ export async function GET(
           newSession.kind === "component"
             ? "Untitled component"
             : "Untitled page template",
-        composition: defaultEmptyPageComposition(),
+        composition:
+          newSession.kind === "component"
+            ? defaultEmptyPageComposition()
+            : defaultPageTemplateComposition(),
         updatedAt: "",
         tokenMetadata: designTokens.tokenMetadata,
         cssVariables: designTokens.cssVariables,
@@ -205,7 +210,7 @@ export async function GET(
   return Response.json({
     data: {
       name: String(doc.title ?? "Untitled template"),
-      composition: parsed.data,
+      composition: normalizeTemplateShell(parsed.data),
       updatedAt: responseUpdatedAt(doc.updatedAt),
       tokenMetadata: designTokens.tokenMetadata,
       cssVariables: designTokens.cssVariables,
