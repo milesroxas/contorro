@@ -2,38 +2,33 @@
 
 import { useConfig } from "@payloadcms/ui";
 import {
-  IconArrowLeft,
-  IconEdit,
+  IconExternalLink,
   IconLayout,
+  IconLoader2,
   IconPlus,
   IconPuzzle,
+  IconRefresh,
   IconSearch,
 } from "@tabler/icons-react";
+import { builderRowIdForComponent } from "@repo/infrastructure-payload-config/builder-row-id";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatAdminURL } from "payload/shared";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { COMPONENTS_SLUG, PAGE_COMPOSITIONS_SLUG } from "./constants";
-import { HubChoiceButton } from "./hub-choice-tile";
-import {
-  hubEyebrowClass,
-  hubFilterLabelClass,
-  hubInputClass,
-  hubLeadClass,
-  hubPanelClass,
-  hubStepShellClass,
-  hubTileGridClass,
-  hubTitleClass,
-  hubViewportClass,
-} from "./hub-styles";
-import { ModifyResourceList } from "./modify-resource-list";
+import { formatUpdatedAt } from "./formatters";
 
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-
-const tileIconClass = "size-5 md:size-6";
+import { Separator } from "@/components/ui/separator";
 
 type PageTemplateRow = {
   id: string | number;
@@ -50,18 +45,10 @@ type ComponentRow = {
   _status?: string | null;
 };
 
-type HubStep =
-  | { name: "intent" }
-  | { name: "create" }
-  | { name: "modify-pick" }
-  | { name: "modify-list"; resource: "templates" | "components" };
-
 export default function BuilderHub() {
   const router = useRouter();
   const { config } = useConfig();
   const adminRoute = config.routes?.admin ?? "/admin";
-
-  const [hubStep, setHubStep] = useState<HubStep>({ name: "intent" });
 
   const [templateDocs, setTemplateDocs] = useState<PageTemplateRow[] | null>(
     null,
@@ -72,29 +59,18 @@ export default function BuilderHub() {
   const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(
     "idle",
   );
-  const [modifySearch, setModifySearch] = useState("");
+  const [templateSearch, setTemplateSearch] = useState("");
+  const [componentSearch, setComponentSearch] = useState("");
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
   const [createTemplateError, setCreateTemplateError] = useState("");
   const [isCreatingComponent, setIsCreatingComponent] = useState(false);
   const [createComponentError, setCreateComponentError] = useState("");
 
-  const createTemplateHref = formatAdminURL({
-    adminRoute,
-    path: `/collections/${PAGE_COMPOSITIONS_SLUG}/create`,
-    relative: true,
-  });
-  const createComponentHref = formatAdminURL({
-    adminRoute,
-    path: `/collections/${COMPONENTS_SLUG}/create`,
-    relative: true,
-  });
-
   const createTemplateAndOpenBuilder = useCallback(async () => {
-    if (isCreatingTemplate) {
-      return;
-    }
+    if (isCreatingTemplate) return;
     setCreateTemplateError("");
     setIsCreatingTemplate(true);
+
     try {
       const res = await fetch("/api/builder/compositions", {
         method: "POST",
@@ -102,16 +78,20 @@ export default function BuilderHub() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: "Untitled page template" }),
       });
+
       if (!res.ok) {
         setCreateTemplateError("Could not create template. Try again.");
         return;
       }
+
       const json = (await res.json()) as { data?: { id?: string } };
       const id = json.data?.id;
+
       if (!id) {
         setCreateTemplateError("Could not create template. Try again.");
         return;
       }
+
       const builderHref = formatAdminURL({
         adminRoute,
         path: `/builder?composition=${encodeURIComponent(id)}`,
@@ -126,11 +106,10 @@ export default function BuilderHub() {
   }, [adminRoute, isCreatingTemplate, router]);
 
   const createComponentAndOpenBuilder = useCallback(async () => {
-    if (isCreatingComponent) {
-      return;
-    }
+    if (isCreatingComponent) return;
     setCreateComponentError("");
     setIsCreatingComponent(true);
+
     try {
       const res = await fetch("/api/builder/compositions", {
         method: "POST",
@@ -141,16 +120,20 @@ export default function BuilderHub() {
           title: "Untitled component",
         }),
       });
+
       if (!res.ok) {
         setCreateComponentError("Could not create component. Try again.");
         return;
       }
+
       const json = (await res.json()) as { data?: { id?: string } };
       const id = json.data?.id;
+
       if (!id) {
         setCreateComponentError("Could not create component. Try again.");
         return;
       }
+
       const builderHref = formatAdminURL({
         adminRoute,
         path: `/builder?composition=${encodeURIComponent(id)}`,
@@ -164,47 +147,39 @@ export default function BuilderHub() {
     }
   }, [adminRoute, isCreatingComponent, router]);
 
-  const fetchTemplates = useCallback(async (signal: AbortSignal) => {
+  const fetchDashboardData = useCallback(async (signal: AbortSignal) => {
     setLoadState("loading");
-    try {
-      const res = await fetch(
-        `/api/${PAGE_COMPOSITIONS_SLUG}?limit=200&depth=0&sort=-updatedAt`,
-        {
-          credentials: "include",
-          headers: { Accept: "application/json" },
-          signal,
-        },
-      );
-      if (!res.ok) {
-        setLoadState("error");
-        return;
-      }
-      const json = (await res.json()) as { docs?: PageTemplateRow[] };
-      setTemplateDocs(Array.isArray(json.docs) ? json.docs : []);
-      setLoadState("idle");
-    } catch {
-      if (signal.aborted) return;
-      setLoadState("error");
-    }
-  }, []);
 
-  const fetchComponents = useCallback(async (signal: AbortSignal) => {
-    setLoadState("loading");
     try {
-      const res = await fetch(
-        `/api/${COMPONENTS_SLUG}?limit=200&depth=0&sort=-updatedAt`,
-        {
+      const [templatesRes, componentsRes] = await Promise.all([
+        fetch(`/api/${PAGE_COMPOSITIONS_SLUG}?limit=200&depth=0&sort=-updatedAt`, {
           credentials: "include",
           headers: { Accept: "application/json" },
           signal,
-        },
-      );
-      if (!res.ok) {
+        }),
+        fetch(`/api/${COMPONENTS_SLUG}?limit=200&depth=0&sort=-updatedAt`, {
+          credentials: "include",
+          headers: { Accept: "application/json" },
+          signal,
+        }),
+      ]);
+
+      if (!templatesRes.ok || !componentsRes.ok) {
         setLoadState("error");
         return;
       }
-      const json = (await res.json()) as { docs?: ComponentRow[] };
-      setComponentDocs(Array.isArray(json.docs) ? json.docs : []);
+
+      const templatesJson = (await templatesRes.json()) as {
+        docs?: PageTemplateRow[];
+      };
+      const componentsJson = (await componentsRes.json()) as {
+        docs?: ComponentRow[];
+      };
+
+      setTemplateDocs(Array.isArray(templatesJson.docs) ? templatesJson.docs : []);
+      setComponentDocs(
+        Array.isArray(componentsJson.docs) ? componentsJson.docs : [],
+      );
       setLoadState("idle");
     } catch {
       if (signal.aborted) return;
@@ -213,246 +188,313 @@ export default function BuilderHub() {
   }, []);
 
   useEffect(() => {
-    if (hubStep.name !== "modify-list") return;
     const ac = new AbortController();
-    const { signal } = ac;
-    if (hubStep.resource === "templates") {
-      if (templateDocs === null) {
-        void fetchTemplates(signal);
-      } else {
-        setLoadState("idle");
-      }
-    } else if (hubStep.resource === "components") {
-      if (componentDocs === null) {
-        void fetchComponents(signal);
-      } else {
-        setLoadState("idle");
-      }
-    }
+    void fetchDashboardData(ac.signal);
     return () => ac.abort();
-  }, [hubStep, templateDocs, componentDocs, fetchTemplates, fetchComponents]);
+  }, [fetchDashboardData]);
 
   const filteredTemplates = useMemo(() => {
     const list = templateDocs ?? [];
-    const q = modifySearch.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter((d) => d.title.toLowerCase().includes(q));
-  }, [templateDocs, modifySearch]);
+    const query = templateSearch.trim().toLowerCase();
+    if (!query) return list;
+    return list.filter((doc) => doc.title.toLowerCase().includes(query));
+  }, [templateDocs, templateSearch]);
 
   const filteredComponents = useMemo(() => {
     const list = componentDocs ?? [];
-    const q = modifySearch.trim().toLowerCase();
-    if (!q) return list;
+    const query = componentSearch.trim().toLowerCase();
+    if (!query) return list;
     return list.filter(
-      (d) =>
-        d.displayName.toLowerCase().includes(q) ||
-        (d.key?.toLowerCase().includes(q) ?? false),
+      (doc) =>
+        doc.displayName.toLowerCase().includes(query) ||
+        (doc.key?.toLowerCase().includes(query) ?? false),
     );
-  }, [componentDocs, modifySearch]);
+  }, [componentDocs, componentSearch]);
 
-  const goBack = () => {
-    setModifySearch("");
-    if (hubStep.name === "create" || hubStep.name === "modify-pick") {
-      setHubStep({ name: "intent" });
-      return;
-    }
-    if (hubStep.name === "modify-list") {
-      setHubStep({ name: "modify-pick" });
-    }
-  };
+  const templateCollectionHref = formatAdminURL({
+    adminRoute,
+    path: `/collections/${PAGE_COMPOSITIONS_SLUG}`,
+    relative: true,
+  });
+  const componentCollectionHref = formatAdminURL({
+    adminRoute,
+    path: `/collections/${COMPONENTS_SLUG}`,
+    relative: true,
+  });
 
-  const stepIndex =
-    hubStep.name === "intent"
-      ? 1
-      : hubStep.name === "create" || hubStep.name === "modify-pick"
-        ? 2
-        : 3;
-  const stepTotal = 3;
+  const templateEditHref = (id: string) =>
+    formatAdminURL({
+      adminRoute,
+      path: `/collections/${PAGE_COMPOSITIONS_SLUG}/${encodeURIComponent(id)}`,
+      relative: true,
+    });
+  const templateBuilderHref = (id: string) =>
+    formatAdminURL({
+      adminRoute,
+      path: `/builder?composition=${encodeURIComponent(id)}`,
+      relative: true,
+    });
+  const componentEditHref = (id: string) =>
+    formatAdminURL({
+      adminRoute,
+      path: `/collections/${COMPONENTS_SLUG}/${encodeURIComponent(id)}`,
+      relative: true,
+    });
+  const componentBuilderHref = (id: string) =>
+    formatAdminURL({
+      adminRoute,
+      path: `/builder?composition=${encodeURIComponent(builderRowIdForComponent(id))}`,
+      relative: true,
+    });
+
+  const isLoading = loadState === "loading";
+  const isError = loadState === "error";
 
   return (
-    <div className={hubViewportClass}>
-      <div className={hubStepShellClass}>
-        {hubStep.name !== "intent" ? (
-          <Button
-            className="gap-2 self-start text-muted-foreground motion-safe:transition-colors hover:text-foreground"
-            onClick={goBack}
-            size="default"
-            type="button"
-            variant="ghost"
-          >
-            <IconArrowLeft className="size-4 md:size-5" aria-hidden />
-            <span className="text-sm md:text-base">Back</span>
-          </Button>
-        ) : null}
-
-        <header className="space-y-2 md:space-y-3">
-          <p className={hubEyebrowClass}>
-            Step {stepIndex} of {stepTotal}
-          </p>
-          <h1 className={hubTitleClass}>
-            {hubStep.name === "intent"
-              ? "Builder"
-              : hubStep.name === "create"
-                ? "Create new"
-                : hubStep.name === "modify-pick"
-                  ? "Modify existing"
-                  : hubStep.resource === "templates"
-                    ? "Page templates"
-                    : "Components"}
+    <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:gap-8 md:px-6 md:py-8">
+      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+            Builder dashboard
           </h1>
-          <p className={hubLeadClass}>
-            {hubStep.name === "intent"
-              ? "Choose whether to start something new or open work you already have."
-              : hubStep.name === "create"
-                ? "Create a page template or component, then start editing in the visual builder."
-                : hubStep.name === "modify-pick"
-                  ? "Pick whether you are working with full-page templates or library components."
-                  : "Search, then edit in admin or jump straight into the builder."}
+          <p className="text-sm text-muted-foreground md:text-base">
+            Manage page templates and components from one place.
           </p>
-        </header>
+        </div>
+        <Button
+          className="gap-2 self-start"
+          onClick={() => {
+            const ac = new AbortController();
+            void fetchDashboardData(ac.signal);
+          }}
+          type="button"
+          variant="outline"
+        >
+          <IconRefresh className="size-4" aria-hidden />
+          Refresh
+        </Button>
+      </header>
 
-        {hubStep.name === "intent" ? (
-          <div className={hubTileGridClass}>
-            <HubChoiceButton
-              description="Blank page template or component in Payload, then build."
-              icon={<IconPlus className={tileIconClass} aria-hidden />}
-              title="Create new"
-              onClick={() => setHubStep({ name: "create" })}
-            />
-            <HubChoiceButton
-              description="Jump into the builder for something that already exists."
-              icon={<IconEdit className={tileIconClass} aria-hidden />}
-              title="Modify existing"
-              onClick={() => setHubStep({ name: "modify-pick" })}
-            />
-          </div>
-        ) : null}
-
-        {hubStep.name === "create" ? (
-          <div className="space-y-3">
-            <div className={hubTileGridClass}>
-              <HubChoiceButton
-                description="Create template and open it in builder."
-                disabled={isCreatingTemplate}
-                icon={<IconLayout className={tileIconClass} aria-hidden />}
-                title={
-                  isCreatingTemplate
-                    ? "Creating page template…"
-                    : "Page template"
-                }
-                onClick={() => {
-                  void createTemplateAndOpenBuilder();
-                }}
-              />
-              <HubChoiceButton
-                description="Create component and open it in builder."
-                disabled={isCreatingComponent}
-                icon={<IconPuzzle className={tileIconClass} aria-hidden />}
-                title={
-                  isCreatingComponent ? "Creating component…" : "Component"
-                }
-                onClick={() => {
-                  void createComponentAndOpenBuilder();
-                }}
-              />
-            </div>
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="space-y-1">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <IconLayout className="size-5" aria-hidden />
+              Page templates
+            </CardTitle>
+            <CardDescription>
+              Create new page template and open builder immediately.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button
+              className="w-full gap-2 sm:w-auto"
+              disabled={isCreatingTemplate}
+              onClick={() => {
+                void createTemplateAndOpenBuilder();
+              }}
+              type="button"
+            >
+              {isCreatingTemplate ? (
+                <IconLoader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <IconPlus className="size-4" aria-hidden />
+              )}
+              {isCreatingTemplate ? "Creating..." : "Create template"}
+            </Button>
             {createTemplateError ? (
-              <p className="border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive md:px-5 md:py-3.5 md:text-base">
+              <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {createTemplateError}
               </p>
             ) : null}
+            <Button asChild variant="ghost">
+              <Link href={templateCollectionHref} prefetch={false}>
+                Open templates collection
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="space-y-1">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <IconPuzzle className="size-5" aria-hidden />
+              Components
+            </CardTitle>
+            <CardDescription>
+              Create reusable component and open builder immediately.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button
+              className="w-full gap-2 sm:w-auto"
+              disabled={isCreatingComponent}
+              onClick={() => {
+                void createComponentAndOpenBuilder();
+              }}
+              type="button"
+            >
+              {isCreatingComponent ? (
+                <IconLoader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <IconPlus className="size-4" aria-hidden />
+              )}
+              {isCreatingComponent ? "Creating..." : "Create component"}
+            </Button>
             {createComponentError ? (
-              <p className="border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive md:px-5 md:py-3.5 md:text-base">
+              <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {createComponentError}
               </p>
             ) : null}
-          </div>
-        ) : null}
+            <Button asChild variant="ghost">
+              <Link href={componentCollectionHref} prefetch={false}>
+                Open components collection
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
 
-        {hubStep.name === "modify-pick" ? (
-          <div className={hubTileGridClass}>
-            <HubChoiceButton
-              description="Full-page layouts from the builder."
-              icon={<IconLayout className={tileIconClass} aria-hidden />}
-              title="Page templates"
-              onClick={() =>
-                setHubStep({ name: "modify-list", resource: "templates" })
-              }
-            />
-            <HubChoiceButton
-              description="Components in your library."
-              icon={<IconPuzzle className={tileIconClass} aria-hidden />}
-              title="Components"
-              onClick={() =>
-                setHubStep({ name: "modify-list", resource: "components" })
-              }
-            />
-          </div>
-        ) : null}
+      {isError ? (
+        <p className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          Could not load dashboard data. Click refresh and try again.
+        </p>
+      ) : null}
 
-        {hubStep.name === "modify-list" ? (
-          <div className={hubPanelClass}>
-            <div className="space-y-2 md:space-y-2.5">
-              <Label
-                className={hubFilterLabelClass}
-                htmlFor="builder-hub-search"
-              >
-                Filter
-              </Label>
-              <div className="relative">
-                <IconSearch
-                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground md:left-3.5 md:size-5"
-                  aria-hidden
-                />
-                <Input
-                  id="builder-hub-search"
-                  type="search"
-                  placeholder="Search by title or key…"
-                  value={modifySearch}
-                  onChange={(e) => setModifySearch(e.target.value)}
-                  autoComplete="off"
-                  className={cn(
-                    hubInputClass,
-                    "placeholder:text-muted-foreground/90",
-                  )}
-                />
-              </div>
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card className="min-h-[22rem]">
+          <CardHeader className="gap-3">
+            <CardTitle className="text-lg">Templates</CardTitle>
+            <div className="relative">
+              <IconSearch
+                className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden
+              />
+              <Input
+                className="pl-9"
+                placeholder="Search templates..."
+                type="search"
+                value={templateSearch}
+                onChange={(event) => setTemplateSearch(event.target.value)}
+              />
             </div>
-
-            {loadState === "loading" ? (
-              <p className="py-8 text-center text-sm text-muted-foreground md:py-10 md:text-base">
-                Loading…
-              </p>
-            ) : null}
-            {loadState === "error" ? (
-              <p className="border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive md:px-5 md:py-3.5 md:text-base">
-                Could not load this list. Try again or use the sidebar
-                collections.
-              </p>
-            ) : null}
-
-            {hubStep.resource === "templates" ? (
-              <ModifyResourceList
-                adminRoute={adminRoute}
-                emptyCtaLabel="Create a template"
-                emptyHref={createTemplateHref}
-                loadState={loadState}
-                resource="templates"
-                rows={filteredTemplates}
-              />
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <p className="text-sm text-muted-foreground">Loading templates...</p>
+            ) : filteredTemplates.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No templates found.</p>
             ) : (
-              <ModifyResourceList
-                adminRoute={adminRoute}
-                emptyCtaLabel="Create a component"
-                emptyHref={createComponentHref}
-                loadState={loadState}
-                resource="components"
-                rows={filteredComponents}
-              />
+              <ul className="space-y-2">
+                {filteredTemplates.map((template, index) => {
+                  const id = String(template.id);
+                  const updated = formatUpdatedAt(template.updatedAt);
+                  return (
+                    <li key={id}>
+                      {index > 0 ? <Separator className="mb-2" /> : null}
+                      <div className="space-y-2">
+                        <div className="space-y-1">
+                          <p className="truncate text-sm font-medium md:text-base">
+                            {template.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {template._status === "draft" ? "Draft" : "Published"}
+                            {updated ? ` · ${updated}` : ""}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button asChild size="sm" variant="outline">
+                            <Link href={templateEditHref(id)} prefetch={false}>
+                              Edit
+                            </Link>
+                          </Button>
+                          <Button asChild size="sm">
+                            <Link
+                              className="inline-flex items-center gap-1.5"
+                              href={templateBuilderHref(id)}
+                              prefetch={false}
+                            >
+                              Open builder
+                              <IconExternalLink className="size-3.5" aria-hidden />
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
-          </div>
-        ) : null}
-      </div>
-    </div>
+          </CardContent>
+        </Card>
+
+        <Card className="min-h-[22rem]">
+          <CardHeader className="gap-3">
+            <CardTitle className="text-lg">Components</CardTitle>
+            <div className="relative">
+              <IconSearch
+                className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden
+              />
+              <Input
+                className="pl-9"
+                placeholder="Search components..."
+                type="search"
+                value={componentSearch}
+                onChange={(event) => setComponentSearch(event.target.value)}
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <p className="text-sm text-muted-foreground">Loading components...</p>
+            ) : filteredComponents.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No components found.</p>
+            ) : (
+              <ul className="space-y-2">
+                {filteredComponents.map((component, index) => {
+                  const id = String(component.id);
+                  const updated = formatUpdatedAt(component.updatedAt);
+                  return (
+                    <li key={id}>
+                      {index > 0 ? <Separator className="mb-2" /> : null}
+                      <div className="space-y-2">
+                        <div className="space-y-1">
+                          <p className="truncate text-sm font-medium md:text-base">
+                            {component.displayName}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {component.key ? `${component.key} · ` : ""}
+                            {component._status === "draft" ? "Draft" : "Published"}
+                            {updated ? ` · ${updated}` : ""}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button asChild size="sm" variant="outline">
+                            <Link href={componentEditHref(id)} prefetch={false}>
+                              Edit
+                            </Link>
+                          </Button>
+                          <Button asChild size="sm">
+                            <Link
+                              className="inline-flex items-center gap-1.5"
+                              href={componentBuilderHref(id)}
+                              prefetch={false}
+                            >
+                              Open builder
+                              <IconExternalLink className="size-3.5" aria-hidden />
+                            </Link>
+                          </Button>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+    </main>
   );
 }
