@@ -23,6 +23,7 @@ export const DesignTokenSets: CollectionConfig = {
     drafts: true,
   },
   admin: {
+    group: "Layout & library",
     useAsTitle: "title",
     defaultColumns: ["title", "scopeKey", "_status", "updatedAt"],
     description:

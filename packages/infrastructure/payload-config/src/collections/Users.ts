@@ -21,6 +21,7 @@ function isAdminUser(user: unknown): boolean {
 export const Users: CollectionConfig = {
   slug: "users",
   admin: {
+    group: "Settings",
     useAsTitle: "email",
   },
   auth: true,

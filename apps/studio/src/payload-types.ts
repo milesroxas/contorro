@@ -67,13 +67,13 @@ export interface Config {
   };
   blocks: {};
   collections: {
+    pages: Page;
     users: User;
     media: Media;
     'design-token-sets': DesignTokenSet;
     'design-token-overrides': DesignTokenOverride;
     components: Component;
     'page-compositions': PageComposition;
-    pages: Page;
     'release-snapshots': ReleaseSnapshot;
     'publish-jobs': PublishJob;
     'catalog-activity': CatalogActivity;
@@ -90,13 +90,13 @@ export interface Config {
     };
   };
   collectionsSelect: {
+    pages: PagesSelect<false> | PagesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'design-token-sets': DesignTokenSetsSelect<false> | DesignTokenSetsSelect<true>;
     'design-token-overrides': DesignTokenOverridesSelect<false> | DesignTokenOverridesSelect<true>;
     components: ComponentsSelect<false> | ComponentsSelect<true>;
     'page-compositions': PageCompositionsSelect<false> | PageCompositionsSelect<true>;
-    pages: PagesSelect<false> | PagesSelect<true>;
     'release-snapshots': ReleaseSnapshotsSelect<false> | ReleaseSnapshotsSelect<true>;
     'publish-jobs': PublishJobsSelect<false> | PublishJobsSelect<true>;
     'catalog-activity': CatalogActivitySelect<false> | CatalogActivitySelect<true>;
@@ -144,201 +144,6 @@ export interface UserAuthOperations {
     email: string;
     password: string;
   };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: number;
-  role: 'admin' | 'designer' | 'contentEditor' | 'engineer';
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: number;
-  alt: string;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-}
-/**
- * Design tokens for your brands and themes. Publishing updates the active design system.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "design-token-sets".
- */
-export interface DesignTokenSet {
-  id: number;
-  title: string;
-  scopeKey: string;
-  hasBeenPublished?: boolean | null;
-  tokens: {
-    key: string;
-    category:
-      | 'color'
-      | 'space'
-      | 'size'
-      | 'radius'
-      | 'typography'
-      | 'shadow'
-      | 'border'
-      | 'zIndex'
-      | 'opacity'
-      | 'transition'
-      | 'breakpoint'
-      | 'container';
-    resolvedValue: string;
-    id?: string | null;
-  }[];
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "design-token-overrides".
- */
-export interface DesignTokenOverride {
-  id: number;
-  tokenSet: number | DesignTokenSet;
-  tokenKey: string;
-  override:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * Reusable blocks for your library and pages. Author in the builder; publish when ready.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "components".
- */
-export interface Component {
-  id: number;
-  displayName: string;
-  /**
-   * Stable id derived from the title when the component is created. Shown for reference only.
-   */
-  key: string;
-  propContract:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  editorFields:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  composition?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  lastTouchedBy?: (number | null) | User;
-  folder?: (number | null) | FolderInterface;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-folders".
- */
-export interface FolderInterface {
-  id: number;
-  name: string;
-  folder?: (number | null) | FolderInterface;
-  documentsAndFolders?: {
-    docs?: (
-      | {
-          relationTo?: 'payload-folders';
-          value: number | FolderInterface;
-        }
-      | {
-          relationTo?: 'components';
-          value: number | Component;
-        }
-    )[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  folderType?: 'components'[] | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * Full-page layouts from the builder. Choose one when you create a page (Pages → Page template).
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "page-compositions".
- */
-export interface PageComposition {
-  id: number;
-  title: string;
-  slug: string;
-  composition:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  catalogSubmittedAt?: string | null;
-  catalogReviewStatus: 'none' | 'submitted' | 'approved' | 'rejected';
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
 }
 /**
  * Site page: add a page template from the builder and/or place library blocks. The rich text fields below are for SEO and social metadata only—not page body content.
@@ -433,6 +238,201 @@ export interface Page {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * Full-page layouts from the builder. Choose one when you create a page (Pages → Page template).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "page-compositions".
+ */
+export interface PageComposition {
+  id: number;
+  title: string;
+  slug: string;
+  composition:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  catalogSubmittedAt?: string | null;
+  catalogReviewStatus: 'none' | 'submitted' | 'approved' | 'rejected';
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Reusable blocks for your library and pages. Author in the builder; publish when ready.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "components".
+ */
+export interface Component {
+  id: number;
+  displayName: string;
+  /**
+   * Stable id derived from the title when the component is created. Shown for reference only.
+   */
+  key: string;
+  propContract:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  editorFields:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  composition?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  lastTouchedBy?: (number | null) | User;
+  folder?: (number | null) | FolderInterface;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  role: 'admin' | 'designer' | 'contentEditor' | 'engineer';
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-folders".
+ */
+export interface FolderInterface {
+  id: number;
+  name: string;
+  folder?: (number | null) | FolderInterface;
+  documentsAndFolders?: {
+    docs?: (
+      | {
+          relationTo?: 'payload-folders';
+          value: number | FolderInterface;
+        }
+      | {
+          relationTo?: 'components';
+          value: number | Component;
+        }
+    )[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  folderType?: 'components'[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * Design tokens for your brands and themes. Publishing updates the active design system.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "design-token-sets".
+ */
+export interface DesignTokenSet {
+  id: number;
+  title: string;
+  scopeKey: string;
+  hasBeenPublished?: boolean | null;
+  tokens: {
+    key: string;
+    category:
+      | 'color'
+      | 'space'
+      | 'size'
+      | 'radius'
+      | 'typography'
+      | 'shadow'
+      | 'border'
+      | 'zIndex'
+      | 'opacity'
+      | 'transition'
+      | 'breakpoint'
+      | 'container';
+    resolvedValue: string;
+    id?: string | null;
+  }[];
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "design-token-overrides".
+ */
+export interface DesignTokenOverride {
+  id: number;
+  tokenSet: number | DesignTokenSet;
+  tokenKey: string;
+  override:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Point-in-time page template tree captured when a page goes live.
@@ -536,6 +536,10 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
+        relationTo: 'pages';
+        value: number | Page;
+      } | null)
+    | ({
         relationTo: 'users';
         value: number | User;
       } | null)
@@ -558,10 +562,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'page-compositions';
         value: number | PageComposition;
-      } | null)
-    | ({
-        relationTo: 'pages';
-        value: number | Page;
       } | null)
     | ({
         relationTo: 'release-snapshots';
@@ -624,6 +624,29 @@ export interface PayloadMigration {
   batch?: number | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages_select".
+ */
+export interface PagesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  pageComposition?: T;
+  templateEditorFields?: T;
+  content?:
+    | T
+    | {
+        componentDefinition?: T;
+        layoutSlotId?: T;
+        editorFieldValues?: T;
+        id?: T;
+      };
+  seoDescription?: T;
+  socialShareText?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -723,29 +746,6 @@ export interface PageCompositionsSelect<T extends boolean = true> {
   composition?: T;
   catalogSubmittedAt?: T;
   catalogReviewStatus?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "pages_select".
- */
-export interface PagesSelect<T extends boolean = true> {
-  title?: T;
-  slug?: T;
-  pageComposition?: T;
-  templateEditorFields?: T;
-  content?:
-    | T
-    | {
-        componentDefinition?: T;
-        layoutSlotId?: T;
-        editorFieldValues?: T;
-        id?: T;
-      };
-  seoDescription?: T;
-  socialShareText?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

@@ -8,6 +8,7 @@ export const DesignSystemSettings: GlobalConfig = {
   slug: "design-system-settings",
   label: "Design system",
   admin: {
+    group: "Site globals",
     description: "Default published token set and active brand scope.",
   },
   access: {

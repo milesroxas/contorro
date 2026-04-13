@@ -1,7 +1,3 @@
-import { FolderTableCell as FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
-import { FolderField as FolderField_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
-import { default as default_dda01d5396f5fd2dd9333d25a03955b3 } from '../../../components/admin/ComponentOpenBuilder'
-import { default as default_dc8f9b8e23d55e378685fc46c6b4eb5d } from '../../../components/admin/PageCompositionOpenBuilder'
 import { default as default_8683fc19a16e81a9395ab68a07418a81 } from '../../../components/admin/PageTemplateEditorFieldsField'
 import { default as default_86145e7175414e10e8bf56f73aeca5d4 } from '../../../components/admin/LayoutSlotIdField'
 import { default as default_bd43b6c8b1798074899186c70b71d9e8 } from '../../../components/admin/DesignerEditorFieldsField'
@@ -30,6 +26,10 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { FolderTableCell as FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
+import { FolderField as FolderField_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
+import { default as default_dda01d5396f5fd2dd9333d25a03955b3 } from '../../../components/admin/ComponentOpenBuilder'
+import { default as default_dc8f9b8e23d55e378685fc46c6b4eb5d } from '../../../components/admin/PageCompositionOpenBuilder'
 import { FolderTypeField as FolderTypeField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
 import { default as default_117c7ded6016a73915851ae016af1e96 } from '../../../components/admin/BuilderNavLink'
 import { default as default_55b8bdcdde915bae2246f3a37b9e345d } from '../../../components/admin/DesignSystemPreviewCallout'
@@ -38,10 +38,6 @@ import { default as default_f73444f49720bd80d14a8e87f761bcfd } from '../../../co
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 export const importMap = {
-  "@payloadcms/next/rsc#FolderTableCell": FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1,
-  "@payloadcms/next/rsc#FolderField": FolderField_f9c02e79a4aed9a3924487c0cd4cafb1,
-  "/components/admin/ComponentOpenBuilder#default": default_dda01d5396f5fd2dd9333d25a03955b3,
-  "/components/admin/PageCompositionOpenBuilder#default": default_dc8f9b8e23d55e378685fc46c6b4eb5d,
   "/components/admin/PageTemplateEditorFieldsField#default": default_8683fc19a16e81a9395ab68a07418a81,
   "/components/admin/LayoutSlotIdField#default": default_86145e7175414e10e8bf56f73aeca5d4,
   "/components/admin/DesignerEditorFieldsField#default": default_bd43b6c8b1798074899186c70b71d9e8,
@@ -70,6 +66,10 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "@payloadcms/next/rsc#FolderTableCell": FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1,
+  "@payloadcms/next/rsc#FolderField": FolderField_f9c02e79a4aed9a3924487c0cd4cafb1,
+  "/components/admin/ComponentOpenBuilder#default": default_dda01d5396f5fd2dd9333d25a03955b3,
+  "/components/admin/PageCompositionOpenBuilder#default": default_dc8f9b8e23d55e378685fc46c6b4eb5d,
   "@payloadcms/next/client#FolderTypeField": FolderTypeField_2b8867833a34864a02ddf429b0728a40,
   "/components/admin/BuilderNavLink#default": default_117c7ded6016a73915851ae016af1e96,
   "/components/admin/DesignSystemPreviewCallout#default": default_55b8bdcdde915bae2246f3a37b9e345d,

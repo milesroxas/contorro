@@ -10,6 +10,7 @@ const beforeValidate = createDesignTokenOverrideBeforeValidateHandler();
 export const DesignTokenOverrides: CollectionConfig = {
   slug: "design-token-overrides",
   admin: {
+    group: "Layout & library",
     useAsTitle: "tokenKey",
     defaultColumns: ["tokenSet", "tokenKey", "updatedAt"],
   },

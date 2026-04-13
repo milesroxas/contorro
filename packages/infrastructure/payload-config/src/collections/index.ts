@@ -12,13 +12,13 @@ import { ReleaseSnapshots } from "./ReleaseSnapshots.js";
 import { Users } from "./Users.js";
 
 export const collections: CollectionConfig[] = [
+  Pages,
   Users,
   Media,
   DesignTokenSets,
   DesignTokenOverrides,
   Components,
   PageCompositions,
-  Pages,
   ReleaseSnapshots,
   PublishJobs,
   CatalogActivity,
