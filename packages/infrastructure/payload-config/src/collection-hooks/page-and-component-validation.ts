@@ -130,7 +130,7 @@ export function createPagesBeforeValidateHandler(): CollectionBeforeValidateHook
           id: pcId,
           depth: 0,
           user: req.user,
-          overrideAccess: false,
+          overrideAccess: !req.user,
         });
         const rawComp = pDoc?.composition;
         if (rawComp !== undefined && rawComp !== null) {
@@ -185,7 +185,7 @@ export function createPagesBeforeValidateHandler(): CollectionBeforeValidateHook
             id: defId,
             depth: 0,
             user: req.user,
-            overrideAccess: false,
+            overrideAccess: !req.user,
           });
           if (!doc) {
             throw new APIError("Designer block: definition not found.", 400);
@@ -226,7 +226,7 @@ export function createPagesBeforeValidateHandler(): CollectionBeforeValidateHook
           id: pcId,
           depth: 0,
           user: req.user,
-          overrideAccess: false,
+          overrideAccess: !req.user,
         });
         if (pDoc?.composition) {
           const pComp = PageCompositionSchema.safeParse(pDoc.composition);

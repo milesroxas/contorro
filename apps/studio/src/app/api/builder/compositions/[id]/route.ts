@@ -8,6 +8,7 @@ import type { PageComposition } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
 import {
   defaultEmptyPageComposition,
+  findInvalidStyleTokens,
   parseBuilderNewCompositionSessionId,
 } from "@repo/domains-composition";
 import {
@@ -266,6 +267,16 @@ export async function POST(
     );
   }
   const composition = compParsed.data;
+  const designTokens = await designTokensForBuilder(payload);
+  const allowedTokenKeys = new Set(
+    designTokens.tokenMetadata.map((token) => token.key),
+  );
+  if (findInvalidStyleTokens(composition, allowedTokenKeys).length > 0) {
+    return Response.json(
+      { error: { code: "VALIDATION_ERROR" as const } },
+      { status: 400 },
+    );
+  }
   const matchRaw = body.ifMatchUpdatedAt;
   if (
     matchRaw !== undefined &&

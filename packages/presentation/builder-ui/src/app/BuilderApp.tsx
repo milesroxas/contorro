@@ -82,6 +82,7 @@ export function BuilderApp({
   const [activePaletteKey, setActivePaletteKey] = useState<string | null>(null);
   const [paletteSubtitle, setPaletteSubtitle] = useState<string | null>(null);
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   const composition = useBuilder((s) => s.composition);
   const tokenMetadata = useBuilder((s) => s.tokenMetadata);
@@ -113,6 +114,20 @@ export function BuilderApp({
   useEffect(() => {
     void useBuilder.getState().load();
   }, [useBuilder]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const storedTheme = window.localStorage.getItem("builder-theme");
+    if (storedTheme === "light" || storedTheme === "dark") {
+      setTheme(storedTheme);
+      return;
+    }
+    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      setTheme("dark");
+    }
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -260,6 +275,7 @@ export function BuilderApp({
       <div
         className={cn(
           "flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-sm",
+          theme === "dark" && "dark",
         )}
         data-testid="builder-app"
       >
@@ -270,6 +286,13 @@ export function BuilderApp({
           dirty={dirty}
           error={error}
           name={name}
+          onToggleTheme={() => {
+            setTheme((prevTheme) => {
+              const nextTheme = prevTheme === "dark" ? "light" : "dark";
+              window.localStorage.setItem("builder-theme", nextTheme);
+              return nextTheme;
+            });
+          }}
           onPublish={() => void publish()}
           onRedo={() => redo()}
           onRename={async (nextName) => {
@@ -280,6 +303,7 @@ export function BuilderApp({
           renaming={renaming}
           saving={saving}
           studioHref={studioHref}
+          theme={theme}
         />
         <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 auto-rows-[minmax(0,1fr)] gap-3 p-3 lg:auto-rows-auto lg:grid-cols-[minmax(0,220px)_1fr_minmax(0,280px)] lg:grid-rows-1">
           <div className="flex min-h-0 min-w-0 flex-col gap-3">
@@ -319,6 +343,7 @@ export function BuilderApp({
                 <PropertyInspector
                   composition={composition}
                   node={selectedNode}
+                  tokenMetadata={tokenMetadata}
                   onNodeStyleToken={(property, token) => {
                     if (selectedNodeId) {
                       setNodeStyleToken(selectedNodeId, property, token);

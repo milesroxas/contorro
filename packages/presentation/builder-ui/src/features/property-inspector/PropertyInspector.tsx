@@ -1,5 +1,6 @@
 "use client";
 
+import type { TokenMeta } from "@repo/config-tailwind";
 import {
   type CompositionNode,
   EDITOR_FIELD_TYPES,
@@ -9,6 +10,10 @@ import {
   type StyleProperty,
   type StylePropertyEntry,
 } from "@repo/contracts-zod";
+import {
+  stylePropertiesForDefinitionKey,
+  stylePropertyLabel,
+} from "@repo/domains-composition";
 import { useEffect, useId, useState } from "react";
 
 import { Checkbox } from "../../components/ui/checkbox.js";
@@ -277,6 +282,7 @@ function TextPrimitiveInspector({
 export function PropertyInspector({
   composition,
   node,
+  tokenMetadata,
   onTextChange,
   onNodeStyleToken,
   patchNodeProps,
@@ -284,6 +290,7 @@ export function PropertyInspector({
 }: {
   composition: PageComposition | null;
   node: CompositionNode | null;
+  tokenMetadata: TokenMeta[];
   onTextChange: (content: string) => void;
   onNodeStyleToken: (property: StyleProperty, token: string) => void;
   patchNodeProps: (patch: Record<string, unknown>) => void;
@@ -298,22 +305,22 @@ export function PropertyInspector({
   }
 
   const isText = node.definitionKey === "primitive.text";
-  const isBox = node.definitionKey === "primitive.box";
   const isSlot = node.definitionKey === "primitive.slot";
   const isLibraryComponent =
     node.definitionKey === "primitive.libraryComponent";
 
   const content =
     typeof node.propValues?.content === "string" ? node.propValues.content : "";
-  const backgroundStyle = readStyleProperty(composition, node, "background");
-  const bgToken =
-    backgroundStyle?.type === "token" ? backgroundStyle.token : "";
-
   const fieldBound =
     node.contentBinding?.source === "editor"
       ? node.contentBinding.editorField
       : undefined;
   const exposeToEditors = Boolean(fieldBound);
+  const supportedStyleProperties = stylePropertiesForDefinitionKey(
+    node.definitionKey,
+  );
+  const hasStyleControls =
+    supportedStyleProperties.length > 0 && tokenMetadata.length > 0;
 
   return (
     <div className="space-y-4 text-sm">
@@ -330,27 +337,41 @@ export function PropertyInspector({
           fieldBound={fieldBound}
         />
       ) : null}
-      {isBox || isSlot ? (
-        <label className="block space-y-1.5">
-          <span className="text-xs font-medium text-foreground">
-            Background token
-          </span>
-          <input
-            className={cn(
-              "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm",
-              "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-            )}
-            data-testid={
-              isSlot
-                ? "inspector-slot-background-token"
-                : "inspector-box-background-token"
-            }
-            onChange={(e) => onNodeStyleToken("background", e.target.value)}
-            placeholder="color.surface.primary"
-            type="text"
-            value={bgToken}
-          />
-        </label>
+      {hasStyleControls ? (
+        <div className="space-y-3 border-t border-border/60 pt-3">
+          {supportedStyleProperties.map((property) => {
+            const styleEntry = readStyleProperty(composition, node, property);
+            const value = styleEntry?.type === "token" ? styleEntry.token : "";
+            return (
+              <label className="block space-y-1.5" key={property}>
+                <span className="text-xs font-medium text-foreground">
+                  {stylePropertyLabel(property)} token
+                </span>
+                <select
+                  className={cn(
+                    "flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-xs shadow-sm",
+                    "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                  )}
+                  data-testid={`inspector-style-token-${property}`}
+                  onChange={(e) => onNodeStyleToken(property, e.target.value)}
+                  value={value}
+                >
+                  <option value="">None</option>
+                  {tokenMetadata.map((token) => (
+                    <option key={token.key} value={token.key}>
+                      {token.key}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            );
+          })}
+        </div>
+      ) : null}
+      {supportedStyleProperties.length > 0 && tokenMetadata.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          Publish a token set to configure primitive styles.
+        </p>
       ) : null}
       {isSlot ? (
         <div className="space-y-2 border-t border-border/60 pt-3">

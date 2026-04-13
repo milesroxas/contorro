@@ -274,8 +274,16 @@ export function createBuilderStore(compositionId: string) {
     },
 
     setNodeStyleToken: (nodeId, property, token) => {
-      const { composition } = get();
+      const { composition, tokenMetadata } = get();
       if (!composition) {
+        return;
+      }
+      const normalizedToken = token.trim();
+      if (
+        normalizedToken !== "" &&
+        !tokenMetadata.some((entry) => entry.key === normalizedToken)
+      ) {
+        set({ error: `Unknown token: ${normalizedToken}` });
         return;
       }
       const next = setNodeTokenStyle(composition, nodeId, property, token);
@@ -283,6 +291,7 @@ export function createBuilderStore(compositionId: string) {
         return;
       }
       set({
+        error: null,
         composition: next.value,
         historyPast: [...get().historyPast, composition],
         historyFuture: [],
@@ -334,7 +343,11 @@ export function createBuilderStore(compositionId: string) {
             : updatedAt,
           name: get().name,
         });
-        set({ compositionId: saved.id, updatedAt: saved.updatedAt, dirty: false });
+        set({
+          compositionId: saved.id,
+          updatedAt: saved.updatedAt,
+          dirty: false,
+        });
         if (saved.id !== id && typeof window !== "undefined") {
           const url = new URL(window.location.href);
           url.searchParams.set("composition", saved.id);
@@ -368,7 +381,11 @@ export function createBuilderStore(compositionId: string) {
             : updatedAt,
           name: get().name,
         });
-        set({ compositionId: saved.id, updatedAt: saved.updatedAt, dirty: false });
+        set({
+          compositionId: saved.id,
+          updatedAt: saved.updatedAt,
+          dirty: false,
+        });
         if (saved.id !== id && typeof window !== "undefined") {
           const url = new URL(window.location.href);
           url.searchParams.set("composition", saved.id);

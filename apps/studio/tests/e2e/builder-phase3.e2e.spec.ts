@@ -61,12 +61,12 @@ test.describe("Phase 3 — Builder MVP", () => {
       .click();
 
     await page
-      .getByTestId("inspector-box-background-token")
-      .fill("color.surface.primary");
+      .getByTestId("inspector-style-token-background")
+      .selectOption("color.surface.primary");
 
     await page.getByTestId("save-draft").click();
 
-    await expect(page.getByText("Saved")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/^Saved$/)).toBeVisible({ timeout: 15_000 });
 
     await page.reload();
 

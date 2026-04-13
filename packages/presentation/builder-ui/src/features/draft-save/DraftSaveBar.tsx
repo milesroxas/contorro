@@ -3,7 +3,9 @@
 import {
   IconArrowBackUp,
   IconArrowForwardUp,
+  IconMoonStars,
   IconPencil,
+  IconSunHigh,
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -45,6 +47,8 @@ export function DraftSaveBar({
   onRename,
   onSaveDraft,
   onPublish,
+  theme,
+  onToggleTheme,
 }: {
   name: string;
   canEditName: boolean;
@@ -60,6 +64,8 @@ export function DraftSaveBar({
   onRename: (name: string) => Promise<void>;
   onSaveDraft: () => void;
   onPublish: () => void;
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
 }) {
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState(name);
@@ -78,6 +84,19 @@ export function DraftSaveBar({
       <a className={btnGhost} href={studioHref}>
         Studio
       </a>
+      <button
+        aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+        className={btnGhost}
+        onClick={onToggleTheme}
+        title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+        type="button"
+      >
+        {theme === "dark" ? (
+          <IconSunHigh className="size-4" />
+        ) : (
+          <IconMoonStars className="size-4" />
+        )}
+      </button>
       <div className="h-5 w-px bg-border" />
       {editingName && canEditName ? (
         <>

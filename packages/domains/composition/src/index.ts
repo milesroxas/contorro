@@ -53,3 +53,9 @@ export {
   isKnownPrimitiveKey,
   primitiveKindForDefinitionKey,
 } from "./primitives.js";
+export {
+  findInvalidStyleTokens,
+  stylePropertiesForDefinitionKey,
+  stylePropertyLabel,
+  type InvalidStyleTokenIssue,
+} from "./style-authoring.js";

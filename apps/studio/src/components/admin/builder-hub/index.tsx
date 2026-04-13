@@ -1,6 +1,8 @@
 "use client";
 
 import { useConfig } from "@payloadcms/ui";
+import { builderNewCompositionSessionId } from "@repo/domains-composition";
+import { builderRowIdForComponent } from "@repo/infrastructure-payload-config/builder-row-id";
 import {
   IconExternalLink,
   IconLayout,
@@ -9,10 +11,6 @@ import {
   IconRefresh,
   IconSearch,
 } from "@tabler/icons-react";
-import {
-  builderRowIdForComponent,
-} from "@repo/infrastructure-payload-config/builder-row-id";
-import { builderNewCompositionSessionId } from "@repo/domains-composition";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatAdminURL } from "payload/shared";
@@ -89,11 +87,14 @@ export default function BuilderHub() {
 
     try {
       const [templatesRes, componentsRes] = await Promise.all([
-        fetch(`/api/${PAGE_COMPOSITIONS_SLUG}?limit=200&depth=0&sort=-updatedAt`, {
-          credentials: "include",
-          headers: { Accept: "application/json" },
-          signal,
-        }),
+        fetch(
+          `/api/${PAGE_COMPOSITIONS_SLUG}?limit=200&depth=0&sort=-updatedAt`,
+          {
+            credentials: "include",
+            headers: { Accept: "application/json" },
+            signal,
+          },
+        ),
         fetch(`/api/${COMPONENTS_SLUG}?limit=200&depth=0&sort=-updatedAt`, {
           credentials: "include",
           headers: { Accept: "application/json" },
@@ -113,7 +114,9 @@ export default function BuilderHub() {
         docs?: ComponentRow[];
       };
 
-      setTemplateDocs(Array.isArray(templatesJson.docs) ? templatesJson.docs : []);
+      setTemplateDocs(
+        Array.isArray(templatesJson.docs) ? templatesJson.docs : [],
+      );
       setComponentDocs(
         Array.isArray(componentsJson.docs) ? componentsJson.docs : [],
       );
@@ -298,9 +301,13 @@ export default function BuilderHub() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading templates...</p>
+              <p className="text-sm text-muted-foreground">
+                Loading templates...
+              </p>
             ) : filteredTemplates.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No templates found.</p>
+              <p className="text-sm text-muted-foreground">
+                No templates found.
+              </p>
             ) : (
               <ul className="space-y-2">
                 {filteredTemplates.map((template, index) => {
@@ -315,7 +322,9 @@ export default function BuilderHub() {
                             {template.title}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {template._status === "draft" ? "Draft" : "Published"}
+                            {template._status === "draft"
+                              ? "Draft"
+                              : "Published"}
                             {updated ? ` · ${updated}` : ""}
                           </p>
                         </div>
@@ -332,7 +341,10 @@ export default function BuilderHub() {
                               prefetch={false}
                             >
                               Open builder
-                              <IconExternalLink className="size-3.5" aria-hidden />
+                              <IconExternalLink
+                                className="size-3.5"
+                                aria-hidden
+                              />
                             </Link>
                           </Button>
                         </div>
@@ -364,9 +376,13 @@ export default function BuilderHub() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading components...</p>
+              <p className="text-sm text-muted-foreground">
+                Loading components...
+              </p>
             ) : filteredComponents.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No components found.</p>
+              <p className="text-sm text-muted-foreground">
+                No components found.
+              </p>
             ) : (
               <ul className="space-y-2">
                 {filteredComponents.map((component, index) => {
@@ -382,7 +398,9 @@ export default function BuilderHub() {
                           </p>
                           <p className="truncate text-xs text-muted-foreground">
                             {component.key ? `${component.key} · ` : ""}
-                            {component._status === "draft" ? "Draft" : "Published"}
+                            {component._status === "draft"
+                              ? "Draft"
+                              : "Published"}
                             {updated ? ` · ${updated}` : ""}
                           </p>
                         </div>
@@ -399,7 +417,10 @@ export default function BuilderHub() {
                               prefetch={false}
                             >
                               Open builder
-                              <IconExternalLink className="size-3.5" aria-hidden />
+                              <IconExternalLink
+                                className="size-3.5"
+                                aria-hidden
+                              />
                             </Link>
                           </Button>
                         </div>
