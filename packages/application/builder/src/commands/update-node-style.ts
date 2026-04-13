@@ -1,9 +1,9 @@
+import type { StyleProperty } from "@repo/contracts-zod";
 import type {
   CompositionActor,
   CompositionRepository,
 } from "@repo/domains-composition";
 import { setNodeTokenStyle } from "@repo/domains-composition";
-import type { StyleProperty } from "@repo/contracts-zod";
 import { type AsyncResult, err } from "@repo/kernel";
 
 import { saveValidated } from "../internal/save-validated.js";

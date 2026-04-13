@@ -247,7 +247,8 @@ function componentDefinitionFromFormGetSiblingData(
     try {
       const sd = ctx.getSiblingData(p);
       if (sd && typeof sd === "object" && !Array.isArray(sd)) {
-        const cd = (sd as { componentDefinition?: unknown }).componentDefinition;
+        const cd = (sd as { componentDefinition?: unknown })
+          .componentDefinition;
         if (isPresentRelationshipValue(cd)) {
           return cd;
         }
@@ -343,8 +344,9 @@ export function resolveComponentDefinitionRef(args: {
     getData,
     savedDocumentData,
   } = args;
-  const editorFieldValuesPath =
-    normalizeEditorFieldValuesPath(rawEditorFieldValuesPath);
+  const editorFieldValuesPath = normalizeEditorFieldValuesPath(
+    rawEditorFieldValuesPath,
+  );
   const candidateEditorPaths = [
     editorFieldValuesPath,
     ...siblingLookupPaths.map(normalizeEditorFieldValuesPath),
@@ -369,7 +371,10 @@ export function resolveComponentDefinitionRef(args: {
   if (isPresentRelationshipValue(raw)) {
     return raw;
   }
-  raw = componentDefinitionFromFormGetSiblingData(documentForm, candidateEditorPaths);
+  raw = componentDefinitionFromFormGetSiblingData(
+    documentForm,
+    candidateEditorPaths,
+  );
   if (isPresentRelationshipValue(raw)) {
     return raw;
   }

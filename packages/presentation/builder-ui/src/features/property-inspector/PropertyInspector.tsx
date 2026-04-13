@@ -455,7 +455,9 @@ export function PropertyInspector({
                 : "";
             return (
               <label className="block space-y-1" key={property}>
-                <span className="text-xs text-muted-foreground">{property}</span>
+                <span className="text-xs text-muted-foreground">
+                  {property}
+                </span>
                 <input
                   className={cn(
                     "flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs shadow-sm",

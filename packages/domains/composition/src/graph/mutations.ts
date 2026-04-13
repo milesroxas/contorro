@@ -1,9 +1,9 @@
 import type {
   CompositionNode,
   PageComposition,
+  StyleBinding,
   StyleOverrideValue,
   StyleProperty,
-  StyleBinding,
 } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
 import { makeId } from "@repo/kernel";

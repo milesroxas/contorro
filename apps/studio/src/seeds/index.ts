@@ -471,13 +471,15 @@ async function seed(): Promise<void> {
         componentDefinition: cardCreated.id,
       })),
     }));
-    const designerPageContentSlots = seedDesignerPageContentSlots.map((row) => ({
-      ...row,
-      blocks: row.blocks.map((block) => ({
-        ...block,
-        componentDefinition: cardCreated.id,
-      })),
-    }));
+    const designerPageContentSlots = seedDesignerPageContentSlots.map(
+      (row) => ({
+        ...row,
+        blocks: row.blocks.map((block) => ({
+          ...block,
+          componentDefinition: cardCreated.id,
+        })),
+      }),
+    );
 
     const composition = await payload.create({
       collection: "page-compositions",
