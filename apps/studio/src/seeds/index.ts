@@ -1,4 +1,3 @@
-import { deleteBuilderCompositionBySlug } from "@repo/infrastructure-payload-config";
 import { getPayload } from "payload";
 
 import config from "../payload.config.js";
@@ -275,8 +274,6 @@ async function seed(): Promise<void> {
       where: { slug: { equals: SEED_PAGE_COMPOSITION_SLUG } },
       overrideAccess: true,
     });
-    await deleteBuilderCompositionBySlug(SEED_PAGE_COMPOSITION_SLUG);
-
     for (const key of SEED_COMPONENT_KEYS) {
       await payload.delete({
         collection: "components",

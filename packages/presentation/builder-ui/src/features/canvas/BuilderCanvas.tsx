@@ -25,56 +25,13 @@ function isContainerNode(node: CompositionNode) {
   return isChildContainerPrimitive(node.definitionKey);
 }
 
-function stackInnerLayout(node: CompositionNode): CSSProperties {
-  const direction =
-    (node.propValues?.direction as string | undefined) === "row"
-      ? "row"
-      : "column";
-  const gap = (node.propValues?.gap as string | undefined) ?? "0";
-  const align = (node.propValues?.align as string | undefined) ?? "stretch";
-  const justify =
-    (node.propValues?.justify as string | undefined) ?? "flex-start";
-  return {
-    display: "flex",
-    flexDirection: direction === "row" ? "row" : "column",
-    alignItems: align,
-    justifyContent: justify,
-    gap,
-    width: "100%",
-    minHeight: "3rem",
-    flex: "1 1 auto",
-    minWidth: 0,
-  };
-}
-
-function gridInnerLayout(node: CompositionNode): CSSProperties {
-  const gap = (node.propValues?.gap as string | undefined) ?? "0";
-  return {
-    display: "flex",
-    flexDirection: "column",
-    gap,
-    width: "100%",
-    minHeight: "3rem",
-    flex: "1 1 auto",
-  };
-}
-
-function boxInnerLayout(): CSSProperties {
+function containerContentLayout(): CSSProperties {
   return {
     display: "block",
     width: "100%",
     minHeight: "3rem",
+    minWidth: 0,
   };
-}
-
-function containerContentLayout(node: CompositionNode): CSSProperties {
-  if (node.definitionKey === "primitive.stack") {
-    return stackInnerLayout(node);
-  }
-  if (node.definitionKey === "primitive.grid") {
-    return gridInnerLayout(node);
-  }
-  return boxInnerLayout();
 }
 
 /** `contextmenu` targets may be a Text node (no `Element#closest`). */
@@ -96,7 +53,7 @@ function ContainerDropZone({
   children: React.ReactNode;
 }) {
   const isBox = node.definitionKey === "primitive.box";
-  const layout = containerContentLayout(node);
+  const layout = containerContentLayout();
   const childIds = node.childIds;
 
   return (

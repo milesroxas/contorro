@@ -202,20 +202,3 @@ export async function renderDesignerContentBlocksBySlot(
 
   return { slotContent, orphanSections };
 }
-
-/** Renders v0.4 page `content` array blocks (template from definition + editor field substitution). */
-export async function renderDesignerContentBlocks(
-  payload: Payload,
-  contentSlots: unknown,
-  tokenMeta: TokenMeta[],
-): Promise<ReactNode[]> {
-  const { orphanSections, slotContent } =
-    await renderDesignerContentBlocksBySlot(
-      payload,
-      contentSlots,
-      tokenMeta,
-      null,
-    );
-  const legacy = Object.values(slotContent);
-  return [...legacy, ...orphanSections];
-}

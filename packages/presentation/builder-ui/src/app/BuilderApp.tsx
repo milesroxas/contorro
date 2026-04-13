@@ -61,7 +61,15 @@ function BuilderDragPreview({
   );
 }
 
-export function BuilderApp({ compositionId }: { compositionId: string }) {
+export function BuilderApp({
+  compositionId,
+  studioHref,
+  canEditName,
+}: {
+  compositionId: string;
+  studioHref: string;
+  canEditName: boolean;
+}) {
   const useBuilder = useMemo(
     () => createBuilderStore(compositionId),
     [compositionId],
@@ -78,9 +86,13 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
   const composition = useBuilder((s) => s.composition);
   const tokenMetadata = useBuilder((s) => s.tokenMetadata);
   const cssVariables = useBuilder((s) => s.cssVariables);
+  const name = useBuilder((s) => s.name);
   const selectedNodeId = useBuilder((s) => s.selectedNodeId);
   const dirty = useBuilder((s) => s.dirty);
   const saving = useBuilder((s) => s.saving);
+  const renaming = useBuilder((s) => s.renaming);
+  const canUndo = useBuilder((s) => s.canUndo);
+  const canRedo = useBuilder((s) => s.canRedo);
   const error = useBuilder((s) => s.error);
   const selectNode = useBuilder((s) => s.selectNode);
   const addPrimitive = useBuilder((s) => s.addPrimitive);
@@ -93,12 +105,50 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
   );
   const saveDraft = useBuilder((s) => s.saveDraft);
   const publish = useBuilder((s) => s.publish);
-  const cancel = useBuilder((s) => s.cancel);
+  const rename = useBuilder((s) => s.rename);
+  const undo = useBuilder((s) => s.undo);
+  const redo = useBuilder((s) => s.redo);
   const removeNode = useBuilder((s) => s.removeNode);
 
   useEffect(() => {
     void useBuilder.getState().load();
   }, [useBuilder]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+      const key = event.key.toLowerCase();
+      const hasModifier = event.metaKey || event.ctrlKey;
+      if (!hasModifier) {
+        return;
+      }
+      if (key === "z") {
+        event.preventDefault();
+        if (event.shiftKey) {
+          redo();
+          return;
+        }
+        undo();
+        return;
+      }
+      if (key === "y" && event.ctrlKey && !event.metaKey) {
+        event.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [redo, undo]);
 
   const onDragStart = (event: DragStartEvent) => {
     const d = event.active.data.current;
@@ -214,12 +264,22 @@ export function BuilderApp({ compositionId }: { compositionId: string }) {
         data-testid="builder-app"
       >
         <DraftSaveBar
+          canEditName={canEditName}
+          canRedo={canRedo}
+          canUndo={canUndo}
           dirty={dirty}
           error={error}
-          onCancel={() => cancel()}
+          name={name}
           onPublish={() => void publish()}
+          onRedo={() => redo()}
+          onRename={async (nextName) => {
+            await rename(nextName);
+          }}
           onSaveDraft={() => void saveDraft()}
+          onUndo={() => undo()}
+          renaming={renaming}
           saving={saving}
+          studioHref={studioHref}
         />
         <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 auto-rows-[minmax(0,1fr)] gap-3 p-3 lg:auto-rows-auto lg:grid-cols-[minmax(0,220px)_1fr_minmax(0,280px)] lg:grid-rows-1">
           <div className="flex min-h-0 min-w-0 flex-col gap-3">

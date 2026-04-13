@@ -12,7 +12,8 @@
     }
   },
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "dev": "tsc -b --watch --preserveWatchOutput"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

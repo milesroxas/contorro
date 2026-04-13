@@ -7,30 +7,11 @@ import type {
 import { PageCompositionSchema } from "@repo/contracts-zod";
 import { makeId } from "@repo/kernel";
 import { type Result, err, ok } from "@repo/kernel";
-
-const PRIMITIVE_KEYS = new Set([
-  "primitive.box",
-  "primitive.text",
-  "primitive.stack",
-  "primitive.grid",
-  "primitive.image",
-  "primitive.slot",
-  /** Placeholder for a published library component; expanded at render (see `expandLibraryComponentNodes`). */
-  "primitive.libraryComponent",
-]);
-
-function inferKind(definitionKey: string): CompositionNode["kind"] {
-  if (definitionKey === "primitive.text") {
-    return "text";
-  }
-  if (definitionKey === "primitive.slot") {
-    return "slot";
-  }
-  if (definitionKey === "primitive.libraryComponent") {
-    return "designerComponent";
-  }
-  return "primitive";
-}
+import {
+  defaultPrimitivePropValues,
+  isBuilderCreatablePrimitiveKey,
+  primitiveKindForDefinitionKey,
+} from "../primitives.js";
 
 function collectDescendants(
   nodes: PageComposition["nodes"],
@@ -75,7 +56,7 @@ export function addChildNode(
   insertIndex?: number,
   options?: { libraryComponentKey?: string },
 ): Result<PageComposition, "INVALID_NODE"> {
-  if (!PRIMITIVE_KEYS.has(definitionKey)) {
+  if (!isBuilderCreatablePrimitiveKey(definitionKey)) {
     return err("INVALID_NODE");
   }
   if (definitionKey === "primitive.libraryComponent") {
@@ -93,7 +74,7 @@ export function addChildNode(
   }
 
   const newId = makeId();
-  const kind = inferKind(definitionKey);
+  const kind = primitiveKindForDefinitionKey(definitionKey);
   const newNode: CompositionNode = {
     id: newId,
     kind,
@@ -103,18 +84,7 @@ export function addChildNode(
     propValues:
       definitionKey === "primitive.libraryComponent"
         ? { componentKey: options?.libraryComponentKey?.trim() ?? "" }
-        : definitionKey === "primitive.stack"
-          ? {
-              direction: "column",
-              gap: "8px",
-              align: "stretch",
-              justify: "flex-start",
-            }
-          : definitionKey === "primitive.text"
-            ? { content: "" }
-            : definitionKey === "primitive.slot"
-              ? { slotId: "main" }
-              : {},
+        : defaultPrimitivePropValues(definitionKey),
   };
 
   const siblings = [...parent.childIds];

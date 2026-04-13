@@ -1,9 +1,5 @@
 import type { CollectionConfig } from "payload";
 import { createPageCompositionBeforeValidateHandler } from "../collection-hooks/page-and-component-validation.js";
-import {
-  syncBuilderCompositionAfterChange,
-  syncBuilderCompositionAfterDelete,
-} from "../hooks/sync-builder-composition.js";
 
 import { composerAuthoringAccess } from "../access/composition-access.js";
 import { authenticatedAccess } from "../access/design-system-access.js";
@@ -23,7 +19,7 @@ export const PageCompositions: CollectionConfig = {
   admin: {
     group: "Layout & library",
     useAsTitle: "title",
-    defaultColumns: ["title", "slug", "_status", "updatedAt"],
+    defaultColumns: ["title", "_status", "updatedAt"],
     description:
       "Full-page layouts from the builder. Choose one when you create a page (Pages → Page template).",
   },
@@ -45,6 +41,9 @@ export const PageCompositions: CollectionConfig = {
       required: true,
       unique: true,
       index: true,
+      admin: {
+        hidden: true,
+      },
     },
     {
       name: "composition",
@@ -79,7 +78,5 @@ export const PageCompositions: CollectionConfig = {
   ],
   hooks: {
     beforeValidate: [beforeValidate],
-    afterChange: [syncBuilderCompositionAfterChange],
-    afterDelete: [syncBuilderCompositionAfterDelete],
   },
 };

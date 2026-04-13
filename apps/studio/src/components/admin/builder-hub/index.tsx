@@ -9,11 +9,12 @@ import {
   IconPuzzle,
   IconSearch,
 } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
 import { formatAdminURL } from "payload/shared";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { COMPONENTS_SLUG, PAGE_COMPOSITIONS_SLUG } from "./constants";
-import { HubChoiceButton, HubChoiceLink } from "./hub-choice-tile";
+import { HubChoiceButton } from "./hub-choice-tile";
 import {
   hubEyebrowClass,
   hubFilterLabelClass,
@@ -56,6 +57,7 @@ type HubStep =
   | { name: "modify-list"; resource: "templates" | "components" };
 
 export default function BuilderHub() {
+  const router = useRouter();
   const { config } = useConfig();
   const adminRoute = config.routes?.admin ?? "/admin";
 
@@ -71,6 +73,10 @@ export default function BuilderHub() {
     "idle",
   );
   const [modifySearch, setModifySearch] = useState("");
+  const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
+  const [createTemplateError, setCreateTemplateError] = useState("");
+  const [isCreatingComponent, setIsCreatingComponent] = useState(false);
+  const [createComponentError, setCreateComponentError] = useState("");
 
   const createTemplateHref = formatAdminURL({
     adminRoute,
@@ -82,6 +88,81 @@ export default function BuilderHub() {
     path: `/collections/${COMPONENTS_SLUG}/create`,
     relative: true,
   });
+
+  const createTemplateAndOpenBuilder = useCallback(async () => {
+    if (isCreatingTemplate) {
+      return;
+    }
+    setCreateTemplateError("");
+    setIsCreatingTemplate(true);
+    try {
+      const res = await fetch("/api/builder/compositions", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Untitled page template" }),
+      });
+      if (!res.ok) {
+        setCreateTemplateError("Could not create template. Try again.");
+        return;
+      }
+      const json = (await res.json()) as { data?: { id?: string } };
+      const id = json.data?.id;
+      if (!id) {
+        setCreateTemplateError("Could not create template. Try again.");
+        return;
+      }
+      const builderHref = formatAdminURL({
+        adminRoute,
+        path: `/builder?composition=${encodeURIComponent(id)}`,
+        relative: true,
+      });
+      router.push(builderHref);
+    } catch {
+      setCreateTemplateError("Could not create template. Try again.");
+    } finally {
+      setIsCreatingTemplate(false);
+    }
+  }, [adminRoute, isCreatingTemplate, router]);
+
+  const createComponentAndOpenBuilder = useCallback(async () => {
+    if (isCreatingComponent) {
+      return;
+    }
+    setCreateComponentError("");
+    setIsCreatingComponent(true);
+    try {
+      const res = await fetch("/api/builder/compositions", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "component",
+          title: "Untitled component",
+        }),
+      });
+      if (!res.ok) {
+        setCreateComponentError("Could not create component. Try again.");
+        return;
+      }
+      const json = (await res.json()) as { data?: { id?: string } };
+      const id = json.data?.id;
+      if (!id) {
+        setCreateComponentError("Could not create component. Try again.");
+        return;
+      }
+      const builderHref = formatAdminURL({
+        adminRoute,
+        path: `/builder?composition=${encodeURIComponent(id)}`,
+        relative: true,
+      });
+      router.push(builderHref);
+    } catch {
+      setCreateComponentError("Could not create component. Try again.");
+    } finally {
+      setIsCreatingComponent(false);
+    }
+  }, [adminRoute, isCreatingComponent, router]);
 
   const fetchTemplates = useCallback(async (signal: AbortSignal) => {
     setLoadState("loading");
@@ -223,7 +304,7 @@ export default function BuilderHub() {
             {hubStep.name === "intent"
               ? "Choose whether to start something new or open work you already have."
               : hubStep.name === "create"
-                ? "Start from Payload; you can open the visual builder from the document when you are ready."
+                ? "Create a page template or component, then start editing in the visual builder."
                 : hubStep.name === "modify-pick"
                   ? "Pick whether you are working with full-page templates or library components."
                   : "Search, then edit in admin or jump straight into the builder."}
@@ -248,19 +329,43 @@ export default function BuilderHub() {
         ) : null}
 
         {hubStep.name === "create" ? (
-          <div className={hubTileGridClass}>
-            <HubChoiceLink
-              description="Layouts you assign when creating pages."
-              href={createTemplateHref}
-              icon={<IconLayout className={tileIconClass} aria-hidden />}
-              title="Page template"
-            />
-            <HubChoiceLink
-              description="Reusable blocks for the library and editor."
-              href={createComponentHref}
-              icon={<IconPuzzle className={tileIconClass} aria-hidden />}
-              title="Component"
-            />
+          <div className="space-y-3">
+            <div className={hubTileGridClass}>
+              <HubChoiceButton
+                description="Create template and open it in builder."
+                disabled={isCreatingTemplate}
+                icon={<IconLayout className={tileIconClass} aria-hidden />}
+                title={
+                  isCreatingTemplate
+                    ? "Creating page template…"
+                    : "Page template"
+                }
+                onClick={() => {
+                  void createTemplateAndOpenBuilder();
+                }}
+              />
+              <HubChoiceButton
+                description="Create component and open it in builder."
+                disabled={isCreatingComponent}
+                icon={<IconPuzzle className={tileIconClass} aria-hidden />}
+                title={
+                  isCreatingComponent ? "Creating component…" : "Component"
+                }
+                onClick={() => {
+                  void createComponentAndOpenBuilder();
+                }}
+              />
+            </div>
+            {createTemplateError ? (
+              <p className="border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive md:px-5 md:py-3.5 md:text-base">
+                {createTemplateError}
+              </p>
+            ) : null}
+            {createComponentError ? (
+              <p className="border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive md:px-5 md:py-3.5 md:text-base">
+                {createComponentError}
+              </p>
+            ) : null}
           </div>
         ) : null}
 

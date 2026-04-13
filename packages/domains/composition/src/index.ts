@@ -36,3 +36,13 @@ export {
   orderedLayoutSlotIds,
 } from "./layout-slot.js";
 export { mergePageContentSlotsToSlotOrder } from "./page-content-slots.js";
+export {
+  BUILDER_PALETTE_PRIMITIVE_KEYS,
+  KNOWN_PRIMITIVE_KEYS,
+  defaultPrimitivePropValues,
+  isBuilderCreatablePrimitiveKey,
+  isBuilderPalettePrimitiveKey,
+  isContainerPrimitiveKey,
+  isKnownPrimitiveKey,
+  primitiveKindForDefinitionKey,
+} from "./primitives.js";

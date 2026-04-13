@@ -5,6 +5,7 @@ const studioBuilder = "/api/builder";
 
 export type GatewayCompositionResponse = {
   data: {
+    name: string;
     composition: PageComposition;
     updatedAt: string;
     tokenMetadata: TokenMeta[];
@@ -14,6 +15,13 @@ export type GatewayCompositionResponse = {
 
 export type GatewaySaveResponse = {
   data: { updatedAt: string };
+};
+
+export type GatewayRenameResponse = {
+  data: {
+    name: string;
+    updatedAt: string;
+  };
 };
 
 export async function fetchComposition(
@@ -92,4 +100,24 @@ export async function postPublish(
     ...body,
     intent: "publish",
   });
+}
+
+export async function patchName(
+  compositionId: string,
+  name: string,
+): Promise<GatewayRenameResponse["data"]> {
+  const res = await fetch(
+    `${studioBuilder}/compositions/${encodeURIComponent(compositionId)}`,
+    {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    },
+  );
+  if (!res.ok) {
+    throw new Error(`rename failed: ${res.status}`);
+  }
+  const json = (await res.json()) as GatewayRenameResponse;
+  return json.data;
 }

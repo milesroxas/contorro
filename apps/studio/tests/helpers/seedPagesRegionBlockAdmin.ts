@@ -1,5 +1,3 @@
-import { deleteBuilderCompositionBySlug } from "@repo/infrastructure-payload-config";
-
 import { getTestPayload } from "./getTestPayload.js";
 
 /** Admin E2E: pages edit view shows block CMS fields for components in layout regions. */
@@ -126,7 +124,6 @@ export async function seedPagesRegionBlockAdminFixture(): Promise<{
     where: { slug: { equals: E2E_REGION_PC_SLUG } },
     overrideAccess: true,
   });
-  await deleteBuilderCompositionBySlug(E2E_REGION_PC_SLUG);
   await payload.delete({
     collection: "components",
     where: { key: { equals: E2E_REGION_COMPONENT_KEY } },
@@ -213,7 +210,6 @@ export async function cleanupPagesRegionBlockAdmin(): Promise<void> {
     where: { slug: { equals: E2E_REGION_PC_SLUG } },
     overrideAccess: true,
   });
-  await deleteBuilderCompositionBySlug(E2E_REGION_PC_SLUG);
   await payload.delete({
     collection: "components",
     where: { key: { equals: E2E_REGION_COMPONENT_KEY } },

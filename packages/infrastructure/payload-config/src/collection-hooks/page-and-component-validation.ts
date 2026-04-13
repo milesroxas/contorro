@@ -37,12 +37,40 @@ function relationshipId(ref: unknown): number | undefined {
 const DEFAULT_SLOT_ORDER = ["main"] as const;
 
 export function createPageCompositionBeforeValidateHandler(): CollectionBeforeValidateHook {
-  return ({ data }) => {
-    if (!data) {
+  return ({ data, operation, originalDoc }) => {
+    if (!data || typeof data !== "object") {
       return data;
     }
 
-    const raw = (data as { composition?: unknown }).composition;
+    const next = { ...(data as Record<string, unknown>) };
+    if (typeof next.title === "string") {
+      next.title = next.title.trim();
+    }
+    if (typeof next.slug === "string") {
+      next.slug = next.slug.trim();
+    }
+    if (
+      (next.slug === undefined || next.slug === null || next.slug === "") &&
+      operation === "update" &&
+      originalDoc &&
+      typeof originalDoc === "object" &&
+      typeof (originalDoc as { slug?: unknown }).slug === "string"
+    ) {
+      next.slug = (originalDoc as { slug: string }).slug;
+    }
+    if (next.slug === undefined || next.slug === null || next.slug === "") {
+      next.slug = `template-${crypto.randomUUID().slice(0, 12)}`;
+    }
+
+    const merged: Record<string, unknown> =
+      operation === "update" &&
+      originalDoc !== undefined &&
+      originalDoc !== null &&
+      typeof originalDoc === "object"
+        ? { ...(originalDoc as Record<string, unknown>), ...next }
+        : next;
+
+    const raw = (merged as { composition?: unknown }).composition;
     if (raw === undefined || raw === null) {
       throw new APIError("Composition is required", 400);
     }
@@ -58,7 +86,7 @@ export function createPageCompositionBeforeValidateHandler(): CollectionBeforeVa
     }
 
     return {
-      ...data,
+      ...next,
       composition: parsed.data,
     };
   };
@@ -101,6 +129,8 @@ export function createPagesBeforeValidateHandler(): CollectionBeforeValidateHook
           collection: "page-compositions",
           id: pcId,
           depth: 0,
+          user: req.user,
+          overrideAccess: false,
         });
         const rawComp = pDoc?.composition;
         if (rawComp !== undefined && rawComp !== null) {
@@ -154,6 +184,8 @@ export function createPagesBeforeValidateHandler(): CollectionBeforeValidateHook
             collection: "components",
             id: defId,
             depth: 0,
+            user: req.user,
+            overrideAccess: false,
           });
           if (!doc) {
             throw new APIError("Designer block: definition not found.", 400);
@@ -193,6 +225,8 @@ export function createPagesBeforeValidateHandler(): CollectionBeforeValidateHook
           collection: "page-compositions",
           id: pcId,
           depth: 0,
+          user: req.user,
+          overrideAccess: false,
         });
         if (pDoc?.composition) {
           const pComp = PageCompositionSchema.safeParse(pDoc.composition);

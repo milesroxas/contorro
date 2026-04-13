@@ -4,7 +4,7 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "build": "tsc -b",
-    "dev": "pnpm --filter @repo/studio dev & pnpm --filter @repo/gateway dev",
+    "dev": "pnpm --filter @repo/presentation-builder-ui dev & pnpm --filter @repo/studio dev & pnpm --filter @repo/gateway dev",
     "db:up": "docker compose up db -d",
     "db:reset": "docker compose down -v && docker compose up db -d",
     "migrate": "node ./scripts/migrate.mjs",

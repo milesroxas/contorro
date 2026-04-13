@@ -1,3 +1,4 @@
+import { BUILDER_PALETTE_PRIMITIVE_KEYS } from "@repo/domains-composition";
 import type { Icon } from "@tabler/icons-react";
 import {
   IconBox,
@@ -9,14 +10,7 @@ import {
   IconTypography,
 } from "@tabler/icons-react";
 
-export const PRIMITIVE_KEYS = [
-  "primitive.box",
-  "primitive.text",
-  "primitive.stack",
-  "primitive.grid",
-  "primitive.image",
-  "primitive.slot",
-] as const;
+export const PRIMITIVE_KEYS = BUILDER_PALETTE_PRIMITIVE_KEYS;
 
 const META: Record<string, { label: string; Icon: Icon }> = {
   "primitive.box": { label: "Box", Icon: IconBox },

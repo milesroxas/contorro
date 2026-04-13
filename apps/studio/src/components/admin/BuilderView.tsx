@@ -1,18 +1,12 @@
 "use client";
 
 import { useAuth, useConfig } from "@payloadcms/ui";
+import { isBuilderComponentRowId } from "@repo/infrastructure-payload-config/builder-row-id";
 import { BuilderApp } from "@repo/presentation-builder-ui";
-import { IconArrowLeft } from "@tabler/icons-react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { formatAdminURL } from "payload/shared";
 import { Suspense } from "react";
 
 import BuilderHub from "@/components/admin/BuilderHub";
-import { Button } from "@/components/ui/button";
-
-const PAGE_COMPOSITIONS_SLUG = "page-compositions";
-const COMPONENTS_SLUG = "components";
 
 function BuilderViewInner() {
   const { user } = useAuth();
@@ -20,11 +14,7 @@ function BuilderViewInner() {
   const sp = useSearchParams();
   const compositionId = sp.get("composition") ?? "";
   const adminRoute = config.routes?.admin ?? "/admin";
-  const isComponentComposition =
-    compositionId.startsWith("cmp-") && compositionId.length > 4;
-  const componentPayloadId = isComponentComposition
-    ? compositionId.slice(4)
-    : "";
+  const isComponentComposition = isBuilderComponentRowId(compositionId);
 
   const role =
     user && typeof user === "object" && "role" in user
@@ -47,41 +37,14 @@ function BuilderViewInner() {
     return <BuilderHub />;
   }
 
-  const entryHref = formatAdminURL({
-    adminRoute,
-    path: isComponentComposition
-      ? `/collections/${COMPONENTS_SLUG}/${encodeURIComponent(componentPayloadId)}`
-      : `/collections/${PAGE_COMPOSITIONS_SLUG}/${encodeURIComponent(compositionId)}`,
-    relative: true,
-  });
-
-  const backLabel = isComponentComposition
-    ? "Back to component"
-    : "Back to page template";
-
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
-      <header className="shrink-0 border-b border-border bg-card/40 backdrop-blur-sm">
-        <div className="flex h-11 items-center px-3 sm:px-4">
-          <Button
-            asChild
-            className="text-muted-foreground hover:text-foreground"
-            size="sm"
-            variant="ghost"
-          >
-            <Link href={entryHref} prefetch={false}>
-              <IconArrowLeft
-                aria-hidden
-                className="size-4"
-                data-icon="inline-start"
-              />
-              {backLabel}
-            </Link>
-          </Button>
-        </div>
-      </header>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <BuilderApp compositionId={compositionId} />
+        <BuilderApp
+          canEditName={!isComponentComposition}
+          compositionId={compositionId}
+          studioHref={adminRoute}
+        />
       </div>
     </div>
   );

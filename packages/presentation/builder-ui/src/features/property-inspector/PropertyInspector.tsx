@@ -299,7 +299,6 @@ export function PropertyInspector({
 
   const isText = node.definitionKey === "primitive.text";
   const isBox = node.definitionKey === "primitive.box";
-  const isStack = node.definitionKey === "primitive.stack";
   const isSlot = node.definitionKey === "primitive.slot";
   const isLibraryComponent =
     node.definitionKey === "primitive.libraryComponent";
@@ -330,86 +329,6 @@ export function PropertyInspector({
           setNodeEditorFieldBinding={setNodeEditorFieldBinding}
           fieldBound={fieldBound}
         />
-      ) : null}
-      {isStack ? (
-        <div className="space-y-3 border-t border-border/60 pt-3">
-          <div className="text-xs font-medium text-foreground">
-            Props (stack)
-          </div>
-          <label className="block space-y-1">
-            <span className="text-xs text-muted-foreground">Direction</span>
-            <select
-              className={cn(
-                "flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs shadow-sm",
-                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-              )}
-              onChange={(e) => {
-                patchNodeProps({ direction: e.target.value });
-              }}
-              value={
-                (node.propValues?.direction as string | undefined) === "row"
-                  ? "row"
-                  : "column"
-              }
-            >
-              <option value="column">column</option>
-              <option value="row">row</option>
-            </select>
-          </label>
-          <label className="block space-y-1">
-            <span className="text-xs text-muted-foreground">Gap</span>
-            <input
-              className={cn(
-                "flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs shadow-sm",
-                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-              )}
-              onChange={(e) => {
-                patchNodeProps({ gap: e.target.value });
-              }}
-              type="text"
-              value={String(node.propValues?.gap ?? "8px")}
-            />
-          </label>
-          <label className="block space-y-1">
-            <span className="text-xs text-muted-foreground">Align</span>
-            <select
-              className={cn(
-                "flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs shadow-sm",
-                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-              )}
-              onChange={(e) => {
-                patchNodeProps({ align: e.target.value });
-              }}
-              value={String(node.propValues?.align ?? "stretch")}
-            >
-              <option value="stretch">stretch</option>
-              <option value="flex-start">flex-start</option>
-              <option value="flex-end">flex-end</option>
-              <option value="center">center</option>
-              <option value="baseline">baseline</option>
-            </select>
-          </label>
-          <label className="block space-y-1">
-            <span className="text-xs text-muted-foreground">Justify</span>
-            <select
-              className={cn(
-                "flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-xs shadow-sm",
-                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-              )}
-              onChange={(e) => {
-                patchNodeProps({ justify: e.target.value });
-              }}
-              value={String(node.propValues?.justify ?? "flex-start")}
-            >
-              <option value="flex-start">flex-start</option>
-              <option value="flex-end">flex-end</option>
-              <option value="center">center</option>
-              <option value="space-between">space-between</option>
-              <option value="space-around">space-around</option>
-              <option value="space-evenly">space-evenly</option>
-            </select>
-          </label>
-        </div>
       ) : null}
       {isBox || isSlot ? (
         <label className="block space-y-1.5">
