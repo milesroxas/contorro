@@ -14,7 +14,9 @@
 
 ## Route split
 
-- Builder composition persistence: `apps/studio/src/app/api/builder/compositions/[id]/route.ts`.
+- Builder APIs:
+  - `apps/studio/src/app/api/builder/compositions/[id]/route.ts` (GET/POST/PATCH)
+  - `apps/studio/src/app/api/builder/compositions/route.ts` (POST create)
 - Gateway proxy route: `apps/studio/src/app/api/gateway/[[...route]]/route.ts`.
 
 ## Core rule

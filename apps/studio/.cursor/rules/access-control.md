@@ -8,4 +8,5 @@
 
 ## Current role gate in builder API
 
-`apps/studio/src/app/api/builder/compositions/[id]/route.ts` restricts to `admin` or `designer`.
+`apps/studio/src/app/api/builder/compositions/[id]/route.ts` and
+`apps/studio/src/app/api/builder/compositions/route.ts` restrict to `admin` or `designer`.

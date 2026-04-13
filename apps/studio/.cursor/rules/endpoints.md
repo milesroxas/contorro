@@ -2,9 +2,11 @@
 
 ## Studio-owned endpoints
 
-- `/api/builder/compositions/:id` (GET/POST): canonical composition persistence API.
+- `/api/builder/compositions/:id` (GET/POST/PATCH): canonical composition load/save/rename API.
 - `/api/builder/compositions` (POST): create template/component and open in builder.
 - `/api/gateway/*`: same-origin forwarding to Hono gateway app with JWT bridging.
+
+Builder endpoint rule: route handlers orchestrate only; mutation logic goes through `@repo/application-builder`.
 
 ## Gateway-owned endpoints (behind forwarder)
 

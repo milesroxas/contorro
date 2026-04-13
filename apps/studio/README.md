@@ -6,7 +6,10 @@ Studio is Next.js + Payload app for CMS/admin/auth and builder-adjacent APIs.
 
 - Payload runtime assembly in `src/payload.config.ts`
 - Next app routes in `src/app`
-- Builder persistence API in `src/app/api/builder/compositions/[id]/route.ts`
+- Builder APIs in:
+  - `src/app/api/builder/compositions/[id]/route.ts` (GET/POST/PATCH)
+  - `src/app/api/builder/compositions/route.ts` (POST create)
+- Builder route mutations orchestrated through `@repo/application-builder` commands
 - Same-origin gateway forwarding in `src/app/api/gateway/[[...route]]/route.ts`
 - Migrations in `src/migrations`
 - Seeds in `src/seeds`

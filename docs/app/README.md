@@ -31,7 +31,12 @@ Current collections include `pages`, `users`, `media`, `design-token-sets`, `com
 
 - Builder UI entry: `packages/presentation/builder-ui/src/app/BuilderApp.tsx`
 - Builder client API: `packages/presentation/builder-ui/src/lib/builder-api.ts`
-- Canonical persist API: `apps/studio/src/app/api/builder/compositions/[id]/route.ts`
+- Canonical Studio builder APIs:
+  - `apps/studio/src/app/api/builder/compositions/[id]/route.ts` (GET/POST/PATCH)
+  - `apps/studio/src/app/api/builder/compositions/route.ts` (POST create)
+- Builder mutation commands: `packages/application/builder/src/commands/*`
+- Studio builder mutation repository adapter:
+  `apps/studio/src/app/api/builder/_lib/payload-builder-mutation-repository.ts`
 - Domain graph/mutations: `packages/domains/composition/src`
 - Runtime render/style resolution: `packages/runtime/renderer/src`
 

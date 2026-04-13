@@ -12,7 +12,11 @@ Use this file for changes inside `apps/studio`. Root constraints still apply fro
 
 - Payload config entry: `apps/studio/src/payload.config.ts`
 - DB adapter: Postgres via `createPostgresAdapter` from `@repo/infrastructure-payload-config`
-- Builder composition persistence endpoint: `apps/studio/src/app/api/builder/compositions/[id]/route.ts`
+- Builder API endpoints:
+  - `apps/studio/src/app/api/builder/compositions/[id]/route.ts` (GET/POST/PATCH)
+  - `apps/studio/src/app/api/builder/compositions/route.ts` (POST create)
+- Builder mutation commands: `packages/application/builder/src/commands/*`
+- Builder mutation repository adapter (Studio): `apps/studio/src/app/api/builder/_lib/payload-builder-mutation-repository.ts`
 - Gateway forwarding endpoint: `apps/studio/src/app/api/gateway/[[...route]]/route.ts`
 
 ## Security-critical patterns
@@ -26,6 +30,8 @@ Use this file for changes inside `apps/studio`. Root constraints still apply fro
 - Next route handlers should orchestrate only.
 - Put business rules in domain/application packages.
 - Studio can wire dependencies and map HTTP <-> application/domain contracts.
+- Keep component builder row-id parsing in `@repo/infrastructure-payload-config/builder-row-id`.
+- Do not add builder mirror sync hooks; avoid dual-write drift.
 
 ## Required checks after relevant changes
 

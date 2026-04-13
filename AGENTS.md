@@ -23,15 +23,29 @@ Contorro is multi-surface authoring:
 
 - Payload collections/globals: `packages/infrastructure/payload-config`.
 - Studio assembly (`buildConfig`, secrets, import map, migrations): `apps/studio`.
-- Builder persistence API: `apps/studio/src/app/api/builder/compositions/[id]/route.ts`.
+- Builder API endpoints:
+  - `apps/studio/src/app/api/builder/compositions/[id]/route.ts` (GET/POST/PATCH)
+  - `apps/studio/src/app/api/builder/compositions/route.ts` (POST create)
+- Builder mutation orchestration: `packages/application/builder/*`.
 - Gateway API surface: `apps/gateway/src/app.ts` and `apps/gateway/src/routes/*`.
 - Shared contracts/validation: `packages/contracts/zod` and domain schemas.
+- Builder component row-id mapping (single parser/formatter): `packages/infrastructure/payload-config/src/builder-row-id.ts`.
 
 ## Current API split (important)
 
-- Canonical composition reads/writes are in Studio `/api/builder/compositions/:id`.
+- Canonical builder composition API is Studio `/api/builder/compositions/*`.
+- Route handlers orchestrate only; mutation logic goes through `packages/application/builder` commands.
 - Gateway composition mutation routes are intentionally `NOT_IMPLEMENTED`.
 - Gateway remains active for health and contracts endpoints under `/api/gateway/*`.
+
+## Drift prevention rules (important)
+
+- Do not add direct `payload.create/update/delete` mutation logic in Studio builder route handlers; use application commands + repository adapter.
+- Do not reintroduce builder mirror sync hooks for `builder.compositions`; builder state must come from canonical Payload collections + Studio API.
+- When changing builder endpoints, update both:
+  - `docs/app/README.md`
+  - `apps/studio/.cursor/rules/endpoints.md`
+- Keep `cmp-` logic centralized in `builder-row-id.ts` only.
 
 ## Monorepo layout
 
