@@ -8,6 +8,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "../../components/ui/button.js";
+import { Separator } from "../../components/ui/separator.js";
 
 export function DraftSaveBar({
   name,
@@ -52,12 +53,28 @@ export function DraftSaveBar({
     [draftName, name],
   );
 
+  let saveStatus = "Saved";
+  let saveStatusClassName =
+    "inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2 py-0.5 text-xs font-medium text-muted-foreground";
+  let saveStatusDotClassName = "size-1.5 rounded-full bg-muted-foreground";
+  if (saving) {
+    saveStatus = "Saving...";
+    saveStatusClassName =
+      "inline-flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-xs font-medium text-sky-700 dark:text-sky-300";
+    saveStatusDotClassName = "size-1.5 rounded-full bg-sky-500";
+  } else if (dirty) {
+    saveStatus = "Draft";
+    saveStatusClassName =
+      "inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300";
+    saveStatusDotClassName = "size-1.5 rounded-full bg-amber-500";
+  }
+
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-muted/20 px-4 py-3 dark:bg-muted/10">
       <Button asChild size="sm" variant="ghost">
         <a href={adminHref}>CMS</a>
       </Button>
-      <div className="h-5 w-px bg-border" />
+      <Separator aria-hidden className="h-5 w-px bg-border" />
       {editingName && canEditName ? (
         <>
           <input
@@ -123,6 +140,10 @@ export function DraftSaveBar({
           ) : null}
         </>
       )}
+      <span aria-live="polite" className={saveStatusClassName}>
+        <span aria-hidden className={saveStatusDotClassName} />
+        {saveStatus}
+      </span>
       <div className="min-w-0 flex-1" />
       <Button
         aria-label="Undo"
@@ -146,33 +167,31 @@ export function DraftSaveBar({
       >
         <IconArrowForwardUp className="size-4" />
       </Button>
-      <div className="h-5 w-px bg-border" />
-      <Button
-        data-testid="save-draft"
-        disabled={!dirty || saving}
-        onClick={() => onSaveDraft()}
-        size="sm"
-        type="button"
-        variant="ghost"
-      >
-        Save draft
-      </Button>
-      <Button
-        data-testid="publish-builder"
-        disabled={!dirty || saving}
-        onClick={() => onPublish()}
-        size="sm"
-        type="button"
-      >
-        Save &amp; publish
-      </Button>
-      {dirty ? (
-        <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
-          Unsaved changes
-        </span>
-      ) : (
-        <span className="text-xs text-muted-foreground">Saved</span>
-      )}
+      <Separator aria-hidden className="h-5 w-px bg-border" />
+      <div className="flex items-center gap-2 rounded-md border border-border/70 p-1">
+        <Button
+          data-testid="save-draft"
+          disabled={!dirty || saving}
+          onClick={() => onSaveDraft()}
+          size="sm"
+          type="button"
+          variant="ghost"
+        >
+          Save draft
+        </Button>
+        <Separator aria-hidden className="h-5 w-px bg-border" />
+        <Button
+          className="font-semibold"
+          data-testid="publish-builder"
+          disabled={!dirty || saving}
+          onClick={() => onPublish()}
+          size="sm"
+          type="button"
+          variant="ghost"
+        >
+          Publish
+        </Button>
+      </div>
       {error ? (
         <span className="text-xs font-medium text-destructive">{error}</span>
       ) : null}

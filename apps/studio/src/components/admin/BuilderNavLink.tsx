@@ -5,7 +5,7 @@ import Link from "next/link";
 import { formatAdminURL } from "payload/shared";
 
 /** Sidebar link to Studio (templates, components, design system) — admin + designer only. */
-export default function BuilderNavLink() {
+export default function StudioNavLink() {
   const { user } = useAuth();
   const { config } = useConfig();
   const role =
@@ -18,7 +18,7 @@ export default function BuilderNavLink() {
   const adminRoute = config.routes?.admin ?? "/admin";
   const href = formatAdminURL({
     adminRoute,
-    path: "/builder",
+    path: "/studio",
     relative: true,
   });
   return (

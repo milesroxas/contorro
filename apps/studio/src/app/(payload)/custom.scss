@@ -31,6 +31,10 @@
   color: var(--foreground) !important;
 }
 
+[data-contorro-admin-ui] :is(a, button)[data-slot="button"][data-size="panel"] {
+  font-size: 10px !important;
+}
+
 [data-contorro-admin-ui] :is(a, button)[data-slot="button"][data-variant="ghost"] {
   color: var(--foreground) !important;
 }

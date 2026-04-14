@@ -1,7 +1,10 @@
+"use client";
+
 import * as Dialog from "@radix-ui/react-dialog";
 import type * as React from "react";
 
 import { cn } from "../../lib/cn.js";
+import { useStudioPortalRoot } from "../studio-root.js";
 
 function Sheet({ ...props }: React.ComponentProps<typeof Dialog.Root>) {
   return <Dialog.Root data-slot="sheet" {...props} />;
@@ -18,7 +21,14 @@ function SheetClose({ ...props }: React.ComponentProps<typeof Dialog.Close>) {
 }
 
 function SheetPortal({ ...props }: React.ComponentProps<typeof Dialog.Portal>) {
-  return <Dialog.Portal data-slot="sheet-portal" {...props} />;
+  const portalContainer = useStudioPortalRoot();
+  return (
+    <Dialog.Portal
+      container={portalContainer ?? undefined}
+      data-slot="sheet-portal"
+      {...props}
+    />
+  );
 }
 
 function SheetOverlay({

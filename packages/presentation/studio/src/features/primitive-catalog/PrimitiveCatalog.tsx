@@ -42,7 +42,7 @@ function PaletteTile({
         className="size-6.5 text-muted-foreground"
         stroke={1.25}
       />
-      <span className="text-[15px] leading-tight font-medium text-foreground capitalize">
+      <span className="text-[13px] leading-tight font-medium text-foreground capitalize">
         {label}
       </span>
     </button>

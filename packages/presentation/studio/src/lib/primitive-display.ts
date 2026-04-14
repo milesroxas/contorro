@@ -7,22 +7,24 @@ import {
   IconHandClick,
   IconLayoutGrid,
   IconLayoutList,
+  IconLayoutRows,
+  IconLetterT,
   IconPhoto,
-  IconSection,
-  IconTypography,
+  IconRectangle,
 } from "@tabler/icons-react";
 
 export const PRIMITIVE_KEYS = BUILDER_PALETTE_PRIMITIVE_KEYS;
 
 const META: Record<string, { label: string; Icon: Icon }> = {
   "primitive.box": { label: "Box", Icon: IconBox },
-  "primitive.text": { label: "Text", Icon: IconTypography },
+  "primitive.section": { label: "Section", Icon: IconLayoutRows },
+  "primitive.text": { label: "Text", Icon: IconLetterT },
   "primitive.heading": { label: "Heading", Icon: IconH1 },
   "primitive.button": { label: "Button", Icon: IconHandClick },
   "primitive.stack": { label: "Stack", Icon: IconLayoutList },
   "primitive.grid": { label: "Grid", Icon: IconLayoutGrid },
   "primitive.image": { label: "Image", Icon: IconPhoto },
-  "primitive.slot": { label: "Slot", Icon: IconSection },
+  "primitive.slot": { label: "Slot", Icon: IconRectangle },
   "primitive.libraryComponent": {
     label: "Library block",
     Icon: IconComponents,

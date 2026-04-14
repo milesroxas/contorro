@@ -5,6 +5,7 @@ import { IconCheck, IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import type * as React from "react";
 
 import { cn } from "../../lib/cn.js";
+import { useStudioPortalRoot } from "../studio-root.js";
 
 function Select(props: React.ComponentProps<typeof SelectPrimitive.Root>) {
   return <SelectPrimitive.Root data-slot="select" {...props} />;
@@ -51,8 +52,9 @@ function SelectContent({
   position = "popper",
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
+  const portalContainer = useStudioPortalRoot();
   return (
-    <SelectPrimitive.Portal>
+    <SelectPrimitive.Portal container={portalContainer ?? undefined}>
       <SelectPrimitive.Content
         className={cn(
           "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-md",

@@ -1,1 +1,1 @@
-export { default } from "./builder-hub";
+export { default } from "./builder-hub/dashboard";

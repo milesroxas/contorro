@@ -4,6 +4,8 @@ import {
   styleTokenClassName,
 } from "@repo/config-tailwind";
 import {
+  type CompositionNode,
+  type PageComposition,
   type StyleBinding,
   type StyleProperty,
   type StylePropertyEntry,
@@ -13,6 +15,11 @@ import {
 export type ResolvedStyle = {
   classes: string;
   inlineStyle: Record<string, string>;
+};
+
+export type ResolvedNodeStyle = {
+  className?: string;
+  style?: Record<string, string>;
 };
 
 type StyleRule = {
@@ -374,4 +381,30 @@ export function resolveStyleBinding(
   }
 
   return { classes: Array.from(classes).join(" "), inlineStyle };
+}
+
+/**
+ * Resolves style classes and inline style for one composition node.
+ * Shared by canvas preview and published renderer to avoid drift.
+ */
+export function resolveNodeStyle(
+  node: Pick<CompositionNode, "styleBindingId">,
+  composition: Pick<PageComposition, "styleBindings">,
+  tokenMeta: TokenMeta[],
+): ResolvedNodeStyle {
+  if (!node.styleBindingId) {
+    return {};
+  }
+  const binding = composition.styleBindings[node.styleBindingId];
+  if (!binding) {
+    return {};
+  }
+  const resolved = resolveStyleBinding(binding, tokenMeta);
+  return {
+    className: resolved.classes || undefined,
+    style:
+      Object.keys(resolved.inlineStyle).length > 0
+        ? resolved.inlineStyle
+        : undefined,
+  };
 }

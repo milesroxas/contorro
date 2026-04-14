@@ -246,7 +246,7 @@ function DesignerEditorFieldsField(props: JSONFieldClientProps) {
     return (
       <p className="rounded-none border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
         {effectiveDoc
-          ? "This component has no CMS fields yet. Expose content as editor-managed fields in the builder, then publish."
+          ? "This component has no CMS fields yet. Expose content as editor-managed fields in Studio, then publish."
           : "Loading block…"}
       </p>
     );

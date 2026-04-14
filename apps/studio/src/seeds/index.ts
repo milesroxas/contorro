@@ -763,7 +763,7 @@ async function seed(): Promise<void> {
       console.log(`    ${label}: ${u.email}`);
     }
     console.log(
-      `\n  Builder:  ${base}/admin/builder?composition=${compositionId}`,
+      `\n  Studio:   ${base}/admin/studio?composition=${compositionId}`,
     );
     console.log(
       `  Composer: ${base}/admin/collections/pages (seed page / template in admin)`,

@@ -8,12 +8,13 @@ import {
   IconChevronUp,
   IconLayoutGrid,
   IconLayoutList,
-  IconSection,
+  IconLayoutRows,
 } from "@tabler/icons-react";
 import {
   Fragment,
   type ReactNode,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -195,6 +196,77 @@ function collectExpandableSubtreeNodeIds(
   return ids;
 }
 
+function collectVisibleLayerNodeIds(
+  composition: PageComposition,
+  collapsedNodeIds: ReadonlySet<string>,
+): string[] {
+  const visibleNodeIds: string[] = [];
+  const visit = (nodeId: string) => {
+    const node = composition.nodes[nodeId];
+    if (!node) {
+      return;
+    }
+    visibleNodeIds.push(nodeId);
+    if (
+      !isChildContainerPrimitive(node.definitionKey) ||
+      node.childIds.length === 0 ||
+      collapsedNodeIds.has(nodeId)
+    ) {
+      return;
+    }
+    for (const childId of node.childIds) {
+      visit(childId);
+    }
+  };
+
+  const root = composition.nodes[composition.rootId];
+  if (isTemplateShellRoot(composition) && root) {
+    visibleNodeIds.push(composition.rootId);
+    for (const childId of root.childIds) {
+      visit(childId);
+    }
+    return visibleNodeIds;
+  }
+
+  visit(composition.rootId);
+  return visibleNodeIds;
+}
+
+function collectTemplateShellSectionIds(
+  composition: PageComposition,
+): string[] {
+  const root = composition.nodes[composition.rootId];
+  if (!root || !isTemplateShellRoot(composition)) {
+    return [];
+  }
+  return root.childIds.filter((childId) => {
+    const child = composition.nodes[childId];
+    return Boolean(child && isTemplateShellSectionTag(child.propValues?.tag));
+  });
+}
+
+function resolveTemplateShellSectionId(
+  composition: PageComposition,
+  nodeId: string,
+): string | null {
+  let currentId: string | null = nodeId;
+  while (currentId) {
+    const currentNode: PageComposition["nodes"][string] | undefined =
+      composition.nodes[currentId];
+    if (!currentNode) {
+      return null;
+    }
+    if (
+      currentNode.parentId === composition.rootId &&
+      isTemplateShellSectionTag(currentNode.propValues?.tag)
+    ) {
+      return currentNode.id;
+    }
+    currentId = currentNode.parentId;
+  }
+  return null;
+}
+
 /** Document root: reads as a section heading; nested rows are the editable layer list. */
 function RootLayerHeading({
   nodeId,
@@ -254,6 +326,7 @@ function LayerSubtree({
   collapsedNodeIds,
   onToggleNodeCollapse,
   onSetNodeCollapseState,
+  globalCollapseToggleButton,
 }: {
   composition: PageComposition;
   nodeId: string;
@@ -263,6 +336,7 @@ function LayerSubtree({
   collapsedNodeIds: Set<string>;
   onToggleNodeCollapse: (id: string) => void;
   onSetNodeCollapseState: (ids: string[], collapsed: boolean) => void;
+  globalCollapseToggleButton?: ReactNode;
 }) {
   const node = composition.nodes[nodeId];
   if (!node) {
@@ -277,7 +351,7 @@ function LayerSubtree({
     semanticTag === "header"
       ? IconLayoutList
       : semanticTag === "main"
-        ? IconSection
+        ? IconLayoutRows
         : semanticTag === "footer"
           ? IconLayoutGrid
           : defaultIcon;
@@ -350,7 +424,7 @@ function LayerSubtree({
       kindTitle={kindTitle}
       nodeId={nodeId}
       onSelect={onSelect}
-      rightControls={sectionToggleButton}
+      rightControls={isRoot ? globalCollapseToggleButton : sectionToggleButton}
       selected={selected}
     />
   ) : (
@@ -397,6 +471,7 @@ function LayerSubtree({
                   <LayerSubtree
                     composition={composition}
                     collapsedNodeIds={collapsedNodeIds}
+                    globalCollapseToggleButton={globalCollapseToggleButton}
                     nodeId={cid}
                     onSetNodeCollapseState={onSetNodeCollapseState}
                     onToggleNodeCollapse={onToggleNodeCollapse}
@@ -466,6 +541,154 @@ export function NodeTree({
     },
     [],
   );
+  useEffect(() => {
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Key-specific tree navigation branches by design.
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+      const key = event.key.toLowerCase();
+      if (
+        key !== "w" &&
+        key !== "a" &&
+        key !== "s" &&
+        key !== "d" &&
+        key !== "q" &&
+        key !== "e"
+      ) {
+        return;
+      }
+
+      const visibleNodeIds = collectVisibleLayerNodeIds(
+        composition,
+        collapsedNodeIds,
+      );
+      if (visibleNodeIds.length === 0) {
+        return;
+      }
+
+      const hasValidSelection = Boolean(
+        selectedNodeId && composition.nodes[selectedNodeId],
+      );
+      const currentNodeId =
+        hasValidSelection && selectedNodeId
+          ? selectedNodeId
+          : visibleNodeIds[0];
+      let nextNodeId: string | null = null;
+
+      if (!hasValidSelection && (key === "w" || key === "a" || key === "s")) {
+        nextNodeId = currentNodeId;
+      } else if (key === "w" || key === "s") {
+        const currentIndex = visibleNodeIds.indexOf(currentNodeId);
+        if (currentIndex >= 0) {
+          if (key === "w" && currentIndex > 0) {
+            nextNodeId = visibleNodeIds[currentIndex - 1];
+          } else if (key === "s" && currentIndex < visibleNodeIds.length - 1) {
+            nextNodeId = visibleNodeIds[currentIndex + 1];
+          }
+        }
+      } else if (key === "a") {
+        const parentId = composition.nodes[currentNodeId]?.parentId;
+        if (parentId) {
+          nextNodeId = parentId;
+        }
+      } else if (key === "d") {
+        const firstChildId = composition.nodes[currentNodeId]?.childIds.find(
+          (childId) => Boolean(composition.nodes[childId]),
+        );
+        if (firstChildId) {
+          if (collapsedNodeIds.has(currentNodeId)) {
+            setCollapsedNodeIds((prev) => {
+              if (!prev.has(currentNodeId)) {
+                return prev;
+              }
+              const next = new Set(prev);
+              next.delete(currentNodeId);
+              return next;
+            });
+          }
+          nextNodeId = firstChildId;
+        } else if (!hasValidSelection) {
+          nextNodeId = currentNodeId;
+        }
+      } else if (key === "q" || key === "e") {
+        const sectionIds = collectTemplateShellSectionIds(composition);
+        if (sectionIds.length > 0) {
+          if (currentNodeId === composition.rootId) {
+            nextNodeId =
+              key === "q" ? sectionIds[sectionIds.length - 1] : sectionIds[0];
+          } else {
+            const currentSectionId = resolveTemplateShellSectionId(
+              composition,
+              currentNodeId,
+            );
+            if (currentSectionId) {
+              const currentSectionIndex = sectionIds.indexOf(currentSectionId);
+              if (currentSectionIndex >= 0) {
+                if (key === "q" && currentSectionIndex > 0) {
+                  nextNodeId = sectionIds[currentSectionIndex - 1];
+                } else if (
+                  key === "e" &&
+                  currentSectionIndex < sectionIds.length - 1
+                ) {
+                  nextNodeId = sectionIds[currentSectionIndex + 1];
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (!nextNodeId || nextNodeId === selectedNodeId) {
+        return;
+      }
+      event.preventDefault();
+      onSelect(nextNodeId);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [collapsedNodeIds, composition, onSelect, selectedNodeId]);
+  const expandableNodeIds = useMemo(
+    () =>
+      collectExpandableSubtreeNodeIds(composition, composition.rootId).filter(
+        (id) => id !== composition.rootId,
+      ),
+    [composition],
+  );
+  const hasExpandableSections = expandableNodeIds.length > 0;
+  const allSectionsCollapsed =
+    hasExpandableSections &&
+    expandableNodeIds.every((id) => collapsedNodeIds.has(id));
+  const globalSectionsToggleButton = hasExpandableSections ? (
+    <Button
+      aria-label={
+        allSectionsCollapsed ? "Expand sections" : "Collapse sections"
+      }
+      aria-pressed={!allSectionsCollapsed}
+      className="shrink-0"
+      onClick={() =>
+        setNodeCollapseState(expandableNodeIds, !allSectionsCollapsed)
+      }
+      size="panel"
+      title={allSectionsCollapsed ? "Expand sections" : "Collapse sections"}
+      type="button"
+      variant="outline"
+    >
+      {allSectionsCollapsed ? "Expand" : "Collapse"}
+    </Button>
+  ) : null;
   const root = composition.nodes[composition.rootId];
   const templateShell = isTemplateShellRoot(composition);
   const topLevelIds =
@@ -482,6 +705,7 @@ export function NodeTree({
             kindTitle="body"
             nodeId={composition.rootId}
             onSelect={onSelect}
+            rightControls={globalSectionsToggleButton}
             selected={selectedNodeId === composition.rootId}
           />
         </li>
@@ -490,6 +714,7 @@ export function NodeTree({
         <LayerSubtree
           composition={composition}
           collapsedNodeIds={collapsedNodeIds}
+          globalCollapseToggleButton={globalSectionsToggleButton}
           key={nodeId}
           nodeId={nodeId}
           onSetNodeCollapseState={setNodeCollapseState}
@@ -501,6 +726,5 @@ export function NodeTree({
       ))}
     </ul>
   );
-
   return tree;
 }

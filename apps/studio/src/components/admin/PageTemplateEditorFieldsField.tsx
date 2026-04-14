@@ -238,7 +238,7 @@ function parseEmbeddedPageComposition(raw: unknown): PageComposition | null {
   return parsed.success ? parsed.data : null;
 }
 
-/** Slot fill-in for the selected page template (builder tree). */
+/** Slot fill-in for the selected page template (Studio tree). */
 function PageTemplateEditorFieldsField(props: JSONFieldClientProps) {
   const { path, field } = props;
 
@@ -408,8 +408,8 @@ function PageTemplateEditorFieldsField(props: JSONFieldClientProps) {
   if (editorFields.length === 0) {
     return (
       <p className="rounded-none border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-        This page template has no CMS fields yet. In the builder, expose text
-        (or other primitives) as editor-managed fields.
+        This page template has no CMS fields yet. In Studio, expose text (or
+        other primitives) as editor-managed fields.
       </p>
     );
   }

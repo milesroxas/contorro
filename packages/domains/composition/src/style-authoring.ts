@@ -238,6 +238,53 @@ const STYLE_PROPERTY_LABELS: Record<StyleProperty, string> = {
   maxHeight: "Max height",
 };
 
+const STYLE_PROPERTY_DEFAULT_VALUE_LABELS: Record<StyleProperty, string> = {
+  background: "transparent",
+  borderColor: "currentColor",
+  borderRadius: "0",
+  borderStyle: "none",
+  borderWidth: "medium",
+  color: "inherit",
+  fontFamily: "inherit",
+  fontSize: "inherit",
+  fontWeight: "inherit",
+  textAlign: "inherit",
+  lineHeight: "inherit",
+  letterSpacing: "inherit",
+  textTransform: "inherit",
+  fontStyle: "inherit",
+  textDecorationLine: "none",
+  display: "inline",
+  flexDirection: "row",
+  flexWrap: "nowrap",
+  justifyContent: "normal",
+  alignItems: "normal",
+  alignSelf: "auto",
+  flex: "0 1 auto",
+  flexGrow: "0",
+  flexShrink: "1",
+  flexBasis: "auto",
+  order: "0",
+  padding: "0",
+  paddingTop: "0",
+  paddingRight: "0",
+  paddingBottom: "0",
+  paddingLeft: "0",
+  margin: "0",
+  marginTop: "0",
+  marginRight: "0",
+  marginBottom: "0",
+  marginLeft: "0",
+  gap: "normal",
+  width: "auto",
+  height: "auto",
+  aspectRatio: "auto",
+  minWidth: "auto",
+  minHeight: "auto",
+  maxWidth: "none",
+  maxHeight: "none",
+};
+
 const STYLE_PROPERTY_SECTIONS: Record<StyleProperty, StyleSectionId> = {
   background: "color",
   borderColor: "border",
@@ -287,6 +334,7 @@ const STYLE_PROPERTY_SECTIONS: Record<StyleProperty, StyleSectionId> = {
 
 const PRIMITIVE_STYLE_PROPERTIES: Record<string, readonly StyleProperty[]> = {
   "primitive.box": BOX_STYLE_PROPERTIES,
+  "primitive.section": BOX_STYLE_PROPERTIES,
   "primitive.text": TEXT_STYLE_PROPERTIES,
   "primitive.heading": HEADING_STYLE_PROPERTIES,
   "primitive.button": BUTTON_STYLE_PROPERTIES,
@@ -306,6 +354,12 @@ export function stylePropertiesForDefinitionKey(
 
 export function stylePropertyLabel(property: StyleProperty): string {
   return STYLE_PROPERTY_LABELS[property];
+}
+
+export function stylePropertyDefaultValueLabel(
+  property: StyleProperty,
+): string {
+  return STYLE_PROPERTY_DEFAULT_VALUE_LABELS[property];
 }
 
 export function styleSectionForProperty(

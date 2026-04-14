@@ -14,6 +14,7 @@ import {
 import {
   type StyleSectionId,
   stylePropertiesBySectionForDefinitionKey,
+  stylePropertyDefaultValueLabel,
   stylePropertyLabel,
   styleSectionForProperty,
 } from "@repo/domains-composition";
@@ -26,9 +27,11 @@ import {
   IconArrowsHorizontal,
   IconArrowsSplit2,
   IconArrowsVertical,
-  IconBox,
+  IconBorderStyle2,
   IconChevronDown,
   IconChevronRight,
+  IconChevronUp,
+  IconLayout2,
   IconLayoutAlignBottom,
   IconLayoutAlignCenter,
   IconLayoutAlignLeft,
@@ -36,11 +39,13 @@ import {
   IconLayoutAlignRight,
   IconLayoutAlignTop,
   IconLayoutDistributeHorizontal,
-  IconLayoutGrid,
-  IconLayoutList,
+  IconPalette,
   IconPhoto,
   IconPhotoOff,
+  IconRestore,
+  IconRulerMeasure,
   IconSearch,
+  IconSpacingHorizontal,
   IconTypography,
   IconUpload,
   IconX,
@@ -86,7 +91,14 @@ import {
   TabsList,
   TabsTrigger,
 } from "../../components/ui/tabs.js";
+import { TooltipProvider } from "../../components/ui/tooltip.js";
+import { cn } from "../../lib/cn.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
+import {
+  BorderPropertyRowLabel,
+  PropertyControlLabel,
+  SettingsFieldRow,
+} from "./property-control-label.js";
 
 type MediaRecord = {
   id: number;
@@ -132,6 +144,17 @@ function readStyleProperty(
   return sb.properties.find((p) => p.property === property);
 }
 
+function nodeHasNonEmptyStyleBinding(
+  composition: PageComposition,
+  node: CompositionNode,
+): boolean {
+  if (!node.styleBindingId) {
+    return false;
+  }
+  const sb = composition.styleBindings[node.styleBindingId];
+  return (sb?.properties.length ?? 0) > 0;
+}
+
 const NONE_SELECT_VALUE = "__none__";
 
 function utilityValueLabel(property: StyleProperty, value: string): string {
@@ -139,6 +162,10 @@ function utilityValueLabel(property: StyleProperty, value: string): string {
     return "hidden (display: none)";
   }
   return value;
+}
+
+function stylePropertyDefaultOptionLabel(property: StyleProperty): string {
+  return stylePropertyDefaultValueLabel(property);
 }
 
 function tokenSemanticLabel(tokenKey: string): string {
@@ -289,6 +316,24 @@ function isFlexIconProperty(
   );
 }
 
+function controlOptionButtonClass({
+  selected,
+  iconOnly,
+}: {
+  selected: boolean;
+  iconOnly: boolean;
+}): string {
+  return cn(
+    "inline-flex h-10 items-center justify-center rounded-md transition-colors",
+    iconOnly
+      ? "size-10 p-0"
+      : "min-w-10 whitespace-nowrap px-2 text-xs font-medium",
+    selected
+      ? "bg-primary/12 text-primary"
+      : "bg-background hover:bg-accent/40",
+  );
+}
+
 type SpacingSideProperty =
   | "paddingTop"
   | "paddingRight"
@@ -298,6 +343,55 @@ type SpacingSideProperty =
   | "marginRight"
   | "marginBottom"
   | "marginLeft";
+
+type SpacingShorthandProperty = "padding" | "margin";
+type SpacingControlProperty = SpacingSideProperty | SpacingShorthandProperty;
+type SpacingSideKey = "top" | "right" | "bottom" | "left";
+
+type SpacingSideMap = Record<SpacingSideKey, SpacingSideProperty>;
+
+const SPACING_SIDE_MAP: Record<SpacingShorthandProperty, SpacingSideMap> = {
+  margin: {
+    top: "marginTop",
+    right: "marginRight",
+    bottom: "marginBottom",
+    left: "marginLeft",
+  },
+  padding: {
+    top: "paddingTop",
+    right: "paddingRight",
+    bottom: "paddingBottom",
+    left: "paddingLeft",
+  },
+};
+
+const SPACING_SIDE_KEYS: readonly SpacingSideKey[] = [
+  "top",
+  "right",
+  "bottom",
+  "left",
+];
+
+const SPACING_SIDE_LABEL: Record<SpacingSideKey, string> = {
+  top: "Top",
+  right: "Right",
+  bottom: "Bottom",
+  left: "Left",
+};
+
+const SPACING_SIDE_SHORT_LABEL: Record<SpacingSideKey, string> = {
+  top: "T",
+  right: "R",
+  bottom: "B",
+  left: "L",
+};
+
+const SPACING_SIDE_POSITION_CLASS: Record<SpacingSideKey, string> = {
+  top: "col-start-2 row-start-1",
+  right: "col-start-3 row-start-2",
+  bottom: "col-start-2 row-start-3",
+  left: "col-start-1 row-start-2",
+};
 
 const SPACING_RING_PROPERTIES = new Set<StyleProperty>([
   "padding",
@@ -326,6 +420,162 @@ function spacingEntryDisplayValue(
   return "token";
 }
 
+function spacingEntryUtilityValue(
+  entry: StylePropertyEntry | undefined,
+): string | null {
+  return entry?.type === "utility" ? entry.value : null;
+}
+
+function spacingGroupDisplayValue(
+  entries: readonly (StylePropertyEntry | undefined)[],
+  fallbackEntry: StylePropertyEntry | undefined,
+): string {
+  if (entries.length === 0) {
+    return "0";
+  }
+  const values = entries.map((entry) =>
+    spacingEntryDisplayValue(entry, fallbackEntry),
+  );
+  return values.every((value) => value === values[0]) ? values[0] : "mix";
+}
+
+function spacingGroupSelectedUtilityValue(
+  entries: readonly (StylePropertyEntry | undefined)[],
+  fallbackEntry: StylePropertyEntry | undefined,
+): string | null {
+  if (entries.length === 0) {
+    return null;
+  }
+  const resolvedEntries = entries.map((entry) => entry ?? fallbackEntry);
+  const first = resolvedEntries[0];
+  if (!first || first.type !== "utility") {
+    return null;
+  }
+  return resolvedEntries.every(
+    (entry) => entry?.type === "utility" && entry.value === first.value,
+  )
+    ? first.value
+    : null;
+}
+
+function spacingAxisDisabled(
+  shorthandProperty: SpacingShorthandProperty,
+  axisMode: "horizontal" | "vertical",
+  availableProperties: ReadonlySet<StyleProperty>,
+): boolean {
+  const sides = SPACING_SIDE_MAP[shorthandProperty];
+  if (axisMode === "horizontal") {
+    return !(
+      availableProperties.has(sides.left) &&
+      availableProperties.has(sides.right)
+    );
+  }
+  return !(
+    availableProperties.has(sides.top) && availableProperties.has(sides.bottom)
+  );
+}
+
+function SpacingGroupPopover({
+  title,
+  optionPrefix,
+  valueProperty,
+  targetProperties,
+  targetEntries,
+  fallbackEntry,
+  disabled,
+  triggerClassName,
+  onNodeStyleEntry,
+}: {
+  title: string;
+  optionPrefix: string;
+  valueProperty: SpacingShorthandProperty;
+  targetProperties: readonly SpacingControlProperty[];
+  targetEntries: readonly (StylePropertyEntry | undefined)[];
+  fallbackEntry: StylePropertyEntry | undefined;
+  disabled: boolean;
+  triggerClassName?: string;
+  onNodeStyleEntry: (
+    property: StyleProperty,
+    entry: StylePropertyEntry | null,
+  ) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const utilityValues = utilityValuesForStyleProperty(valueProperty);
+  const displayValue = spacingGroupDisplayValue(targetEntries, fallbackEntry);
+  const triggerLabel = `${optionPrefix}-${displayValue}`;
+  const selectedValue = spacingGroupSelectedUtilityValue(
+    targetEntries,
+    fallbackEntry,
+  );
+  const hasOverride =
+    targetEntries.some((entry) => Boolean(entry)) || Boolean(fallbackEntry);
+
+  return (
+    <Popover onOpenChange={setOpen} open={open}>
+      <PopoverTrigger asChild>
+        <button
+          className={cn(
+            "inline-flex h-8 min-w-[72px] shrink-0 items-center justify-center rounded-sm border bg-background px-2 text-[11px] font-semibold leading-none hover:bg-accent/40 disabled:cursor-not-allowed disabled:opacity-50",
+            hasOverride
+              ? "border-primary/45 ring-1 ring-primary/25"
+              : "border-border/70",
+            triggerClassName,
+          )}
+          disabled={disabled}
+          title={`${title}: ${triggerLabel}`}
+          type="button"
+        >
+          <span className="truncate font-mono">{triggerLabel}</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="center" className="w-40 p-1.5">
+        <ScrollArea className="h-64 pr-1">
+          <div className="space-y-1">
+            <button
+              className="w-full rounded-sm px-2 py-1 text-left text-xs hover:bg-accent/50"
+              onClick={() => {
+                for (const property of targetProperties) {
+                  onNodeStyleEntry(property, null);
+                }
+                setOpen(false);
+              }}
+              type="button"
+            >
+              Unset {title}
+            </button>
+            {utilityValues.map((value) => {
+              const selected = selectedValue === value;
+              return (
+                <button
+                  className={`w-full rounded-sm px-2 py-1 text-left text-xs ${
+                    selected
+                      ? "bg-primary/10 text-primary"
+                      : "hover:bg-accent/50"
+                  }`}
+                  key={`${optionPrefix}-${value}`}
+                  onClick={() => {
+                    for (const property of targetProperties) {
+                      onNodeStyleEntry(property, {
+                        type: "utility",
+                        property,
+                        value,
+                      });
+                    }
+                    setOpen(false);
+                  }}
+                  type="button"
+                >
+                  {`${optionPrefix}-${value}`}
+                </button>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function SpacingSidePopover({
   sideProperty,
   shorthandProperty,
@@ -336,7 +586,7 @@ function SpacingSidePopover({
   onNodeStyleEntry,
 }: {
   sideProperty: SpacingSideProperty;
-  shorthandProperty: "padding" | "margin";
+  shorthandProperty: SpacingShorthandProperty;
   sideLabel: string;
   sideEntry: StylePropertyEntry | undefined;
   shorthandEntry: StylePropertyEntry | undefined;
@@ -349,18 +599,27 @@ function SpacingSidePopover({
   const [open, setOpen] = useState(false);
   const utilityValues = utilityValuesForStyleProperty(sideProperty);
   const displayValue = spacingEntryDisplayValue(sideEntry, shorthandEntry);
-  const selectedValue = sideEntry?.type === "utility" ? sideEntry.value : null;
+  const sidePrefix = `${shorthandProperty === "padding" ? "p" : "m"}${sideLabel.toLowerCase()[0]}`;
+  const triggerLabel = `${sidePrefix}-${displayValue}`;
+  const selectedValue =
+    spacingEntryUtilityValue(sideEntry) ??
+    spacingEntryUtilityValue(shorthandEntry);
+  const hasOverride = Boolean(sideEntry ?? shorthandEntry);
 
   return (
     <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger asChild>
         <button
-          className="inline-flex size-8 shrink-0 items-center justify-center rounded-sm border border-border/70 bg-background px-1 text-xs font-medium leading-none hover:bg-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
+          className={`inline-flex h-8 min-w-[72px] shrink-0 items-center justify-center rounded-sm border bg-background px-2 text-[11px] font-semibold leading-none hover:bg-accent/40 disabled:cursor-not-allowed disabled:opacity-50 ${
+            hasOverride
+              ? "border-primary/45 ring-1 ring-primary/25"
+              : "border-border/70"
+          }`}
           disabled={disabled}
-          title={sideLabel}
+          title={`${sideLabel}: ${triggerLabel}`}
           type="button"
         >
-          {displayValue}
+          <span className="truncate font-mono">{triggerLabel}</span>
         </button>
       </PopoverTrigger>
       <PopoverContent align="center" className="w-40 p-1.5">
@@ -396,7 +655,7 @@ function SpacingSidePopover({
                   }}
                   type="button"
                 >
-                  {`${shorthandProperty === "padding" ? "p" : "m"}${sideLabel.toLowerCase()[0]}-${value}`}
+                  {`${sidePrefix}-${value}`}
                 </button>
               );
             })}
@@ -404,6 +663,182 @@ function SpacingSidePopover({
         </ScrollArea>
       </PopoverContent>
     </Popover>
+  );
+}
+
+function SpacingPropertyPanel({
+  shorthandProperty,
+  composition,
+  node,
+  availableProperties,
+  onNodeStyleEntry,
+}: {
+  shorthandProperty: SpacingShorthandProperty;
+  composition: PageComposition;
+  node: CompositionNode;
+  availableProperties: ReadonlySet<StyleProperty>;
+  onNodeStyleEntry: (
+    property: StyleProperty,
+    entry: StylePropertyEntry | null,
+  ) => void;
+}) {
+  const sideMap = SPACING_SIDE_MAP[shorthandProperty];
+  const shorthandEntry = readStyleProperty(
+    composition,
+    node,
+    shorthandProperty,
+  );
+  const sideEntries: Record<SpacingSideKey, StylePropertyEntry | undefined> = {
+    top: readStyleProperty(composition, node, sideMap.top),
+    right: readStyleProperty(composition, node, sideMap.right),
+    bottom: readStyleProperty(composition, node, sideMap.bottom),
+    left: readStyleProperty(composition, node, sideMap.left),
+  };
+  const horizontalDisabled = spacingAxisDisabled(
+    shorthandProperty,
+    "horizontal",
+    availableProperties,
+  );
+  const verticalDisabled = spacingAxisDisabled(
+    shorthandProperty,
+    "vertical",
+    availableProperties,
+  );
+  const baseLabel = shorthandProperty === "padding" ? "Padding" : "Margin";
+  const basePrefix = shorthandProperty === "padding" ? "p" : "m";
+  const allTargetProperties: SpacingControlProperty[] = [
+    shorthandProperty,
+    sideMap.top,
+    sideMap.right,
+    sideMap.bottom,
+    sideMap.left,
+  ].filter((property) => availableProperties.has(property));
+  const allDisabled = allTargetProperties.length === 0;
+  const hasAnySpacingOverride =
+    Boolean(shorthandEntry) ||
+    SPACING_SIDE_KEYS.some((side) => Boolean(sideEntries[side]));
+  const [targetMode, setTargetMode] = useState<"sides" | "axis" | "all">(
+    "sides",
+  );
+
+  return (
+    <div className="space-y-3 rounded-md border border-border/70 bg-background/50 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <Select
+          onValueChange={(value) => {
+            if (value === "sides" || value === "axis" || value === "all") {
+              setTargetMode(value);
+            }
+          }}
+          value={targetMode}
+        >
+          <SelectTrigger
+            aria-label={`${baseLabel} value target`}
+            className="h-8 w-[80px] text-xs font-medium"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="sides">Sides</SelectItem>
+            <SelectItem value="axis">Axis</SelectItem>
+            <SelectItem value="all">All</SelectItem>
+          </SelectContent>
+        </Select>
+        {hasAnySpacingOverride ? (
+          <div className="flex items-center gap-1.5">
+            <span
+              aria-hidden
+              className="inline-flex size-1.5 shrink-0 rounded-full bg-primary"
+              title="Changed from default"
+            />
+            <Button
+              aria-label={`Reset ${baseLabel.toLowerCase()} spacing`}
+              className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                for (const property of allTargetProperties) {
+                  onNodeStyleEntry(property, null);
+                }
+              }}
+              type="button"
+              variant="ghost"
+            >
+              <IconRestore className="size-3.5" stroke={1.6} />
+            </Button>
+          </div>
+        ) : null}
+      </div>
+      {targetMode === "all" ? (
+        <SpacingGroupPopover
+          disabled={allDisabled}
+          fallbackEntry={shorthandEntry}
+          onNodeStyleEntry={onNodeStyleEntry}
+          optionPrefix={basePrefix}
+          targetEntries={[
+            sideEntries.top,
+            sideEntries.right,
+            sideEntries.bottom,
+            sideEntries.left,
+          ]}
+          targetProperties={allTargetProperties}
+          title={`${baseLabel} all sides`}
+          triggerClassName="w-full"
+          valueProperty={shorthandProperty}
+        />
+      ) : targetMode === "axis" ? (
+        <div className="grid grid-cols-2 gap-2">
+          <SpacingGroupPopover
+            disabled={horizontalDisabled}
+            fallbackEntry={shorthandEntry}
+            onNodeStyleEntry={onNodeStyleEntry}
+            optionPrefix={`${basePrefix}x`}
+            targetEntries={[sideEntries.left, sideEntries.right]}
+            targetProperties={[sideMap.left, sideMap.right]}
+            title={`${baseLabel} horizontal`}
+            triggerClassName="w-full"
+            valueProperty={shorthandProperty}
+          />
+          <SpacingGroupPopover
+            disabled={verticalDisabled}
+            fallbackEntry={shorthandEntry}
+            onNodeStyleEntry={onNodeStyleEntry}
+            optionPrefix={`${basePrefix}y`}
+            targetEntries={[sideEntries.top, sideEntries.bottom]}
+            targetProperties={[sideMap.top, sideMap.bottom]}
+            title={`${baseLabel} vertical`}
+            triggerClassName="w-full"
+            valueProperty={shorthandProperty}
+          />
+        </div>
+      ) : (
+        <div className="mx-auto grid w-[252px] grid-cols-3 grid-rows-3 gap-2">
+          <div className="col-start-2 row-start-2 flex h-8 items-center justify-center rounded-md border border-dashed border-border/70 bg-muted/20 text-[10px] font-semibold uppercase text-muted-foreground">
+            {basePrefix}
+          </div>
+          {SPACING_SIDE_KEYS.map((side) => {
+            const sideProperty = sideMap[side];
+            return (
+              <div
+                className={cn(
+                  "flex items-center justify-center",
+                  SPACING_SIDE_POSITION_CLASS[side],
+                )}
+                key={`${shorthandProperty}-${side}`}
+              >
+                <SpacingSidePopover
+                  disabled={!availableProperties.has(sideProperty)}
+                  onNodeStyleEntry={onNodeStyleEntry}
+                  shorthandEntry={shorthandEntry}
+                  shorthandProperty={shorthandProperty}
+                  sideEntry={sideEntries[side]}
+                  sideLabel={SPACING_SIDE_LABEL[side]}
+                  sideProperty={sideProperty}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -421,104 +856,42 @@ function SpacingBoxControl({
     entry: StylePropertyEntry | null,
   ) => void;
 }) {
-  const marginEntry = readStyleProperty(composition, node, "margin");
-  const paddingEntry = readStyleProperty(composition, node, "padding");
+  const [activeProperty, setActiveProperty] =
+    useState<SpacingShorthandProperty>("margin");
 
   return (
-    <div>
-      <div className="relative mx-auto w-full min-h-[15rem] rounded-md border border-border/70 bg-background/50 p-4">
-        <div className="absolute left-1/2 top-2 -translate-x-1/2">
-          <SpacingSidePopover
-            disabled={!availableProperties.has("marginTop")}
-            onNodeStyleEntry={onNodeStyleEntry}
-            shorthandEntry={marginEntry}
-            shorthandProperty="margin"
-            sideEntry={readStyleProperty(composition, node, "marginTop")}
-            sideLabel="Top"
-            sideProperty="marginTop"
-          />
-        </div>
-        <div className="absolute right-2 top-1/2 -translate-y-1/2">
-          <SpacingSidePopover
-            disabled={!availableProperties.has("marginRight")}
-            onNodeStyleEntry={onNodeStyleEntry}
-            shorthandEntry={marginEntry}
-            shorthandProperty="margin"
-            sideEntry={readStyleProperty(composition, node, "marginRight")}
-            sideLabel="Right"
-            sideProperty="marginRight"
-          />
-        </div>
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
-          <SpacingSidePopover
-            disabled={!availableProperties.has("marginBottom")}
-            onNodeStyleEntry={onNodeStyleEntry}
-            shorthandEntry={marginEntry}
-            shorthandProperty="margin"
-            sideEntry={readStyleProperty(composition, node, "marginBottom")}
-            sideLabel="Bottom"
-            sideProperty="marginBottom"
-          />
-        </div>
-        <div className="absolute left-2 top-1/2 -translate-y-1/2">
-          <SpacingSidePopover
-            disabled={!availableProperties.has("marginLeft")}
-            onNodeStyleEntry={onNodeStyleEntry}
-            shorthandEntry={marginEntry}
-            shorthandProperty="margin"
-            sideEntry={readStyleProperty(composition, node, "marginLeft")}
-            sideLabel="Left"
-            sideProperty="marginLeft"
-          />
-        </div>
-        <div className="relative mx-10 my-8 grid min-h-36 place-items-center rounded-sm border border-border/70 bg-muted/15 px-5 py-6">
-          <div className="absolute left-1/2 top-2 -translate-x-1/2">
-            <SpacingSidePopover
-              disabled={!availableProperties.has("paddingTop")}
-              onNodeStyleEntry={onNodeStyleEntry}
-              shorthandEntry={paddingEntry}
-              shorthandProperty="padding"
-              sideEntry={readStyleProperty(composition, node, "paddingTop")}
-              sideLabel="Top"
-              sideProperty="paddingTop"
-            />
-          </div>
-          <div className="absolute right-5 top-1/2 -translate-y-1/2">
-            <SpacingSidePopover
-              disabled={!availableProperties.has("paddingRight")}
-              onNodeStyleEntry={onNodeStyleEntry}
-              shorthandEntry={paddingEntry}
-              shorthandProperty="padding"
-              sideEntry={readStyleProperty(composition, node, "paddingRight")}
-              sideLabel="Right"
-              sideProperty="paddingRight"
-            />
-          </div>
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
-            <SpacingSidePopover
-              disabled={!availableProperties.has("paddingBottom")}
-              onNodeStyleEntry={onNodeStyleEntry}
-              shorthandEntry={paddingEntry}
-              shorthandProperty="padding"
-              sideEntry={readStyleProperty(composition, node, "paddingBottom")}
-              sideLabel="Bottom"
-              sideProperty="paddingBottom"
-            />
-          </div>
-          <div className="absolute left-5 top-1/2 -translate-y-1/2">
-            <SpacingSidePopover
-              disabled={!availableProperties.has("paddingLeft")}
-              onNodeStyleEntry={onNodeStyleEntry}
-              shorthandEntry={paddingEntry}
-              shorthandProperty="padding"
-              sideEntry={readStyleProperty(composition, node, "paddingLeft")}
-              sideLabel="Left"
-              sideProperty="paddingLeft"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+    <Tabs
+      className="w-full"
+      onValueChange={(nextValue) => {
+        if (nextValue === "margin" || nextValue === "padding") {
+          setActiveProperty(nextValue);
+        }
+      }}
+      value={activeProperty}
+    >
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="margin">Margin</TabsTrigger>
+        <TabsTrigger value="padding">Padding</TabsTrigger>
+      </TabsList>
+      <TabsContent className="mt-3" value="margin">
+        <SpacingPropertyPanel
+          availableProperties={availableProperties}
+          composition={composition}
+          node={node}
+          onNodeStyleEntry={onNodeStyleEntry}
+          shorthandProperty="margin"
+        />
+      </TabsContent>
+      <TabsContent className="mt-3" value="padding">
+        <SpacingPropertyPanel
+          availableProperties={availableProperties}
+          composition={composition}
+          node={node}
+          onNodeStyleEntry={onNodeStyleEntry}
+          shorthandProperty="padding"
+        />
+      </TabsContent>
+    </Tabs>
   );
 }
 
@@ -529,20 +902,12 @@ function styleEntryTriggerCaption(
   valueEntry: StylePropertyEntry | undefined,
 ): string {
   if (!valueEntry) {
-    return "—";
+    return stylePropertyDefaultValueLabel(property);
   }
   if (valueEntry.type === "utility") {
     return valueEntry.value;
   }
   return tokenSemanticLabel(valueEntry.token);
-}
-
-function InspectorFieldLabel({ children }: { children: string }) {
-  return (
-    <span className="inline-flex w-[52px] shrink-0 items-center justify-center rounded border border-primary/35 bg-primary/12 px-1.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
-      {children}
-    </span>
-  );
 }
 
 function BorderSideGlyphIcon({ side }: { side: BorderSideKey }) {
@@ -759,7 +1124,7 @@ function BorderWidthUtilityPopover({
               }}
               type="button"
             >
-              Unset (default)
+              {stylePropertyDefaultOptionLabel(property)}
             </button>
             {utilityValues.map((value) => {
               const selected = selectedUtility === value;
@@ -852,7 +1217,7 @@ function BorderColorField({
 
   const displayLabel = (() => {
     if (!valueEntry) {
-      return "Default";
+      return stylePropertyDefaultValueLabel(property);
     }
     if (valueEntry.type === "utility") {
       return utilityValueLabel(property, valueEntry.value);
@@ -906,7 +1271,7 @@ function BorderColorField({
               }}
               type="button"
             >
-              Unset (default)
+              {stylePropertyDefaultOptionLabel(property)}
             </button>
             {utilityValues.map((value) => {
               const selected = selectedUtility === value;
@@ -1048,7 +1413,7 @@ function BorderRadiusUtilityAndTokenRow({
                   }}
                   type="button"
                 >
-                  Unset (default)
+                  {stylePropertyDefaultOptionLabel(property)}
                 </button>
                 {visibleTokens.map((token) => {
                   const selected = selectedToken === token.key;
@@ -1127,7 +1492,12 @@ function BorderControl({
         <div className="min-w-0 flex-1 space-y-3">
           {hasStyle ? (
             <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1">
-              <InspectorFieldLabel>Style</InspectorFieldLabel>
+              <BorderPropertyRowLabel
+                onReset={() => onNodeStyleEntry("borderStyle", null)}
+                showModified={Boolean(styleEntry)}
+              >
+                Style
+              </BorderPropertyRowLabel>
               <div className="flex justify-end">
                 <BorderStyleUtilityChips
                   onNodeStyleEntry={onNodeStyleEntry}
@@ -1138,7 +1508,12 @@ function BorderControl({
           ) : null}
           {hasWidth ? (
             <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1">
-              <InspectorFieldLabel>Width</InspectorFieldLabel>
+              <BorderPropertyRowLabel
+                onReset={() => onNodeStyleEntry("borderWidth", null)}
+                showModified={Boolean(widthEntry)}
+              >
+                Width
+              </BorderPropertyRowLabel>
               <BorderWidthUtilityPopover
                 onNodeStyleEntry={onNodeStyleEntry}
                 tokenMetadata={tokenMetadata}
@@ -1148,7 +1523,12 @@ function BorderControl({
           ) : null}
           {hasColor ? (
             <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1">
-              <InspectorFieldLabel>Color</InspectorFieldLabel>
+              <BorderPropertyRowLabel
+                onReset={() => onNodeStyleEntry("borderColor", null)}
+                showModified={Boolean(colorEntry)}
+              >
+                Color
+              </BorderPropertyRowLabel>
               <BorderColorField
                 onNodeStyleEntry={onNodeStyleEntry}
                 tokenMetadata={tokenMetadata}
@@ -1158,7 +1538,12 @@ function BorderControl({
           ) : null}
           {radiusProperty ? (
             <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-1">
-              <InspectorFieldLabel>Radius</InspectorFieldLabel>
+              <BorderPropertyRowLabel
+                onReset={() => onNodeStyleEntry("borderRadius", null)}
+                showModified={Boolean(radiusEntry)}
+              >
+                Radius
+              </BorderPropertyRowLabel>
               <BorderRadiusUtilityAndTokenRow
                 onNodeStyleEntry={onNodeStyleEntry}
                 tokenMetadata={tokenMetadata}
@@ -1192,18 +1577,17 @@ function FlexIconStyleValueControl({
     <div className="space-y-1.5">
       <div className="flex flex-wrap gap-1.5">
         <button
-          aria-label={`Unset ${stylePropertyLabel(property)}`}
+          aria-label={`Default ${stylePropertyLabel(property)} (${stylePropertyDefaultValueLabel(property)})`}
           aria-pressed={!valueEntry}
-          className={`inline-flex size-10 items-center justify-center rounded-md text-xs font-medium transition-colors ${
-            !valueEntry
-              ? "bg-primary/12 text-primary"
-              : "bg-background hover:bg-accent/40"
-          }`}
+          className={controlOptionButtonClass({
+            selected: !valueEntry,
+            iconOnly: false,
+          })}
           onClick={() => onNodeStyleEntry(property, null)}
-          title="Unset"
+          title={`Default: ${stylePropertyDefaultValueLabel(property)}`}
           type="button"
         >
-          Auto
+          {stylePropertyDefaultValueLabel(property)}
         </button>
         {options.map(([value, meta]) => {
           const selected = selectedValue === value;
@@ -1211,11 +1595,10 @@ function FlexIconStyleValueControl({
             <button
               aria-label={meta.label}
               aria-pressed={selected}
-              className={`inline-flex size-10 items-center justify-center rounded-md transition-colors ${
-                selected
-                  ? "bg-primary/12 text-primary"
-                  : "bg-background hover:bg-accent/40"
-              }`}
+              className={controlOptionButtonClass({
+                selected,
+                iconOnly: true,
+              })}
               key={value}
               onClick={() =>
                 onNodeStyleEntry(property, {
@@ -1332,7 +1715,7 @@ function DimensionStyleValueControl({
     ? valueEntry.type === "utility"
       ? dimensionValueLabel(property, valueEntry.value)
       : tokenSemanticLabel(valueEntry.token)
-    : "Unset (default)";
+    : stylePropertyDefaultValueLabel(property);
   const groups = dimensionUtilityGroups(utilityValues);
 
   return (
@@ -1358,7 +1741,7 @@ function DimensionStyleValueControl({
               }}
               type="button"
             >
-              <span>Unset (default)</span>
+              <span>{stylePropertyDefaultOptionLabel(property)}</span>
               {!valueEntry ? (
                 <IconChevronRight aria-hidden className="size-3.5" />
               ) : null}
@@ -1462,12 +1845,11 @@ const DISPLAY_QUICK_OPTIONS: readonly {
   id: "block" | "flex" | "grid" | "none";
   value: "block" | "flex" | "grid" | "hidden";
   label: string;
-  Icon: Icon;
 }[] = [
-  { id: "block", value: "block", label: "Block", Icon: IconLayoutList },
-  { id: "flex", value: "flex", label: "Flex", Icon: IconArrowsHorizontal },
-  { id: "grid", value: "grid", label: "Grid", Icon: IconLayoutGrid },
-  { id: "none", value: "hidden", label: "None", Icon: IconBox },
+  { id: "block", value: "block", label: "Block" },
+  { id: "flex", value: "flex", label: "Flex" },
+  { id: "grid", value: "grid", label: "Grid" },
+  { id: "none", value: "hidden", label: "None" },
 ];
 
 function DisplayStyleValueControl({
@@ -1497,9 +1879,8 @@ function DisplayStyleValueControl({
           const selected = selectedUtility === option.value;
           return (
             <button
-              aria-label={option.label}
               aria-pressed={selected}
-              className={`inline-flex size-10 items-center justify-center rounded-md transition-colors ${
+              className={`inline-flex h-10 items-center justify-center rounded-md px-3 text-xs font-medium transition-colors ${
                 selected
                   ? "bg-primary/12 text-primary"
                   : "bg-background hover:bg-accent/40"
@@ -1515,7 +1896,7 @@ function DisplayStyleValueControl({
               title={option.label}
               type="button"
             >
-              <option.Icon aria-hidden className="size-5" stroke={1.8} />
+              {option.label}
             </button>
           );
         })}
@@ -1545,7 +1926,7 @@ function DisplayStyleValueControl({
                   }}
                   type="button"
                 >
-                  Unset (default)
+                  {stylePropertyDefaultOptionLabel("display")}
                 </button>
                 {overflowUtilityValues.map((value) => {
                   const selected = selectedUtility === value;
@@ -1589,11 +1970,11 @@ const SECTION_META: Record<
 > = {
   color: {
     label: "Color",
-    Icon: IconBox,
+    Icon: IconPalette,
   },
   border: {
     label: "Borders",
-    Icon: IconBox,
+    Icon: IconBorderStyle2,
   },
   text: {
     label: "Text",
@@ -1601,15 +1982,15 @@ const SECTION_META: Record<
   },
   layout: {
     label: "Layout",
-    Icon: IconLayoutList,
+    Icon: IconLayout2,
   },
   spacing: {
     label: "Spacing",
-    Icon: IconLayoutList,
+    Icon: IconSpacingHorizontal,
   },
   size: {
     label: "Size",
-    Icon: IconLayoutGrid,
+    Icon: IconRulerMeasure,
   },
 };
 
@@ -1646,6 +2027,69 @@ const PRIMARY_STYLE_PROPERTIES = new Set<StyleProperty>([
   "height",
   "aspectRatio",
 ]);
+
+const GROUPED_MORE_OPTIONS_SECTIONS = new Set<StyleSectionId>([
+  "spacing",
+  "size",
+  "layout",
+  "text",
+]);
+
+const MORE_OPTIONS_PROPERTY_ORDER: Partial<
+  Record<StyleSectionId, readonly StyleProperty[]>
+> = {
+  spacing: [
+    "marginTop",
+    "paddingTop",
+    "marginRight",
+    "paddingRight",
+    "marginBottom",
+    "paddingBottom",
+    "marginLeft",
+    "paddingLeft",
+  ],
+  size: ["minWidth", "minHeight", "maxWidth", "maxHeight"],
+  layout: [
+    "flexGrow",
+    "flexShrink",
+    "flexBasis",
+    "flex",
+    "flexWrap",
+    "alignSelf",
+    "order",
+  ],
+  text: [
+    "fontFamily",
+    "lineHeight",
+    "letterSpacing",
+    "textTransform",
+    "fontStyle",
+    "textDecorationLine",
+  ],
+};
+
+function groupedMoreOptionsProperties(
+  sectionId: StyleSectionId,
+  properties: readonly StyleProperty[],
+): StyleProperty[] {
+  const preferredOrder = MORE_OPTIONS_PROPERTY_ORDER[sectionId];
+  if (!preferredOrder) {
+    return [...properties];
+  }
+  const ordered = preferredOrder.filter((property) =>
+    properties.includes(property),
+  );
+  const remaining = properties.filter(
+    (property) => !ordered.includes(property),
+  );
+  return [...ordered, ...remaining];
+}
+
+function moreOptionsGridClassName(sectionId: StyleSectionId): string {
+  return GROUPED_MORE_OPTIONS_SECTIONS.has(sectionId)
+    ? "grid grid-cols-2 gap-3"
+    : "grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4";
+}
 
 const COLOR_CATEGORIES = new Set(["color"]);
 const TYPOGRAPHY_CATEGORIES = new Set([
@@ -1748,14 +2192,21 @@ function StyleValueSelect({
   );
   const utilityValues = utilityValuesForStyleProperty(property);
   const currentValue = entrySelectValue(valueEntry);
+  const showModified = Boolean(valueEntry);
   return (
-    <div className="block" key={property}>
-      <Label
-        className="mb-2 block text-xs font-medium text-muted-foreground"
+    <div className="block space-y-2" key={property}>
+      <PropertyControlLabel
         htmlFor={`style-${property}`}
-      >
-        {stylePropertyLabel(property)}
-      </Label>
+        label={stylePropertyLabel(property)}
+        onReset={
+          showModified
+            ? () => {
+                onNodeStyleEntry(property, null);
+              }
+            : undefined
+        }
+        showModified={showModified}
+      />
       {property === "display" ? (
         <DisplayStyleValueControl
           onNodeStyleEntry={onNodeStyleEntry}
@@ -1802,7 +2253,9 @@ function StyleValueSelect({
           value={currentValue}
         >
           <SelectTrigger id={`style-${property}`}>
-            <SelectValue placeholder="Unset (default)" />
+            <SelectValue
+              placeholder={stylePropertyDefaultOptionLabel(property)}
+            />
           </SelectTrigger>
           <SelectContent
             className={
@@ -1811,7 +2264,9 @@ function StyleValueSelect({
                 : undefined
             }
           >
-            <SelectItem value={NONE_SELECT_VALUE}>Unset (default)</SelectItem>
+            <SelectItem value={NONE_SELECT_VALUE}>
+              {stylePropertyDefaultOptionLabel(property)}
+            </SelectItem>
             {utilityValues.length > 0 ? (
               <SelectGroup>
                 <SelectLabel>Tailwind values</SelectLabel>
@@ -1958,6 +2413,7 @@ function TextPrimitiveInspector({
   fieldBound,
   exposeToEditors,
   onTextChange,
+  resetNodePropKey,
   setNodeEditorFieldBinding,
 }: {
   node: CompositionNode;
@@ -1965,6 +2421,7 @@ function TextPrimitiveInspector({
   fieldBound: EditorFieldSpec | undefined;
   exposeToEditors: boolean;
   onTextChange: (content: string) => void;
+  resetNodePropKey: (propKey: string) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
   const baseId = useId();
@@ -2008,8 +2465,14 @@ function TextPrimitiveInspector({
 
   return (
     <>
-      <div className="space-y-3">
-        <Label htmlFor={contentId}>Content</Label>
+      <SettingsFieldRow
+        definitionKey={node.definitionKey}
+        htmlFor={contentId}
+        label="Content"
+        onResetProp={resetNodePropKey}
+        propKey="content"
+        propValues={node.propValues}
+      >
         <Input
           data-testid="inspector-text-content"
           id={contentId}
@@ -2017,7 +2480,7 @@ function TextPrimitiveInspector({
           type="text"
           value={content}
         />
-      </div>
+      </SettingsFieldRow>
       <div className="flex items-center gap-2">
         <Checkbox
           checked={exposeToEditors}
@@ -2197,12 +2660,14 @@ function HeadingPrimitiveInspector({
   patchNodeProps,
   fieldBound,
   exposeToEditors,
+  resetNodePropKey,
   setNodeEditorFieldBinding,
 }: {
   node: CompositionNode;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   fieldBound: EditorFieldSpec | undefined;
   exposeToEditors: boolean;
+  resetNodePropKey: (propKey: string) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
   const baseId = useId();
@@ -2246,17 +2711,29 @@ function HeadingPrimitiveInspector({
 
   return (
     <div className="space-y-5">
-      <div className="space-y-3">
-        <Label htmlFor={`${baseId}-heading-content`}>Content</Label>
+      <SettingsFieldRow
+        definitionKey={node.definitionKey}
+        htmlFor={`${baseId}-heading-content`}
+        label="Content"
+        onResetProp={resetNodePropKey}
+        propKey="content"
+        propValues={node.propValues}
+      >
         <Input
           id={`${baseId}-heading-content`}
           onChange={(e) => patchNodeProps({ content: e.target.value })}
           type="text"
           value={content}
         />
-      </div>
-      <div className="space-y-3">
-        <Label htmlFor={`${baseId}-heading-level`}>Heading level</Label>
+      </SettingsFieldRow>
+      <SettingsFieldRow
+        definitionKey={node.definitionKey}
+        htmlFor={`${baseId}-heading-level`}
+        label="Heading level"
+        onResetProp={resetNodePropKey}
+        propKey="level"
+        propValues={node.propValues}
+      >
         <Select
           onValueChange={(value) => patchNodeProps({ level: value })}
           value={level}
@@ -2273,7 +2750,7 @@ function HeadingPrimitiveInspector({
             <SelectItem value="h6">H6</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+      </SettingsFieldRow>
       <div className="flex items-center gap-2">
         <Checkbox
           checked={exposeToEditors}
@@ -2445,9 +2922,11 @@ function HeadingPrimitiveInspector({
 function ButtonPrimitiveInspector({
   node,
   patchNodeProps,
+  resetNodePropKey,
 }: {
   node: CompositionNode;
   patchNodeProps: (patch: Record<string, unknown>) => void;
+  resetNodePropKey: (propKey: string) => void;
 }) {
   const baseId = useId();
   const label =
@@ -2494,17 +2973,29 @@ function ButtonPrimitiveInspector({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-3">
-        <Label htmlFor={`${baseId}-button-label`}>Label</Label>
+      <SettingsFieldRow
+        definitionKey={node.definitionKey}
+        htmlFor={`${baseId}-button-label`}
+        label="Label"
+        onResetProp={resetNodePropKey}
+        propKey="label"
+        propValues={node.propValues}
+      >
         <Input
           id={`${baseId}-button-label`}
           onChange={(e) => patchNodeProps({ label: e.target.value })}
           type="text"
           value={label}
         />
-      </div>
-      <div className="space-y-3">
-        <Label htmlFor={`${baseId}-button-link-type`}>Link source</Label>
+      </SettingsFieldRow>
+      <SettingsFieldRow
+        definitionKey={node.definitionKey}
+        htmlFor={`${baseId}-button-link-type`}
+        label="Link source"
+        onResetProp={resetNodePropKey}
+        propKey="linkType"
+        propValues={node.propValues}
+      >
         <Select
           onValueChange={(value) =>
             patchNodeProps({
@@ -2523,10 +3014,16 @@ function ButtonPrimitiveInspector({
             </SelectItem>
           </SelectContent>
         </Select>
-      </div>
+      </SettingsFieldRow>
       {linkType === "url" ? (
-        <div className="space-y-3">
-          <Label htmlFor={`${baseId}-button-url`}>URL</Label>
+        <SettingsFieldRow
+          definitionKey={node.definitionKey}
+          htmlFor={`${baseId}-button-url`}
+          label="URL"
+          onResetProp={resetNodePropKey}
+          propKey="href"
+          propValues={node.propValues}
+        >
           <Input
             id={`${baseId}-button-url`}
             onChange={(e) => patchNodeProps({ href: e.target.value })}
@@ -2534,13 +3031,17 @@ function ButtonPrimitiveInspector({
             type="url"
             value={href}
           />
-        </div>
+        </SettingsFieldRow>
       ) : (
         <>
-          <div className="space-y-3">
-            <Label htmlFor={`${baseId}-button-collection`}>
-              Collection slug
-            </Label>
+          <SettingsFieldRow
+            definitionKey={node.definitionKey}
+            htmlFor={`${baseId}-button-collection`}
+            label="Collection slug"
+            onResetProp={resetNodePropKey}
+            propKey="collectionSlug"
+            propValues={node.propValues}
+          >
             <Input
               id={`${baseId}-button-collection`}
               onChange={(e) =>
@@ -2552,11 +3053,15 @@ function ButtonPrimitiveInspector({
               type="text"
               value={collectionSlug}
             />
-          </div>
-          <div className="space-y-3">
-            <Label htmlFor={`${baseId}-button-entry`}>
-              Entry slug (optional)
-            </Label>
+          </SettingsFieldRow>
+          <SettingsFieldRow
+            definitionKey={node.definitionKey}
+            htmlFor={`${baseId}-button-entry`}
+            label="Entry slug (optional)"
+            onResetProp={resetNodePropKey}
+            propKey="entrySlug"
+            propValues={node.propValues}
+          >
             <div className="flex items-center gap-2">
               <Input
                 id={`${baseId}-button-entry`}
@@ -2636,22 +3141,31 @@ function ButtonPrimitiveInspector({
                 </SheetContent>
               </Sheet>
             </div>
-          </div>
+          </SettingsFieldRow>
         </>
       )}
-      <div className="flex items-center gap-2">
-        <Checkbox
-          checked={openInNewTab}
-          id={`${baseId}-button-new-tab`}
-          onChange={(e) => patchNodeProps({ openInNewTab: e.target.checked })}
-        />
-        <Label
-          className="text-sm font-normal"
-          htmlFor={`${baseId}-button-new-tab`}
-        >
-          Open in new tab
-        </Label>
-      </div>
+      <SettingsFieldRow
+        definitionKey={node.definitionKey}
+        htmlFor={`${baseId}-button-new-tab`}
+        label="Open in new tab"
+        onResetProp={resetNodePropKey}
+        propKey="openInNewTab"
+        propValues={node.propValues}
+      >
+        <div className="flex items-center gap-2">
+          <Checkbox
+            checked={openInNewTab}
+            id={`${baseId}-button-new-tab`}
+            onChange={(e) => patchNodeProps({ openInNewTab: e.target.checked })}
+          />
+          <Label
+            className="text-sm font-normal"
+            htmlFor={`${baseId}-button-new-tab`}
+          >
+            Enabled
+          </Label>
+        </div>
+      </SettingsFieldRow>
     </div>
   );
 }
@@ -2662,12 +3176,14 @@ function ImagePrimitiveInspector({
   fieldBound,
   exposeToEditors,
   patchNodeProps,
+  resetNodePropKey,
   setNodeEditorFieldBinding,
 }: {
   node: CompositionNode;
   fieldBound: EditorFieldSpec | undefined;
   exposeToEditors: boolean;
   patchNodeProps: (patch: Record<string, unknown>) => void;
+  resetNodePropKey: (propKey: string) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
   const baseId = useId();
@@ -2738,8 +3254,14 @@ function ImagePrimitiveInspector({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
-        <Label htmlFor={`${baseId}-image-source`}>Source</Label>
+      <SettingsFieldRow
+        definitionKey={node.definitionKey}
+        htmlFor={`${baseId}-image-source`}
+        label="Source"
+        onResetProp={resetNodePropKey}
+        propKey="imageSource"
+        propValues={node.propValues}
+      >
         <Select
           onValueChange={(value) =>
             patchNodeProps({
@@ -2756,22 +3278,30 @@ function ImagePrimitiveInspector({
             <SelectItem value="media">Payload Media</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+      </SettingsFieldRow>
       {imageSource === "url" ? (
         <div className="space-y-3 border-t border-border/60 pt-5">
-          <Label htmlFor={`${baseId}-image-url`}>Image URL</Label>
-          <Input
-            id={`${baseId}-image-url`}
-            onChange={(e) =>
-              patchNodeProps({
-                src: e.target.value,
-                imageSource: "url",
-              })
-            }
-            placeholder="https://"
-            type="url"
-            value={src}
-          />
+          <SettingsFieldRow
+            definitionKey={node.definitionKey}
+            htmlFor={`${baseId}-image-url`}
+            label="Image URL"
+            onResetProp={resetNodePropKey}
+            propKey="src"
+            propValues={node.propValues}
+          >
+            <Input
+              id={`${baseId}-image-url`}
+              onChange={(e) =>
+                patchNodeProps({
+                  src: e.target.value,
+                  imageSource: "url",
+                })
+              }
+              placeholder="https://"
+              type="url"
+              value={src}
+            />
+          </SettingsFieldRow>
         </div>
       ) : (
         <div className="space-y-5 border-t border-border/60 pt-5">
@@ -2950,14 +3480,22 @@ function ImagePrimitiveInspector({
           </div>
         </div>
       )}
-      <div className="space-y-3 border-t border-border/60 pt-5">
-        <Label htmlFor={`${baseId}-image-alt`}>Alt text</Label>
-        <Input
-          id={`${baseId}-image-alt`}
-          onChange={(e) => patchNodeProps({ alt: e.target.value })}
-          type="text"
-          value={alt}
-        />
+      <div className="border-t border-border/60 pt-5">
+        <SettingsFieldRow
+          definitionKey={node.definitionKey}
+          htmlFor={`${baseId}-image-alt`}
+          label="Alt text"
+          onResetProp={resetNodePropKey}
+          propKey="alt"
+          propValues={node.propValues}
+        >
+          <Input
+            id={`${baseId}-image-alt`}
+            onChange={(e) => patchNodeProps({ alt: e.target.value })}
+            type="text"
+            value={alt}
+          />
+        </SettingsFieldRow>
       </div>
       <div className="flex items-center gap-2.5 border-t border-border/60 pt-5">
         <Checkbox
@@ -3060,6 +3598,8 @@ export function PropertyInspector({
   onTextChange,
   onNodeStyleEntry,
   patchNodeProps,
+  resetNodePropKey,
+  clearNodeStyles,
   setNodeEditorFieldBinding,
 }: {
   composition: PageComposition | null;
@@ -3071,8 +3611,13 @@ export function PropertyInspector({
     entry: StylePropertyEntry | null,
   ) => void;
   patchNodeProps: (patch: Record<string, unknown>) => void;
+  resetNodePropKey: (propKey: string) => void;
+  clearNodeStyles: () => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
+  const [styleSectionOpenState, setStyleSectionOpenState] = useState<
+    Partial<Record<StyleSectionId, boolean>>
+  >({});
   if (!node || !composition) {
     return (
       <div className="text-sm text-muted-foreground">
@@ -3104,252 +3649,204 @@ export function PropertyInspector({
     node.definitionKey,
   );
   const hasStyleControls = stylePropertiesBySection.length > 0;
+  const hasStyleOverrides = nodeHasNonEmptyStyleBinding(composition, node);
+  const gapPropertyAvailable = stylePropertiesBySection.some((section) =>
+    section.properties.includes("gap"),
+  );
+  const isStyleSectionOpen = (sectionId: StyleSectionId) =>
+    styleSectionOpenState[sectionId] ?? true;
+  const setStyleSectionOpen = (sectionId: StyleSectionId, open: boolean) => {
+    setStyleSectionOpenState((prev) => {
+      if ((prev[sectionId] ?? true) === open) {
+        return prev;
+      }
+      return { ...prev, [sectionId]: open };
+    });
+  };
+  const styleSectionIdsWithControls: StyleSectionId[] = [];
+  for (const section of STYLE_SECTIONS) {
+    const rawSectionProperties =
+      stylePropertiesBySection.find((s) => s.id === section.id)?.properties ??
+      [];
+    let sectionProperties = rawSectionProperties;
+    if (section.id === "spacing") {
+      sectionProperties = sectionProperties.filter(
+        (property) => property !== "gap",
+      );
+    }
+    if (
+      section.id === "layout" &&
+      gapPropertyAvailable &&
+      !sectionProperties.includes("gap")
+    ) {
+      sectionProperties = [...sectionProperties, "gap"];
+    }
+    if (sectionProperties.length > 0) {
+      styleSectionIdsWithControls.push(section.id);
+    }
+  }
+  const allStyleSectionsCollapsed =
+    styleSectionIdsWithControls.length > 0 &&
+    styleSectionIdsWithControls.every(
+      (sectionId) => !isStyleSectionOpen(sectionId),
+    );
 
   return (
-    <div className="space-y-4 text-sm">
-      <Tabs className="w-full" defaultValue="styles">
-        <div className="flex items-center justify-between gap-3">
-          <div className="text-base font-semibold uppercase tracking-[0.1em] text-foreground">
-            {nodeLabel}
+    <TooltipProvider>
+      <div className="space-y-4 text-sm">
+        <Tabs className="w-full" defaultValue="styles">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-base font-semibold uppercase tracking-[0.1em] text-foreground">
+              {nodeLabel}
+            </div>
+            <TabsList className="grid w-fit grid-cols-2">
+              <TabsTrigger value="styles">Styles</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
           </div>
-          <TabsList className="grid w-fit grid-cols-2">
-            <TabsTrigger value="styles">Styles</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
-        </div>
-        <TabsContent className="mt-4" value="styles">
-          {hasStyleControls ? (
-            <div className="space-y-4">
-              {/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog. */}
-              {STYLE_SECTIONS.map((section, sectionIndex) => {
-                const sectionProperties =
-                  stylePropertiesBySection.find((s) => s.id === section.id)
-                    ?.properties ?? [];
-                if (sectionProperties.length === 0) {
-                  return null;
-                }
-                const filteredSectionProperties =
-                  section.id === "spacing"
-                    ? sectionProperties.filter(
-                        (property) => !SPACING_RING_PROPERTIES.has(property),
-                      )
-                    : sectionProperties;
-                const primaryProperties = filteredSectionProperties.filter(
-                  (property) => PRIMARY_STYLE_PROPERTIES.has(property),
-                );
-                const secondaryProperties = filteredSectionProperties.filter(
-                  (property) => !PRIMARY_STYLE_PROPERTIES.has(property),
-                );
-                const visibleProperties =
-                  primaryProperties.length > 0
-                    ? primaryProperties
-                    : filteredSectionProperties;
-                if (section.id === "spacing") {
-                  return (
-                    <div
-                      className={`${sectionIndex === 0 ? "" : "border-t border-border/60 pt-4 "}space-y-4`}
-                      key={section.id}
-                    >
-                      <Collapsible defaultOpen>
-                        <CollapsibleTrigger asChild>
-                          <Button
-                            className="group h-7 w-full cursor-pointer justify-between rounded-sm px-0 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground hover:bg-transparent hover:text-foreground"
-                            type="button"
-                            variant="ghost"
-                          >
-                            <span className="flex items-center gap-1.5">
-                              <section.Icon
-                                aria-hidden
-                                className="size-4 text-muted-foreground"
-                                stroke={1.7}
-                              />
-                              <span>Margin & Padding</span>
-                            </span>
-                            <IconChevronDown
-                              aria-hidden
-                              className="size-4 transition-transform group-data-[state=open]:rotate-180"
-                              stroke={1.8}
-                            />
-                          </Button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-4 pt-3">
-                          <SpacingBoxControl
-                            availableProperties={new Set(sectionProperties)}
-                            composition={composition}
-                            node={node}
-                            onNodeStyleEntry={onNodeStyleEntry}
-                          />
-                          {visibleProperties.length > 0 ? (
-                            <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
-                              {visibleProperties.map((property) => {
-                                const styleEntry = readStyleProperty(
-                                  composition,
-                                  node,
-                                  property,
-                                );
-                                return (
-                                  <StyleValueSelect
-                                    key={property}
-                                    onNodeStyleEntry={onNodeStyleEntry}
-                                    property={property}
-                                    tokenMetadata={tokenMetadata}
-                                    valueEntry={styleEntry}
-                                  />
-                                );
-                              })}
-                            </div>
-                          ) : null}
-                          {secondaryProperties.length > 0 &&
-                          primaryProperties.length > 0 ? (
-                            <Collapsible>
-                              <CollapsibleTrigger asChild>
-                                <Button
-                                  className="h-8 w-full justify-between px-2 text-xs"
-                                  type="button"
-                                  variant="ghost"
-                                >
-                                  <span>More spacing options</span>
-                                  <span className="rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                    {secondaryProperties.length}
-                                  </span>
-                                </Button>
-                              </CollapsibleTrigger>
-                              <CollapsibleContent className="pt-3">
-                                <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
-                                  {secondaryProperties.map((property) => {
-                                    const styleEntry = readStyleProperty(
-                                      composition,
-                                      node,
-                                      property,
-                                    );
-                                    return (
-                                      <StyleValueSelect
-                                        key={property}
-                                        onNodeStyleEntry={onNodeStyleEntry}
-                                        property={property}
-                                        tokenMetadata={tokenMetadata}
-                                        valueEntry={styleEntry}
-                                      />
-                                    );
-                                  })}
-                                </div>
-                              </CollapsibleContent>
-                            </Collapsible>
-                          ) : null}
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </div>
-                  );
-                }
-                if (section.id === "border") {
-                  return (
-                    <div
-                      className={`${sectionIndex === 0 ? "" : "border-t border-border/60 pt-4 "}space-y-4`}
-                      key={section.id}
-                    >
-                      <Collapsible defaultOpen>
-                        <CollapsibleTrigger asChild>
-                          <Button
-                            className="group h-7 w-full cursor-pointer justify-between rounded-sm px-0 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground hover:bg-transparent hover:text-foreground"
-                            type="button"
-                            variant="ghost"
-                          >
-                            <span className="flex items-center gap-1.5">
-                              <section.Icon
-                                aria-hidden
-                                className="size-4 text-muted-foreground"
-                                stroke={1.7}
-                              />
-                              <span>{section.label}</span>
-                            </span>
-                            <IconChevronDown
-                              aria-hidden
-                              className="size-4 transition-transform group-data-[state=open]:rotate-180"
-                              stroke={1.8}
-                            />
-                          </Button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-4 pt-3">
-                          <BorderControl
-                            availableProperties={
-                              new Set(filteredSectionProperties)
-                            }
-                            composition={composition}
-                            node={node}
-                            onNodeStyleEntry={onNodeStyleEntry}
-                            tokenMetadata={tokenMetadata}
-                          />
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </div>
-                  );
-                }
-                return (
-                  <div
-                    className={`${sectionIndex === 0 ? "" : "border-t border-border/60 pt-4 "}space-y-4`}
-                    key={section.id}
+          <TabsContent className="mt-4" value="styles">
+            {hasStyleControls &&
+            (styleSectionIdsWithControls.length > 0 || hasStyleOverrides) ? (
+              <div className="mb-3 flex items-center justify-end gap-2">
+                {styleSectionIdsWithControls.length > 0 ? (
+                  <Button
+                    className="h-8 gap-1.5 px-2 text-xs"
+                    onClick={() => {
+                      const nextOpen = allStyleSectionsCollapsed;
+                      setStyleSectionOpenState((prev) => {
+                        const next = { ...prev };
+                        for (const sectionId of styleSectionIdsWithControls) {
+                          next[sectionId] = nextOpen;
+                        }
+                        return next;
+                      });
+                    }}
+                    type="button"
+                    variant="ghost"
                   >
-                    <Collapsible defaultOpen>
-                      <CollapsibleTrigger asChild>
-                        <Button
-                          className="group h-7 w-full cursor-pointer justify-between rounded-sm px-0 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground hover:bg-transparent hover:text-foreground"
-                          type="button"
-                          variant="ghost"
+                    {allStyleSectionsCollapsed ? (
+                      <IconChevronDown aria-hidden className="size-3.5" />
+                    ) : (
+                      <IconChevronUp aria-hidden className="size-3.5" />
+                    )}
+                    <span>
+                      {allStyleSectionsCollapsed
+                        ? "Expand all sections"
+                        : "Collapse all sections"}
+                    </span>
+                  </Button>
+                ) : null}
+                {hasStyleOverrides ? (
+                  <Button
+                    className="h-8 text-xs"
+                    onClick={clearNodeStyles}
+                    type="button"
+                    variant="outline"
+                  >
+                    Reset styles
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+            {hasStyleControls ? (
+              <div className="space-y-4">
+                {/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog. */}
+                {STYLE_SECTIONS.map((section, sectionIndex) => {
+                  const rawSectionProperties =
+                    stylePropertiesBySection.find((s) => s.id === section.id)
+                      ?.properties ?? [];
+                  let sectionProperties = rawSectionProperties;
+                  if (section.id === "spacing") {
+                    sectionProperties = sectionProperties.filter(
+                      (property) => property !== "gap",
+                    );
+                  }
+                  if (
+                    section.id === "layout" &&
+                    gapPropertyAvailable &&
+                    !sectionProperties.includes("gap")
+                  ) {
+                    sectionProperties = [...sectionProperties, "gap"];
+                  }
+                  if (sectionProperties.length === 0) {
+                    return null;
+                  }
+                  const filteredSectionProperties =
+                    section.id === "spacing"
+                      ? sectionProperties.filter(
+                          (property) => !SPACING_RING_PROPERTIES.has(property),
+                        )
+                      : sectionProperties;
+                  let primaryProperties = filteredSectionProperties.filter(
+                    (property) => PRIMARY_STYLE_PROPERTIES.has(property),
+                  );
+                  if (
+                    section.id === "layout" &&
+                    primaryProperties.includes("gap")
+                  ) {
+                    primaryProperties = [
+                      ...primaryProperties.filter(
+                        (property) => property !== "gap",
+                      ),
+                      "gap",
+                    ];
+                  }
+                  const secondaryProperties = filteredSectionProperties.filter(
+                    (property) => !PRIMARY_STYLE_PROPERTIES.has(property),
+                  );
+                  const groupedSecondaryProperties =
+                    groupedMoreOptionsProperties(
+                      section.id,
+                      secondaryProperties,
+                    );
+                  const visibleProperties =
+                    primaryProperties.length > 0
+                      ? primaryProperties
+                      : filteredSectionProperties;
+                  if (section.id === "spacing") {
+                    return (
+                      <div
+                        className={`${sectionIndex === 0 ? "" : "border-t border-border/60 pt-4 "}space-y-4`}
+                        key={section.id}
+                      >
+                        <Collapsible
+                          onOpenChange={(open) =>
+                            setStyleSectionOpen(section.id, open)
+                          }
+                          open={isStyleSectionOpen(section.id)}
                         >
-                          <span className="flex items-center gap-1.5">
-                            <section.Icon
-                              aria-hidden
-                              className="size-4 text-muted-foreground"
-                              stroke={1.7}
-                            />
-                            <span>{section.label}</span>
-                          </span>
-                          <IconChevronDown
-                            aria-hidden
-                            className="size-4 transition-transform group-data-[state=open]:rotate-180"
-                            stroke={1.8}
-                          />
-                        </Button>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="space-y-4 pt-3">
-                        <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
-                          {visibleProperties.map((property) => {
-                            const styleEntry = readStyleProperty(
-                              composition,
-                              node,
-                              property,
-                            );
-                            return (
-                              <StyleValueSelect
-                                key={property}
-                                onNodeStyleEntry={onNodeStyleEntry}
-                                property={property}
-                                tokenMetadata={tokenMetadata}
-                                valueEntry={styleEntry}
+                          <CollapsibleTrigger asChild>
+                            <Button
+                              className="group w-full justify-between px-1"
+                              size="panel"
+                              type="button"
+                              variant="panel"
+                            >
+                              <span className="flex items-center gap-1.5">
+                                <section.Icon
+                                  aria-hidden
+                                  className="size-3.5 text-muted-foreground/90"
+                                  stroke={1.7}
+                                />
+                                <span>Margin & Padding</span>
+                              </span>
+                              <IconChevronDown
+                                aria-hidden
+                                className="size-3.5 transition-transform group-data-[state=open]:rotate-180"
+                                stroke={1.8}
                               />
-                            );
-                          })}
-                        </div>
-                        {secondaryProperties.length > 0 &&
-                        primaryProperties.length > 0 ? (
-                          <Collapsible>
-                            <CollapsibleTrigger asChild>
-                              <Button
-                                className="h-8 w-full justify-between px-2 text-xs"
-                                type="button"
-                                variant="ghost"
-                              >
-                                <span>
-                                  More {section.label.toLowerCase()} options
-                                </span>
-                                <span className="rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                  {secondaryProperties.length}
-                                </span>
-                              </Button>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent className="pt-3">
+                            </Button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="space-y-4 pt-3">
+                            <SpacingBoxControl
+                              availableProperties={new Set(sectionProperties)}
+                              composition={composition}
+                              node={node}
+                              onNodeStyleEntry={onNodeStyleEntry}
+                            />
+                            {visibleProperties.length > 0 ? (
                               <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
-                                {secondaryProperties.map((property) => {
+                                {visibleProperties.map((property) => {
                                   const styleEntry = readStyleProperty(
                                     composition,
                                     node,
@@ -3366,86 +3863,292 @@ export function PropertyInspector({
                                   );
                                 })}
                               </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-                        ) : null}
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-md border border-border/70 bg-muted/20 p-2.5 text-xs leading-snug text-muted-foreground">
-              No style controls available for this element.
-            </div>
-          )}
-        </TabsContent>
-        <TabsContent className="mt-4 space-y-4" value="settings">
-          {isText ? (
-            <TextPrimitiveInspector
-              content={content}
-              exposeToEditors={exposeToEditors}
-              fieldBound={fieldBound}
-              node={node}
-              onTextChange={onTextChange}
-              setNodeEditorFieldBinding={setNodeEditorFieldBinding}
-            />
-          ) : null}
-          {isHeading ? (
-            <HeadingPrimitiveInspector
-              exposeToEditors={exposeToEditors}
-              fieldBound={fieldBound}
-              node={node}
-              patchNodeProps={patchNodeProps}
-              setNodeEditorFieldBinding={setNodeEditorFieldBinding}
-            />
-          ) : null}
-          {isButton ? (
-            <ButtonPrimitiveInspector
-              node={node}
-              patchNodeProps={patchNodeProps}
-            />
-          ) : null}
-          {isImage ? (
-            <ImagePrimitiveInspector
-              exposeToEditors={exposeToEditors}
-              fieldBound={fieldBound}
-              node={node}
-              patchNodeProps={patchNodeProps}
-              setNodeEditorFieldBinding={setNodeEditorFieldBinding}
-            />
-          ) : null}
-          {isSlot ? (
-            <div className="space-y-3 border-t border-border/60 pt-4">
-              <div className="text-xs font-medium text-foreground">Slot id</div>
-              <Input
-                data-testid="inspector-slot-id"
-                onChange={(e) => patchNodeProps({ slotId: e.target.value })}
-                placeholder="main"
-                type="text"
-                value={
-                  typeof node.propValues?.slotId === "string"
-                    ? node.propValues.slotId
-                    : ""
-                }
+                            ) : null}
+                            {secondaryProperties.length > 0 &&
+                            primaryProperties.length > 0 ? (
+                              <Collapsible>
+                                <CollapsibleTrigger asChild>
+                                  <Button
+                                    className="h-8 w-full justify-between px-2 text-xs"
+                                    type="button"
+                                    variant="ghost"
+                                  >
+                                    <span>More spacing options</span>
+                                    <span className="rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                      {secondaryProperties.length}
+                                    </span>
+                                  </Button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="pt-3">
+                                  <div
+                                    className={moreOptionsGridClassName(
+                                      section.id,
+                                    )}
+                                  >
+                                    {groupedSecondaryProperties.map(
+                                      (property) => {
+                                        const styleEntry = readStyleProperty(
+                                          composition,
+                                          node,
+                                          property,
+                                        );
+                                        return (
+                                          <StyleValueSelect
+                                            key={property}
+                                            onNodeStyleEntry={onNodeStyleEntry}
+                                            property={property}
+                                            tokenMetadata={tokenMetadata}
+                                            valueEntry={styleEntry}
+                                          />
+                                        );
+                                      },
+                                    )}
+                                  </div>
+                                </CollapsibleContent>
+                              </Collapsible>
+                            ) : null}
+                          </CollapsibleContent>
+                        </Collapsible>
+                      </div>
+                    );
+                  }
+                  if (section.id === "border") {
+                    return (
+                      <div
+                        className={`${sectionIndex === 0 ? "" : "border-t border-border/60 pt-4 "}space-y-4`}
+                        key={section.id}
+                      >
+                        <Collapsible
+                          onOpenChange={(open) =>
+                            setStyleSectionOpen(section.id, open)
+                          }
+                          open={isStyleSectionOpen(section.id)}
+                        >
+                          <CollapsibleTrigger asChild>
+                            <Button
+                              className="group w-full justify-between px-1"
+                              size="panel"
+                              type="button"
+                              variant="panel"
+                            >
+                              <span className="flex items-center gap-1.5">
+                                <section.Icon
+                                  aria-hidden
+                                  className="size-3.5 text-muted-foreground/90"
+                                  stroke={1.7}
+                                />
+                                <span>{section.label}</span>
+                              </span>
+                              <IconChevronDown
+                                aria-hidden
+                                className="size-3.5 transition-transform group-data-[state=open]:rotate-180"
+                                stroke={1.8}
+                              />
+                            </Button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="space-y-4 pt-3">
+                            <BorderControl
+                              availableProperties={
+                                new Set(filteredSectionProperties)
+                              }
+                              composition={composition}
+                              node={node}
+                              onNodeStyleEntry={onNodeStyleEntry}
+                              tokenMetadata={tokenMetadata}
+                            />
+                          </CollapsibleContent>
+                        </Collapsible>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div
+                      className={`${sectionIndex === 0 ? "" : "border-t border-border/60 pt-4 "}space-y-4`}
+                      key={section.id}
+                    >
+                      <Collapsible
+                        onOpenChange={(open) =>
+                          setStyleSectionOpen(section.id, open)
+                        }
+                        open={isStyleSectionOpen(section.id)}
+                      >
+                        <CollapsibleTrigger asChild>
+                          <Button
+                            className="group w-full justify-between px-1"
+                            size="panel"
+                            type="button"
+                            variant="panel"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <section.Icon
+                                aria-hidden
+                                className="size-3.5 text-muted-foreground/90"
+                                stroke={1.7}
+                              />
+                              <span>{section.label}</span>
+                            </span>
+                            <IconChevronDown
+                              aria-hidden
+                              className="size-3.5 transition-transform group-data-[state=open]:rotate-180"
+                              stroke={1.8}
+                            />
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="space-y-4 pt-3">
+                          <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+                            {visibleProperties.map((property) => {
+                              const styleEntry = readStyleProperty(
+                                composition,
+                                node,
+                                property,
+                              );
+                              return (
+                                <StyleValueSelect
+                                  key={property}
+                                  onNodeStyleEntry={onNodeStyleEntry}
+                                  property={property}
+                                  tokenMetadata={tokenMetadata}
+                                  valueEntry={styleEntry}
+                                />
+                              );
+                            })}
+                          </div>
+                          {secondaryProperties.length > 0 &&
+                          primaryProperties.length > 0 ? (
+                            <Collapsible>
+                              <CollapsibleTrigger asChild>
+                                <Button
+                                  className="h-8 w-full justify-between px-2 text-xs"
+                                  type="button"
+                                  variant="ghost"
+                                >
+                                  <span>
+                                    More {section.label.toLowerCase()} options
+                                  </span>
+                                  <span className="rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                    {secondaryProperties.length}
+                                  </span>
+                                </Button>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="pt-3">
+                                <div
+                                  className={moreOptionsGridClassName(
+                                    section.id,
+                                  )}
+                                >
+                                  {groupedSecondaryProperties.map(
+                                    (property) => {
+                                      const styleEntry = readStyleProperty(
+                                        composition,
+                                        node,
+                                        property,
+                                      );
+                                      return (
+                                        <StyleValueSelect
+                                          key={property}
+                                          onNodeStyleEntry={onNodeStyleEntry}
+                                          property={property}
+                                          tokenMetadata={tokenMetadata}
+                                          valueEntry={styleEntry}
+                                        />
+                                      );
+                                    },
+                                  )}
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          ) : null}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-md border border-border/70 bg-muted/20 p-2.5 text-xs leading-snug text-muted-foreground">
+                No style controls available for this element.
+              </div>
+            )}
+          </TabsContent>
+          <TabsContent className="mt-4 space-y-4" value="settings">
+            {isText ? (
+              <TextPrimitiveInspector
+                content={content}
+                exposeToEditors={exposeToEditors}
+                fieldBound={fieldBound}
+                node={node}
+                onTextChange={onTextChange}
+                resetNodePropKey={resetNodePropKey}
+                setNodeEditorFieldBinding={setNodeEditorFieldBinding}
               />
-            </div>
-          ) : null}
-          {isLibraryComponent ? (
-            <div className="space-y-3 border-t border-border/60 pt-4">
-              <div className="text-xs font-medium text-foreground">
-                Component
+            ) : null}
+            {isHeading ? (
+              <HeadingPrimitiveInspector
+                exposeToEditors={exposeToEditors}
+                fieldBound={fieldBound}
+                node={node}
+                patchNodeProps={patchNodeProps}
+                resetNodePropKey={resetNodePropKey}
+                setNodeEditorFieldBinding={setNodeEditorFieldBinding}
+              />
+            ) : null}
+            {isButton ? (
+              <ButtonPrimitiveInspector
+                node={node}
+                patchNodeProps={patchNodeProps}
+                resetNodePropKey={resetNodePropKey}
+              />
+            ) : null}
+            {isImage ? (
+              <ImagePrimitiveInspector
+                exposeToEditors={exposeToEditors}
+                fieldBound={fieldBound}
+                node={node}
+                patchNodeProps={patchNodeProps}
+                resetNodePropKey={resetNodePropKey}
+                setNodeEditorFieldBinding={setNodeEditorFieldBinding}
+              />
+            ) : null}
+            {isSlot ? (
+              <div className="border-t border-border/60 pt-4">
+                <SettingsFieldRow
+                  definitionKey={node.definitionKey}
+                  htmlFor="inspector-slot-id"
+                  label="Slot id"
+                  onResetProp={resetNodePropKey}
+                  propKey="slotId"
+                  propValues={node.propValues}
+                >
+                  <Input
+                    data-testid="inspector-slot-id"
+                    id="inspector-slot-id"
+                    onChange={(e) => patchNodeProps({ slotId: e.target.value })}
+                    placeholder="main"
+                    type="text"
+                    value={
+                      typeof node.propValues?.slotId === "string"
+                        ? node.propValues.slotId
+                        : ""
+                    }
+                  />
+                </SettingsFieldRow>
               </div>
-              <div className="rounded-md border border-border bg-muted/30 px-2 py-1.5 font-mono text-xs text-foreground">
-                {typeof node.propValues?.componentKey === "string"
-                  ? node.propValues.componentKey
-                  : "—"}
+            ) : null}
+            {isLibraryComponent ? (
+              <div className="space-y-3 border-t border-border/60 pt-4">
+                <div className="text-xs font-medium text-foreground">
+                  Component
+                </div>
+                <div className="rounded-md border border-border bg-muted/30 px-2 py-1.5 font-mono text-xs text-foreground">
+                  {typeof node.propValues?.componentKey === "string"
+                    ? node.propValues.componentKey
+                    : "—"}
+                </div>
               </div>
-            </div>
-          ) : null}
-        </TabsContent>
-      </Tabs>
-    </div>
+            ) : null}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </TooltipProvider>
   );
 }

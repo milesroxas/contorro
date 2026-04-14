@@ -448,6 +448,73 @@ export function updateNodePropValues(
 }
 
 /**
+ * Sets `propValues[propKey]` back to the primitive default, or removes the key
+ * when there is no declared default.
+ */
+export function resetNodePropKeyToPrimitiveDefault(
+  composition: PageComposition,
+  nodeId: string,
+  propKey: string,
+): Result<PageComposition, "INVALID_NODE"> {
+  const node = composition.nodes[nodeId];
+  if (!node) {
+    return err("INVALID_NODE");
+  }
+  const defaults = defaultPrimitivePropValues(node.definitionKey);
+  const prev = node.propValues ?? {};
+  const next: Record<string, unknown> = { ...prev };
+  if (Object.prototype.hasOwnProperty.call(defaults, propKey)) {
+    next[propKey] = defaults[propKey as keyof typeof defaults];
+  } else {
+    delete next[propKey];
+  }
+  const nextNode: CompositionNode = {
+    ...node,
+    propValues: Object.keys(next).length > 0 ? next : undefined,
+  };
+  const assembled: PageComposition = {
+    rootId: composition.rootId,
+    nodes: { ...composition.nodes, [nodeId]: nextNode },
+    styleBindings: { ...composition.styleBindings },
+  };
+  const parsed = PageCompositionSchema.safeParse(assembled);
+  if (!parsed.success) {
+    return err("INVALID_NODE");
+  }
+  return ok(parsed.data);
+}
+
+/**
+ * Removes all style overrides for a node (clears its style binding).
+ */
+export function clearNodeStyleBinding(
+  composition: PageComposition,
+  nodeId: string,
+): Result<PageComposition, "INVALID_NODE"> {
+  const node = composition.nodes[nodeId];
+  if (!node) {
+    return err("INVALID_NODE");
+  }
+  const bindingId = node.styleBindingId;
+  if (!bindingId) {
+    return ok(composition);
+  }
+  const nextBindings = { ...composition.styleBindings };
+  delete nextBindings[bindingId];
+  const nextNode: CompositionNode = { ...node, styleBindingId: undefined };
+  const assembled: PageComposition = {
+    rootId: composition.rootId,
+    nodes: { ...composition.nodes, [nodeId]: nextNode },
+    styleBindings: nextBindings,
+  };
+  const parsed = PageCompositionSchema.safeParse(assembled);
+  if (!parsed.success) {
+    return err("INVALID_NODE");
+  }
+  return ok(parsed.data);
+}
+
+/**
  * Sets or replaces a single token-backed style property on a node (creates `StyleBinding` when needed).
  */
 export function setNodeTokenStyle(

@@ -24,6 +24,8 @@ import {
 import type { StudioAuthoringClient } from "@repo/contracts-zod";
 
 import { BuilderPanel } from "../components/builder-panel.js";
+import { StudioRoot } from "../components/studio-root.js";
+import { Separator } from "../components/ui/separator.js";
 import { BuilderCanvas } from "../features/canvas/BuilderCanvas.js";
 import type { InsertDropData } from "../features/dnd/InsertionDropZone.js";
 import { DraftSaveBar } from "../features/draft-save/DraftSaveBar.js";
@@ -31,6 +33,7 @@ import { NodeTree } from "../features/node-tree/NodeTree.js";
 import { LibraryComponentCatalog } from "../features/primitive-catalog/LibraryComponentCatalog.js";
 import { PrimitiveCatalog } from "../features/primitive-catalog/PrimitiveCatalog.js";
 import { PropertyInspector } from "../features/property-inspector/PropertyInspector.js";
+import { KeyboardShortcutsDrawer } from "../features/shortcuts/KeyboardShortcutsDrawer.js";
 import { cn } from "../lib/cn.js";
 import { computeInsertIndex } from "../lib/compute-insert-index.js";
 import {
@@ -88,7 +91,7 @@ function BuilderDragPreview({
 }) {
   const { Icon, label } = display;
   return (
-    <div className="pointer-events-none flex min-w-[150px] max-w-[min(100vw-2rem,240px)] items-center gap-2 rounded-md border-2 border-primary/50 bg-card px-2.5 py-1.5 text-card-foreground shadow-xl ring-2 ring-primary/20">
+    <div className="pointer-events-none flex min-w-[150px] max-w-[min(100vw-2rem,240px)] items-center gap-2 rounded-sm border-2 border-primary/50 bg-card px-2.5 py-1.5 text-card-foreground shadow-xl ring-2 ring-primary/20">
       <Icon
         aria-hidden
         className="size-6 shrink-0 text-primary"
@@ -169,6 +172,8 @@ export function BuilderApp({
   const setTextContent = useBuilder((s) => s.setTextContent);
   const patchNodeProps = useBuilder((s) => s.patchNodeProps);
   const setNodeStyleEntry = useBuilder((s) => s.setNodeStyleEntry);
+  const storeResetNodePropKey = useBuilder((s) => s.resetNodePropKey);
+  const storeClearNodeStyles = useBuilder((s) => s.clearNodeStyles);
   const setNodeEditorFieldBinding = useBuilder(
     (s) => s.setNodeEditorFieldBinding,
   );
@@ -417,9 +422,9 @@ export function BuilderApp({
 
   if (!composition) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-4 text-sm text-muted-foreground">
+      <StudioRoot className="flex min-h-0 flex-1 flex-col items-center justify-center p-4 text-sm text-muted-foreground">
         {error ?? "Loading…"}
-      </div>
+      </StudioRoot>
     );
   }
 
@@ -449,7 +454,7 @@ export function BuilderApp({
       onDragStart={onDragStart}
       sensors={sensors}
     >
-      <div
+      <StudioRoot
         className={cn(
           "flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-sm",
           theme === "dark" && "dark",
@@ -493,28 +498,34 @@ export function BuilderApp({
               aria-label="Left builder panels"
               className="flex shrink-0 flex-col items-center gap-1 border-r border-border/70 bg-muted/20 p-1.5 dark:bg-muted/10"
             >
-              {leftSidebarPanels.map(({ id, label, Icon, shortcutDigit }) => {
-                const isActive = activeLeftSidebarPanel === id;
-                return (
-                  <button
-                    aria-keyshortcuts={shortcutDigit}
-                    aria-label={label}
-                    aria-pressed={isActive}
-                    className={cn(
-                      "flex size-10 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors",
-                      "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      isActive &&
-                        "border-border bg-background text-foreground shadow-sm",
-                    )}
-                    key={id}
-                    onClick={() => setActiveLeftSidebarPanel(id)}
-                    title={`${label} (${shortcutDigit})`}
-                    type="button"
-                  >
-                    <Icon aria-hidden className="size-5.5" stroke={1.7} />
-                  </button>
-                );
-              })}
+              <div className="flex w-full flex-col items-center gap-1">
+                {leftSidebarPanels.map(({ id, label, Icon, shortcutDigit }) => {
+                  const isActive = activeLeftSidebarPanel === id;
+                  return (
+                    <button
+                      aria-keyshortcuts={shortcutDigit}
+                      aria-label={label}
+                      aria-pressed={isActive}
+                      className={cn(
+                        "flex size-10 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors",
+                        "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        isActive &&
+                          "border-border bg-background text-foreground shadow-sm",
+                      )}
+                      key={id}
+                      onClick={() => setActiveLeftSidebarPanel(id)}
+                      title={`${label} (${shortcutDigit})`}
+                      type="button"
+                    >
+                      <Icon aria-hidden className="size-5.5" stroke={1.7} />
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-auto flex w-full flex-col items-center gap-2 pt-2">
+                <Separator className="w-8 bg-border/70" />
+                <KeyboardShortcutsDrawer />
+              </div>
             </nav>
             <BuilderPanel
               className="min-h-0 min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none"
@@ -573,8 +584,18 @@ export function BuilderApp({
             title=""
           >
             <PropertyInspector
+              clearNodeStyles={() => {
+                if (selectedNodeId) {
+                  storeClearNodeStyles(selectedNodeId);
+                }
+              }}
               composition={composition}
               node={selectedNode}
+              resetNodePropKey={(propKey) => {
+                if (selectedNodeId) {
+                  storeResetNodePropKey(selectedNodeId, propKey);
+                }
+              }}
               tokenMetadata={tokenMetadata}
               onNodeStyleEntry={(property, entry) => {
                 if (selectedNodeId) {
@@ -599,7 +620,7 @@ export function BuilderApp({
             />
           </BuilderPanel>
         </div>
-      </div>
+      </StudioRoot>
       <DragOverlay dropAnimation={null}>
         {overlayDisplay ? (
           <BuilderDragPreview

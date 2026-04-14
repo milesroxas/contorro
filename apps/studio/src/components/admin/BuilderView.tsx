@@ -11,10 +11,10 @@ import {
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo } from "react";
 
-import BuilderHub from "@/components/admin/BuilderHub";
+import StudioHub from "@/components/admin/BuilderHub";
 import { contorroAdminUiRootProps } from "@/components/admin/contorro-admin-ui";
 
-function BuilderViewInner() {
+function StudioViewInner() {
   const authoringClient = useMemo(
     () =>
       createFetchStudioAuthoringClient({
@@ -45,7 +45,7 @@ function BuilderViewInner() {
     return (
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center text-muted-foreground">
         <p className="max-w-md text-pretty">
-          The visual builder is limited to admin and designer roles. Use{" "}
+          Studio is limited to admin and designer roles. Use{" "}
           <strong className="text-foreground">Composer</strong> to edit page
           content.
         </p>
@@ -67,7 +67,7 @@ function BuilderViewInner() {
   }
 
   if (!compositionId) {
-    return <BuilderHub />;
+    return <StudioHub />;
   }
 
   return (
@@ -85,7 +85,7 @@ function BuilderViewInner() {
 }
 
 /** Payload admin custom view — architecture spec Phase 3. */
-export default function BuilderView() {
+export default function StudioView() {
   return (
     <div
       className="flex h-dvh max-h-dvh w-full min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground"
@@ -99,7 +99,7 @@ export default function BuilderView() {
             </div>
           }
         >
-          <BuilderViewInner />
+          <StudioViewInner />
         </Suspense>
       </div>
     </div>

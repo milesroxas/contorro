@@ -13,6 +13,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ScrollArea } from "../../components/scroll-area.js";
+import { StudioRoot } from "../../components/studio-root.js";
 import { Button } from "../../components/ui/button.js";
 import {
   Card,
@@ -418,16 +419,16 @@ export function DesignSystemEditor({
 
   if (!canAccess) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center text-muted-foreground">
+      <StudioRoot className="flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center text-muted-foreground">
         <p className="max-w-md text-pretty">
           Design system editor is limited to admin and designer roles.
         </p>
-      </div>
+      </StudioRoot>
     );
   }
 
   return (
-    <div className="flex min-h-dvh w-full min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
+    <StudioRoot className="flex min-h-dvh w-full min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-3 p-3 xl:grid-cols-[minmax(340px,420px)_1fr]">
           <Card className="min-h-0 overflow-hidden">
@@ -713,6 +714,6 @@ export function DesignSystemEditor({
           </Card>
         </div>
       </div>
-    </div>
+    </StudioRoot>
   );
 }

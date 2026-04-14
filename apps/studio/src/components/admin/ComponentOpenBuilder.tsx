@@ -5,10 +5,10 @@ import { builderRowIdForComponent } from "@repo/infrastructure-payload-config/bu
 import { formatAdminURL } from "payload/shared";
 
 /**
- * Opens the visual builder for this component (composition id is namespaced so it does not
- * collide with page template ids in the builder DB).
+ * Opens Studio for this component (composition id is namespaced so it does not
+ * collide with page template ids in the Studio composition DB).
  */
-export default function ComponentOpenBuilder() {
+export default function ComponentOpenStudio() {
   const { user } = useAuth();
   const { config } = useConfig();
   const role =
@@ -28,20 +28,20 @@ export default function ComponentOpenBuilder() {
   const compositionParam = builderRowIdForComponent(String(id));
   const url = formatAdminURL({
     adminRoute,
-    path: `/builder?composition=${encodeURIComponent(compositionParam)}`,
+    path: `/studio?composition=${encodeURIComponent(compositionParam)}`,
     relative: true,
   });
 
   return (
     <Button
-      buttonId="open-visual-builder-component"
+      buttonId="open-visual-studio-component"
       buttonStyle="secondary"
       el="link"
       margin={false}
       size="small"
       url={url}
     >
-      Open in builder
+      Open in Studio
     </Button>
   );
 }

@@ -7,7 +7,7 @@ import {
   seedDesignerAndComposition,
 } from "../helpers/seedBuilderE2e";
 
-test.describe("Phase 3 — Builder MVP", () => {
+test.describe("Phase 3 — Studio MVP", () => {
   let page: Page;
   let compositionId: string;
 
@@ -30,7 +30,7 @@ test.describe("Phase 3 — Builder MVP", () => {
   });
 
   test("designer composes, styles, saves, restores", async () => {
-    await page.goto(`/admin/builder?composition=${compositionId}`);
+    await page.goto(`/admin/studio?composition=${compositionId}`);
 
     await expect(page.getByTestId("builder-app")).toBeVisible({
       timeout: 30_000,

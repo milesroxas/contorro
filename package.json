@@ -14,6 +14,7 @@
     "seed": "pnpm --filter @repo/cms exec payload run src/seeds/index.ts",
     "test": "pnpm --filter @repo/cms run test:int",
     "test:e2e": "pnpm --filter @repo/cms exec playwright test",
+    "check": "pnpm lint && pnpm typecheck && pnpm build && pnpm --filter @repo/cms exec payload migrate && pnpm --filter @repo/cms exec payload migrate && pnpm test",
     "lint": "biome check .",
     "format": "biome format --write .",
     "typecheck": "tsc -b && pnpm --filter @repo/cms exec tsc --noEmit"

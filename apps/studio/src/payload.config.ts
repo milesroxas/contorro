@@ -99,9 +99,9 @@ export default buildConfig({
         "/components/admin/PageCompositionOpenBuilder",
       ],
       views: {
-        builder: {
+        studio: {
           Component: "/components/admin/BuilderView",
-          path: "/builder",
+          path: "/studio",
         },
       },
     },

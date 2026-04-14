@@ -8,9 +8,11 @@ import type {
 } from "@repo/contracts-zod";
 import {
   addChildNode,
+  clearNodeStyleBinding,
   isBuilderNewCompositionSessionId,
   moveNode as moveNodeInComposition,
   removeSubtree,
+  resetNodePropKeyToPrimitiveDefault,
   setNodeContentBinding,
   setNodeStyleProperty,
   updateNodePropValues,
@@ -56,6 +58,8 @@ export type BuilderStoreState = {
     property: StyleProperty,
     entry: StylePropertyEntry | null,
   ) => void;
+  resetNodePropKey: (nodeId: string, propKey: string) => void;
+  clearNodeStyles: (nodeId: string) => void;
   setNodeEditorFieldBinding: (
     nodeId: string,
     field: EditorFieldSpec | null,
@@ -295,6 +299,48 @@ export function createBuilderStore(
       }
       set({
         error: null,
+        composition: next.value,
+        historyPast: [...get().historyPast, composition],
+        historyFuture: [],
+        dirty: true,
+        canUndo: true,
+        canRedo: false,
+      });
+    },
+
+    resetNodePropKey: (nodeId, propKey) => {
+      const { composition } = get();
+      if (!composition) {
+        return;
+      }
+      const next = resetNodePropKeyToPrimitiveDefault(
+        composition,
+        nodeId,
+        propKey,
+      );
+      if (!next.ok) {
+        return;
+      }
+      set({
+        composition: next.value,
+        historyPast: [...get().historyPast, composition],
+        historyFuture: [],
+        dirty: true,
+        canUndo: true,
+        canRedo: false,
+      });
+    },
+
+    clearNodeStyles: (nodeId) => {
+      const { composition } = get();
+      if (!composition) {
+        return;
+      }
+      const next = clearNodeStyleBinding(composition, nodeId);
+      if (!next.ok) {
+        return;
+      }
+      set({
         composition: next.value,
         historyPast: [...get().historyPast, composition],
         historyFuture: [],

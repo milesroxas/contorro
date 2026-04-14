@@ -3,7 +3,7 @@ import type { CompositionNode, PageComposition } from "@repo/contracts-zod";
 import type { RuntimeRegistry } from "@repo/domains-runtime-catalog";
 import type { CSSProperties, ReactElement, ReactNode } from "react";
 
-import { resolveStyleBinding } from "./style-resolver.js";
+import { resolveNodeStyle } from "./style-resolver.js";
 
 function normalizedLayoutSlotId(node: CompositionNode): string {
   const raw = node.propValues?.slotId;
@@ -35,21 +35,9 @@ function renderNode(
     return null;
   }
 
-  let className: string | undefined;
-  let style: CSSProperties | undefined;
-
-  if (node.styleBindingId) {
-    const sb = composition.styleBindings[node.styleBindingId];
-    if (sb) {
-      const r = resolveStyleBinding(sb, tokenMeta);
-      if (r.classes) {
-        className = r.classes;
-      }
-      if (Object.keys(r.inlineStyle).length > 0) {
-        style = r.inlineStyle as CSSProperties;
-      }
-    }
-  }
+  const resolvedNodeStyle = resolveNodeStyle(node, composition, tokenMeta);
+  const className = resolvedNodeStyle.className;
+  const style = resolvedNodeStyle.style as CSSProperties | undefined;
 
   if (node.definitionKey === "primitive.slot") {
     const slotId = normalizedLayoutSlotId(node);

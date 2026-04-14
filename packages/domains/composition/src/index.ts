@@ -17,13 +17,16 @@ export { clonePageCompositionWithNewIds } from "./graph/clone-composition.js";
 export { expandLibraryComponentNodes } from "./graph/expand-library-component-nodes.js";
 export {
   addChildNode,
+  clearNodeStyleBinding,
   moveNode,
   removeSubtree,
+  resetNodePropKeyToPrimitiveDefault,
   setNodeContentBinding,
   setNodeStyleProperty,
   setNodeTokenStyle,
   updateNodePropValues,
 } from "./graph/mutations.js";
+export { isPrimitivePropValueModified } from "./primitive-prop-override.js";
 export { validatePageCompositionInvariants } from "./validation/page-composition.js";
 export {
   editorFieldSpecsFromComposition,
@@ -59,6 +62,7 @@ export {
 export {
   findInvalidStyleTokens,
   stylePropertiesBySectionForDefinitionKey,
+  stylePropertyDefaultValueLabel,
   styleSectionForProperty,
   stylePropertiesForDefinitionKey,
   stylePropertyLabel,

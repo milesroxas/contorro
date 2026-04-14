@@ -4,7 +4,7 @@ import { useDraggable } from "@dnd-kit/core";
 import type { TokenMeta } from "@repo/config-tailwind";
 import type { CompositionNode, PageComposition } from "@repo/contracts-zod";
 import { defaultPrimitiveRegistry } from "@repo/runtime-primitives";
-import { resolveStyleBinding } from "@repo/runtime-renderer";
+import { resolveNodeStyle } from "@repo/runtime-renderer";
 import { IconMoonStars, IconSunHigh } from "@tabler/icons-react";
 import type {
   CSSProperties,
@@ -15,6 +15,7 @@ import { Fragment, forwardRef, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { ScrollArea } from "../../components/scroll-area.js";
+import { useStudioPortalRoot } from "../../components/studio-root.js";
 import { Button } from "../../components/ui/button.js";
 import { cn } from "../../lib/cn.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
@@ -100,7 +101,8 @@ function ContainerChildList({
         insertIndex={0}
         parentId={parentNode.id}
         testId={
-          parentNode.definitionKey === "primitive.box"
+          parentNode.definitionKey === "primitive.box" ||
+          parentNode.definitionKey === "primitive.section"
             ? `drop-target-box-${parentNode.id}`
             : undefined
         }
@@ -190,7 +192,7 @@ const NodeChrome = forwardRef<HTMLDivElement, NodeChromeProps>(
         className={cn(
           "min-w-0 flex-1 rounded-[2px] outline-none transition-shadow duration-150",
           selected &&
-            "z-2 ring-1 ring-ring/60 ring-offset-0 ring-offset-transparent",
+            "z-2 ring-2 ring-ring/85 ring-offset-1 ring-offset-background",
           className,
         )}
         data-canvas-node=""
@@ -309,21 +311,9 @@ function CanvasNode({
     return null;
   }
 
-  let className: string | undefined;
-  let style: CSSProperties | undefined;
-
-  if (node.styleBindingId) {
-    const sb = composition.styleBindings[node.styleBindingId];
-    if (sb) {
-      const r = resolveStyleBinding(sb, tokenMeta);
-      if (r.classes) {
-        className = r.classes;
-      }
-      if (Object.keys(r.inlineStyle).length > 0) {
-        style = r.inlineStyle as CSSProperties;
-      }
-    }
-  }
+  const resolvedNodeStyle = resolveNodeStyle(node, composition, tokenMeta);
+  const className = resolvedNodeStyle.className;
+  const style = resolvedNodeStyle.style as CSSProperties | undefined;
 
   const selected = selectedNodeId === node.id;
   const isContainer = isContainerNode(node);
@@ -441,14 +431,7 @@ function CanvasNode({
         onSelectNode={onSelectNode}
         selected={selected}
       >
-        <div
-          className={cn(
-            "flex w-full justify-center",
-            !hasImageSource && "py-4",
-          )}
-        >
-          <div className="inline-block max-w-full">{primitive}</div>
-        </div>
+        {hasImageSource ? primitive : <div className="py-4">{primitive}</div>}
       </CanvasNodeFrame>
     );
   }
@@ -477,6 +460,7 @@ function CanvasDropRoot({
   onBackgroundPointer?: () => void;
   onSelectNode: (id: string) => void;
 }) {
+  const studioPortalRoot = useStudioPortalRoot();
   const [canvasMenu, setCanvasMenu] = useState<{
     x: number;
     y: number;
@@ -526,7 +510,7 @@ function CanvasDropRoot({
           </button>
         </div>
       </>,
-      document.body,
+      studioPortalRoot ?? document.body,
     );
 
   return (

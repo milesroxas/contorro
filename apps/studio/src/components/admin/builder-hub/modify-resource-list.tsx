@@ -38,7 +38,7 @@ type NormalizedListRow = {
   title: string;
   meta: string;
   editHref: string;
-  builderHref: string;
+  studioHref: string;
 };
 
 function normalizeRows(
@@ -62,9 +62,9 @@ function normalizeRows(
           path: `/collections/${PAGE_COMPOSITIONS_SLUG}/${encodeURIComponent(id)}`,
           relative: true,
         }),
-        builderHref: formatAdminURL({
+        studioHref: formatAdminURL({
           adminRoute,
-          path: `/builder?composition=${encodeURIComponent(id)}`,
+          path: `/studio?composition=${encodeURIComponent(id)}`,
           relative: true,
         }),
       };
@@ -86,9 +86,9 @@ function normalizeRows(
         path: `/collections/${COMPONENTS_SLUG}/${encodeURIComponent(id)}`,
         relative: true,
       }),
-      builderHref: formatAdminURL({
+      studioHref: formatAdminURL({
         adminRoute,
-        path: `/builder?composition=${encodeURIComponent(builderRowIdForComponent(id))}`,
+        path: `/studio?composition=${encodeURIComponent(builderRowIdForComponent(id))}`,
         relative: true,
       }),
     };
@@ -162,10 +162,10 @@ export function ModifyResourceList({
                 <Button asChild size="default" variant="secondary">
                   <Link
                     className="inline-flex items-center gap-2"
-                    href={row.builderHref}
+                    href={row.studioHref}
                     prefetch={false}
                   >
-                    Open builder
+                    Open Studio
                     <IconArrowRight
                       className="size-4 opacity-90 motion-safe:transition-transform motion-safe:duration-200 group-hover/row:translate-x-0.5"
                       aria-hidden

@@ -14,6 +14,13 @@ const PRIMITIVE_SPECS = [
     allowsChildren: true,
     availableInPalette: true,
     creatableInBuilder: true,
+    defaultPropValues: { tag: "div" },
+  },
+  {
+    definitionKey: "primitive.section",
+    allowsChildren: true,
+    availableInPalette: true,
+    creatableInBuilder: true,
     defaultPropValues: {},
   },
   {
@@ -53,6 +60,7 @@ const PRIMITIVE_SPECS = [
       src: "",
       alt: "",
       objectFit: "cover",
+      imageSource: "media",
     },
   },
   {
