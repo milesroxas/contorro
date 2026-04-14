@@ -225,7 +225,9 @@ function utilityClassNameForPropertyValue(
     case "flexShrink":
       return value === "0" ? "shrink-0" : "shrink";
     case "flexBasis":
-      return value === "prose" ? "basis-[var(--container-prose)]" : `basis-${value}`;
+      return value === "prose"
+        ? "basis-[var(--container-prose)]"
+        : `basis-${value}`;
     case "order":
       return `order-${value}`;
     case "padding":

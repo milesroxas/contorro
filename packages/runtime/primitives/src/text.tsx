@@ -18,5 +18,9 @@ export function Text({ node, className, style }: RuntimePrimitiveProps) {
   }
   const text = fromProps ?? fallback;
 
-  return <span className={className} style={style}>{text}</span>;
+  return (
+    <span className={className} style={style}>
+      {text}
+    </span>
+  );
 }

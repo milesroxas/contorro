@@ -16,5 +16,9 @@ export function Grid({
     ...style,
   };
 
-  return <div className={className} style={layout}>{children}</div>;
+  return (
+    <div className={className} style={layout}>
+      {children}
+    </div>
+  );
 }

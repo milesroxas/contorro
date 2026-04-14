@@ -1,11 +1,11 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
-import { IconMoonStars, IconSunHigh } from "@tabler/icons-react";
 import type { TokenMeta } from "@repo/config-tailwind";
 import type { CompositionNode, PageComposition } from "@repo/contracts-zod";
 import { defaultPrimitiveRegistry } from "@repo/runtime-primitives";
 import { resolveStyleBinding } from "@repo/runtime-renderer";
+import { IconMoonStars, IconSunHigh } from "@tabler/icons-react";
 import type {
   CSSProperties,
   ComponentPropsWithoutRef,
@@ -14,8 +14,8 @@ import type {
 import { Fragment, forwardRef, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { Button } from "../../components/ui/button.js";
 import { ScrollArea } from "../../components/scroll-area.js";
+import { Button } from "../../components/ui/button.js";
 import { cn } from "../../lib/cn.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
 import { isChildContainerPrimitive } from "../../lib/style-controls.js";
@@ -215,10 +215,12 @@ function CanvasNodeFrame({
   });
 
   const semanticTag =
-    typeof node.propValues?.tag === "string" && isTemplateShellSectionTag(node.propValues.tag)
+    typeof node.propValues?.tag === "string" &&
+    isTemplateShellSectionTag(node.propValues.tag)
       ? `${node.propValues.tag.charAt(0).toUpperCase()}${node.propValues.tag.slice(1)}`
       : null;
-  const kindLabel = semanticTag ?? getPrimitiveDisplay(node.definitionKey).label;
+  const kindLabel =
+    semanticTag ?? getPrimitiveDisplay(node.definitionKey).label;
   const layerLabel = `${kindLabel} · ${node.id.slice(0, 6)}`;
 
   return (
@@ -421,7 +423,10 @@ function CanvasNode({
         selected={selected}
       >
         <div
-          className={cn("flex w-full justify-center", !hasImageSource && "py-4")}
+          className={cn(
+            "flex w-full justify-center",
+            !hasImageSource && "py-4",
+          )}
         >
           <div className="inline-block max-w-full">{primitive}</div>
         </div>

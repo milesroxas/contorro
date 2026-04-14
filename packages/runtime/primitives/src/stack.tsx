@@ -24,5 +24,9 @@ export function Stack({
     ...style,
   };
 
-  return <div className={className} style={layout}>{children}</div>;
+  return (
+    <div className={className} style={layout}>
+      {children}
+    </div>
+  );
 }
