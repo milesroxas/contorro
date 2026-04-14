@@ -1,6 +1,7 @@
 import "dotenv/config";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { resendAdapter } from "@payloadcms/email-resend";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { parseStudioEnv } from "@repo/config-env/studio";
 import {
@@ -26,6 +27,15 @@ const studioBase = buildStudioConfig({
   secret: env.PAYLOAD_SECRET,
   serverURL: env.SITE_URL,
 });
+
+const email =
+  env.RESEND_API_KEY !== undefined
+    ? resendAdapter({
+        apiKey: env.RESEND_API_KEY,
+        defaultFromAddress: env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev",
+        defaultFromName: env.RESEND_FROM_NAME ?? "Contorro",
+      })
+    : undefined;
 
 const collectionsWithStudioAdmin = (studioBase.collections ?? []).map(
   (collection) => {
@@ -69,6 +79,7 @@ const collectionsWithStudioAdmin = (studioBase.collections ?? []).map(
 
 export default buildConfig({
   ...studioBase,
+  ...(email !== undefined ? { email } : {}),
   folders: {
     browseByFolder: true,
     collectionSpecific: true,
