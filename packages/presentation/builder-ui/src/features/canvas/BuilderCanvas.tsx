@@ -15,6 +15,7 @@ import { createPortal } from "react-dom";
 
 import { ScrollArea } from "../../components/scroll-area.js";
 import { cn } from "../../lib/cn.js";
+import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
 import { isChildContainerPrimitive } from "../../lib/style-controls.js";
 import { PrimitiveNodeContextMenu } from "../context-menu/PrimitiveNodeContextMenu.js";
 import { InsertionDropZone } from "../dnd/InsertionDropZone.js";
@@ -87,6 +88,9 @@ function ContainerChildList({
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
 }) {
+  const isTemplateShellRootParent =
+    parentNode.id === composition.rootId && isTemplateShellRoot(composition);
+
   if (childIds.length === 0) {
     return (
       <InsertionDropZone
@@ -101,6 +105,26 @@ function ContainerChildList({
       />
     );
   }
+
+  if (isTemplateShellRootParent) {
+    return (
+      <>
+        {childIds.map((cid) => (
+          <CanvasNode
+            composition={composition}
+            key={cid}
+            nodeId={cid}
+            onRemoveNode={onRemoveNode}
+            onSelectNode={onSelectNode}
+            registry={registry}
+            selectedNodeId={selectedNodeId}
+            tokenMeta={tokenMeta}
+          />
+        ))}
+      </>
+    );
+  }
+
   return (
     <>
       <InsertionDropZone
@@ -148,7 +172,7 @@ const NodeChrome = forwardRef<HTMLDivElement, NodeChromeProps>(
         className={cn(
           "min-w-0 flex-1 rounded-[2px] outline-none transition-shadow duration-150",
           selected &&
-            "z-2 ring-2 ring-ring ring-offset-2 ring-offset-background",
+            "z-2 ring-1 ring-ring/60 ring-offset-0 ring-offset-transparent",
           className,
         )}
         data-canvas-node=""
@@ -188,12 +212,18 @@ function CanvasNodeFrame({
     data: { kind: "node" as const, nodeId: node.id },
   });
 
-  const layerLabel = `${node.definitionKey.replace("primitive.", "")} · ${node.id.slice(0, 6)}`;
+  const semanticTag =
+    typeof node.propValues?.tag === "string" && isTemplateShellSectionTag(node.propValues.tag)
+      ? `${node.propValues.tag.charAt(0).toUpperCase()}${node.propValues.tag.slice(1)}`
+      : null;
+  const kindLabel = semanticTag ?? getPrimitiveDisplay(node.definitionKey).label;
+  const layerLabel = `${kindLabel} · ${node.id.slice(0, 6)}`;
 
   return (
     <div
       className={cn(
         "relative min-w-0",
+        selected && "z-20",
         isDragging && "opacity-60",
         !dragDisabled &&
           "touch-none cursor-grab select-none active:cursor-grabbing",
@@ -372,6 +402,14 @@ function CanvasNode({
   }
 
   if (node.definitionKey === "primitive.image") {
+    const imageSrc =
+      typeof node.propValues?.src === "string"
+        ? node.propValues.src
+        : typeof node.propValues?.mediaUrl === "string"
+          ? node.propValues.mediaUrl
+          : "";
+    const hasImageSource = imageSrc.trim().length > 0;
+
     return (
       <CanvasNodeFrame
         composition={composition}
@@ -380,7 +418,11 @@ function CanvasNode({
         onSelectNode={onSelectNode}
         selected={selected}
       >
-        <div className="inline-block max-w-full">{primitive}</div>
+        <div
+          className={cn("flex w-full justify-center", !hasImageSource && "py-4")}
+        >
+          <div className="inline-block max-w-full">{primitive}</div>
+        </div>
       </CanvasNodeFrame>
     );
   }

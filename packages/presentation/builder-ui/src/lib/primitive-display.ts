@@ -37,8 +37,11 @@ export function getPrimitiveDisplay(definitionKey: string): {
   if (m) {
     return m;
   }
+  const fallback = definitionKey
+    .replace("primitive.", "")
+    .replace(/([a-z])([A-Z])/g, "$1 $2");
   return {
-    label: definitionKey.replace("primitive.", ""),
+    label: `${fallback.charAt(0).toUpperCase()}${fallback.slice(1)}`,
     Icon: IconBox,
   };
 }

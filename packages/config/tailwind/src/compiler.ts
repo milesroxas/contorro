@@ -15,6 +15,15 @@ export type CompiledTokenOutput = {
 export type BuilderStyleProperty =
   | "background"
   | "color"
+  | "fontFamily"
+  | "fontSize"
+  | "fontWeight"
+  | "textAlign"
+  | "lineHeight"
+  | "letterSpacing"
+  | "textTransform"
+  | "fontStyle"
+  | "textDecorationLine"
   | "display"
   | "flexDirection"
   | "flexWrap"
@@ -48,6 +57,15 @@ export type BuilderStyleProperty =
 const BUILDER_STYLE_VARIABLES: Record<BuilderStyleProperty, string> = {
   background: "--builder-style-background",
   color: "--builder-style-color",
+  fontFamily: "--builder-style-font-family",
+  fontSize: "--builder-style-font-size",
+  fontWeight: "--builder-style-font-weight",
+  textAlign: "--builder-style-text-align",
+  lineHeight: "--builder-style-line-height",
+  letterSpacing: "--builder-style-letter-spacing",
+  textTransform: "--builder-style-text-transform",
+  fontStyle: "--builder-style-font-style",
+  textDecorationLine: "--builder-style-text-decoration-line",
   display: "--builder-style-display",
   flexDirection: "--builder-style-flex-direction",
   flexWrap: "--builder-style-flex-wrap",

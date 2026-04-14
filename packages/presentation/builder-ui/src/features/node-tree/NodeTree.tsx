@@ -156,16 +156,10 @@ function LayerSubtree({
     semanticTag === "header" ||
     semanticTag === "main" ||
     semanticTag === "footer"
-      ? semanticTag
+      ? `${semanticTag.charAt(0).toUpperCase()}${semanticTag.slice(1)}`
       : defaultKindTitle;
-  const kindSlug =
-    semanticTag === "header" ||
-    semanticTag === "main" ||
-    semanticTag === "footer"
-      ? semanticTag
-      : node.definitionKey.replace("primitive.", "");
   const shortId = node.id.slice(0, 6);
-  const layerLabel = `${kindSlug} · ${shortId}`;
+  const layerLabel = `${kindTitle} · ${shortId}`;
   const isContainer = isChildContainerPrimitive(node.definitionKey);
   const isRoot = nodeId === composition.rootId;
   const isLockedSection = isLockedTemplateShellSection(composition, nodeId);
@@ -281,6 +275,7 @@ export function NodeTree({
 }) {
   const root = composition.nodes[composition.rootId];
   const templateShell = isTemplateShellRoot(composition);
+  const rootShortId = composition.rootId.slice(0, 6);
   const topLevelIds =
     templateShell && root
       ? root.childIds.filter((childId) => composition.nodes[childId])
@@ -288,6 +283,18 @@ export function NodeTree({
 
   const tree = (
     <ul className={layerTreeRootListClass}>
+      {templateShell ? (
+        <li className="list-none m-0! p-0! pl-0!">
+          <RootLayerHeading
+            Icon={IconLayoutGrid}
+            kindTitle="body"
+            nodeId={composition.rootId}
+            onSelect={onSelect}
+            selected={selectedNodeId === composition.rootId}
+            shortId={rootShortId}
+          />
+        </li>
+      ) : null}
       {topLevelIds.map((nodeId) => (
         <LayerSubtree
           composition={composition}

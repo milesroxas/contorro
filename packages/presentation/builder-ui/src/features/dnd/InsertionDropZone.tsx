@@ -36,7 +36,7 @@ export function InsertionDropZone({
     <div
       className={cn(
         "relative shrink-0 transition-colors",
-        variant === "between" && "z-3 py-px",
+        variant === "between" && "z-3",
         variant === "empty" && "min-h-[4.5rem] flex-1 py-2",
         className,
       )}
@@ -46,10 +46,10 @@ export function InsertionDropZone({
       {variant === "between" ? (
         <div
           className={cn(
-            "pointer-events-none flex w-full items-center justify-center rounded-md border-2 border-dashed transition-all",
+            "pointer-events-none flex w-full items-center justify-center rounded-md transition-all",
             isOver
-              ? "min-h-8 border-primary bg-primary/15 py-1 shadow-md ring-2 ring-primary/30"
-              : "min-h-1 border-transparent bg-transparent py-0",
+              ? "min-h-8 border-2 border-dashed border-primary bg-primary/15 py-1 shadow-md ring-2 ring-primary/30"
+              : "h-0 min-h-0 border-0 bg-transparent py-0",
           )}
         />
       ) : (

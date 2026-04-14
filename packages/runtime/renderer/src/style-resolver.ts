@@ -28,6 +28,43 @@ const STYLE_RULES: Record<StyleProperty, StyleRule> = {
     property: "color",
     tokenClassName: "text-[var(--builder-style-color)]",
   },
+  fontFamily: {
+    property: "fontFamily",
+    tokenClassName: "[font-family:var(--builder-style-font-family)]",
+  },
+  fontSize: {
+    property: "fontSize",
+    tokenClassName: "[font-size:var(--builder-style-font-size)]",
+  },
+  fontWeight: {
+    property: "fontWeight",
+    tokenClassName: "[font-weight:var(--builder-style-font-weight)]",
+  },
+  textAlign: {
+    property: "textAlign",
+    tokenClassName: "[text-align:var(--builder-style-text-align)]",
+  },
+  lineHeight: {
+    property: "lineHeight",
+    tokenClassName: "[line-height:var(--builder-style-line-height)]",
+  },
+  letterSpacing: {
+    property: "letterSpacing",
+    tokenClassName: "[letter-spacing:var(--builder-style-letter-spacing)]",
+  },
+  textTransform: {
+    property: "textTransform",
+    tokenClassName: "[text-transform:var(--builder-style-text-transform)]",
+  },
+  fontStyle: {
+    property: "fontStyle",
+    tokenClassName: "[font-style:var(--builder-style-font-style)]",
+  },
+  textDecorationLine: {
+    property: "textDecorationLine",
+    tokenClassName:
+      "[text-decoration-line:var(--builder-style-text-decoration-line)]",
+  },
   display: {
     property: "display",
     tokenClassName: "[display:var(--builder-style-display)]",
@@ -235,6 +272,77 @@ function aspectRatioValueToCss(value: string): string | null {
   return null;
 }
 
+function fontFamilyValueToCss(value: string): string | null {
+  if (value === "sans" || value === "serif" || value === "mono") {
+    return `var(--font-${value})`;
+  }
+  return null;
+}
+
+function fontSizeValueToCss(value: string): string | null {
+  const byValue: Record<string, string> = {
+    xs: "0.75rem",
+    sm: "0.875rem",
+    base: "1rem",
+    lg: "1.125rem",
+    xl: "1.25rem",
+    "2xl": "1.5rem",
+    "3xl": "1.875rem",
+    "4xl": "2.25rem",
+    "5xl": "3rem",
+    "6xl": "3.75rem",
+    "7xl": "4.5rem",
+    "8xl": "6rem",
+    "9xl": "8rem",
+  };
+  return byValue[value] ?? null;
+}
+
+function fontWeightValueToCss(value: string): string | null {
+  const byValue: Record<string, string> = {
+    thin: "100",
+    extralight: "200",
+    light: "300",
+    normal: "400",
+    medium: "500",
+    semibold: "600",
+    bold: "700",
+    extrabold: "800",
+    black: "900",
+  };
+  return byValue[value] ?? null;
+}
+
+function lineHeightValueToCss(value: string): string | null {
+  const byValue: Record<string, string> = {
+    none: "1",
+    tight: "1.25",
+    snug: "1.375",
+    normal: "1.5",
+    relaxed: "1.625",
+    loose: "2",
+  };
+  if (value in byValue) {
+    return byValue[value];
+  }
+  if (/^\d+$/.test(value)) {
+    return `calc(var(--spacing) * ${value})`;
+  }
+  return null;
+}
+
+function letterSpacingValueToCss(value: string): string | null {
+  const byValue: Record<string, string> = {
+    tighter: "-0.05em",
+    tight: "-0.025em",
+    normal: "0em",
+    wide: "0.025em",
+    wider: "0.05em",
+    widest: "0.1em",
+  };
+  return byValue[value] ?? null;
+}
+
 function utilityClassNameForPropertyValue(
   property: StyleProperty,
   value: string,
@@ -255,6 +363,40 @@ function utilityInlineStyleForPropertyValue(
       return {
         key: "display",
         value: value === "hidden" ? "none" : value,
+      };
+    case "fontFamily": {
+      const cssValue = fontFamilyValueToCss(value);
+      return cssValue ? { key: "fontFamily", value: cssValue } : null;
+    }
+    case "fontSize": {
+      const cssValue = fontSizeValueToCss(value);
+      return cssValue ? { key: "fontSize", value: cssValue } : null;
+    }
+    case "fontWeight": {
+      const cssValue = fontWeightValueToCss(value);
+      return cssValue ? { key: "fontWeight", value: cssValue } : null;
+    }
+    case "textAlign":
+      return { key: "textAlign", value };
+    case "lineHeight": {
+      const cssValue = lineHeightValueToCss(value);
+      return cssValue ? { key: "lineHeight", value: cssValue } : null;
+    }
+    case "letterSpacing": {
+      const cssValue = letterSpacingValueToCss(value);
+      return cssValue ? { key: "letterSpacing", value: cssValue } : null;
+    }
+    case "textTransform":
+      return {
+        key: "textTransform",
+        value: value === "normal-case" ? "none" : value,
+      };
+    case "fontStyle":
+      return { key: "fontStyle", value: value === "not-italic" ? "normal" : value };
+    case "textDecorationLine":
+      return {
+        key: "textDecorationLine",
+        value: value === "no-underline" ? "none" : value,
       };
     case "flexDirection":
       return {

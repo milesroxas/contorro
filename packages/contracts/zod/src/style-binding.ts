@@ -141,6 +141,87 @@ export const DISPLAY_UTILITY_VALUES = [
   "hidden",
 ] as const;
 
+export const FONT_FAMILY_UTILITY_VALUES = ["sans", "serif", "mono"] as const;
+
+export const FONT_SIZE_UTILITY_VALUES = [
+  "xs",
+  "sm",
+  "base",
+  "lg",
+  "xl",
+  "2xl",
+  "3xl",
+  "4xl",
+  "5xl",
+  "6xl",
+  "7xl",
+  "8xl",
+  "9xl",
+] as const;
+
+export const FONT_WEIGHT_UTILITY_VALUES = [
+  "thin",
+  "extralight",
+  "light",
+  "normal",
+  "medium",
+  "semibold",
+  "bold",
+  "extrabold",
+  "black",
+] as const;
+
+export const TEXT_ALIGN_UTILITY_VALUES = [
+  "left",
+  "center",
+  "right",
+  "justify",
+  "start",
+  "end",
+] as const;
+
+export const LINE_HEIGHT_UTILITY_VALUES = [
+  "none",
+  "tight",
+  "snug",
+  "normal",
+  "relaxed",
+  "loose",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10",
+] as const;
+
+export const LETTER_SPACING_UTILITY_VALUES = [
+  "tighter",
+  "tight",
+  "normal",
+  "wide",
+  "wider",
+  "widest",
+] as const;
+
+export const TEXT_TRANSFORM_UTILITY_VALUES = [
+  "uppercase",
+  "lowercase",
+  "capitalize",
+  "normal-case",
+] as const;
+
+export const FONT_STYLE_UTILITY_VALUES = ["italic", "not-italic"] as const;
+
+export const TEXT_DECORATION_LINE_UTILITY_VALUES = [
+  "underline",
+  "overline",
+  "line-through",
+  "no-underline",
+] as const;
+
 export const FLEX_DIRECTION_UTILITY_VALUES = [
   "row",
   "row-reverse",
@@ -229,6 +310,15 @@ const MARGIN_UTILITY_PROPERTIES = new Set([
 const SIZE_UTILITY_PROPERTIES = new Set(["height"]);
 
 const UTILITY_VALUES_BY_PROPERTY = {
+  fontFamily: FONT_FAMILY_UTILITY_VALUES,
+  fontSize: FONT_SIZE_UTILITY_VALUES,
+  fontWeight: FONT_WEIGHT_UTILITY_VALUES,
+  textAlign: TEXT_ALIGN_UTILITY_VALUES,
+  lineHeight: LINE_HEIGHT_UTILITY_VALUES,
+  letterSpacing: LETTER_SPACING_UTILITY_VALUES,
+  textTransform: TEXT_TRANSFORM_UTILITY_VALUES,
+  fontStyle: FONT_STYLE_UTILITY_VALUES,
+  textDecorationLine: TEXT_DECORATION_LINE_UTILITY_VALUES,
   display: DISPLAY_UTILITY_VALUES,
   flexDirection: FLEX_DIRECTION_UTILITY_VALUES,
   flexWrap: FLEX_WRAP_UTILITY_VALUES,

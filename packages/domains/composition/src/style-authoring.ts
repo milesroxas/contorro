@@ -1,7 +1,13 @@
 import type { PageComposition, StyleProperty } from "@repo/contracts-zod";
 
 const EMPTY_STYLE_PROPERTIES: readonly StyleProperty[] = [];
-const STYLE_SECTION_ORDER = ["color", "layout", "spacing", "size"] as const;
+const STYLE_SECTION_ORDER = [
+  "color",
+  "text",
+  "layout",
+  "spacing",
+  "size",
+] as const;
 export type StyleSectionId = (typeof STYLE_SECTION_ORDER)[number];
 
 const BOX_STYLE_PROPERTIES: readonly StyleProperty[] = [
@@ -39,6 +45,15 @@ const BOX_STYLE_PROPERTIES: readonly StyleProperty[] = [
 
 const TEXT_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "color",
+  "fontFamily",
+  "fontSize",
+  "fontWeight",
+  "textAlign",
+  "lineHeight",
+  "letterSpacing",
+  "textTransform",
+  "fontStyle",
+  "textDecorationLine",
   "margin",
   "marginTop",
   "marginRight",
@@ -54,6 +69,15 @@ const TEXT_STYLE_PROPERTIES: readonly StyleProperty[] = [
 
 const HEADING_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "color",
+  "fontFamily",
+  "fontSize",
+  "fontWeight",
+  "textAlign",
+  "lineHeight",
+  "letterSpacing",
+  "textTransform",
+  "fontStyle",
+  "textDecorationLine",
   "margin",
   "marginTop",
   "marginRight",
@@ -70,6 +94,15 @@ const HEADING_STYLE_PROPERTIES: readonly StyleProperty[] = [
 const BUTTON_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "background",
   "color",
+  "fontFamily",
+  "fontSize",
+  "fontWeight",
+  "textAlign",
+  "lineHeight",
+  "letterSpacing",
+  "textTransform",
+  "fontStyle",
+  "textDecorationLine",
   "padding",
   "paddingTop",
   "paddingRight",
@@ -140,6 +173,15 @@ const LIBRARY_COMPONENT_STYLE_PROPERTIES: readonly StyleProperty[] = [
 const STYLE_PROPERTY_LABELS: Record<StyleProperty, string> = {
   background: "Background",
   color: "Text color",
+  fontFamily: "Font family",
+  fontSize: "Font size",
+  fontWeight: "Font weight",
+  textAlign: "Text align",
+  lineHeight: "Line height",
+  letterSpacing: "Letter spacing",
+  textTransform: "Text transform",
+  fontStyle: "Font style",
+  textDecorationLine: "Text decoration",
   display: "Display",
   flexDirection: "Flex direction",
   flexWrap: "Flex wrap",
@@ -174,6 +216,15 @@ const STYLE_PROPERTY_LABELS: Record<StyleProperty, string> = {
 const STYLE_PROPERTY_SECTIONS: Record<StyleProperty, StyleSectionId> = {
   background: "color",
   color: "color",
+  fontFamily: "text",
+  fontSize: "text",
+  fontWeight: "text",
+  textAlign: "text",
+  lineHeight: "text",
+  letterSpacing: "text",
+  textTransform: "text",
+  fontStyle: "text",
+  textDecorationLine: "text",
   display: "layout",
   flexDirection: "layout",
   flexWrap: "layout",

@@ -489,10 +489,10 @@ export function BuilderApp({
             <div className="h-full w-px bg-border/75 transition-colors group-hover:bg-primary/60" />
           </button>
           <BuilderPanel
-            className="min-h-0 min-w-0 rounded-md bg-muted/20 dark:bg-muted/10"
+            className="min-h-0 min-w-0 rounded-none border-0 bg-transparent shadow-none [&>div:first-child]:hidden"
             collapsible={false}
             contentClassName="flex-1"
-            title="Inspector"
+            title=""
           >
             <PropertyInspector
               composition={composition}

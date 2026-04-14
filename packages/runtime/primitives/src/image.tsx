@@ -20,27 +20,26 @@ export function Image({ node, className, style }: RuntimePrimitiveProps) {
         className={className}
         data-definition={node.definitionKey}
         style={{
+          alignItems: "center",
           aspectRatio: "16 / 9",
           background:
             "linear-gradient(135deg, color-mix(in oklab, CanvasText 8%, Canvas) 0%, color-mix(in oklab, CanvasText 4%, Canvas) 100%)",
           border: "1px dashed color-mix(in oklab, CanvasText 22%, Canvas)",
           color: "color-mix(in oklab, CanvasText 55%, Canvas)",
+          display: "flex",
+          justifyContent: "center",
+          margin: "auto",
           minHeight: "8rem",
-          minWidth: "12rem",
+          width: "100%",
           ...style,
         }}
       >
         <div
           style={{
-            alignItems: "center",
-            display: "flex",
             fontSize: "0.75rem",
             fontWeight: 600,
-            height: "100%",
-            justifyContent: "center",
             letterSpacing: "0.08em",
             textTransform: "uppercase",
-            width: "100%",
           }}
         >
           Image

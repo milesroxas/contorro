@@ -17,12 +17,12 @@ export function Heading({ node, className, style }: RuntimePrimitiveProps) {
       data-definition={node.definitionKey}
       style={style}
     >
-      {level === "h1" ? <h1>{content}</h1> : null}
-      {level === "h2" ? <h2>{content}</h2> : null}
-      {level === "h3" ? <h3>{content}</h3> : null}
-      {level === "h4" ? <h4>{content}</h4> : null}
-      {level === "h5" ? <h5>{content}</h5> : null}
-      {level === "h6" ? <h6>{content}</h6> : null}
+      {level === "h1" ? <h1 style={{ margin: 0 }}>{content}</h1> : null}
+      {level === "h2" ? <h2 style={{ margin: 0 }}>{content}</h2> : null}
+      {level === "h3" ? <h3 style={{ margin: 0 }}>{content}</h3> : null}
+      {level === "h4" ? <h4 style={{ margin: 0 }}>{content}</h4> : null}
+      {level === "h5" ? <h5 style={{ margin: 0 }}>{content}</h5> : null}
+      {level === "h6" ? <h6 style={{ margin: 0 }}>{content}</h6> : null}
     </div>
   );
 }

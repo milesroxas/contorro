@@ -38,8 +38,13 @@ import {
   IconLayoutDistributeHorizontal,
   IconLayoutGrid,
   IconLayoutList,
+  IconPhoto,
+  IconPhotoOff,
+  IconSearch,
+  IconTypography,
+  IconUpload,
 } from "@tabler/icons-react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { ScrollArea } from "../../components/scroll-area.js";
 import { Button } from "../../components/ui/button.js";
@@ -80,6 +85,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "../../components/ui/tabs.js";
+import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
 
 type MediaRecord = {
   id: number;
@@ -134,6 +140,25 @@ function utilityValueLabel(property: StyleProperty, value: string): string {
   return value;
 }
 
+function tokenSemanticLabel(tokenKey: string): string {
+  const parts = tokenKey.split(".").filter(Boolean);
+  const semanticParts =
+    parts[0] === "color" && parts.length > 1 ? parts.slice(1) : parts;
+  return semanticParts
+    .map((part) =>
+      part
+        .split("-")
+        .filter(Boolean)
+        .map((word) =>
+          /^\d+$/.test(word)
+            ? word
+            : `${word.charAt(0).toUpperCase()}${word.slice(1)}`,
+        )
+        .join(" "),
+    )
+    .join(" ");
+}
+
 function isColorStyleProperty(property: StyleProperty): boolean {
   return styleSectionForProperty(property) === "color";
 }
@@ -171,13 +196,13 @@ function ColorOptionLabel({
   style: { backgroundColor: string; opacity?: number };
 }) {
   return (
-    <span className="inline-flex items-center gap-2">
+    <span className="inline-flex items-center gap-2 leading-none">
       <span
         aria-hidden
-        className="size-3.5 shrink-0 rounded-sm border border-border/70"
+        className="size-5 shrink-0 rounded-sm border border-border/70"
         style={style}
       />
-      <span>{label}</span>
+      <span className="leading-none">{label}</span>
     </span>
   );
 }
@@ -336,7 +361,7 @@ function SpacingSidePopover({
         </button>
       </PopoverTrigger>
       <PopoverContent align="center" className="w-40 p-1.5">
-        <ScrollArea className="max-h-64 pr-1">
+        <ScrollArea className="h-64 pr-1">
           <div className="space-y-1">
             <button
               className="w-full rounded-sm px-2 py-1 text-left text-xs hover:bg-accent/50"
@@ -397,12 +422,9 @@ function SpacingBoxControl({
   const paddingEntry = readStyleProperty(composition, node, "padding");
 
   return (
-    <div className="border-y border-border/70 py-3">
-      <div className="mb-1 text-[10px] font-semibold tracking-wide text-muted-foreground">
-        MARGIN
-      </div>
-      <div className="relative rounded-md border border-border/70 bg-background/50 p-6">
-        <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
+    <div>
+      <div className="relative mx-auto w-full min-h-[15rem] rounded-md border border-border/70 bg-background/50 p-4">
+        <div className="absolute left-1/2 top-2 -translate-x-1/2">
           <SpacingSidePopover
             disabled={!availableProperties.has("marginTop")}
             onNodeStyleEntry={onNodeStyleEntry}
@@ -413,7 +435,7 @@ function SpacingBoxControl({
             sideProperty="marginTop"
           />
         </div>
-        <div className="absolute right-1 top-1/2 -translate-y-1/2">
+        <div className="absolute right-2 top-1/2 -translate-y-1/2">
           <SpacingSidePopover
             disabled={!availableProperties.has("marginRight")}
             onNodeStyleEntry={onNodeStyleEntry}
@@ -424,7 +446,7 @@ function SpacingBoxControl({
             sideProperty="marginRight"
           />
         </div>
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
           <SpacingSidePopover
             disabled={!availableProperties.has("marginBottom")}
             onNodeStyleEntry={onNodeStyleEntry}
@@ -435,7 +457,7 @@ function SpacingBoxControl({
             sideProperty="marginBottom"
           />
         </div>
-        <div className="absolute left-1 top-1/2 -translate-y-1/2">
+        <div className="absolute left-2 top-1/2 -translate-y-1/2">
           <SpacingSidePopover
             disabled={!availableProperties.has("marginLeft")}
             onNodeStyleEntry={onNodeStyleEntry}
@@ -446,11 +468,8 @@ function SpacingBoxControl({
             sideProperty="marginLeft"
           />
         </div>
-        <div className="mb-1 text-[10px] font-semibold tracking-wide text-muted-foreground">
-          PADDING
-        </div>
-        <div className="relative rounded-sm border border-border/70 bg-muted/15 p-5">
-          <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
+        <div className="relative mx-10 my-8 grid min-h-36 place-items-center rounded-sm border border-border/70 bg-muted/15 px-5 py-6">
+          <div className="absolute left-1/2 top-2 -translate-x-1/2">
             <SpacingSidePopover
               disabled={!availableProperties.has("paddingTop")}
               onNodeStyleEntry={onNodeStyleEntry}
@@ -461,7 +480,7 @@ function SpacingBoxControl({
               sideProperty="paddingTop"
             />
           </div>
-          <div className="absolute right-1 top-1/2 -translate-y-1/2">
+          <div className="absolute right-5 top-1/2 -translate-y-1/2">
             <SpacingSidePopover
               disabled={!availableProperties.has("paddingRight")}
               onNodeStyleEntry={onNodeStyleEntry}
@@ -472,7 +491,7 @@ function SpacingBoxControl({
               sideProperty="paddingRight"
             />
           </div>
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
             <SpacingSidePopover
               disabled={!availableProperties.has("paddingBottom")}
               onNodeStyleEntry={onNodeStyleEntry}
@@ -483,7 +502,7 @@ function SpacingBoxControl({
               sideProperty="paddingBottom"
             />
           </div>
-          <div className="absolute left-1 top-1/2 -translate-y-1/2">
+          <div className="absolute left-5 top-1/2 -translate-y-1/2">
             <SpacingSidePopover
               disabled={!availableProperties.has("paddingLeft")}
               onNodeStyleEntry={onNodeStyleEntry}
@@ -494,7 +513,6 @@ function SpacingBoxControl({
               sideProperty="paddingLeft"
             />
           </div>
-          <div className="h-8 rounded-sm bg-muted/40" />
         </div>
       </div>
     </div>
@@ -519,13 +537,14 @@ function FlexIconStyleValueControl({
 
   return (
     <div className="space-y-1.5">
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="flex flex-wrap gap-1.5">
         <button
           aria-label={`Unset ${stylePropertyLabel(property)}`}
-          className={`inline-flex h-8 items-center justify-center rounded-md border text-xs ${
+          aria-pressed={!valueEntry}
+          className={`inline-flex size-10 items-center justify-center rounded-md text-xs font-medium transition-colors ${
             !valueEntry
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-border/70 hover:bg-accent/40"
+              ? "bg-primary/12 text-primary"
+              : "bg-background hover:bg-accent/40"
           }`}
           onClick={() => onNodeStyleEntry(property, null)}
           title="Unset"
@@ -538,10 +557,11 @@ function FlexIconStyleValueControl({
           return (
             <button
               aria-label={meta.label}
-              className={`inline-flex h-8 items-center justify-center rounded-md border ${
+              aria-pressed={selected}
+              className={`inline-flex size-10 items-center justify-center rounded-md transition-colors ${
                 selected
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border/70 hover:bg-accent/40"
+                  ? "bg-primary/12 text-primary"
+                  : "bg-background hover:bg-accent/40"
               }`}
               key={value}
               onClick={() =>
@@ -554,7 +574,7 @@ function FlexIconStyleValueControl({
               title={meta.label}
               type="button"
             >
-              <meta.Icon aria-hidden className="size-4" stroke={1.8} />
+              <meta.Icon aria-hidden className="size-5" stroke={1.8} />
             </button>
           );
         })}
@@ -658,7 +678,7 @@ function DimensionStyleValueControl({
   const triggerText = valueEntry
     ? valueEntry.type === "utility"
       ? dimensionValueLabel(property, valueEntry.value)
-      : `Token: ${valueEntry.token}`
+      : tokenSemanticLabel(valueEntry.token)
     : "Unset (default)";
   const groups = dimensionUtilityGroups(utilityValues);
 
@@ -666,7 +686,7 @@ function DimensionStyleValueControl({
     <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger asChild>
         <Button
-          className="h-8 w-full justify-between rounded-md border border-input bg-background px-2 text-left text-sm font-normal hover:bg-accent/30"
+          className="h-10 w-full justify-between rounded-md border border-input bg-background px-2 text-left text-sm font-normal hover:bg-accent/30"
           type="button"
           variant="ghost"
         >
@@ -674,125 +694,253 @@ function DimensionStyleValueControl({
           <IconChevronDown aria-hidden className="size-3.5 opacity-70" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-80 space-y-2 p-2">
-        <button
-          className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent/60"
-          onClick={() => {
-            onNodeStyleEntry(property, null);
-            setOpen(false);
-          }}
-          type="button"
-        >
-          <span>Unset (default)</span>
-          {!valueEntry ? (
-            <IconChevronRight aria-hidden className="size-3.5" />
-          ) : null}
-        </button>
-        {groups.map((group) => (
-          <Collapsible
-            defaultOpen={
-              group.id === "common" ||
-              group.values.includes(selectedUtility ?? "")
-            }
-            key={group.id}
-          >
-            <CollapsibleTrigger asChild>
-              <button
-                className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-xs font-semibold text-muted-foreground hover:bg-accent/40"
-                type="button"
+      <PopoverContent align="start" className="w-80 p-2">
+        <ScrollArea className="h-[min(20rem,calc(100vh-12rem))]">
+          <div className="space-y-2 pr-2">
+            <button
+              className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent/60"
+              onClick={() => {
+                onNodeStyleEntry(property, null);
+                setOpen(false);
+              }}
+              type="button"
+            >
+              <span>Unset (default)</span>
+              {!valueEntry ? (
+                <IconChevronRight aria-hidden className="size-3.5" />
+              ) : null}
+            </button>
+            {groups.map((group) => (
+              <Collapsible
+                defaultOpen={
+                  group.id === "common" ||
+                  group.values.includes(selectedUtility ?? "")
+                }
+                key={group.id}
               >
-                <span>{group.label}</span>
-                <IconChevronDown className="size-3.5 transition-transform data-[state=open]:rotate-180" />
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-1">
-              <div className="grid grid-cols-2 gap-1">
-                {group.values.map((value) => {
+                <CollapsibleTrigger asChild>
+                  <button
+                    className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-xs font-semibold text-muted-foreground hover:bg-accent/40"
+                    type="button"
+                  >
+                    <span>{group.label}</span>
+                    <IconChevronDown className="size-3.5 transition-transform data-[state=open]:rotate-180" />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-1">
+                  <div className="grid grid-cols-2 gap-1">
+                    {group.values.map((value) => {
+                      const selected = selectedUtility === value;
+                      return (
+                        <button
+                          className={`rounded-sm border px-2 py-1 text-left text-xs ${
+                            selected
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border/70 hover:bg-accent/40"
+                          }`}
+                          key={value}
+                          onClick={() => {
+                            onNodeStyleEntry(property, {
+                              type: "utility",
+                              property,
+                              value,
+                            });
+                            setOpen(false);
+                          }}
+                          type="button"
+                        >
+                          {dimensionValueLabel(property, value)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
+            {visibleTokens.length > 0 ? (
+              <Collapsible defaultOpen={Boolean(selectedToken)}>
+                <CollapsibleTrigger asChild>
+                  <button
+                    className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-xs font-semibold text-muted-foreground hover:bg-accent/40"
+                    type="button"
+                  >
+                    <span>Tokens</span>
+                    <IconChevronDown className="size-3.5 transition-transform data-[state=open]:rotate-180" />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-1">
+                  <div className="space-y-1">
+                    {visibleTokens.map((token) => {
+                      const selected = selectedToken === token.key;
+                      return (
+                        <button
+                          className={`w-full rounded-sm border px-2 py-1 text-left text-xs ${
+                            selected
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border/70 hover:bg-accent/40"
+                          }`}
+                          key={token.key}
+                          onClick={() => {
+                            onNodeStyleEntry(property, {
+                              type: "token",
+                              property,
+                              token: token.key,
+                            });
+                            setOpen(false);
+                          }}
+                          type="button"
+                        >
+                          {tokenSemanticLabel(token.key)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            ) : null}
+          </div>
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+const DISPLAY_QUICK_OPTIONS: readonly {
+  id: "block" | "flex" | "grid" | "none";
+  value: "block" | "flex" | "grid" | "hidden";
+  label: string;
+  Icon: Icon;
+}[] = [
+  { id: "block", value: "block", label: "Block", Icon: IconLayoutList },
+  { id: "flex", value: "flex", label: "Flex", Icon: IconArrowsHorizontal },
+  { id: "grid", value: "grid", label: "Grid", Icon: IconLayoutGrid },
+  { id: "none", value: "hidden", label: "None", Icon: IconBox },
+];
+
+function DisplayStyleValueControl({
+  valueEntry,
+  onNodeStyleEntry,
+}: {
+  valueEntry: StylePropertyEntry | undefined;
+  onNodeStyleEntry: (
+    property: StyleProperty,
+    entry: StylePropertyEntry | null,
+  ) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selectedUtility =
+    valueEntry?.type === "utility" ? valueEntry.value : undefined;
+  const quickValues = new Set<string>(
+    DISPLAY_QUICK_OPTIONS.map((option) => option.value),
+  );
+  const overflowUtilityValues = utilityValuesForStyleProperty("display").filter(
+    (value) => !quickValues.has(value),
+  );
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1.5">
+        {DISPLAY_QUICK_OPTIONS.map((option) => {
+          const selected = selectedUtility === option.value;
+          return (
+            <button
+              aria-label={option.label}
+              aria-pressed={selected}
+              className={`inline-flex size-10 items-center justify-center rounded-md transition-colors ${
+                selected
+                  ? "bg-primary/12 text-primary"
+                  : "bg-background hover:bg-accent/40"
+              }`}
+              key={option.id}
+              onClick={() =>
+                onNodeStyleEntry("display", {
+                  type: "utility",
+                  property: "display",
+                  value: option.value,
+                })
+              }
+              title={option.label}
+              type="button"
+            >
+              <option.Icon aria-hidden className="size-5" stroke={1.8} />
+            </button>
+          );
+        })}
+        <Popover onOpenChange={setOpen} open={open}>
+          <PopoverTrigger asChild>
+            <button
+              aria-label="More display options"
+              className="inline-flex size-10 items-center justify-center rounded-md bg-background text-sm font-semibold hover:bg-accent/40"
+              title="More display options"
+              type="button"
+            >
+              ...
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-48 p-1.5">
+            <ScrollArea className="h-64 pr-1">
+              <div className="space-y-1">
+                <button
+                  className={`w-full rounded-sm px-2 py-1 text-left text-xs ${
+                    !valueEntry
+                      ? "bg-primary/10 text-primary"
+                      : "hover:bg-accent/50"
+                  }`}
+                  onClick={() => {
+                    onNodeStyleEntry("display", null);
+                    setOpen(false);
+                  }}
+                  type="button"
+                >
+                  Unset (default)
+                </button>
+                {overflowUtilityValues.map((value) => {
                   const selected = selectedUtility === value;
                   return (
                     <button
-                      className={`rounded-sm border px-2 py-1 text-left text-xs ${
+                      className={`w-full rounded-sm px-2 py-1 text-left text-xs ${
                         selected
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border/70 hover:bg-accent/40"
+                          ? "bg-primary/10 text-primary"
+                          : "hover:bg-accent/50"
                       }`}
                       key={value}
                       onClick={() => {
-                        onNodeStyleEntry(property, {
+                        onNodeStyleEntry("display", {
                           type: "utility",
-                          property,
+                          property: "display",
                           value,
                         });
                         setOpen(false);
                       }}
                       type="button"
                     >
-                      {dimensionValueLabel(property, value)}
+                      {utilityValueLabel("display", value)}
                     </button>
                   );
                 })}
               </div>
-            </CollapsibleContent>
-          </Collapsible>
-        ))}
-        {visibleTokens.length > 0 ? (
-          <Collapsible defaultOpen={Boolean(selectedToken)}>
-            <CollapsibleTrigger asChild>
-              <button
-                className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-xs font-semibold text-muted-foreground hover:bg-accent/40"
-                type="button"
-              >
-                <span>Tokens</span>
-                <IconChevronDown className="size-3.5 transition-transform data-[state=open]:rotate-180" />
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-1">
-              <ScrollArea className="max-h-40 pr-1">
-                <div className="space-y-1">
-                  {visibleTokens.map((token) => {
-                    const selected = selectedToken === token.key;
-                    return (
-                      <button
-                        className={`w-full rounded-sm border px-2 py-1 text-left text-xs ${
-                          selected
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border/70 hover:bg-accent/40"
-                        }`}
-                        key={token.key}
-                        onClick={() => {
-                          onNodeStyleEntry(property, {
-                            type: "token",
-                            property,
-                            token: token.key,
-                          });
-                          setOpen(false);
-                        }}
-                        type="button"
-                      >
-                        {token.key}
-                      </button>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-            </CollapsibleContent>
-          </Collapsible>
-        ) : null}
-      </PopoverContent>
-    </Popover>
+            </ScrollArea>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
   );
 }
 
 const SECTION_META: Record<
   StyleSectionId,
   {
-    label: "Color" | "Layout" | "Spacing" | "Size";
+    label: "Color" | "Text" | "Layout" | "Spacing" | "Size";
     Icon: Icon;
   }
 > = {
   color: {
     label: "Color",
     Icon: IconBox,
+  },
+  text: {
+    label: "Text",
+    Icon: IconTypography,
   },
   layout: {
     label: "Layout",
@@ -810,18 +958,22 @@ const SECTION_META: Record<
 
 const STYLE_SECTIONS: readonly {
   id: StyleSectionId;
-  label: "Color" | "Layout" | "Spacing" | "Size";
+  label: "Color" | "Text" | "Layout" | "Spacing" | "Size";
   Icon: Icon;
 }[] = [
-  { id: "color", ...SECTION_META.color },
   { id: "layout", ...SECTION_META.layout },
   { id: "spacing", ...SECTION_META.spacing },
   { id: "size", ...SECTION_META.size },
+  { id: "color", ...SECTION_META.color },
+  { id: "text", ...SECTION_META.text },
 ];
 
 const PRIMARY_STYLE_PROPERTIES = new Set<StyleProperty>([
   "background",
   "color",
+  "fontSize",
+  "fontWeight",
+  "textAlign",
   "display",
   "flexDirection",
   "justifyContent",
@@ -835,6 +987,13 @@ const PRIMARY_STYLE_PROPERTIES = new Set<StyleProperty>([
 ]);
 
 const COLOR_CATEGORIES = new Set(["color"]);
+const TYPOGRAPHY_CATEGORIES = new Set([
+  "typography",
+  "type",
+  "font",
+  "fonts",
+  "text",
+]);
 const SPACE_SIZE_CATEGORIES = new Set([
   "spacing",
   "space",
@@ -851,8 +1010,12 @@ function tokenMatchesProperty(
   property: StyleProperty,
 ): boolean {
   const category = token.category.trim().toLowerCase();
-  if (styleSectionForProperty(property) === "color") {
+  const section = styleSectionForProperty(property);
+  if (section === "color") {
     return COLOR_CATEGORIES.has(category) || token.key.startsWith("color.");
+  }
+  if (section === "text") {
+    return false;
   }
   return (
     SPACE_SIZE_CATEGORIES.has(category) ||
@@ -918,11 +1081,19 @@ function StyleValueSelect({
   const utilityValues = utilityValuesForStyleProperty(property);
   const currentValue = entrySelectValue(valueEntry);
   return (
-    <div className="block space-y-1.5" key={property}>
-      <Label className="text-xs font-medium" htmlFor={`style-${property}`}>
+    <div className="block" key={property}>
+      <Label
+        className="mb-2 block text-xs font-medium text-muted-foreground"
+        htmlFor={`style-${property}`}
+      >
         {stylePropertyLabel(property)}
       </Label>
-      {isDimensionProperty(property) ? (
+      {property === "display" ? (
+        <DisplayStyleValueControl
+          onNodeStyleEntry={onNodeStyleEntry}
+          valueEntry={valueEntry}
+        />
+      ) : isDimensionProperty(property) ? (
         <DimensionStyleValueControl
           onNodeStyleEntry={onNodeStyleEntry}
           property={property}
@@ -965,7 +1136,13 @@ function StyleValueSelect({
           <SelectTrigger id={`style-${property}`}>
             <SelectValue placeholder="Unset (default)" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent
+            className={
+              isColorStyleProperty(property)
+                ? "**:data-[slot=select-item]:pl-2 [&_[data-slot=select-item]>span.absolute]:hidden"
+                : undefined
+            }
+          >
             <SelectItem value={NONE_SELECT_VALUE}>Unset (default)</SelectItem>
             {utilityValues.length > 0 ? (
               <SelectGroup>
@@ -984,11 +1161,11 @@ function StyleValueSelect({
                   <SelectItem key={token.key} value={`token:${token.key}`}>
                     {isColorStyleProperty(property) ? (
                       <ColorOptionLabel
-                        label={token.key}
+                        label={tokenSemanticLabel(token.key)}
                         style={{ backgroundColor: `var(${token.cssVar})` }}
                       />
                     ) : (
-                      token.key
+                      tokenSemanticLabel(token.key)
                     )}
                   </SelectItem>
                 ))}
@@ -999,28 +1176,6 @@ function StyleValueSelect({
       )}
     </div>
   );
-}
-
-async function fetchMediaRecordById(id: number): Promise<MediaRecord> {
-  const res = await fetch(`/api/media/${id}?depth=0`, {
-    credentials: "include",
-  });
-  if (!res.ok) {
-    throw new Error(`Failed to load media (${res.status})`);
-  }
-  const json = (await res.json()) as {
-    id?: unknown;
-    url?: unknown;
-    alt?: unknown;
-  };
-  if (typeof json.id !== "number" || typeof json.url !== "string") {
-    throw new Error("Invalid media response");
-  }
-  return {
-    id: json.id,
-    url: json.url,
-    alt: typeof json.alt === "string" ? json.alt : "",
-  };
 }
 
 async function fetchMediaRecords(): Promise<MediaListItem[]> {
@@ -1185,7 +1340,7 @@ function TextPrimitiveInspector({
 
   return (
     <>
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor={contentId}>Content</Label>
         <Input
           data-testid="inspector-text-content"
@@ -1219,8 +1374,8 @@ function TextPrimitiveInspector({
         </Label>
       </div>
       {exposeToEditors && fieldBound ? (
-        <div className="space-y-3 rounded-md border border-border/60 p-3">
-          <div className="space-y-2">
+        <div className="space-y-4 rounded-md border border-border/60 p-4">
+          <div className="space-y-3">
             <Label
               className="text-sm text-muted-foreground"
               htmlFor={slotNameId}
@@ -1252,7 +1407,7 @@ function TextPrimitiveInspector({
               value={nameDraft}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label
               className="text-sm text-muted-foreground"
               htmlFor={slotLabelId}
@@ -1281,7 +1436,7 @@ function TextPrimitiveInspector({
               value={labelDraft}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label
               className="text-sm text-muted-foreground"
               htmlFor={slotTypeId}
@@ -1331,7 +1486,7 @@ function TextPrimitiveInspector({
               Required
             </Label>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label
               className="text-sm text-muted-foreground"
               htmlFor={slotDefaultId}
@@ -1422,8 +1577,8 @@ function HeadingPrimitiveInspector({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-2">
+    <div className="space-y-5">
+      <div className="space-y-3">
         <Label htmlFor={`${baseId}-heading-content`}>Content</Label>
         <Input
           id={`${baseId}-heading-content`}
@@ -1432,7 +1587,7 @@ function HeadingPrimitiveInspector({
           value={content}
         />
       </div>
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor={`${baseId}-heading-level`}>Heading level</Label>
         <Select
           onValueChange={(value) => patchNodeProps({ level: value })}
@@ -1478,8 +1633,8 @@ function HeadingPrimitiveInspector({
         </Label>
       </div>
       {exposeToEditors && fieldBound ? (
-        <div className="space-y-3 rounded-md border border-border/60 p-3">
-          <div className="space-y-2">
+        <div className="space-y-4 rounded-md border border-border/60 p-4">
+          <div className="space-y-3">
             <Label
               className="text-sm text-muted-foreground"
               htmlFor={`${baseId}-heading-slot-name`}
@@ -1507,7 +1662,7 @@ function HeadingPrimitiveInspector({
               value={nameDraft}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label
               className="text-sm text-muted-foreground"
               htmlFor={`${baseId}-heading-slot-label`}
@@ -1533,7 +1688,7 @@ function HeadingPrimitiveInspector({
               value={labelDraft}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label
               className="text-sm text-muted-foreground"
               htmlFor={`${baseId}-heading-slot-type`}
@@ -1583,7 +1738,7 @@ function HeadingPrimitiveInspector({
               Required
             </Label>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label
               className="text-sm text-muted-foreground"
               htmlFor={`${baseId}-heading-slot-default`}
@@ -1669,8 +1824,8 @@ function ButtonPrimitiveInspector({
   }, [collectionSlug, entryPickerOpen]);
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-2">
+    <div className="space-y-4">
+      <div className="space-y-3">
         <Label htmlFor={`${baseId}-button-label`}>Label</Label>
         <Input
           id={`${baseId}-button-label`}
@@ -1679,7 +1834,7 @@ function ButtonPrimitiveInspector({
           value={label}
         />
       </div>
-      <div className="space-y-2">
+      <div className="space-y-3">
         <Label htmlFor={`${baseId}-button-link-type`}>Link source</Label>
         <Select
           onValueChange={(value) =>
@@ -1701,7 +1856,7 @@ function ButtonPrimitiveInspector({
         </Select>
       </div>
       {linkType === "url" ? (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <Label htmlFor={`${baseId}-button-url`}>URL</Label>
           <Input
             id={`${baseId}-button-url`}
@@ -1713,7 +1868,7 @@ function ButtonPrimitiveInspector({
         </div>
       ) : (
         <>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label htmlFor={`${baseId}-button-collection`}>
               Collection slug
             </Label>
@@ -1729,7 +1884,7 @@ function ButtonPrimitiveInspector({
               value={collectionSlug}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label htmlFor={`${baseId}-button-entry`}>
               Entry slug (optional)
             </Label>
@@ -1765,39 +1920,43 @@ function ButtonPrimitiveInspector({
                       Pick an entry and we will set its slug.
                     </SheetDescription>
                   </SheetHeader>
-                  <div className="space-y-2 overflow-y-auto">
-                    {entryLoading ? (
-                      <p className="text-sm text-muted-foreground">Loading…</p>
-                    ) : entryLoadError ? (
-                      <p className="text-sm text-red-500">{entryLoadError}</p>
-                    ) : entries.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        No entries found.
-                      </p>
-                    ) : (
-                      entries.map((entry) => (
-                        <button
-                          className="w-full rounded-md border border-border/60 p-2 text-left hover:bg-accent/50"
-                          key={`${entry.id}-${entry.slug}`}
-                          onClick={() => {
-                            patchNodeProps({
-                              collectionSlug: collectionSlug.trim(),
-                              entrySlug: entry.slug,
-                            });
-                            setEntryPickerOpen(false);
-                          }}
-                          type="button"
-                        >
-                          <div className="text-sm font-medium">
-                            {entry.label}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {entry.slug}
-                          </div>
-                        </button>
-                      ))
-                    )}
-                  </div>
+                  <ScrollArea className="min-h-0 flex-1">
+                    <div className="space-y-2 py-1 pr-2">
+                      {entryLoading ? (
+                        <p className="text-sm text-muted-foreground">
+                          Loading…
+                        </p>
+                      ) : entryLoadError ? (
+                        <p className="text-sm text-red-500">{entryLoadError}</p>
+                      ) : entries.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          No entries found.
+                        </p>
+                      ) : (
+                        entries.map((entry) => (
+                          <button
+                            className="w-full rounded-md border border-border/60 p-2 text-left hover:bg-accent/50"
+                            key={`${entry.id}-${entry.slug}`}
+                            onClick={() => {
+                              patchNodeProps({
+                                collectionSlug: collectionSlug.trim(),
+                                entrySlug: entry.slug,
+                              });
+                              setEntryPickerOpen(false);
+                            }}
+                            type="button"
+                          >
+                            <div className="text-sm font-medium">
+                              {entry.label}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {entry.slug}
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </ScrollArea>
                   <div className="pt-3">
                     <SheetClose asChild>
                       <Button size="sm" type="button" variant="ghost">
@@ -1842,8 +2001,7 @@ function ImagePrimitiveInspector({
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
   const baseId = useId();
-  const imageSource =
-    node.propValues?.imageSource === "media" ? "media" : "url";
+  const imageSource = node.propValues?.imageSource === "url" ? "url" : "media";
   const src =
     typeof node.propValues?.src === "string" ? node.propValues.src : "";
   const alt =
@@ -1855,9 +2013,7 @@ function ImagePrimitiveInspector({
           /^\d+$/.test(node.propValues.mediaId)
         ? Number.parseInt(node.propValues.mediaId, 10)
         : "";
-  const [mediaIdDraft, setMediaIdDraft] = useState(
-    mediaId === "" ? "" : String(mediaId),
-  );
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
@@ -1866,10 +2022,6 @@ function ImagePrimitiveInspector({
   const [mediaDocs, setMediaDocs] = useState<MediaListItem[]>([]);
   const [nameDraft, setNameDraft] = useState(() => fieldBound?.name ?? "");
   const [labelDraft, setLabelDraft] = useState(() => fieldBound?.label ?? "");
-
-  useEffect(() => {
-    setMediaIdDraft(mediaId === "" ? "" : String(mediaId));
-  }, [mediaId]);
 
   useEffect(() => {
     if (!exposeToEditors) {
@@ -1914,33 +2066,9 @@ function ImagePrimitiveInspector({
     setNodeEditorFieldBinding(parsed.data);
   }
 
-  async function syncMediaById(rawId: string) {
-    const id = Number.parseInt(rawId, 10);
-    if (!Number.isFinite(id)) {
-      patchNodeProps({ mediaId: "", src: "", imageSource: "media" });
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    try {
-      const media = await fetchMediaRecordById(id);
-      patchNodeProps({
-        imageSource: "media",
-        mediaId: media.id,
-        src: media.url,
-        mediaUrl: media.url,
-        alt: media.alt || alt,
-      });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to resolve media");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
-    <div className="space-y-3">
-      <div className="space-y-2">
+    <div className="space-y-6">
+      <div className="space-y-3">
         <Label htmlFor={`${baseId}-image-source`}>Source</Label>
         <Select
           onValueChange={(value) =>
@@ -1960,7 +2088,7 @@ function ImagePrimitiveInspector({
         </Select>
       </div>
       {imageSource === "url" ? (
-        <div className="space-y-2">
+        <div className="space-y-3 border-t border-border/60 pt-5">
           <Label htmlFor={`${baseId}-image-url`}>Image URL</Label>
           <Input
             id={`${baseId}-image-url`}
@@ -1976,137 +2104,183 @@ function ImagePrimitiveInspector({
           />
         </div>
       ) : (
-        <div className="space-y-2">
-          <Label htmlFor={`${baseId}-media-id`}>Media ID</Label>
-          <div className="flex items-center gap-2">
-            <Input
-              id={`${baseId}-media-id`}
-              inputMode="numeric"
-              onBlur={(e) => {
-                void syncMediaById(e.target.value.trim());
-              }}
-              onChange={(e) => {
-                setMediaIdDraft(e.target.value);
-                setError(null);
-              }}
-              placeholder="123"
-              type="text"
-              value={mediaIdDraft}
-            />
-            <Sheet onOpenChange={setMediaPickerOpen} open={mediaPickerOpen}>
-              <SheetTrigger asChild>
-                <Button size="sm" type="button" variant="ghost">
-                  Browse
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Select media</SheetTitle>
-                  <SheetDescription>
-                    Pick an existing Payload media record.
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="space-y-2 overflow-y-auto">
-                  {mediaLoading ? (
-                    <p className="text-sm text-muted-foreground">Loading…</p>
-                  ) : mediaLoadError ? (
-                    <p className="text-sm text-red-500">{mediaLoadError}</p>
-                  ) : mediaDocs.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No media entries found.
-                    </p>
-                  ) : (
-                    mediaDocs.map((media) => (
-                      <button
-                        className="w-full rounded-md border border-border/60 p-2 text-left hover:bg-accent/50"
-                        key={media.id}
-                        onClick={() => {
-                          patchNodeProps({
-                            imageSource: "media",
-                            mediaId: media.id,
-                            src: media.url,
-                            mediaUrl: media.url,
-                            alt: media.alt || alt,
-                          });
-                          setMediaPickerOpen(false);
-                        }}
-                        type="button"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="size-12 shrink-0 overflow-hidden rounded-sm border border-border/60 bg-muted/30">
-                            <img
-                              alt={
-                                media.alt ||
-                                media.filename ||
-                                `Media ${media.id}`
-                              }
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                              src={media.url}
-                            />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="truncate text-sm font-medium">
-                              {media.alt || media.filename || media.url}
+        <div className="space-y-5 border-t border-border/60 pt-5">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <Label>Selected image</Label>
+              <Sheet onOpenChange={setMediaPickerOpen} open={mediaPickerOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    className="border border-border/70"
+                    size="sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <IconSearch aria-hidden className="mr-1.5 size-4" />
+                    Browse
+                  </Button>
+                </SheetTrigger>
+                <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Select media</SheetTitle>
+                    <SheetDescription>
+                      Pick an existing Payload media record.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <ScrollArea className="min-h-0 flex-1">
+                    <div className="space-y-2 py-1 pr-2">
+                      {mediaLoading ? (
+                        <p className="text-sm text-muted-foreground">
+                          Loading…
+                        </p>
+                      ) : mediaLoadError ? (
+                        <p className="text-sm text-red-500">{mediaLoadError}</p>
+                      ) : mediaDocs.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          No media entries found.
+                        </p>
+                      ) : (
+                        mediaDocs.map((media) => (
+                          <button
+                            className="w-full rounded-md border border-border/60 p-2 text-left hover:bg-accent/50"
+                            key={media.id}
+                            onClick={() => {
+                              patchNodeProps({
+                                imageSource: "media",
+                                mediaId: media.id,
+                                src: media.url,
+                                mediaUrl: media.url,
+                                alt: media.alt || alt,
+                              });
+                              setMediaPickerOpen(false);
+                            }}
+                            type="button"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="size-12 shrink-0 overflow-hidden rounded-sm border border-border/60 bg-muted/30">
+                                <img
+                                  alt={
+                                    media.alt ||
+                                    media.filename ||
+                                    `Media ${media.id}`
+                                  }
+                                  className="h-full w-full object-cover"
+                                  loading="lazy"
+                                  src={media.url}
+                                />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="truncate text-sm font-medium">
+                                  {media.alt || media.filename || media.url}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {media.filename || "Payload media"}
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              ID {media.id}
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    ))
-                  )}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </ScrollArea>
+                  <div className="pt-3">
+                    <SheetClose asChild>
+                      <Button size="sm" type="button" variant="ghost">
+                        Close
+                      </Button>
+                    </SheetClose>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+            <div className="overflow-hidden rounded-md border border-border/70 bg-muted/20">
+              {src ? (
+                <div className="space-y-2 p-2">
+                  <div className="aspect-4/3 overflow-hidden rounded-sm border border-border/70 bg-background">
+                    <img
+                      alt={alt || "Selected image"}
+                      className="h-full w-full object-cover"
+                      src={src}
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <IconPhoto aria-hidden className="size-3.5" />
+                    <span className="truncate">
+                      {alt || `Media ${mediaId || "selected"}`}
+                    </span>
+                  </div>
                 </div>
-                <div className="pt-3">
-                  <SheetClose asChild>
-                    <Button size="sm" type="button" variant="ghost">
-                      Close
-                    </Button>
-                  </SheetClose>
+              ) : (
+                <div className="flex aspect-4/3 flex-col items-center justify-center gap-2 p-4 text-center text-muted-foreground">
+                  <IconPhotoOff aria-hidden className="size-8" />
+                  <p className="text-sm font-medium">No image selected</p>
+                  <p className="text-xs">Browse media or upload a new image</p>
                 </div>
-              </SheetContent>
-            </Sheet>
+              )}
+            </div>
           </div>
-          <Label htmlFor={`${baseId}-media-upload`}>Upload new image</Label>
-          <Input
-            accept="image/*"
-            disabled={busy}
-            id={`${baseId}-media-upload`}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (!file) {
-                return;
-              }
-              setBusy(true);
-              setError(null);
-              void uploadMediaFile(file, alt)
-                .then((media) => {
-                  patchNodeProps({
-                    imageSource: "media",
-                    mediaId: media.id,
-                    src: media.url,
-                    mediaUrl: media.url,
-                    alt: media.alt || alt || file.name,
+          <div className="space-y-3">
+            <Label htmlFor={`${baseId}-media-upload`}>Upload new image</Label>
+            <Input
+              accept="image/*"
+              className="sr-only"
+              disabled={busy}
+              id={`${baseId}-media-upload`}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) {
+                  return;
+                }
+                setBusy(true);
+                setError(null);
+                void uploadMediaFile(file, alt)
+                  .then((media) => {
+                    patchNodeProps({
+                      imageSource: "media",
+                      mediaId: media.id,
+                      src: media.url,
+                      mediaUrl: media.url,
+                      alt: media.alt || alt || file.name,
+                    });
+                  })
+                  .catch((uploadErr) => {
+                    setError(
+                      uploadErr instanceof Error
+                        ? uploadErr.message
+                        : "Upload failed",
+                    );
+                  })
+                  .finally(() => {
+                    setBusy(false);
+                    e.target.value = "";
                   });
-                })
-                .catch((uploadErr) => {
-                  setError(
-                    uploadErr instanceof Error
-                      ? uploadErr.message
-                      : "Upload failed",
-                  );
-                })
-                .finally(() => {
-                  setBusy(false);
-                  e.target.value = "";
-                });
-            }}
-            type="file"
-          />
+              }}
+              ref={uploadInputRef}
+              type="file"
+            />
+            <div className="rounded-md border border-dashed border-border/70 bg-muted/10 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+                  <IconUpload aria-hidden className="size-4 shrink-0" />
+                  <span className="truncate">
+                    {busy ? "Uploading image..." : "PNG, JPG, WEBP or GIF"}
+                  </span>
+                </div>
+                <Button
+                  disabled={busy}
+                  onClick={() => uploadInputRef.current?.click()}
+                  size="sm"
+                  type="button"
+                  variant="default"
+                >
+                  {busy ? "Uploading..." : "Choose file"}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
-      <div className="space-y-2">
+      <div className="space-y-3 border-t border-border/60 pt-5">
         <Label htmlFor={`${baseId}-image-alt`}>Alt text</Label>
         <Input
           id={`${baseId}-image-alt`}
@@ -2115,7 +2289,7 @@ function ImagePrimitiveInspector({
           value={alt}
         />
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5 border-t border-border/60 pt-5">
         <Checkbox
           checked={exposeToEditors}
           id={`${baseId}-image-expose`}
@@ -2141,8 +2315,8 @@ function ImagePrimitiveInspector({
         </Label>
       </div>
       {exposeToEditors && fieldBound ? (
-        <div className="space-y-3 rounded-md border border-border/60 p-3">
-          <div className="space-y-2">
+        <div className="space-y-4 rounded-md border border-border/60 p-4">
+          <div className="space-y-3">
             <Label htmlFor={`${baseId}-image-slot-name`}>
               Field name (kebab-case)
             </Label>
@@ -2160,7 +2334,7 @@ function ImagePrimitiveInspector({
               value={nameDraft}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label htmlFor={`${baseId}-image-slot-label`}>Label</Label>
             <Input
               id={`${baseId}-image-slot-label`}
@@ -2251,6 +2425,9 @@ export function PropertyInspector({
       ? node.contentBinding.editorField
       : undefined;
   const semanticShellTag = semanticShellTagForNode(node);
+  const nodeLabel = semanticShellTag
+    ? `${semanticShellTag.charAt(0).toUpperCase()}${semanticShellTag.slice(1)}`
+    : getPrimitiveDisplay(node.definitionKey).label;
   const exposeToEditors = Boolean(fieldBound);
   const stylePropertiesBySection = stylePropertiesBySectionForDefinitionKey(
     node.definitionKey,
@@ -2259,18 +2436,20 @@ export function PropertyInspector({
 
   return (
     <div className="space-y-4 text-sm">
-      <div className="font-mono text-xs text-muted-foreground">
-        {semanticShellTag ? `<${semanticShellTag}>` : node.definitionKey}
-      </div>
       <Tabs className="w-full" defaultValue="styles">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="styles">Styles</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-        </TabsList>
-        <TabsContent className="mt-3" value="styles">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-base font-semibold uppercase tracking-[0.1em] text-foreground">
+            {nodeLabel}
+          </div>
+          <TabsList className="grid w-fit grid-cols-2">
+            <TabsTrigger value="styles">Styles</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent className="mt-4" value="styles">
           {hasStyleControls ? (
-            <div className="space-y-3">
-              {STYLE_SECTIONS.map((section) => {
+            <div className="space-y-4">
+              {STYLE_SECTIONS.map((section, sectionIndex) => {
                 const sectionProperties =
                   stylePropertiesBySection.find((s) => s.id === section.id)
                     ?.properties ?? [];
@@ -2295,15 +2474,130 @@ export function PropertyInspector({
                     : filteredSectionProperties;
                 if (section.id === "spacing") {
                   return (
-                    <div className="space-y-3" key={section.id}>
-                      <SpacingBoxControl
-                        availableProperties={new Set(sectionProperties)}
-                        composition={composition}
-                        node={node}
-                        onNodeStyleEntry={onNodeStyleEntry}
-                      />
-                      {visibleProperties.length > 0 ? (
-                        <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
+                    <div
+                      className={`${sectionIndex === 0 ? "" : "border-t border-border/60 pt-4 "}space-y-4`}
+                      key={section.id}
+                    >
+                      <Collapsible defaultOpen>
+                        <CollapsibleTrigger asChild>
+                          <Button
+                            className="group h-7 w-full cursor-pointer justify-between rounded-sm px-0 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground hover:bg-transparent hover:text-foreground"
+                            type="button"
+                            variant="ghost"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <section.Icon
+                                aria-hidden
+                                className="size-4 text-muted-foreground"
+                                stroke={1.7}
+                              />
+                              <span>Margin & Padding</span>
+                            </span>
+                            <IconChevronDown
+                              aria-hidden
+                              className="size-4 transition-transform group-data-[state=open]:rotate-180"
+                              stroke={1.8}
+                            />
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="space-y-4 pt-3">
+                          <SpacingBoxControl
+                            availableProperties={new Set(sectionProperties)}
+                            composition={composition}
+                            node={node}
+                            onNodeStyleEntry={onNodeStyleEntry}
+                          />
+                          {visibleProperties.length > 0 ? (
+                            <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+                              {visibleProperties.map((property) => {
+                                const styleEntry = readStyleProperty(
+                                  composition,
+                                  node,
+                                  property,
+                                );
+                                return (
+                                  <StyleValueSelect
+                                    key={property}
+                                    onNodeStyleEntry={onNodeStyleEntry}
+                                    property={property}
+                                    tokenMetadata={tokenMetadata}
+                                    valueEntry={styleEntry}
+                                  />
+                                );
+                              })}
+                            </div>
+                          ) : null}
+                          {secondaryProperties.length > 0 &&
+                          primaryProperties.length > 0 ? (
+                            <Collapsible>
+                              <CollapsibleTrigger asChild>
+                                <Button
+                                  className="h-8 w-full justify-between px-2 text-xs"
+                                  type="button"
+                                  variant="ghost"
+                                >
+                                  <span>More spacing options</span>
+                                  <span className="rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                    {secondaryProperties.length}
+                                  </span>
+                                </Button>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent className="pt-3">
+                                <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+                                  {secondaryProperties.map((property) => {
+                                    const styleEntry = readStyleProperty(
+                                      composition,
+                                      node,
+                                      property,
+                                    );
+                                    return (
+                                      <StyleValueSelect
+                                        key={property}
+                                        onNodeStyleEntry={onNodeStyleEntry}
+                                        property={property}
+                                        tokenMetadata={tokenMetadata}
+                                        valueEntry={styleEntry}
+                                      />
+                                    );
+                                  })}
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          ) : null}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </div>
+                  );
+                }
+                return (
+                  <div
+                    className={`${sectionIndex === 0 ? "" : "border-t border-border/60 pt-4 "}space-y-4`}
+                    key={section.id}
+                  >
+                    <Collapsible defaultOpen>
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          className="group h-7 w-full cursor-pointer justify-between rounded-sm px-0 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground hover:bg-transparent hover:text-foreground"
+                          type="button"
+                          variant="ghost"
+                        >
+                          <span className="flex items-center gap-1.5">
+                            <section.Icon
+                              aria-hidden
+                              className="size-4 text-muted-foreground"
+                              stroke={1.7}
+                            />
+                            <span>{section.label}</span>
+                          </span>
+                          <IconChevronDown
+                            aria-hidden
+                            className="size-4 transition-transform group-data-[state=open]:rotate-180"
+                            stroke={1.8}
+                          />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="space-y-4 pt-3">
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
                           {visibleProperties.map((property) => {
                             const styleEntry = readStyleProperty(
                               composition,
@@ -2321,122 +2615,47 @@ export function PropertyInspector({
                             );
                           })}
                         </div>
-                      ) : null}
-                      {secondaryProperties.length > 0 &&
-                      primaryProperties.length > 0 ? (
-                        <Collapsible>
-                          <CollapsibleTrigger asChild>
-                            <Button
-                              className="h-8 w-full justify-between px-2 text-xs"
-                              type="button"
-                              variant="ghost"
-                            >
-                              <span>More spacing options</span>
-                              <span className="rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                {secondaryProperties.length}
-                              </span>
-                            </Button>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent className="pt-3">
-                            <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
-                              {secondaryProperties.map((property) => {
-                                const styleEntry = readStyleProperty(
-                                  composition,
-                                  node,
-                                  property,
-                                );
-                                return (
-                                  <StyleValueSelect
-                                    key={property}
-                                    onNodeStyleEntry={onNodeStyleEntry}
-                                    property={property}
-                                    tokenMetadata={tokenMetadata}
-                                    valueEntry={styleEntry}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </CollapsibleContent>
-                        </Collapsible>
-                      ) : null}
-                    </div>
-                  );
-                }
-                return (
-                  <div
-                    className="rounded-md border border-border/65 bg-muted/15 p-3"
-                    key={section.id}
-                  >
-                    <div className="mb-3 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                        <section.Icon
-                          aria-hidden
-                          className="size-3.5 text-muted-foreground"
-                          stroke={1.6}
-                        />
-                        <span>{section.label}</span>
-                      </div>
-                      <span className="rounded border border-border/70 px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
-                        {sectionProperties.length}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
-                      {visibleProperties.map((property) => {
-                        const styleEntry = readStyleProperty(
-                          composition,
-                          node,
-                          property,
-                        );
-                        return (
-                          <StyleValueSelect
-                            key={property}
-                            onNodeStyleEntry={onNodeStyleEntry}
-                            property={property}
-                            tokenMetadata={tokenMetadata}
-                            valueEntry={styleEntry}
-                          />
-                        );
-                      })}
-                    </div>
-                    {secondaryProperties.length > 0 &&
-                    primaryProperties.length > 0 ? (
-                      <Collapsible className="mt-3">
-                        <CollapsibleTrigger asChild>
-                          <Button
-                            className="h-8 w-full justify-between px-2 text-xs"
-                            type="button"
-                            variant="ghost"
-                          >
-                            <span>
-                              More {section.label.toLowerCase()} options
-                            </span>
-                            <span className="rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                              {secondaryProperties.length}
-                            </span>
-                          </Button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="pt-3">
-                          <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
-                            {secondaryProperties.map((property) => {
-                              const styleEntry = readStyleProperty(
-                                composition,
-                                node,
-                                property,
-                              );
-                              return (
-                                <StyleValueSelect
-                                  key={property}
-                                  onNodeStyleEntry={onNodeStyleEntry}
-                                  property={property}
-                                  tokenMetadata={tokenMetadata}
-                                  valueEntry={styleEntry}
-                                />
-                              );
-                            })}
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-                    ) : null}
+                        {secondaryProperties.length > 0 &&
+                        primaryProperties.length > 0 ? (
+                          <Collapsible>
+                            <CollapsibleTrigger asChild>
+                              <Button
+                                className="h-8 w-full justify-between px-2 text-xs"
+                                type="button"
+                                variant="ghost"
+                              >
+                                <span>
+                                  More {section.label.toLowerCase()} options
+                                </span>
+                                <span className="rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                  {secondaryProperties.length}
+                                </span>
+                              </Button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="pt-3">
+                              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+                                {secondaryProperties.map((property) => {
+                                  const styleEntry = readStyleProperty(
+                                    composition,
+                                    node,
+                                    property,
+                                  );
+                                  return (
+                                    <StyleValueSelect
+                                      key={property}
+                                      onNodeStyleEntry={onNodeStyleEntry}
+                                      property={property}
+                                      tokenMetadata={tokenMetadata}
+                                      valueEntry={styleEntry}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        ) : null}
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
                 );
               })}
@@ -2447,7 +2666,7 @@ export function PropertyInspector({
             </div>
           )}
         </TabsContent>
-        <TabsContent className="mt-3 space-y-4" value="settings">
+        <TabsContent className="mt-4 space-y-4" value="settings">
           {isText ? (
             <TextPrimitiveInspector
               content={content}
@@ -2483,7 +2702,7 @@ export function PropertyInspector({
             />
           ) : null}
           {isSlot ? (
-            <div className="space-y-2 border-t border-border/60 pt-3">
+            <div className="space-y-3 border-t border-border/60 pt-4">
               <div className="text-xs font-medium text-foreground">Slot id</div>
               <Input
                 data-testid="inspector-slot-id"
@@ -2499,7 +2718,7 @@ export function PropertyInspector({
             </div>
           ) : null}
           {isLibraryComponent ? (
-            <div className="space-y-2 border-t border-border/60 pt-3">
+            <div className="space-y-3 border-t border-border/60 pt-4">
               <div className="text-xs font-medium text-foreground">
                 Component
               </div>
