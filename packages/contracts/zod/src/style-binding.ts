@@ -68,6 +68,17 @@ export const SIZE_UTILITY_VALUES = [
   ...FRACTION_UTILITY_VALUES,
 ] as const;
 
+export const ASPECT_RATIO_UTILITY_VALUES = [
+  "auto",
+  "square",
+  "video",
+  "1/1",
+  "4/3",
+  "3/2",
+  "16/9",
+  "21/9",
+] as const;
+
 export const CONTAINER_SIZE_UTILITY_VALUES = [
   "3xs",
   "2xs",
@@ -215,9 +226,7 @@ const MARGIN_UTILITY_PROPERTIES = new Set([
   "marginLeft",
 ]);
 
-const SIZE_UTILITY_PROPERTIES = new Set([
-  "height",
-]);
+const SIZE_UTILITY_PROPERTIES = new Set(["height"]);
 
 const UTILITY_VALUES_BY_PROPERTY = {
   display: DISPLAY_UTILITY_VALUES,
@@ -249,6 +258,9 @@ export function utilityValuesForStyleProperty(
   }
   if (property === "width") {
     return WIDTH_UTILITY_VALUES;
+  }
+  if (property === "aspectRatio") {
+    return ASPECT_RATIO_UTILITY_VALUES;
   }
   if (property === "minWidth" || property === "minHeight") {
     return MIN_SIZE_UTILITY_VALUES;

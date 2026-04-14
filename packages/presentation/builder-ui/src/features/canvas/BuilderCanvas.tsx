@@ -25,7 +25,9 @@ function isContainerNode(node: CompositionNode) {
   return isChildContainerPrimitive(node.definitionKey);
 }
 
-function isTemplateShellSectionTag(tag: unknown): tag is "header" | "main" | "footer" {
+function isTemplateShellSectionTag(
+  tag: unknown,
+): tag is "header" | "main" | "footer" {
   return tag === "header" || tag === "main" || tag === "footer";
 }
 
@@ -37,7 +39,9 @@ function isTemplateShellRoot(composition: PageComposition): boolean {
   const tags = root.childIds
     .map((childId) => composition.nodes[childId]?.propValues?.tag)
     .filter(isTemplateShellSectionTag);
-  return tags.includes("header") && tags.includes("main") && tags.includes("footer");
+  return (
+    tags.includes("header") && tags.includes("main") && tags.includes("footer")
+  );
 }
 
 function isLockedTemplateShellSection(
@@ -191,7 +195,8 @@ function CanvasNodeFrame({
       className={cn(
         "relative min-w-0",
         isDragging && "opacity-60",
-        !dragDisabled && "touch-none cursor-grab select-none active:cursor-grabbing",
+        !dragDisabled &&
+          "touch-none cursor-grab select-none active:cursor-grabbing",
       )}
       ref={setNodeRef}
       {...(!dragDisabled ? listeners : {})}

@@ -124,6 +124,10 @@ const STYLE_RULES: Record<StyleProperty, StyleRule> = {
     property: "height",
     tokenClassName: "h-[var(--builder-style-height)]",
   },
+  aspectRatio: {
+    property: "aspectRatio",
+    tokenClassName: "aspect-[var(--builder-style-aspect-ratio)]",
+  },
   minWidth: {
     property: "minWidth",
     tokenClassName: "min-w-[var(--builder-style-min-width)]",
@@ -159,7 +163,11 @@ function fractionValueToCss(value: string): string | null {
   const [n, d] = value.split("/");
   const numerator = Number.parseInt(n, 10);
   const denominator = Number.parseInt(d, 10);
-  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) {
+  if (
+    !Number.isFinite(numerator) ||
+    !Number.isFinite(denominator) ||
+    denominator === 0
+  ) {
     return null;
   }
   return `${(numerator / denominator) * 100}%`;
@@ -207,6 +215,22 @@ function sizeValueToCss(
   }
   if (value === "none") {
     return "none";
+  }
+  return null;
+}
+
+function aspectRatioValueToCss(value: string): string | null {
+  if (value === "auto") {
+    return "auto";
+  }
+  if (value === "square") {
+    return "1 / 1";
+  }
+  if (value === "video") {
+    return "16 / 9";
+  }
+  if (/^\d+\/\d+$/.test(value)) {
+    return value.replace("/", " / ");
   }
   return null;
 }
@@ -321,6 +345,10 @@ function utilityInlineStyleForPropertyValue(
     case "maxHeight": {
       const cssValue = sizeValueToCss(value, "height");
       return cssValue ? { key: property, value: cssValue } : null;
+    }
+    case "aspectRatio": {
+      const cssValue = aspectRatioValueToCss(value);
+      return cssValue ? { key: "aspectRatio", value: cssValue } : null;
     }
     default:
       return null;

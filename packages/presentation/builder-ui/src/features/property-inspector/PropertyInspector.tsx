@@ -19,16 +19,43 @@ import {
 } from "@repo/domains-composition";
 import type { Icon } from "@tabler/icons-react";
 import {
+  IconArrowDown,
+  IconArrowLeft,
+  IconArrowRight,
+  IconArrowUp,
+  IconArrowsHorizontal,
+  IconArrowsSplit2,
+  IconArrowsVertical,
   IconBox,
+  IconChevronDown,
+  IconChevronRight,
+  IconLayoutAlignBottom,
+  IconLayoutAlignCenter,
+  IconLayoutAlignLeft,
+  IconLayoutAlignMiddle,
+  IconLayoutAlignRight,
+  IconLayoutAlignTop,
+  IconLayoutDistributeHorizontal,
   IconLayoutGrid,
   IconLayoutList,
 } from "@tabler/icons-react";
 import { useEffect, useId, useState } from "react";
 
+import { ScrollArea } from "../../components/scroll-area.js";
 import { Button } from "../../components/ui/button.js";
 import { Checkbox } from "../../components/ui/checkbox.js";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "../../components/ui/collapsible.js";
 import { Input } from "../../components/ui/input.js";
 import { Label } from "../../components/ui/label.js";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../../components/ui/popover.js";
 import {
   Select,
   SelectContent,
@@ -107,6 +134,655 @@ function utilityValueLabel(property: StyleProperty, value: string): string {
   return value;
 }
 
+function isColorStyleProperty(property: StyleProperty): boolean {
+  return styleSectionForProperty(property) === "color";
+}
+
+function colorSwatchStyleForUtility(value: string): {
+  backgroundColor: string;
+  opacity?: number;
+} {
+  if (value === "transparent") {
+    return { backgroundColor: "transparent" };
+  }
+  if (value === "current") {
+    return { backgroundColor: "currentColor" };
+  }
+  if (value === "inherit") {
+    return { backgroundColor: "inherit" };
+  }
+  if (value.startsWith("[") && value.endsWith("]")) {
+    return { backgroundColor: value.slice(1, -1) };
+  }
+  const [base, alpha] = value.split("/");
+  const opacity =
+    alpha && /^\d+$/.test(alpha) ? Number(alpha) / 100 : undefined;
+  return {
+    backgroundColor: `var(--color-${base})`,
+    opacity,
+  };
+}
+
+function ColorOptionLabel({
+  label,
+  style,
+}: {
+  label: string;
+  style: { backgroundColor: string; opacity?: number };
+}) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span
+        aria-hidden
+        className="size-3.5 shrink-0 rounded-sm border border-border/70"
+        style={style}
+      />
+      <span>{label}</span>
+    </span>
+  );
+}
+
+const FLEX_UTILITY_META: Partial<
+  Record<StyleProperty, Record<string, { label: string; Icon: Icon }>>
+> = {
+  flexDirection: {
+    row: { label: "Row", Icon: IconArrowRight },
+    "row-reverse": { label: "Row reverse", Icon: IconArrowLeft },
+    col: { label: "Column", Icon: IconArrowDown },
+    "col-reverse": { label: "Column reverse", Icon: IconArrowUp },
+  },
+  flexWrap: {
+    wrap: { label: "Wrap", Icon: IconArrowsSplit2 },
+    "wrap-reverse": { label: "Wrap reverse", Icon: IconArrowsHorizontal },
+    nowrap: { label: "No wrap", Icon: IconArrowRight },
+  },
+  justifyContent: {
+    start: { label: "Start", Icon: IconLayoutAlignLeft },
+    end: { label: "End", Icon: IconLayoutAlignRight },
+    center: { label: "Center", Icon: IconLayoutAlignCenter },
+    between: { label: "Space between", Icon: IconLayoutDistributeHorizontal },
+    around: { label: "Space around", Icon: IconLayoutAlignMiddle },
+    evenly: { label: "Space evenly", Icon: IconArrowsHorizontal },
+  },
+  alignItems: {
+    start: { label: "Start", Icon: IconLayoutAlignTop },
+    end: { label: "End", Icon: IconLayoutAlignBottom },
+    center: { label: "Center", Icon: IconLayoutAlignMiddle },
+    baseline: { label: "Baseline", Icon: IconLayoutAlignBottom },
+    stretch: { label: "Stretch", Icon: IconArrowsVertical },
+  },
+  alignSelf: {
+    auto: { label: "Auto", Icon: IconLayoutAlignCenter },
+    start: { label: "Start", Icon: IconLayoutAlignTop },
+    end: { label: "End", Icon: IconLayoutAlignBottom },
+    center: { label: "Center", Icon: IconLayoutAlignMiddle },
+    stretch: { label: "Stretch", Icon: IconArrowsVertical },
+    baseline: { label: "Baseline", Icon: IconLayoutAlignBottom },
+  },
+};
+
+function renderUtilityOptionLabel(property: StyleProperty, value: string) {
+  if (isColorStyleProperty(property)) {
+    return (
+      <ColorOptionLabel
+        label={utilityValueLabel(property, value)}
+        style={colorSwatchStyleForUtility(value)}
+      />
+    );
+  }
+  const flexMeta = FLEX_UTILITY_META[property]?.[value];
+  if (!flexMeta) {
+    return utilityValueLabel(property, value);
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <flexMeta.Icon aria-hidden className="size-3.5 text-muted-foreground" />
+      <span>{flexMeta.label}</span>
+    </span>
+  );
+}
+
+type FlexIconProperty =
+  | "flexDirection"
+  | "flexWrap"
+  | "justifyContent"
+  | "alignItems"
+  | "alignSelf";
+
+function isFlexIconProperty(
+  property: StyleProperty,
+): property is FlexIconProperty {
+  return (
+    property === "flexDirection" ||
+    property === "flexWrap" ||
+    property === "justifyContent" ||
+    property === "alignItems" ||
+    property === "alignSelf"
+  );
+}
+
+type SpacingSideProperty =
+  | "paddingTop"
+  | "paddingRight"
+  | "paddingBottom"
+  | "paddingLeft"
+  | "marginTop"
+  | "marginRight"
+  | "marginBottom"
+  | "marginLeft";
+
+const SPACING_RING_PROPERTIES = new Set<StyleProperty>([
+  "padding",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+  "margin",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
+]);
+
+function spacingEntryDisplayValue(
+  sideEntry: StylePropertyEntry | undefined,
+  shorthandEntry: StylePropertyEntry | undefined,
+): string {
+  const entry = sideEntry ?? shorthandEntry;
+  if (!entry) {
+    return "0";
+  }
+  if (entry.type === "utility") {
+    return entry.value;
+  }
+  return "token";
+}
+
+function SpacingSidePopover({
+  sideProperty,
+  shorthandProperty,
+  sideLabel,
+  sideEntry,
+  shorthandEntry,
+  disabled,
+  onNodeStyleEntry,
+}: {
+  sideProperty: SpacingSideProperty;
+  shorthandProperty: "padding" | "margin";
+  sideLabel: string;
+  sideEntry: StylePropertyEntry | undefined;
+  shorthandEntry: StylePropertyEntry | undefined;
+  disabled: boolean;
+  onNodeStyleEntry: (
+    property: StyleProperty,
+    entry: StylePropertyEntry | null,
+  ) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const utilityValues = utilityValuesForStyleProperty(sideProperty);
+  const displayValue = spacingEntryDisplayValue(sideEntry, shorthandEntry);
+  const selectedValue = sideEntry?.type === "utility" ? sideEntry.value : null;
+
+  return (
+    <Popover onOpenChange={setOpen} open={open}>
+      <PopoverTrigger asChild>
+        <button
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-sm border border-border/70 bg-background px-1 text-xs font-medium leading-none hover:bg-accent/40 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={disabled}
+          title={sideLabel}
+          type="button"
+        >
+          {displayValue}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="center" className="w-40 p-1.5">
+        <ScrollArea className="max-h-64 pr-1">
+          <div className="space-y-1">
+            <button
+              className="w-full rounded-sm px-2 py-1 text-left text-xs hover:bg-accent/50"
+              onClick={() => {
+                onNodeStyleEntry(sideProperty, null);
+                setOpen(false);
+              }}
+              type="button"
+            >
+              Unset {sideLabel}
+            </button>
+            {utilityValues.map((value) => {
+              const selected = selectedValue === value;
+              return (
+                <button
+                  className={`w-full rounded-sm px-2 py-1 text-left text-xs ${
+                    selected
+                      ? "bg-primary/10 text-primary"
+                      : "hover:bg-accent/50"
+                  }`}
+                  key={`${sideProperty}-${value}`}
+                  onClick={() => {
+                    onNodeStyleEntry(sideProperty, {
+                      type: "utility",
+                      property: sideProperty,
+                      value,
+                    });
+                    setOpen(false);
+                  }}
+                  type="button"
+                >
+                  {`${shorthandProperty === "padding" ? "p" : "m"}${sideLabel.toLowerCase()[0]}-${value}`}
+                </button>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function SpacingBoxControl({
+  composition,
+  node,
+  availableProperties,
+  onNodeStyleEntry,
+}: {
+  composition: PageComposition;
+  node: CompositionNode;
+  availableProperties: ReadonlySet<StyleProperty>;
+  onNodeStyleEntry: (
+    property: StyleProperty,
+    entry: StylePropertyEntry | null,
+  ) => void;
+}) {
+  const marginEntry = readStyleProperty(composition, node, "margin");
+  const paddingEntry = readStyleProperty(composition, node, "padding");
+
+  return (
+    <div className="border-y border-border/70 py-3">
+      <div className="mb-1 text-[10px] font-semibold tracking-wide text-muted-foreground">
+        MARGIN
+      </div>
+      <div className="relative rounded-md border border-border/70 bg-background/50 p-6">
+        <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
+          <SpacingSidePopover
+            disabled={!availableProperties.has("marginTop")}
+            onNodeStyleEntry={onNodeStyleEntry}
+            shorthandEntry={marginEntry}
+            shorthandProperty="margin"
+            sideEntry={readStyleProperty(composition, node, "marginTop")}
+            sideLabel="Top"
+            sideProperty="marginTop"
+          />
+        </div>
+        <div className="absolute right-1 top-1/2 -translate-y-1/2">
+          <SpacingSidePopover
+            disabled={!availableProperties.has("marginRight")}
+            onNodeStyleEntry={onNodeStyleEntry}
+            shorthandEntry={marginEntry}
+            shorthandProperty="margin"
+            sideEntry={readStyleProperty(composition, node, "marginRight")}
+            sideLabel="Right"
+            sideProperty="marginRight"
+          />
+        </div>
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
+          <SpacingSidePopover
+            disabled={!availableProperties.has("marginBottom")}
+            onNodeStyleEntry={onNodeStyleEntry}
+            shorthandEntry={marginEntry}
+            shorthandProperty="margin"
+            sideEntry={readStyleProperty(composition, node, "marginBottom")}
+            sideLabel="Bottom"
+            sideProperty="marginBottom"
+          />
+        </div>
+        <div className="absolute left-1 top-1/2 -translate-y-1/2">
+          <SpacingSidePopover
+            disabled={!availableProperties.has("marginLeft")}
+            onNodeStyleEntry={onNodeStyleEntry}
+            shorthandEntry={marginEntry}
+            shorthandProperty="margin"
+            sideEntry={readStyleProperty(composition, node, "marginLeft")}
+            sideLabel="Left"
+            sideProperty="marginLeft"
+          />
+        </div>
+        <div className="mb-1 text-[10px] font-semibold tracking-wide text-muted-foreground">
+          PADDING
+        </div>
+        <div className="relative rounded-sm border border-border/70 bg-muted/15 p-5">
+          <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
+            <SpacingSidePopover
+              disabled={!availableProperties.has("paddingTop")}
+              onNodeStyleEntry={onNodeStyleEntry}
+              shorthandEntry={paddingEntry}
+              shorthandProperty="padding"
+              sideEntry={readStyleProperty(composition, node, "paddingTop")}
+              sideLabel="Top"
+              sideProperty="paddingTop"
+            />
+          </div>
+          <div className="absolute right-1 top-1/2 -translate-y-1/2">
+            <SpacingSidePopover
+              disabled={!availableProperties.has("paddingRight")}
+              onNodeStyleEntry={onNodeStyleEntry}
+              shorthandEntry={paddingEntry}
+              shorthandProperty="padding"
+              sideEntry={readStyleProperty(composition, node, "paddingRight")}
+              sideLabel="Right"
+              sideProperty="paddingRight"
+            />
+          </div>
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
+            <SpacingSidePopover
+              disabled={!availableProperties.has("paddingBottom")}
+              onNodeStyleEntry={onNodeStyleEntry}
+              shorthandEntry={paddingEntry}
+              shorthandProperty="padding"
+              sideEntry={readStyleProperty(composition, node, "paddingBottom")}
+              sideLabel="Bottom"
+              sideProperty="paddingBottom"
+            />
+          </div>
+          <div className="absolute left-1 top-1/2 -translate-y-1/2">
+            <SpacingSidePopover
+              disabled={!availableProperties.has("paddingLeft")}
+              onNodeStyleEntry={onNodeStyleEntry}
+              shorthandEntry={paddingEntry}
+              shorthandProperty="padding"
+              sideEntry={readStyleProperty(composition, node, "paddingLeft")}
+              sideLabel="Left"
+              sideProperty="paddingLeft"
+            />
+          </div>
+          <div className="h-8 rounded-sm bg-muted/40" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FlexIconStyleValueControl({
+  property,
+  valueEntry,
+  onNodeStyleEntry,
+}: {
+  property: FlexIconProperty;
+  valueEntry: StylePropertyEntry | undefined;
+  onNodeStyleEntry: (
+    property: StyleProperty,
+    entry: StylePropertyEntry | null,
+  ) => void;
+}) {
+  const selectedValue =
+    valueEntry?.type === "utility" ? valueEntry.value : null;
+  const options = Object.entries(FLEX_UTILITY_META[property] ?? {});
+
+  return (
+    <div className="space-y-1.5">
+      <div className="grid grid-cols-3 gap-1.5">
+        <button
+          aria-label={`Unset ${stylePropertyLabel(property)}`}
+          className={`inline-flex h-8 items-center justify-center rounded-md border text-xs ${
+            !valueEntry
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-border/70 hover:bg-accent/40"
+          }`}
+          onClick={() => onNodeStyleEntry(property, null)}
+          title="Unset"
+          type="button"
+        >
+          Auto
+        </button>
+        {options.map(([value, meta]) => {
+          const selected = selectedValue === value;
+          return (
+            <button
+              aria-label={meta.label}
+              className={`inline-flex h-8 items-center justify-center rounded-md border ${
+                selected
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border/70 hover:bg-accent/40"
+              }`}
+              key={value}
+              onClick={() =>
+                onNodeStyleEntry(property, {
+                  type: "utility",
+                  property,
+                  value,
+                })
+              }
+              title={meta.label}
+              type="button"
+            >
+              <meta.Icon aria-hidden className="size-4" stroke={1.8} />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function isDimensionProperty(
+  property: StyleProperty,
+): property is "width" | "height" {
+  return property === "width" || property === "height";
+}
+
+function dimensionValueLabel(
+  property: "width" | "height",
+  value: string,
+): string {
+  if (value === "full") {
+    return "Fill container";
+  }
+  if (value === "auto") {
+    return property === "width" ? "Hug contents" : "Hug height";
+  }
+  if (value === "screen") {
+    return "Screen";
+  }
+  if (value === "min") {
+    return "Min content";
+  }
+  if (value === "max") {
+    return "Max content";
+  }
+  if (value === "fit") {
+    return "Fit content";
+  }
+  return value;
+}
+
+function dimensionUtilityGroups(values: readonly string[]) {
+  const commonValues = new Set(["auto", "full", "screen", "fit", "min", "max"]);
+  const containerValues = new Set([
+    "3xs",
+    "2xs",
+    "xs",
+    "sm",
+    "md",
+    "lg",
+    "xl",
+    "2xl",
+    "3xl",
+    "4xl",
+    "5xl",
+    "6xl",
+    "7xl",
+    "container",
+    "prose",
+  ]);
+
+  const common = values.filter((value) => commonValues.has(value));
+  const fractions = values.filter((value) => value.includes("/"));
+  const containers = values.filter(
+    (value) => containerValues.has(value) || value.startsWith("screen-"),
+  );
+  const scale = values.filter(
+    (value) =>
+      !commonValues.has(value) &&
+      !value.includes("/") &&
+      !containerValues.has(value) &&
+      !value.startsWith("screen-"),
+  );
+
+  return [
+    { id: "common", label: "Common", values: common },
+    { id: "scale", label: "Scale", values: scale },
+    { id: "fractions", label: "Fractions", values: fractions },
+    { id: "containers", label: "Containers", values: containers },
+  ].filter((group) => group.values.length > 0);
+}
+
+function DimensionStyleValueControl({
+  property,
+  valueEntry,
+  utilityValues,
+  visibleTokens,
+  onNodeStyleEntry,
+}: {
+  property: "width" | "height";
+  valueEntry: StylePropertyEntry | undefined;
+  utilityValues: readonly string[];
+  visibleTokens: TokenMeta[];
+  onNodeStyleEntry: (
+    property: StyleProperty,
+    entry: StylePropertyEntry | null,
+  ) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selectedUtility =
+    valueEntry?.type === "utility" ? valueEntry.value : null;
+  const selectedToken = valueEntry?.type === "token" ? valueEntry.token : null;
+  const triggerText = valueEntry
+    ? valueEntry.type === "utility"
+      ? dimensionValueLabel(property, valueEntry.value)
+      : `Token: ${valueEntry.token}`
+    : "Unset (default)";
+  const groups = dimensionUtilityGroups(utilityValues);
+
+  return (
+    <Popover onOpenChange={setOpen} open={open}>
+      <PopoverTrigger asChild>
+        <Button
+          className="h-8 w-full justify-between rounded-md border border-input bg-background px-2 text-left text-sm font-normal hover:bg-accent/30"
+          type="button"
+          variant="ghost"
+        >
+          <span className="truncate">{triggerText}</span>
+          <IconChevronDown aria-hidden className="size-3.5 opacity-70" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-80 space-y-2 p-2">
+        <button
+          className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent/60"
+          onClick={() => {
+            onNodeStyleEntry(property, null);
+            setOpen(false);
+          }}
+          type="button"
+        >
+          <span>Unset (default)</span>
+          {!valueEntry ? (
+            <IconChevronRight aria-hidden className="size-3.5" />
+          ) : null}
+        </button>
+        {groups.map((group) => (
+          <Collapsible
+            defaultOpen={
+              group.id === "common" ||
+              group.values.includes(selectedUtility ?? "")
+            }
+            key={group.id}
+          >
+            <CollapsibleTrigger asChild>
+              <button
+                className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-xs font-semibold text-muted-foreground hover:bg-accent/40"
+                type="button"
+              >
+                <span>{group.label}</span>
+                <IconChevronDown className="size-3.5 transition-transform data-[state=open]:rotate-180" />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-1">
+              <div className="grid grid-cols-2 gap-1">
+                {group.values.map((value) => {
+                  const selected = selectedUtility === value;
+                  return (
+                    <button
+                      className={`rounded-sm border px-2 py-1 text-left text-xs ${
+                        selected
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border/70 hover:bg-accent/40"
+                      }`}
+                      key={value}
+                      onClick={() => {
+                        onNodeStyleEntry(property, {
+                          type: "utility",
+                          property,
+                          value,
+                        });
+                        setOpen(false);
+                      }}
+                      type="button"
+                    >
+                      {dimensionValueLabel(property, value)}
+                    </button>
+                  );
+                })}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        ))}
+        {visibleTokens.length > 0 ? (
+          <Collapsible defaultOpen={Boolean(selectedToken)}>
+            <CollapsibleTrigger asChild>
+              <button
+                className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-xs font-semibold text-muted-foreground hover:bg-accent/40"
+                type="button"
+              >
+                <span>Tokens</span>
+                <IconChevronDown className="size-3.5 transition-transform data-[state=open]:rotate-180" />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-1">
+              <ScrollArea className="max-h-40 pr-1">
+                <div className="space-y-1">
+                  {visibleTokens.map((token) => {
+                    const selected = selectedToken === token.key;
+                    return (
+                      <button
+                        className={`w-full rounded-sm border px-2 py-1 text-left text-xs ${
+                          selected
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border/70 hover:bg-accent/40"
+                        }`}
+                        key={token.key}
+                        onClick={() => {
+                          onNodeStyleEntry(property, {
+                            type: "token",
+                            property,
+                            token: token.key,
+                          });
+                          setOpen(false);
+                        }}
+                        type="button"
+                      >
+                        {token.key}
+                      </button>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            </CollapsibleContent>
+          </Collapsible>
+        ) : null}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 const SECTION_META: Record<
   StyleSectionId,
   {
@@ -142,6 +818,21 @@ const STYLE_SECTIONS: readonly {
   { id: "spacing", ...SECTION_META.spacing },
   { id: "size", ...SECTION_META.size },
 ];
+
+const PRIMARY_STYLE_PROPERTIES = new Set<StyleProperty>([
+  "background",
+  "color",
+  "display",
+  "flexDirection",
+  "justifyContent",
+  "alignItems",
+  "padding",
+  "margin",
+  "gap",
+  "width",
+  "height",
+  "aspectRatio",
+]);
 
 const COLOR_CATEGORIES = new Set(["color"]);
 const SPACE_SIZE_CATEGORIES = new Set([
@@ -231,58 +922,81 @@ function StyleValueSelect({
       <Label className="text-xs font-medium" htmlFor={`style-${property}`}>
         {stylePropertyLabel(property)}
       </Label>
-      <Select
-        data-testid={`inspector-style-token-${property}`}
-        onValueChange={(next) => {
-          if (next === NONE_SELECT_VALUE) {
-            onNodeStyleEntry(property, null);
-            return;
-          }
-          if (next.startsWith("utility:")) {
-            onNodeStyleEntry(property, {
-              type: "utility",
-              property,
-              value: next.slice("utility:".length),
-            });
-            return;
-          }
-          if (next.startsWith("token:")) {
-            onNodeStyleEntry(property, {
-              type: "token",
-              property,
-              token: next.slice("token:".length),
-            });
-          }
-        }}
-        value={currentValue}
-      >
-        <SelectTrigger id={`style-${property}`}>
-          <SelectValue placeholder="Unset (default)" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={NONE_SELECT_VALUE}>Unset (default)</SelectItem>
-          {utilityValues.length > 0 ? (
-            <SelectGroup>
-              <SelectLabel>Tailwind values</SelectLabel>
-              {utilityValues.map((value) => (
-                <SelectItem key={value} value={`utility:${value}`}>
-                  {utilityValueLabel(property, value)}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          ) : null}
-          {visibleTokens.length > 0 ? (
-            <SelectGroup>
-              <SelectLabel>Tokens</SelectLabel>
-              {visibleTokens.map((token) => (
-                <SelectItem key={token.key} value={`token:${token.key}`}>
-                  {token.key}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          ) : null}
-        </SelectContent>
-      </Select>
+      {isDimensionProperty(property) ? (
+        <DimensionStyleValueControl
+          onNodeStyleEntry={onNodeStyleEntry}
+          property={property}
+          utilityValues={utilityValues}
+          valueEntry={valueEntry}
+          visibleTokens={visibleTokens}
+        />
+      ) : isFlexIconProperty(property) ? (
+        <FlexIconStyleValueControl
+          onNodeStyleEntry={onNodeStyleEntry}
+          property={property}
+          valueEntry={valueEntry}
+        />
+      ) : (
+        <Select
+          data-testid={`inspector-style-token-${property}`}
+          onValueChange={(next) => {
+            if (next === NONE_SELECT_VALUE) {
+              onNodeStyleEntry(property, null);
+              return;
+            }
+            if (next.startsWith("utility:")) {
+              onNodeStyleEntry(property, {
+                type: "utility",
+                property,
+                value: next.slice("utility:".length),
+              });
+              return;
+            }
+            if (next.startsWith("token:")) {
+              onNodeStyleEntry(property, {
+                type: "token",
+                property,
+                token: next.slice("token:".length),
+              });
+            }
+          }}
+          value={currentValue}
+        >
+          <SelectTrigger id={`style-${property}`}>
+            <SelectValue placeholder="Unset (default)" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={NONE_SELECT_VALUE}>Unset (default)</SelectItem>
+            {utilityValues.length > 0 ? (
+              <SelectGroup>
+                <SelectLabel>Tailwind values</SelectLabel>
+                {utilityValues.map((value) => (
+                  <SelectItem key={value} value={`utility:${value}`}>
+                    {renderUtilityOptionLabel(property, value)}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            ) : null}
+            {visibleTokens.length > 0 ? (
+              <SelectGroup>
+                <SelectLabel>Tokens</SelectLabel>
+                {visibleTokens.map((token) => (
+                  <SelectItem key={token.key} value={`token:${token.key}`}>
+                    {isColorStyleProperty(property) ? (
+                      <ColorOptionLabel
+                        label={token.key}
+                        style={{ backgroundColor: `var(${token.cssVar})` }}
+                      />
+                    ) : (
+                      token.key
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            ) : null}
+          </SelectContent>
+        </Select>
+      )}
     </div>
   );
 }
@@ -1318,11 +2032,27 @@ function ImagePrimitiveInspector({
                         }}
                         type="button"
                       >
-                        <div className="text-sm font-medium">
-                          {media.alt || media.filename || media.url}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          ID {media.id}
+                        <div className="flex items-center gap-2">
+                          <div className="size-12 shrink-0 overflow-hidden rounded-sm border border-border/60 bg-muted/30">
+                            <img
+                              alt={
+                                media.alt ||
+                                media.filename ||
+                                `Media ${media.id}`
+                              }
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                              src={media.url}
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium">
+                              {media.alt || media.filename || media.url}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              ID {media.id}
+                            </div>
+                          </div>
                         </div>
                       </button>
                     ))
@@ -1547,6 +2277,91 @@ export function PropertyInspector({
                 if (sectionProperties.length === 0) {
                   return null;
                 }
+                const filteredSectionProperties =
+                  section.id === "spacing"
+                    ? sectionProperties.filter(
+                        (property) => !SPACING_RING_PROPERTIES.has(property),
+                      )
+                    : sectionProperties;
+                const primaryProperties = filteredSectionProperties.filter(
+                  (property) => PRIMARY_STYLE_PROPERTIES.has(property),
+                );
+                const secondaryProperties = filteredSectionProperties.filter(
+                  (property) => !PRIMARY_STYLE_PROPERTIES.has(property),
+                );
+                const visibleProperties =
+                  primaryProperties.length > 0
+                    ? primaryProperties
+                    : filteredSectionProperties;
+                if (section.id === "spacing") {
+                  return (
+                    <div className="space-y-3" key={section.id}>
+                      <SpacingBoxControl
+                        availableProperties={new Set(sectionProperties)}
+                        composition={composition}
+                        node={node}
+                        onNodeStyleEntry={onNodeStyleEntry}
+                      />
+                      {visibleProperties.length > 0 ? (
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
+                          {visibleProperties.map((property) => {
+                            const styleEntry = readStyleProperty(
+                              composition,
+                              node,
+                              property,
+                            );
+                            return (
+                              <StyleValueSelect
+                                key={property}
+                                onNodeStyleEntry={onNodeStyleEntry}
+                                property={property}
+                                tokenMetadata={tokenMetadata}
+                                valueEntry={styleEntry}
+                              />
+                            );
+                          })}
+                        </div>
+                      ) : null}
+                      {secondaryProperties.length > 0 &&
+                      primaryProperties.length > 0 ? (
+                        <Collapsible>
+                          <CollapsibleTrigger asChild>
+                            <Button
+                              className="h-8 w-full justify-between px-2 text-xs"
+                              type="button"
+                              variant="ghost"
+                            >
+                              <span>More spacing options</span>
+                              <span className="rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                {secondaryProperties.length}
+                              </span>
+                            </Button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="pt-3">
+                            <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
+                              {secondaryProperties.map((property) => {
+                                const styleEntry = readStyleProperty(
+                                  composition,
+                                  node,
+                                  property,
+                                );
+                                return (
+                                  <StyleValueSelect
+                                    key={property}
+                                    onNodeStyleEntry={onNodeStyleEntry}
+                                    property={property}
+                                    tokenMetadata={tokenMetadata}
+                                    valueEntry={styleEntry}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      ) : null}
+                    </div>
+                  );
+                }
                 return (
                   <div
                     className="rounded-md border border-border/65 bg-muted/15 p-3"
@@ -1566,7 +2381,7 @@ export function PropertyInspector({
                       </span>
                     </div>
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
-                      {sectionProperties.map((property) => {
+                      {visibleProperties.map((property) => {
                         const styleEntry = readStyleProperty(
                           composition,
                           node,
@@ -1583,6 +2398,45 @@ export function PropertyInspector({
                         );
                       })}
                     </div>
+                    {secondaryProperties.length > 0 &&
+                    primaryProperties.length > 0 ? (
+                      <Collapsible className="mt-3">
+                        <CollapsibleTrigger asChild>
+                          <Button
+                            className="h-8 w-full justify-between px-2 text-xs"
+                            type="button"
+                            variant="ghost"
+                          >
+                            <span>
+                              More {section.label.toLowerCase()} options
+                            </span>
+                            <span className="rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                              {secondaryProperties.length}
+                            </span>
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="pt-3">
+                          <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3">
+                            {secondaryProperties.map((property) => {
+                              const styleEntry = readStyleProperty(
+                                composition,
+                                node,
+                                property,
+                              );
+                              return (
+                                <StyleValueSelect
+                                  key={property}
+                                  onNodeStyleEntry={onNodeStyleEntry}
+                                  property={property}
+                                  tokenMetadata={tokenMetadata}
+                                  valueEntry={styleEntry}
+                                />
+                              );
+                            })}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ) : null}
                   </div>
                 );
               })}

@@ -27,6 +27,7 @@ export const STYLE_PROPERTY_KEYS = [
   "gap",
   "width",
   "height",
+  "aspectRatio",
   "minWidth",
   "minHeight",
   "maxWidth",

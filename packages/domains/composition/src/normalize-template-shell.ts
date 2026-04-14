@@ -46,9 +46,15 @@ export function normalizeTemplateShell(
   }
 
   const rootChildren = rootNode.childIds.map((id) => nodes[id]).filter(Boolean);
-  const shellHeader = rootChildren.find((node) => node.id.startsWith("page-header"));
-  const shellMain = rootChildren.find((node) => node.id.startsWith("page-main"));
-  const shellFooter = rootChildren.find((node) => node.id.startsWith("page-footer"));
+  const shellHeader = rootChildren.find((node) =>
+    node.id.startsWith("page-header"),
+  );
+  const shellMain = rootChildren.find((node) =>
+    node.id.startsWith("page-main"),
+  );
+  const shellFooter = rootChildren.find((node) =>
+    node.id.startsWith("page-footer"),
+  );
 
   if (
     rootNode.parentId === null &&
@@ -67,7 +73,10 @@ export function normalizeTemplateShell(
     };
   }
 
-  if (rootNode.parentId !== null || rootNode.definitionKey !== "primitive.stack") {
+  if (
+    rootNode.parentId !== null ||
+    rootNode.definitionKey !== "primitive.stack"
+  ) {
     return composition;
   }
 

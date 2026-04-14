@@ -39,6 +39,7 @@ export type BuilderStyleProperty =
   | "gap"
   | "width"
   | "height"
+  | "aspectRatio"
   | "minWidth"
   | "minHeight"
   | "maxWidth"
@@ -71,6 +72,7 @@ const BUILDER_STYLE_VARIABLES: Record<BuilderStyleProperty, string> = {
   gap: "--builder-style-gap",
   width: "--builder-style-width",
   height: "--builder-style-height",
+  aspectRatio: "--builder-style-aspect-ratio",
   minWidth: "--builder-style-min-width",
   minHeight: "--builder-style-min-height",
   maxWidth: "--builder-style-max-width",

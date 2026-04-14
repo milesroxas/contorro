@@ -2,7 +2,11 @@
 
 import type { PageComposition } from "@repo/contracts-zod";
 import type { Icon } from "@tabler/icons-react";
-import { IconLayoutGrid, IconLayoutList, IconSection } from "@tabler/icons-react";
+import {
+  IconLayoutGrid,
+  IconLayoutList,
+  IconSection,
+} from "@tabler/icons-react";
 import { Fragment } from "react";
 
 import {
@@ -18,7 +22,9 @@ import { PrimitiveNodeContextMenu } from "../context-menu/PrimitiveNodeContextMe
 import { InsertionDropZone } from "../dnd/InsertionDropZone.js";
 import { NodeDragHandle } from "../dnd/NodeDragHandle.js";
 
-function isTemplateShellSectionTag(tag: unknown): tag is "header" | "main" | "footer" {
+function isTemplateShellSectionTag(
+  tag: unknown,
+): tag is "header" | "main" | "footer" {
   return tag === "header" || tag === "main" || tag === "footer";
 }
 
@@ -30,7 +36,9 @@ function isTemplateShellRoot(composition: PageComposition): boolean {
   const tags = root.childIds
     .map((childId) => composition.nodes[childId]?.propValues?.tag)
     .filter(isTemplateShellSectionTag);
-  return tags.includes("header") && tags.includes("main") && tags.includes("footer");
+  return (
+    tags.includes("header") && tags.includes("main") && tags.includes("footer")
+  );
 }
 
 function isLockedTemplateShellSection(
@@ -145,11 +153,15 @@ function LayerSubtree({
           ? IconLayoutGrid
           : defaultIcon;
   const kindTitle =
-    semanticTag === "header" || semanticTag === "main" || semanticTag === "footer"
+    semanticTag === "header" ||
+    semanticTag === "main" ||
+    semanticTag === "footer"
       ? semanticTag
       : defaultKindTitle;
   const kindSlug =
-    semanticTag === "header" || semanticTag === "main" || semanticTag === "footer"
+    semanticTag === "header" ||
+    semanticTag === "main" ||
+    semanticTag === "footer"
       ? semanticTag
       : node.definitionKey.replace("primitive.", "");
   const shortId = node.id.slice(0, 6);

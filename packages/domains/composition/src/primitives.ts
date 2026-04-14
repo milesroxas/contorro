@@ -49,7 +49,11 @@ const PRIMITIVE_SPECS = [
     allowsChildren: false,
     availableInPalette: true,
     creatableInBuilder: true,
-    defaultPropValues: {},
+    defaultPropValues: {
+      src: "",
+      alt: "",
+      objectFit: "cover",
+    },
   },
   {
     definitionKey: "primitive.slot",

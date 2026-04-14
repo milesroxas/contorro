@@ -43,9 +43,16 @@ export function BuilderPanel({
     return (
       <div className={cn(builderPanelSurfaceClass, className)}>
         <div className={builderPanelHeaderClass}>{title}</div>
-        <div className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", contentClassName)}>
+        <div
+          className={cn(
+            "flex min-h-0 flex-1 flex-col overflow-hidden",
+            contentClassName,
+          )}
+        >
           <ScrollArea className="min-h-0 min-w-0 flex-1">
-            <div className={cn(builderPanelBodyClass, bodyClassName)}>{children}</div>
+            <div className={cn(builderPanelBodyClass, bodyClassName)}>
+              {children}
+            </div>
           </ScrollArea>
         </div>
       </div>

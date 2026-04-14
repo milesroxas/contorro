@@ -12,7 +12,13 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { BuilderPanel } from "../components/builder-panel.js";
 import { BuilderCanvas } from "../features/canvas/BuilderCanvas.js";
