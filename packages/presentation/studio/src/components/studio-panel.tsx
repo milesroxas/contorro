@@ -3,6 +3,7 @@ import { type ReactNode, useState } from "react";
 
 import { cn } from "../lib/cn.js";
 import { ScrollArea } from "./scroll-area.js";
+import { Button } from "./ui/button.js";
 import {
   Collapsible,
   CollapsibleContent,
@@ -91,5 +92,42 @@ export function StudioPanel({
         </ScrollArea>
       </CollapsibleContent>
     </Collapsible>
+  );
+}
+
+/** aria/title strings for bulk expand–collapse in Layers and Inspector (single source of truth). */
+export const STUDIO_BULK_COLLAPSE_EXPAND_LABEL = "Expand sections";
+export const STUDIO_BULK_COLLAPSE_COLLAPSE_LABEL = "Collapse sections";
+
+/**
+ * Outline panel control matching the Layers tree “Expand” / “Collapse” control.
+ * Use for collapsing/expanding multiple groups with one action (layers sections, style sections, etc.).
+ */
+export function StudioBulkCollapseButton({
+  allCollapsed,
+  onClick,
+  className,
+}: {
+  /** When true, everything in scope is collapsed and the control expands. */
+  allCollapsed: boolean;
+  onClick: () => void;
+  className?: string;
+}) {
+  const label = allCollapsed
+    ? STUDIO_BULK_COLLAPSE_EXPAND_LABEL
+    : STUDIO_BULK_COLLAPSE_COLLAPSE_LABEL;
+  return (
+    <Button
+      aria-label={label}
+      aria-pressed={!allCollapsed}
+      className={cn("shrink-0", className)}
+      onClick={onClick}
+      size="panel"
+      title={label}
+      type="button"
+      variant="compact"
+    >
+      {allCollapsed ? "Expand" : "Collapse"}
+    </Button>
   );
 }

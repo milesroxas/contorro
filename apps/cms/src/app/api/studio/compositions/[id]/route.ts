@@ -399,12 +399,6 @@ export async function PATCH(
   props: { params: Promise<{ id: string }> },
 ) {
   const { id } = await props.params;
-  if (isStudioComponentRowId(id)) {
-    return Response.json(
-      { error: { code: "VALIDATION_ERROR" as const } },
-      { status: 400 },
-    );
-  }
 
   const payloadConfig = await config;
   const payload = await getPayload({ config: payloadConfig });

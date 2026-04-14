@@ -1,9 +1,5 @@
 "use client";
 
-import {
-  isStudioComponentRowId,
-  isStudioNewComponentSessionId,
-} from "@repo/domains-composition";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo } from "react";
 
@@ -11,6 +7,8 @@ import { StudioApp } from "../app/StudioApp.js";
 import { DesignSystemEditor } from "../features/design-system/DesignSystemEditor.js";
 import { createFetchStudioAuthoringClient } from "../lib/fetch-studio-authoring-client.js";
 import StudioDashboard from "./StudioDashboard.js";
+import { COMPONENTS_SLUG } from "./hub/constants.js";
+import { adminCollectionsIndexHref } from "./lib/admin-hrefs.js";
 
 export type StudioShellProps = {
   adminRoute: string;
@@ -18,6 +16,9 @@ export type StudioShellProps = {
 };
 
 function StudioShellInner({ adminRoute, userRole }: StudioShellProps) {
+  const studioDashboardHref = "/studio";
+  const componentsHref = adminCollectionsIndexHref(adminRoute, COMPONENTS_SLUG);
+  const designSystemHref = "/studio?screen=design-system";
   const authoringClient = useMemo(
     () =>
       createFetchStudioAuthoringClient({
@@ -32,9 +33,6 @@ function StudioShellInner({ adminRoute, userRole }: StudioShellProps) {
   const sp = useSearchParams();
   const compositionId = sp.get("composition") ?? "";
   const screen = sp.get("screen") ?? "";
-  const isComponentComposition =
-    isStudioComponentRowId(compositionId) ||
-    isStudioNewComponentSessionId(compositionId);
 
   if (userRole === "contentEditor") {
     return (
@@ -71,8 +69,11 @@ function StudioShellInner({ adminRoute, userRole }: StudioShellProps) {
         <StudioApp
           adminHref={adminRoute}
           authoringClient={authoringClient}
-          canEditName={!isComponentComposition}
+          canEditName
           compositionId={compositionId}
+          componentsHref={componentsHref}
+          dashboardHref={studioDashboardHref}
+          designSystemHref={designSystemHref}
         />
       </div>
     </div>

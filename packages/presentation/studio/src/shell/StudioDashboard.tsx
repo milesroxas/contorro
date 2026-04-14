@@ -137,21 +137,22 @@ function QuickActionCard({
   const PrimaryIcon = primaryAction.icon;
 
   return (
-    <div className="flex h-full flex-col justify-between gap-5 border border-border bg-muted/25 p-4">
+    <div className="flex h-full flex-col justify-between gap-4 rounded-lg border bg-card p-4 shadow-sm">
       <div className="space-y-2">
-        <div className="inline-flex size-8 items-center justify-center border border-border bg-background">
+        <div className="inline-flex size-9 items-center justify-center rounded-md border bg-muted/60">
           <Icon className="size-4" aria-hidden />
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-medium text-foreground">{title}</p>
-          <p className="text-xs text-muted-foreground">{description}</p>
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          <p className="text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 pt-1">
         {primaryAction.href ? (
           <Button
             asChild
-            className="w-full justify-start gap-1.5 sm:w-auto"
+            className="gap-1.5"
+            size="sm"
             variant={primaryAction.variant ?? "default"}
           >
             <Link href={primaryAction.href} prefetch={false}>
@@ -163,8 +164,9 @@ function QuickActionCard({
           </Button>
         ) : (
           <Button
-            className="w-full justify-start gap-1.5 sm:w-auto"
+            className="gap-1.5"
             onClick={primaryAction.onClick}
+            size="sm"
             type="button"
             variant={primaryAction.variant ?? "default"}
           >
@@ -177,8 +179,8 @@ function QuickActionCard({
         {secondaryAction ? (
           <Button
             asChild
-            className="w-full justify-start sm:w-auto"
-            variant="ghost"
+            className="h-auto px-0"
+            variant="link"
           >
             <Link href={secondaryAction.href} prefetch={false}>
               {secondaryAction.label}
@@ -218,14 +220,14 @@ function ResourceListCard({
   const isLoading = loadState === "loading";
 
   return (
-    <Card className="flex min-h-[22rem] flex-col">
+    <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card ring-0">
       <CardHeader className="gap-3">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Icon className="size-4" aria-hidden />
             {title}
           </CardTitle>
-          <span className="inline-flex min-w-7 items-center justify-center border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+          <span className="inline-flex min-w-7 items-center justify-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
             {rows.length}
           </span>
         </div>
@@ -261,38 +263,35 @@ function ResourceListCard({
               </div>
             ) : (
               <ul className="space-y-2">
-                {rows.map((row, index) => (
-                  <li key={`${row.resourceType}-${row.id}`}>
-                    {index > 0 ? <Separator className="mb-2" /> : null}
-                    <div className="space-y-2">
-                      <div className="space-y-1">
-                        <p className="truncate text-sm font-medium md:text-base">
-                          {row.title}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {row.meta}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Button asChild size="sm" variant="outline">
-                          <Link href={row.editHref} prefetch={false}>
-                            Edit
-                          </Link>
-                        </Button>
-                        <Button asChild size="sm">
-                          <Link
-                            className="inline-flex items-center gap-1.5"
-                            href={row.studioHref}
-                            prefetch={false}
-                          >
-                            Open studio
-                            <IconExternalLink
-                              className="size-3.5"
-                              aria-hidden
-                            />
-                          </Link>
-                        </Button>
-                      </div>
+                {rows.map((row) => (
+                  <li
+                    className="space-y-2 rounded-md border bg-muted/15 p-3"
+                    key={`${row.resourceType}-${row.id}`}
+                  >
+                    <div className="space-y-1">
+                      <p className="truncate text-sm font-medium md:text-base">
+                        {row.title}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {row.meta}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button asChild size="sm" variant="outline">
+                        <Link href={row.editHref} prefetch={false}>
+                          Edit
+                        </Link>
+                      </Button>
+                      <Button asChild size="sm">
+                        <Link
+                          className="inline-flex items-center gap-1.5"
+                          href={row.studioHref}
+                          prefetch={false}
+                        >
+                          Open studio
+                          <IconExternalLink className="size-3.5" aria-hidden />
+                        </Link>
+                      </Button>
                     </div>
                   </li>
                 ))}
@@ -348,12 +347,14 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
         fetch(
           `/api/${PAGE_COMPOSITIONS_SLUG}?limit=200&depth=0&sort=-updatedAt`,
           {
+            cache: "no-store",
             credentials: "include",
             headers: { Accept: "application/json" },
             signal,
           },
         ),
         fetch(`/api/${COMPONENTS_SLUG}?limit=200&depth=0&sort=-updatedAt`, {
+          cache: "no-store",
           credentials: "include",
           headers: { Accept: "application/json" },
           signal,
@@ -393,6 +394,25 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
     const ac = new AbortController();
     void fetchDashboardData(ac.signal);
     return () => ac.abort();
+  }, [fetchDashboardData]);
+
+  useEffect(() => {
+    const onFocus = () => {
+      void fetchDashboardData();
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void fetchDashboardData();
+      }
+    };
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, [fetchDashboardData]);
 
   const templateCollectionHref = useMemo(
@@ -524,7 +544,6 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
           href: designSystemHref,
           icon: IconExternalLink,
           label: "Open design system",
-          variant: "secondary",
         },
         title: "Design system",
       },
@@ -552,8 +571,8 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
   const isError = loadState === "error";
 
   return (
-    <main className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col gap-6 px-4 py-6 md:gap-8 md:px-6 md:py-8">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <main className="flex h-full min-h-0 w-full flex-col overflow-hidden px-4 py-4 md:px-6 md:py-5 xl:px-8">
+      <header className="shrink-0 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <p className="text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase">
             Workspace
@@ -600,144 +619,35 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
           </Button>
         </div>
       </header>
-      <ScrollArea className="min-h-0 flex-1">
-        <div className="flex flex-col gap-6 pr-3 md:gap-8">
-          <section className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <Card>
-              <CardHeader className="space-y-1">
-                <CardTitle className="text-lg">Quick actions</CardTitle>
-                <CardDescription>
-                  Clear entry points for your three core workflows.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {quickActions.map((action) => (
-                  <QuickActionCard
-                    description={action.description}
-                    icon={action.icon}
-                    key={action.id}
-                    primaryAction={action.primaryAction}
-                    secondaryAction={action.secondaryAction}
-                    title={action.title}
-                  />
-                ))}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="space-y-1">
-                <CardTitle className="text-lg">Workspace health</CardTitle>
-                <CardDescription>
-                  Keep a quick pulse on content volume and publication
-                  readiness.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <dl className="grid grid-cols-2 gap-2">
-                  {overviewStats.map((item) => (
-                    <div
-                      className="space-y-1 border border-border bg-muted/30 px-3 py-2"
-                      key={item.label}
-                    >
-                      <dt className="text-[11px] text-muted-foreground">
-                        {item.label}
-                      </dt>
-                      <dd className="text-base font-medium text-foreground">
-                        {item.value}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-                {latestUpdated ? (
-                  <p className="text-xs text-muted-foreground">
-                    Last activity: {latestUpdated}
-                  </p>
-                ) : null}
-                <Separator />
-                <div className="flex flex-col gap-1">
-                  <Button asChild className="justify-start" variant="ghost">
-                    <Link href={templateCollectionHref} prefetch={false}>
-                      Manage templates
-                    </Link>
-                  </Button>
-                  <Button asChild className="justify-start" variant="ghost">
-                    <Link href={componentCollectionHref} prefetch={false}>
-                      Manage components
-                    </Link>
-                  </Button>
-                  <Button asChild className="justify-start" variant="ghost">
-                    <Link href={designSystemHref} prefetch={false}>
-                      Open design system
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
-
-          {isError ? (
-            <p className="rounded-none border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              Could not load dashboard data. Click refresh and try again.
-            </p>
-          ) : null}
-
-          <Card>
+      {isError ? (
+        <p className="mt-4 shrink-0 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          Could not load dashboard data. Click refresh and try again.
+        </p>
+      ) : null}
+      <div className="grid min-h-0 flex-1 gap-4 pt-4 md:grid-cols-[minmax(0,1fr)_minmax(19rem,22rem)] xl:grid-cols-[minmax(0,1fr)_minmax(21rem,24rem)]">
+        <div className="flex min-h-0 flex-col gap-4 overflow-hidden">
+          <Card className="shrink-0 rounded-lg border bg-card ring-0">
             <CardHeader className="space-y-1">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <IconClock className="size-4" aria-hidden />
-                Continue where you left off
-              </CardTitle>
+              <CardTitle className="text-lg">Quick actions</CardTitle>
               <CardDescription>
-                Jump back into your most recently updated templates and
-                components.
+                Clear entry points for your three core workflows.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="max-h-80">
-                <div className="pr-3">
-                  {loadState === "loading" ? (
-                    <p className="text-sm text-muted-foreground">
-                      Loading recent work...
-                    </p>
-                  ) : recentRows.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No recent items yet. Start from quick actions above.
-                    </p>
-                  ) : (
-                    <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                      {recentRows.map((row) => (
-                        <li
-                          className="flex h-full flex-col justify-between gap-3 border border-border bg-muted/20 p-3"
-                          key={`recent-${row.resourceType}-${row.id}`}
-                        >
-                          <div className="space-y-1">
-                            <p className="truncate text-sm font-medium text-foreground">
-                              {row.title}
-                            </p>
-                            <p className="truncate text-xs text-muted-foreground">
-                              {row.resourceType} · {row.meta}
-                            </p>
-                          </div>
-                          <Button
-                            asChild
-                            className="w-full justify-start"
-                            size="sm"
-                            variant="outline"
-                          >
-                            <Link href={row.studioHref} prefetch={false}>
-                              Open studio
-                            </Link>
-                          </Button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </ScrollArea>
+            <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {quickActions.map((action) => (
+                <QuickActionCard
+                  description={action.description}
+                  icon={action.icon}
+                  key={action.id}
+                  primaryAction={action.primaryAction}
+                  secondaryAction={action.secondaryAction}
+                  title={action.title}
+                />
+              ))}
             </CardContent>
           </Card>
 
-          <section className="grid gap-4 lg:grid-cols-2">
+          <section className="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
             <ResourceListCard
               emptyCtaLabel="Open templates collection"
               emptyHref={templateCollectionHref}
@@ -773,7 +683,114 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
             />
           </section>
         </div>
-      </ScrollArea>
+
+        <div className="flex min-h-0 flex-col gap-4 overflow-hidden">
+          <Card className="shrink-0 rounded-lg border bg-card ring-0">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-lg">Workspace health</CardTitle>
+              <CardDescription>
+                Keep a quick pulse on content volume and publication readiness.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <dl className="grid grid-cols-2 gap-2">
+                {overviewStats.map((item) => (
+                  <div
+                    className="space-y-1 border border-border bg-muted/30 px-3 py-2"
+                    key={item.label}
+                  >
+                    <dt className="text-[11px] text-muted-foreground">
+                      {item.label}
+                    </dt>
+                    <dd className="text-base font-medium text-foreground">
+                      {item.value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              {latestUpdated ? (
+                <p className="text-xs text-muted-foreground">
+                  Last activity: {latestUpdated}
+                </p>
+              ) : null}
+              <Separator />
+              <div className="flex flex-col gap-1">
+                <Button asChild className="h-auto justify-start px-0" variant="link">
+                  <Link href={templateCollectionHref} prefetch={false}>
+                    Manage templates
+                  </Link>
+                </Button>
+                <Button asChild className="h-auto justify-start px-0" variant="link">
+                  <Link href={componentCollectionHref} prefetch={false}>
+                    Manage components
+                  </Link>
+                </Button>
+                <Button asChild className="h-auto justify-start px-0" variant="link">
+                  <Link href={designSystemHref} prefetch={false}>
+                    Open design system
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card ring-0">
+            <CardHeader className="space-y-1">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <IconClock className="size-4" aria-hidden />
+                Continue where you left off
+              </CardTitle>
+              <CardDescription>
+                Jump back into your most recently updated templates and
+                components.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="min-h-0 flex-1">
+              <ScrollArea className="h-full">
+                <div className="pr-3">
+                  {loadState === "loading" ? (
+                    <p className="text-sm text-muted-foreground">
+                      Loading recent work...
+                    </p>
+                  ) : recentRows.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No recent items yet. Start from quick actions above.
+                    </p>
+                  ) : (
+                    <ul className="grid gap-2">
+                      {recentRows.map((row) => (
+                        <li
+                          className="flex h-full flex-col justify-between gap-3 rounded-md border border-border bg-muted/15 p-3"
+                          key={`recent-${row.resourceType}-${row.id}`}
+                        >
+                          <div className="space-y-1">
+                            <p className="truncate text-sm font-medium text-foreground">
+                              {row.title}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {row.resourceType} · {row.meta}
+                            </p>
+                          </div>
+                          <Button
+                            asChild
+                            className="w-full justify-start"
+                            size="sm"
+                            variant="default"
+                          >
+                            <Link href={row.studioHref} prefetch={false}>
+                              Open studio
+                            </Link>
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </main>
   );
 }

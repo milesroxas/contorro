@@ -116,11 +116,17 @@ function StudioDragPreview({
 export function StudioApp({
   compositionId,
   adminHref,
+  dashboardHref,
+  componentsHref,
+  designSystemHref,
   canEditName,
   authoringClient,
 }: {
   compositionId: string;
   adminHref: string;
+  dashboardHref: string;
+  componentsHref: string;
+  designSystemHref: string;
   canEditName: boolean;
   /** Injected transport (e.g. fetch to your host). Defaults inside the store when omitted. */
   authoringClient?: StudioAuthoringClient;
@@ -478,6 +484,9 @@ export function StudioApp({
           }}
           onSaveDraft={() => void saveDraft()}
           onUndo={() => undo()}
+          dashboardHref={dashboardHref}
+          componentsHref={componentsHref}
+          designSystemHref={designSystemHref}
           renaming={renaming}
           saving={saving}
           adminHref={adminHref}

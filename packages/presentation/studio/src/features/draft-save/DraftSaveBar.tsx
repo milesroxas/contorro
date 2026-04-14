@@ -3,17 +3,34 @@
 import {
   IconArrowBackUp,
   IconArrowForwardUp,
+  IconChevronDown,
+  IconExternalLink,
+  IconLayoutDashboard,
+  IconPalette,
   IconPencil,
+  IconPuzzle,
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "../../components/ui/button.js";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../../components/ui/dropdown-menu.js";
 import { Separator } from "../../components/ui/separator.js";
 
 export function DraftSaveBar({
   name,
   canEditName,
   adminHref,
+  dashboardHref,
+  componentsHref,
+  designSystemHref,
   canUndo,
   canRedo,
   dirty,
@@ -29,6 +46,9 @@ export function DraftSaveBar({
   name: string;
   canEditName: boolean;
   adminHref: string;
+  dashboardHref: string;
+  componentsHref: string;
+  designSystemHref: string;
   canUndo: boolean;
   canRedo: boolean;
   dirty: boolean;
@@ -71,9 +91,53 @@ export function DraftSaveBar({
 
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-muted/20 px-4 py-3 dark:bg-muted/10">
-      <Button asChild size="sm" variant="ghost">
-        <a href={adminHref}>CMS</a>
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            aria-label="Open Studio navigation menu"
+            className="gap-1.5"
+            size="sm"
+            type="button"
+            variant="ghost"
+          >
+            Menu
+            <IconChevronDown aria-hidden className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuLabel>Studio</DropdownMenuLabel>
+          <DropdownMenuGroup>
+            <DropdownMenuItem asChild className="gap-2">
+              <a href={dashboardHref}>
+                <IconLayoutDashboard aria-hidden className="size-4" />
+                Dashboard
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="gap-2">
+              <a href={componentsHref}>
+                <IconPuzzle aria-hidden className="size-4" />
+                Components
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="gap-2">
+              <a href={designSystemHref}>
+                <IconPalette aria-hidden className="size-4" />
+                Design system
+              </a>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>CMS</DropdownMenuLabel>
+          <DropdownMenuGroup>
+            <DropdownMenuItem asChild className="gap-2">
+              <a href={adminHref} rel="noopener noreferrer" target="_blank">
+                <IconExternalLink aria-hidden className="size-4" />
+                Open CMS
+              </a>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <Separator aria-hidden className="h-5 w-px bg-border" />
       {editingName && canEditName ? (
         <>

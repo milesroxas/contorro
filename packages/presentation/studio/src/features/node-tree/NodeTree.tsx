@@ -19,6 +19,7 @@ import {
   useState,
 } from "react";
 
+import { StudioBulkCollapseButton } from "../../components/studio-panel.js";
 import { Button } from "../../components/ui/button.js";
 import { cn } from "../../lib/cn.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
@@ -72,10 +73,10 @@ const layerTreeRootListClass = "list-none space-y-0 !p-0";
 const layerTreeItemClass = "list-none m-0! p-0! pl-0!";
 
 const treeCollapseIconButtonClass =
-  "h-8 w-8 shrink-0 cursor-pointer rounded-sm border border-transparent px-0 text-muted-foreground hover:border-border/70 hover:bg-muted/45 hover:text-foreground";
+  "h-6 w-6 shrink-0 cursor-pointer rounded-sm border border-transparent px-0 text-muted-foreground hover:border-border/70 hover:bg-muted/45 hover:text-foreground";
 
 const layerRowBaseClass =
-  "flex min-w-0 items-stretch gap-0 rounded-md border px-0.5 py-px transition-colors";
+  "flex min-w-0 items-stretch gap-0 rounded-sm border px-0 py-px transition-colors";
 
 const layerRowSelectedClass =
   "border-border/55 bg-muted/85 text-foreground shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07)] dark:bg-muted/45 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]";
@@ -85,8 +86,8 @@ const layerRowIdleClass =
 
 function layerTreeNestedListClass(isRoot: boolean) {
   return cn(
-    "ml-6 list-none space-y-0 border-l border-border/45 !pl-3.5",
-    isRoot ? "mt-1" : "mt-0",
+    "ml-2 list-none space-y-0 border-l border-border/45 !pl-2",
+    isRoot ? "mt-0.5" : "mt-0",
   );
 }
 
@@ -144,7 +145,7 @@ function DraggableNodeTreeRow({
         >
           <Button
             className={cn(
-              "min-h-8 min-w-0 flex-1 justify-start hover:bg-transparent focus-visible:ring-offset-0 [&_svg]:size-4",
+              "min-h-6 min-w-0 flex-1 justify-start hover:bg-transparent focus-visible:ring-offset-0 [&_svg]:size-3.5",
               "!cursor-grab active:!cursor-grabbing",
               isDragging && "!cursor-grabbing",
             )}
@@ -156,7 +157,7 @@ function DraggableNodeTreeRow({
           >
             <Icon
               aria-hidden
-              className="size-4 shrink-0 text-muted-foreground opacity-90"
+              className="size-3.5 shrink-0 text-muted-foreground opacity-90"
               stroke={1.5}
             />
             <span className="min-w-0 flex-1 cursor-inherit truncate text-left font-medium capitalize leading-none text-foreground/95">
@@ -284,12 +285,7 @@ function RootLayerHeading({
   rightControls?: ReactNode;
 }) {
   return (
-    <div
-      className={cn(
-        "mb-1.5 border-b pb-2 transition-colors",
-        selected ? "border-primary/40" : "border-border/50",
-      )}
-    >
+    <div className="mb-0.5">
       <div className="flex w-full min-w-0 items-center gap-1">
         <button
           className={cn(
@@ -327,6 +323,7 @@ function LayerSubtree({
   onToggleNodeCollapse,
   onSetNodeCollapseState,
   globalCollapseToggleButton,
+  topLevelSectionIndex,
 }: {
   composition: PageComposition;
   nodeId: string;
@@ -337,6 +334,7 @@ function LayerSubtree({
   onToggleNodeCollapse: (id: string) => void;
   onSetNodeCollapseState: (ids: string[], collapsed: boolean) => void;
   globalCollapseToggleButton?: ReactNode;
+  topLevelSectionIndex?: number;
 }) {
   const node = composition.nodes[nodeId];
   if (!node) {
@@ -440,59 +438,65 @@ function LayerSubtree({
       selected={selected}
     />
   );
+  const topLevelSectionSpacingClass =
+    typeof topLevelSectionIndex === "number" && topLevelSectionIndex > 0
+      ? "mt-4 border-t border-border/60 pt-4"
+      : "";
 
   return (
     <li className={layerTreeItemClass}>
-      {row}
-      {isContainer && !isCollapsed ? (
-        <ul className={layerTreeNestedListClass(isRoot)}>
-          {node.childIds.length === 0 ? (
-            <li className={layerTreeItemClass}>
-              <InsertionDropZone
-                droppableScope="layers"
-                parentId={nodeId}
-                insertIndex={0}
-                variant="empty"
-              />
-            </li>
-          ) : (
-            <>
+      <div className={topLevelSectionSpacingClass}>
+        {row}
+        {isContainer && !isCollapsed ? (
+          <ul className={layerTreeNestedListClass(isRoot)}>
+            {node.childIds.length === 0 ? (
               <li className={layerTreeItemClass}>
                 <InsertionDropZone
-                  className="py-0"
                   droppableScope="layers"
                   parentId={nodeId}
                   insertIndex={0}
-                  variant="between"
+                  variant="empty"
                 />
               </li>
-              {node.childIds.map((cid, i) => (
-                <Fragment key={cid}>
-                  <LayerSubtree
-                    composition={composition}
-                    collapsedNodeIds={collapsedNodeIds}
-                    globalCollapseToggleButton={globalCollapseToggleButton}
-                    nodeId={cid}
-                    onSetNodeCollapseState={onSetNodeCollapseState}
-                    onToggleNodeCollapse={onToggleNodeCollapse}
-                    onRemoveNode={onRemoveNode}
-                    onSelect={onSelect}
-                    selectedNodeId={selectedNodeId}
+            ) : (
+              <>
+                <li className={layerTreeItemClass}>
+                  <InsertionDropZone
+                    className="py-0"
+                    droppableScope="layers"
+                    parentId={nodeId}
+                    insertIndex={0}
+                    variant="between"
                   />
-                  <li className={layerTreeItemClass}>
-                    <InsertionDropZone
-                      droppableScope="layers"
-                      parentId={nodeId}
-                      insertIndex={i + 1}
-                      variant="between"
+                </li>
+                {node.childIds.map((cid, i) => (
+                  <Fragment key={cid}>
+                    <LayerSubtree
+                      composition={composition}
+                      collapsedNodeIds={collapsedNodeIds}
+                      globalCollapseToggleButton={globalCollapseToggleButton}
+                      nodeId={cid}
+                      onSetNodeCollapseState={onSetNodeCollapseState}
+                      onToggleNodeCollapse={onToggleNodeCollapse}
+                      onRemoveNode={onRemoveNode}
+                      onSelect={onSelect}
+                      selectedNodeId={selectedNodeId}
                     />
-                  </li>
-                </Fragment>
-              ))}
-            </>
-          )}
-        </ul>
-      ) : null}
+                    <li className={layerTreeItemClass}>
+                      <InsertionDropZone
+                        droppableScope="layers"
+                        parentId={nodeId}
+                        insertIndex={i + 1}
+                        variant="between"
+                      />
+                    </li>
+                  </Fragment>
+                ))}
+              </>
+            )}
+          </ul>
+        ) : null}
+      </div>
     </li>
   );
 }
@@ -672,22 +676,12 @@ export function NodeTree({
     hasExpandableSections &&
     expandableNodeIds.every((id) => collapsedNodeIds.has(id));
   const globalSectionsToggleButton = hasExpandableSections ? (
-    <Button
-      aria-label={
-        allSectionsCollapsed ? "Expand sections" : "Collapse sections"
-      }
-      aria-pressed={!allSectionsCollapsed}
-      className="shrink-0"
+    <StudioBulkCollapseButton
+      allCollapsed={allSectionsCollapsed}
       onClick={() =>
         setNodeCollapseState(expandableNodeIds, !allSectionsCollapsed)
       }
-      size="panel"
-      title={allSectionsCollapsed ? "Expand sections" : "Collapse sections"}
-      type="button"
-      variant="outline"
-    >
-      {allSectionsCollapsed ? "Expand" : "Collapse"}
-    </Button>
+    />
   ) : null;
   const root = composition.nodes[composition.rootId];
   const templateShell = isTemplateShellRoot(composition);
@@ -710,7 +704,7 @@ export function NodeTree({
           />
         </li>
       ) : null}
-      {topLevelIds.map((nodeId) => (
+      {topLevelIds.map((nodeId, index) => (
         <LayerSubtree
           composition={composition}
           collapsedNodeIds={collapsedNodeIds}
@@ -722,6 +716,7 @@ export function NodeTree({
           onRemoveNode={onRemoveNode}
           onSelect={onSelect}
           selectedNodeId={selectedNodeId}
+          topLevelSectionIndex={index}
         />
       ))}
     </ul>

@@ -30,7 +30,6 @@ import {
   IconBorderStyle2,
   IconChevronDown,
   IconChevronRight,
-  IconChevronUp,
   IconLayout2,
   IconLayoutAlignBottom,
   IconLayoutAlignCenter,
@@ -53,6 +52,7 @@ import {
 import { useEffect, useId, useRef, useState } from "react";
 
 import { ScrollArea } from "../../components/scroll-area.js";
+import { StudioBulkCollapseButton } from "../../components/studio-panel.js";
 import { Button } from "../../components/ui/button.js";
 import { Checkbox } from "../../components/ui/checkbox.js";
 import {
@@ -3618,6 +3618,9 @@ export function PropertyInspector({
   const [styleSectionOpenState, setStyleSectionOpenState] = useState<
     Partial<Record<StyleSectionId, boolean>>
   >({});
+  const [inspectorTab, setInspectorTab] = useState<"styles" | "settings">(
+    "styles",
+  );
   if (!node || !composition) {
     return (
       <div className="text-sm text-muted-foreground">
@@ -3690,27 +3693,48 @@ export function PropertyInspector({
     styleSectionIdsWithControls.every(
       (sectionId) => !isStyleSectionOpen(sectionId),
     );
+  const showStyleToolbarActions =
+    inspectorTab === "styles" &&
+    hasStyleControls &&
+    (styleSectionIdsWithControls.length > 0 || hasStyleOverrides);
 
   return (
     <TooltipProvider>
       <div className="space-y-4 text-sm">
-        <Tabs className="w-full" defaultValue="styles">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-base font-semibold uppercase tracking-[0.1em] text-foreground">
-              {nodeLabel}
-            </div>
-            <TabsList className="grid w-fit grid-cols-2">
+        <Tabs
+          className="w-full"
+          onValueChange={(value) => {
+            if (value === "styles" || value === "settings") {
+              setInspectorTab(value);
+            }
+          }}
+          value={inspectorTab}
+        >
+          <div className="text-base font-semibold uppercase tracking-[0.1em] text-foreground">
+            {nodeLabel}
+          </div>
+          <div className="mt-3 space-y-2">
+            <TabsList className="grid w-fit shrink-0 grid-cols-2">
               <TabsTrigger value="styles">Styles</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
-          </div>
-          <TabsContent className="mt-4" value="styles">
-            {hasStyleControls &&
-            (styleSectionIdsWithControls.length > 0 || hasStyleOverrides) ? (
-              <div className="mb-3 flex items-center justify-end gap-2">
-                {styleSectionIdsWithControls.length > 0 ? (
+            {showStyleToolbarActions ? (
+              <div className="flex items-center gap-2">
+                {hasStyleOverrides ? (
                   <Button
-                    className="h-8 gap-1.5 px-2 text-xs"
+                    className="shrink-0"
+                    onClick={clearNodeStyles}
+                    size="panel"
+                    type="button"
+                    variant="compact"
+                  >
+                    Reset styles
+                  </Button>
+                ) : null}
+                {styleSectionIdsWithControls.length > 0 ? (
+                  <StudioBulkCollapseButton
+                    allCollapsed={allStyleSectionsCollapsed}
+                    className="ml-auto"
                     onClick={() => {
                       const nextOpen = allStyleSectionsCollapsed;
                       setStyleSectionOpenState((prev) => {
@@ -3721,33 +3745,12 @@ export function PropertyInspector({
                         return next;
                       });
                     }}
-                    type="button"
-                    variant="ghost"
-                  >
-                    {allStyleSectionsCollapsed ? (
-                      <IconChevronDown aria-hidden className="size-3.5" />
-                    ) : (
-                      <IconChevronUp aria-hidden className="size-3.5" />
-                    )}
-                    <span>
-                      {allStyleSectionsCollapsed
-                        ? "Expand all sections"
-                        : "Collapse all sections"}
-                    </span>
-                  </Button>
-                ) : null}
-                {hasStyleOverrides ? (
-                  <Button
-                    className="h-8 text-xs"
-                    onClick={clearNodeStyles}
-                    type="button"
-                    variant="outline"
-                  >
-                    Reset styles
-                  </Button>
+                  />
                 ) : null}
               </div>
             ) : null}
+          </div>
+          <TabsContent className="mt-4" value="styles">
             {hasStyleControls ? (
               <div className="space-y-4">
                 {/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog. */}

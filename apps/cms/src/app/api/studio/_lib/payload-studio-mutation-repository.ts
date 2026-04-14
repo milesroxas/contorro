@@ -101,7 +101,39 @@ export function payloadStudioMutationRepository(
 
     async renameTemplate(compositionId, name, actor) {
       void actor;
+      const componentId = componentIdFromStudioRowId(compositionId);
       try {
+        if (componentId) {
+          const existing = await payload.findByID({
+            collection: "components",
+            id: componentId,
+            depth: 0,
+            draft: true,
+            user,
+            overrideAccess: false,
+          });
+          if (!existing) {
+            return err("PERSISTENCE_ERROR");
+          }
+
+          const updated = await payload.update({
+            collection: "components",
+            id: componentId,
+            data: {
+              displayName: name,
+              composition:
+                existing.composition ?? defaultEmptyPageComposition(),
+            },
+            draft: true,
+            user,
+            overrideAccess: false,
+          });
+          return ok({
+            name: String(updated.displayName ?? name),
+            updatedAt: normalizeUpdatedAt(updated.updatedAt),
+          });
+        }
+
         const existing = await payload.findByID({
           collection: "page-compositions",
           id: compositionId,
