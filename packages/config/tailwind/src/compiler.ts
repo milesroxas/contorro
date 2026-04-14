@@ -1,3 +1,4 @@
+import type { StyleProperty } from "@repo/contracts-zod";
 import type { DesignToken, DesignTokenSet } from "@repo/domains-design-system";
 
 export type TokenMeta = {
@@ -12,51 +13,7 @@ export type CompiledTokenOutput = {
   tokenMetadata: TokenMeta[];
 };
 
-export type StudioStyleProperty =
-  | "background"
-  | "borderColor"
-  | "borderRadius"
-  | "borderStyle"
-  | "borderWidth"
-  | "color"
-  | "fontFamily"
-  | "fontSize"
-  | "fontWeight"
-  | "textAlign"
-  | "lineHeight"
-  | "letterSpacing"
-  | "textTransform"
-  | "fontStyle"
-  | "textDecorationLine"
-  | "display"
-  | "flexDirection"
-  | "flexWrap"
-  | "justifyContent"
-  | "alignItems"
-  | "alignSelf"
-  | "flex"
-  | "flexGrow"
-  | "flexShrink"
-  | "flexBasis"
-  | "order"
-  | "padding"
-  | "paddingTop"
-  | "paddingRight"
-  | "paddingBottom"
-  | "paddingLeft"
-  | "margin"
-  | "marginTop"
-  | "marginRight"
-  | "marginBottom"
-  | "marginLeft"
-  | "gap"
-  | "width"
-  | "height"
-  | "aspectRatio"
-  | "minWidth"
-  | "minHeight"
-  | "maxWidth"
-  | "maxHeight";
+export type StudioStyleProperty = StyleProperty;
 
 const TOKEN_UTILITY_CLASS_PREFIX: Record<StudioStyleProperty, string> = {
   background: "bg",

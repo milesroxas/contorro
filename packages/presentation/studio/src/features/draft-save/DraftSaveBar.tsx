@@ -26,6 +26,7 @@ import { Separator } from "../../components/ui/separator.js";
 
 export function DraftSaveBar({
   name,
+  resourceLabel,
   canEditName,
   adminHref,
   dashboardHref,
@@ -44,6 +45,7 @@ export function DraftSaveBar({
   onPublish,
 }: {
   name: string;
+  resourceLabel: "Component" | "Page Template";
   canEditName: boolean;
   adminHref: string;
   dashboardHref: string;
@@ -72,6 +74,12 @@ export function DraftSaveBar({
     () => draftName.trim() !== "" && draftName.trim() !== name,
     [draftName, name],
   );
+  const fallbackName =
+    resourceLabel === "Component"
+      ? "Untitled component"
+      : "Untitled page template";
+  const displayName = name || fallbackName;
+  const renameLabel = `Rename ${resourceLabel.toLowerCase()}`;
 
   let saveStatus = "Saved";
   let saveStatusClassName =
@@ -142,7 +150,7 @@ export function DraftSaveBar({
       {editingName && canEditName ? (
         <>
           <input
-            aria-label="Template name"
+            aria-label={`${resourceLabel} name`}
             className="h-8 min-w-[220px] max-w-[38vw] rounded-md border border-border bg-background px-2.5 text-sm text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onChange={(e) => setDraftName(e.target.value)}
             onKeyDown={(e) => {
@@ -187,11 +195,11 @@ export function DraftSaveBar({
       ) : (
         <>
           <p className="max-w-[32vw] truncate text-sm font-medium text-foreground">
-            {name || "Untitled template"}
+            {resourceLabel}: {displayName}
           </p>
           {canEditName ? (
             <Button
-              aria-label="Rename template"
+              aria-label={renameLabel}
               disabled={renaming}
               onClick={() => setEditingName(true)}
               size="sm"
@@ -199,7 +207,7 @@ export function DraftSaveBar({
               variant="ghost"
             >
               <IconPencil className="size-4" />
-              <span className="sr-only">Rename template</span>
+              <span className="sr-only">{renameLabel}</span>
             </Button>
           ) : null}
         </>

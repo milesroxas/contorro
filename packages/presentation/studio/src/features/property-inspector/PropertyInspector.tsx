@@ -17,6 +17,7 @@ import {
   stylePropertyDefaultValueLabel,
   stylePropertyLabel,
   styleSectionForProperty,
+  styleSectionLabel,
 } from "@repo/domains-composition";
 import type { Icon } from "@tabler/icons-react";
 import {
@@ -1961,51 +1962,52 @@ function DisplayStyleValueControl({
   );
 }
 
-const SECTION_META: Record<
-  StyleSectionId,
-  {
-    label: "Color" | "Borders" | "Text" | "Layout" | "Spacing" | "Size";
-    Icon: Icon;
-  }
-> = {
-  color: {
-    label: "Color",
-    Icon: IconPalette,
-  },
-  border: {
-    label: "Borders",
-    Icon: IconBorderStyle2,
-  },
-  text: {
-    label: "Text",
-    Icon: IconTypography,
-  },
-  layout: {
-    label: "Layout",
-    Icon: IconLayout2,
-  },
-  spacing: {
-    label: "Spacing",
-    Icon: IconSpacingHorizontal,
-  },
-  size: {
-    label: "Size",
-    Icon: IconRulerMeasure,
-  },
+const STYLE_SECTION_DISPLAY_ORDER: readonly StyleSectionId[] = [
+  "layout",
+  "spacing",
+  "size",
+  "color",
+  "text",
+  "border",
+];
+
+const STYLE_SECTION_ICON_BY_ID: Partial<Record<StyleSectionId, Icon>> = {
+  color: IconPalette,
+  border: IconBorderStyle2,
+  text: IconTypography,
+  layout: IconLayout2,
+  spacing: IconSpacingHorizontal,
+  size: IconRulerMeasure,
 };
 
-const STYLE_SECTIONS: readonly {
+const DEFAULT_STYLE_SECTION_ICON: Icon = IconLayout2;
+
+function orderedStyleSectionsForInspector(
+  sections: ReadonlyArray<{
+    id: StyleSectionId;
+    properties: readonly StyleProperty[];
+  }>,
+): Array<{
   id: StyleSectionId;
-  label: "Color" | "Borders" | "Text" | "Layout" | "Spacing" | "Size";
+  label: string;
   Icon: Icon;
-}[] = [
-  { id: "layout", ...SECTION_META.layout },
-  { id: "spacing", ...SECTION_META.spacing },
-  { id: "size", ...SECTION_META.size },
-  { id: "color", ...SECTION_META.color },
-  { id: "text", ...SECTION_META.text },
-  { id: "border", ...SECTION_META.border },
-];
+  properties: readonly StyleProperty[];
+}> {
+  const orderIndex = new Map<StyleSectionId, number>(
+    STYLE_SECTION_DISPLAY_ORDER.map((id, index) => [id, index]),
+  );
+  return [...sections]
+    .sort((a, b) => {
+      const indexA = orderIndex.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+      const indexB = orderIndex.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+      return indexA - indexB;
+    })
+    .map((section) => ({
+      ...section,
+      label: styleSectionLabel(section.id),
+      Icon: STYLE_SECTION_ICON_BY_ID[section.id] ?? DEFAULT_STYLE_SECTION_ICON,
+    }));
+}
 
 const PRIMARY_STYLE_PROPERTIES = new Set<StyleProperty>([
   "background",
@@ -3651,6 +3653,9 @@ export function PropertyInspector({
   const stylePropertiesBySection = stylePropertiesBySectionForDefinitionKey(
     node.definitionKey,
   );
+  const orderedStyleSections = orderedStyleSectionsForInspector(
+    stylePropertiesBySection,
+  );
   const hasStyleControls = stylePropertiesBySection.length > 0;
   const hasStyleOverrides = nodeHasNonEmptyStyleBinding(composition, node);
   const gapPropertyAvailable = stylePropertiesBySection.some((section) =>
@@ -3667,11 +3672,8 @@ export function PropertyInspector({
     });
   };
   const styleSectionIdsWithControls: StyleSectionId[] = [];
-  for (const section of STYLE_SECTIONS) {
-    const rawSectionProperties =
-      stylePropertiesBySection.find((s) => s.id === section.id)?.properties ??
-      [];
-    let sectionProperties = rawSectionProperties;
+  for (const section of orderedStyleSections) {
+    let sectionProperties = section.properties;
     if (section.id === "spacing") {
       sectionProperties = sectionProperties.filter(
         (property) => property !== "gap",
@@ -3754,11 +3756,8 @@ export function PropertyInspector({
             {hasStyleControls ? (
               <div className="space-y-4">
                 {/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog. */}
-                {STYLE_SECTIONS.map((section, sectionIndex) => {
-                  const rawSectionProperties =
-                    stylePropertiesBySection.find((s) => s.id === section.id)
-                      ?.properties ?? [];
-                  let sectionProperties = rawSectionProperties;
+                {orderedStyleSections.map((section, sectionIndex) => {
+                  let sectionProperties = section.properties;
                   if (section.id === "spacing") {
                     sectionProperties = sectionProperties.filter(
                       (property) => property !== "gap",

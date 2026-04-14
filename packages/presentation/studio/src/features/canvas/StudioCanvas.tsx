@@ -1,6 +1,6 @@
 "use client";
 
-import { useDraggable } from "@dnd-kit/core";
+import { useDndContext, useDraggable } from "@dnd-kit/core";
 import type { TokenMeta } from "@repo/config-tailwind";
 import type { CompositionNode, PageComposition } from "@repo/contracts-zod";
 import { defaultPrimitiveRegistry } from "@repo/runtime-primitives";
@@ -93,6 +93,10 @@ function ContainerChildList({
 }) {
   const isTemplateShellRootParent =
     parentNode.id === composition.rootId && isTemplateShellRoot(composition);
+  const isNestedBoxParent =
+    parentNode.definitionKey === "primitive.box" &&
+    !!parentNode.parentId &&
+    composition.nodes[parentNode.parentId]?.definitionKey === "primitive.box";
 
   if (childIds.length === 0) {
     return (
@@ -100,6 +104,7 @@ function ContainerChildList({
         droppableScope="canvas"
         insertIndex={0}
         parentId={parentNode.id}
+        showNestedBoxPlaceholder={isNestedBoxParent}
         testId={
           parentNode.definitionKey === "primitive.box" ||
           parentNode.definitionKey === "primitive.section"
@@ -214,6 +219,7 @@ function CanvasNodeFrame({
   onSelectNode,
   onRemoveNode,
   selected,
+  dragContainerOutline,
   children,
 }: {
   composition: PageComposition;
@@ -221,13 +227,14 @@ function CanvasNodeFrame({
   selected: boolean;
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
+  dragContainerOutline: "none" | "idle" | "active";
   children: React.ReactNode;
 }) {
   const isRoot = node.id === composition.rootId;
   const isLockedSection = isLockedTemplateShellSection(composition, node);
   const dragDisabled = isRoot || isLockedSection;
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `move:${node.id}`,
+    id: `canvas:move:${node.id}`,
     disabled: dragDisabled,
     data: { kind: "node" as const, nodeId: node.id },
   });
@@ -279,6 +286,17 @@ function CanvasNodeFrame({
           </NodeChrome>
         </PrimitiveNodeContextMenu>
       )}
+      {dragContainerOutline !== "none" ? (
+        <div
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute inset-0 rounded-[2px] border border-dashed transition-colors",
+            dragContainerOutline === "active"
+              ? "border-primary/85 shadow-[0_0_0_1px_hsl(var(--primary)/0.35)]"
+              : "border-primary/45",
+          )}
+        />
+      ) : null}
     </div>
   );
 }
@@ -317,6 +335,18 @@ function CanvasNode({
 
   const selected = selectedNodeId === node.id;
   const isContainer = isContainerNode(node);
+  const { active, over } = useDndContext();
+  const hasActiveDrag =
+    active?.data.current?.kind === "palette" ||
+    active?.data.current?.kind === "node";
+  const activeDropParentId =
+    over?.data.current?.kind === "insert" ? over.data.current.parentId : null;
+  const dragContainerOutline: "none" | "idle" | "active" =
+    isContainer && hasActiveDrag
+      ? activeDropParentId === node.id
+        ? "active"
+        : "idle"
+      : "none";
 
   const childList = isContainer ? (
     <ContainerChildList
@@ -404,6 +434,7 @@ function CanvasNode({
     return (
       <CanvasNodeFrame
         composition={composition}
+        dragContainerOutline={dragContainerOutline}
         node={node}
         onRemoveNode={onRemoveNode}
         onSelectNode={onSelectNode}
@@ -426,6 +457,7 @@ function CanvasNode({
     return (
       <CanvasNodeFrame
         composition={composition}
+        dragContainerOutline={dragContainerOutline}
         node={node}
         onRemoveNode={onRemoveNode}
         onSelectNode={onSelectNode}
@@ -439,6 +471,7 @@ function CanvasNode({
   return (
     <CanvasNodeFrame
       composition={composition}
+      dragContainerOutline={dragContainerOutline}
       node={node}
       onRemoveNode={onRemoveNode}
       onSelectNode={onSelectNode}

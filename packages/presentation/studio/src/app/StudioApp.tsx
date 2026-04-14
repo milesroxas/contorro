@@ -12,6 +12,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import {
   type CSSProperties,
   type ReactNode,
@@ -22,6 +23,10 @@ import {
 } from "react";
 
 import type { StudioAuthoringClient } from "@repo/contracts-zod";
+import {
+  isStudioComponentRowId,
+  isStudioNewComponentSessionId,
+} from "@repo/domains-composition";
 
 import { StudioPanel } from "../components/studio-panel.js";
 import { StudioRoot } from "../components/studio-root.js";
@@ -78,6 +83,16 @@ const MAX_LEFT_PANEL_WIDTH = 520;
 const MIN_RIGHT_PANEL_WIDTH = 300;
 const MAX_RIGHT_PANEL_WIDTH = 640;
 const MIN_CENTER_WIDTH = 420;
+
+function studioResourceLabel(
+  compositionId: string,
+): "Component" | "Page Template" {
+  return isStudioComponentRowId(compositionId) ||
+    isStudioNewComponentSessionId(compositionId)
+    ? "Component"
+    : "Page Template";
+}
+
 function StudioDragPreview({
   activeNodeId,
   activePaletteKey,
@@ -164,6 +179,7 @@ export function StudioApp({
     () => runtimeCssVariables(cssVariables),
     [cssVariables],
   );
+  const currentCompositionId = useStudioStore((s) => s.compositionId);
   const name = useStudioStore((s) => s.name);
   const selectedNodeId = useStudioStore((s) => s.selectedNodeId);
   const dirty = useStudioStore((s) => s.dirty);
@@ -453,6 +469,7 @@ export function StudioApp({
   const leftSidebarPanel =
     leftSidebarPanels.find(({ id }) => id === activeLeftSidebarPanel) ??
     leftSidebarPanels[0];
+  const resourceLabel = studioResourceLabel(currentCompositionId);
 
   return (
     <DndContext
@@ -477,6 +494,7 @@ export function StudioApp({
           dirty={dirty}
           error={error}
           name={name}
+          resourceLabel={resourceLabel}
           onPublish={() => void publish()}
           onRedo={() => redo()}
           onRename={async (nextName) => {
@@ -564,7 +582,12 @@ export function StudioApp({
               composition={composition}
               onCanvasBackground={() => selectNode(null)}
               onRemoveNode={removeNode}
-              onSelectNode={selectNode}
+              onSelectNode={(nodeId) => {
+                if (activeLeftSidebarPanel !== "layers") {
+                  setActiveLeftSidebarPanel("layers");
+                }
+                selectNode(nodeId);
+              }}
               onToggleTheme={() => {
                 setTheme((prevTheme) => {
                   const nextTheme = prevTheme === "dark" ? "light" : "dark";
@@ -632,7 +655,11 @@ export function StudioApp({
           </StudioPanel>
         </div>
       </StudioRoot>
-      <DragOverlay dropAnimation={null}>
+      <DragOverlay
+        adjustScale={false}
+        dropAnimation={null}
+        modifiers={[snapCenterToCursor]}
+      >
         {overlayDisplay ? (
           <StudioDragPreview
             activeNodeId={activeNodeId}

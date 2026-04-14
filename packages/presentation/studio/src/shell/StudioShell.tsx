@@ -83,8 +83,8 @@ function StudioShellInner({ adminRoute, userRole }: StudioShellProps) {
 /** Studio route shell: hub, design system screen, and composition editor. */
 export function StudioShell({ adminRoute, userRole }: StudioShellProps) {
   return (
-    <div className="flex h-dvh max-h-dvh w-full min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
-      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden">
+    <div className="flex min-h-dvh w-full min-w-0 flex-1 flex-col overflow-y-auto bg-background text-foreground lg:h-dvh lg:max-h-dvh lg:overflow-hidden">
+      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col lg:overflow-hidden">
         <Suspense
           fallback={
             <div className="flex min-h-0 flex-1 items-center justify-center p-6 text-muted-foreground">

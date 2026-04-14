@@ -14,8 +14,10 @@ export default function StudioGroupLayout(props: {
   const { children } = props;
 
   return (
-    <html lang="en">
-      <body className="min-h-dvh antialiased">{children}</body>
+    <html className="h-full" lang="en">
+      <body className="min-h-dvh antialiased lg:h-dvh lg:overflow-hidden">
+        {children}
+      </body>
     </html>
   );
 }

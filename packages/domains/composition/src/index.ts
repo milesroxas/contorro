@@ -68,6 +68,7 @@ export {
   findInvalidStyleTokens,
   stylePropertiesBySectionForDefinitionKey,
   stylePropertyDefaultValueLabel,
+  styleSectionLabel,
   styleSectionForProperty,
   stylePropertiesForDefinitionKey,
   stylePropertyLabel,

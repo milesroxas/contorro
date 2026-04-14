@@ -14,6 +14,19 @@ import {
   primitiveKindForDefinitionKey,
 } from "../primitives.js";
 
+const EMPTY_CONTAINER_SPACING_PROPERTIES = new Set<StyleProperty>([
+  "padding",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+  "margin",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
+]);
+
 function collectDescendants(
   nodes: PageComposition["nodes"],
   rootId: string,
@@ -44,6 +57,52 @@ function pruneStyleBindings(
     }
   }
   return next;
+}
+
+function clearNodeEmptyStateSpacingStyles(
+  nodes: PageComposition["nodes"],
+  styleBindings: PageComposition["styleBindings"],
+  nodeId: string,
+): {
+  nodes: PageComposition["nodes"];
+  styleBindings: PageComposition["styleBindings"];
+} {
+  const node = nodes[nodeId];
+  if (!node?.styleBindingId || node.definitionKey !== "primitive.box") {
+    return { nodes, styleBindings };
+  }
+  const binding = styleBindings[node.styleBindingId];
+  if (!binding) {
+    return { nodes, styleBindings };
+  }
+
+  const nextProperties = binding.properties.filter(
+    (property) => !EMPTY_CONTAINER_SPACING_PROPERTIES.has(property.property),
+  );
+  if (nextProperties.length === binding.properties.length) {
+    return { nodes, styleBindings };
+  }
+
+  const nextStyleBindings = { ...styleBindings };
+  if (nextProperties.length === 0) {
+    delete nextStyleBindings[binding.id];
+    return {
+      nodes: {
+        ...nodes,
+        [nodeId]: {
+          ...node,
+          styleBindingId: undefined,
+        },
+      },
+      styleBindings: nextStyleBindings,
+    };
+  }
+
+  nextStyleBindings[binding.id] = {
+    ...binding,
+    properties: nextProperties,
+  };
+  return { nodes, styleBindings: nextStyleBindings };
 }
 
 /**
@@ -94,8 +153,9 @@ export function addChildNode(
       ? siblings.length
       : Math.max(0, Math.min(insertIndex, siblings.length));
   siblings.splice(at, 0, newId);
+  const parentWasEmpty = parent.childIds.length === 0;
 
-  const nextNodes: PageComposition["nodes"] = {
+  let nextNodes: PageComposition["nodes"] = {
     ...composition.nodes,
     [newId]: newNode,
     [parentId]: {
@@ -103,11 +163,22 @@ export function addChildNode(
       childIds: siblings,
     },
   };
+  let nextStyleBindings = { ...composition.styleBindings };
+
+  if (parentWasEmpty) {
+    const reset = clearNodeEmptyStateSpacingStyles(
+      nextNodes,
+      nextStyleBindings,
+      parentId,
+    );
+    nextNodes = reset.nodes;
+    nextStyleBindings = reset.styleBindings;
+  }
 
   const assembled: PageComposition = {
     rootId: composition.rootId,
     nodes: nextNodes,
-    styleBindings: { ...composition.styleBindings },
+    styleBindings: nextStyleBindings,
   };
 
   const parsed = PageCompositionSchema.safeParse(assembled);
@@ -183,8 +254,10 @@ export function moveNode(
   }
 
   const newOldChildren = oldParent.childIds.filter((id) => id !== nodeId);
+  const targetParentWasEmpty =
+    oldParentId !== targetParentId && targetParent.childIds.length === 0;
 
-  const nextNodes: PageComposition["nodes"] = { ...composition.nodes };
+  let nextNodes: PageComposition["nodes"] = { ...composition.nodes };
 
   if (oldParentId === targetParentId) {
     const without = newOldChildren;
@@ -206,10 +279,21 @@ export function moveNode(
     nextNodes[nodeId] = { ...node, parentId: targetParentId };
   }
 
+  let nextStyleBindings = { ...composition.styleBindings };
+  if (targetParentWasEmpty) {
+    const reset = clearNodeEmptyStateSpacingStyles(
+      nextNodes,
+      nextStyleBindings,
+      targetParentId,
+    );
+    nextNodes = reset.nodes;
+    nextStyleBindings = reset.styleBindings;
+  }
+
   const assembled: PageComposition = {
     rootId: composition.rootId,
     nodes: nextNodes,
-    styleBindings: { ...composition.styleBindings },
+    styleBindings: nextStyleBindings,
   };
 
   const parsed = PageCompositionSchema.safeParse(assembled);

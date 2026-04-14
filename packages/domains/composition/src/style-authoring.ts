@@ -10,6 +10,22 @@ const STYLE_SECTION_ORDER = [
   "size",
 ] as const;
 export type StyleSectionId = (typeof STYLE_SECTION_ORDER)[number];
+type StyleSectionLabel =
+  | "Color"
+  | "Borders"
+  | "Text"
+  | "Layout"
+  | "Spacing"
+  | "Size";
+
+const STYLE_SECTION_LABELS: Record<StyleSectionId, StyleSectionLabel> = {
+  color: "Color",
+  border: "Borders",
+  text: "Text",
+  layout: "Layout",
+  spacing: "Spacing",
+  size: "Size",
+};
 
 const BOX_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "background",
@@ -48,7 +64,7 @@ const BOX_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "maxHeight",
 ];
 
-const TEXT_STYLE_PROPERTIES: readonly StyleProperty[] = [
+const TYPOGRAPHY_BOX_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "color",
   "fontFamily",
   "fontSize",
@@ -72,29 +88,8 @@ const TEXT_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "maxHeight",
 ];
 
-const HEADING_STYLE_PROPERTIES: readonly StyleProperty[] = [
-  "color",
-  "fontFamily",
-  "fontSize",
-  "fontWeight",
-  "textAlign",
-  "lineHeight",
-  "letterSpacing",
-  "textTransform",
-  "fontStyle",
-  "textDecorationLine",
-  "margin",
-  "marginTop",
-  "marginRight",
-  "marginBottom",
-  "marginLeft",
-  "width",
-  "height",
-  "minWidth",
-  "minHeight",
-  "maxWidth",
-  "maxHeight",
-];
+const TEXT_STYLE_PROPERTIES = TYPOGRAPHY_BOX_STYLE_PROPERTIES;
+const HEADING_STYLE_PROPERTIES = TYPOGRAPHY_BOX_STYLE_PROPERTIES;
 
 const BUTTON_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "background",
@@ -366,6 +361,12 @@ export function styleSectionForProperty(
   property: StyleProperty,
 ): StyleSectionId {
   return STYLE_PROPERTY_SECTIONS[property];
+}
+
+export function styleSectionLabel(
+  sectionId: StyleSectionId,
+): StyleSectionLabel {
+  return STYLE_SECTION_LABELS[sectionId];
 }
 
 export function stylePropertiesBySectionForDefinitionKey(

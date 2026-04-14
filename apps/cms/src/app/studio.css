@@ -16,6 +16,15 @@
     contain: layout style;
     isolation: isolate;
   }
+
+  [data-slot="button"] {
+    cursor: pointer;
+  }
+
+  [data-slot="button"]:disabled,
+  [data-slot="button"][aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 
 @source "../../../../packages/presentation/studio/src";

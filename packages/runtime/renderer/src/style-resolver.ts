@@ -1,8 +1,4 @@
-import {
-  type StudioStyleProperty,
-  type TokenMeta,
-  styleTokenClassName,
-} from "@repo/config-tailwind";
+import { type TokenMeta, styleTokenClassName } from "@repo/config-tailwind";
 import {
   type CompositionNode,
   type PageComposition,
@@ -22,197 +18,12 @@ export type ResolvedNodeStyle = {
   style?: Record<string, string>;
 };
 
-type StyleRule = {
-  property: StudioStyleProperty;
-  tokenClassName?: string;
-};
-
 const PADDING_SIDE_PROPERTIES: readonly StyleProperty[] = [
   "paddingTop",
   "paddingRight",
   "paddingBottom",
   "paddingLeft",
 ];
-
-const STYLE_RULES: Record<StyleProperty, StyleRule> = {
-  background: {
-    property: "background",
-    tokenClassName: "bg-[var(--studio-style-background)]",
-  },
-  borderColor: {
-    property: "borderColor",
-    tokenClassName: "border-[var(--studio-style-border-color)]",
-  },
-  borderRadius: {
-    property: "borderRadius",
-    tokenClassName: "rounded-[var(--studio-style-border-radius)]",
-  },
-  borderStyle: {
-    property: "borderStyle",
-    tokenClassName: "[border-style:var(--studio-style-border-style)]",
-  },
-  borderWidth: {
-    property: "borderWidth",
-    tokenClassName: "border-[var(--studio-style-border-width)]",
-  },
-  color: {
-    property: "color",
-    tokenClassName: "text-[var(--studio-style-color)]",
-  },
-  fontFamily: {
-    property: "fontFamily",
-    tokenClassName: "[font-family:var(--studio-style-font-family)]",
-  },
-  fontSize: {
-    property: "fontSize",
-    tokenClassName: "[font-size:var(--studio-style-font-size)]",
-  },
-  fontWeight: {
-    property: "fontWeight",
-    tokenClassName: "[font-weight:var(--studio-style-font-weight)]",
-  },
-  textAlign: {
-    property: "textAlign",
-    tokenClassName: "[text-align:var(--studio-style-text-align)]",
-  },
-  lineHeight: {
-    property: "lineHeight",
-    tokenClassName: "[line-height:var(--studio-style-line-height)]",
-  },
-  letterSpacing: {
-    property: "letterSpacing",
-    tokenClassName: "[letter-spacing:var(--studio-style-letter-spacing)]",
-  },
-  textTransform: {
-    property: "textTransform",
-    tokenClassName: "[text-transform:var(--studio-style-text-transform)]",
-  },
-  fontStyle: {
-    property: "fontStyle",
-    tokenClassName: "[font-style:var(--studio-style-font-style)]",
-  },
-  textDecorationLine: {
-    property: "textDecorationLine",
-    tokenClassName:
-      "[text-decoration-line:var(--studio-style-text-decoration-line)]",
-  },
-  display: {
-    property: "display",
-    tokenClassName: "[display:var(--studio-style-display)]",
-  },
-  flexDirection: {
-    property: "flexDirection",
-    tokenClassName: "[flex-direction:var(--studio-style-flex-direction)]",
-  },
-  flexWrap: {
-    property: "flexWrap",
-    tokenClassName: "[flex-wrap:var(--studio-style-flex-wrap)]",
-  },
-  justifyContent: {
-    property: "justifyContent",
-    tokenClassName: "[justify-content:var(--studio-style-justify-content)]",
-  },
-  alignItems: {
-    property: "alignItems",
-    tokenClassName: "[align-items:var(--studio-style-align-items)]",
-  },
-  alignSelf: {
-    property: "alignSelf",
-    tokenClassName: "[align-self:var(--studio-style-align-self)]",
-  },
-  flex: {
-    property: "flex",
-    tokenClassName: "[flex:var(--studio-style-flex)]",
-  },
-  flexGrow: {
-    property: "flexGrow",
-    tokenClassName: "[flex-grow:var(--studio-style-flex-grow)]",
-  },
-  flexShrink: {
-    property: "flexShrink",
-    tokenClassName: "[flex-shrink:var(--studio-style-flex-shrink)]",
-  },
-  flexBasis: {
-    property: "flexBasis",
-    tokenClassName: "[flex-basis:var(--studio-style-flex-basis)]",
-  },
-  order: {
-    property: "order",
-    tokenClassName: "[order:var(--studio-style-order)]",
-  },
-  padding: {
-    property: "padding",
-    tokenClassName: "p-[var(--studio-style-padding)]",
-  },
-  paddingTop: {
-    property: "paddingTop",
-    tokenClassName: "pt-[var(--studio-style-padding-top)]",
-  },
-  paddingRight: {
-    property: "paddingRight",
-    tokenClassName: "pr-[var(--studio-style-padding-right)]",
-  },
-  paddingBottom: {
-    property: "paddingBottom",
-    tokenClassName: "pb-[var(--studio-style-padding-bottom)]",
-  },
-  paddingLeft: {
-    property: "paddingLeft",
-    tokenClassName: "pl-[var(--studio-style-padding-left)]",
-  },
-  margin: {
-    property: "margin",
-    tokenClassName: "m-[var(--studio-style-margin)]",
-  },
-  marginTop: {
-    property: "marginTop",
-    tokenClassName: "mt-[var(--studio-style-margin-top)]",
-  },
-  marginRight: {
-    property: "marginRight",
-    tokenClassName: "mr-[var(--studio-style-margin-right)]",
-  },
-  marginBottom: {
-    property: "marginBottom",
-    tokenClassName: "mb-[var(--studio-style-margin-bottom)]",
-  },
-  marginLeft: {
-    property: "marginLeft",
-    tokenClassName: "ml-[var(--studio-style-margin-left)]",
-  },
-  gap: {
-    property: "gap",
-    tokenClassName: "gap-[var(--studio-style-gap)]",
-  },
-  width: {
-    property: "width",
-    tokenClassName: "w-[var(--studio-style-width)]",
-  },
-  height: {
-    property: "height",
-    tokenClassName: "h-[var(--studio-style-height)]",
-  },
-  aspectRatio: {
-    property: "aspectRatio",
-    tokenClassName: "aspect-[var(--studio-style-aspect-ratio)]",
-  },
-  minWidth: {
-    property: "minWidth",
-    tokenClassName: "min-w-[var(--studio-style-min-width)]",
-  },
-  minHeight: {
-    property: "minHeight",
-    tokenClassName: "min-h-[var(--studio-style-min-height)]",
-  },
-  maxWidth: {
-    property: "maxWidth",
-    tokenClassName: "max-w-[var(--studio-style-max-width)]",
-  },
-  maxHeight: {
-    property: "maxHeight",
-    tokenClassName: "max-h-[var(--studio-style-max-height)]",
-  },
-};
 
 function utilityClassNameForPropertyValue(
   property: StyleProperty,
@@ -320,9 +131,7 @@ function addClassForStyleEntry(
     if (!allowedTokenKeys.has(entry.token)) {
       return;
     }
-    classes.add(
-      styleTokenClassName(STYLE_RULES[property].property, entry.token),
-    );
+    classes.add(styleTokenClassName(property, entry.token));
     return;
   }
   if (!utilityValuesForStyleProperty(property).includes(entry.value)) {

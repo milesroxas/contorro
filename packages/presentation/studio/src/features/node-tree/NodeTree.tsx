@@ -113,7 +113,7 @@ function DraggableNodeTreeRow({
   rootId: string;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `move:${nodeId}`,
+    id: `layers:move:${nodeId}`,
     data: { kind: "node" as const, nodeId },
     attributes: {
       role: "group",

@@ -135,6 +135,9 @@ export function createStudioStore(
     load: async () => {
       set({ error: null });
       try {
+        const isNewSession = isStudioNewCompositionSessionId(
+          get().compositionId,
+        );
         const data = await client.fetchComposition(get().compositionId);
         set({
           composition: data.composition,
@@ -144,7 +147,8 @@ export function createStudioStore(
           tokenMetadata: data.tokenMetadata as TokenMeta[],
           cssVariables: data.cssVariables,
           updatedAt: data.updatedAt,
-          dirty: false,
+          // New sessions are not persisted yet; keep save actions enabled.
+          dirty: isNewSession,
           canUndo: false,
           canRedo: false,
           selectedNodeId: data.composition.rootId,

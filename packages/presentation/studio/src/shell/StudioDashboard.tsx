@@ -135,11 +135,12 @@ function QuickActionCard({
   secondaryAction,
 }: QuickActionCardProps) {
   const PrimaryIcon = primaryAction.icon;
+  const hasSecondaryAction = Boolean(secondaryAction);
 
   return (
-    <div className="flex h-full flex-col justify-between gap-4 rounded-lg border bg-card p-4 shadow-sm">
+    <div className="flex h-full flex-col justify-between gap-4 rounded-lg bg-card p-4 shadow-sm">
       <div className="space-y-2">
-        <div className="inline-flex size-9 items-center justify-center rounded-md border bg-muted/60">
+        <div className="inline-flex size-9 items-center justify-center rounded-md bg-muted/60">
           <Icon className="size-4" aria-hidden />
         </div>
         <div className="space-y-1">
@@ -147,12 +148,23 @@ function QuickActionCard({
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2 pt-1">
+      <div
+        className={cn(
+          "grid w-full gap-2 pt-1 [&>[data-slot=button]]:w-full [&>[data-slot=button]]:justify-center",
+          hasSecondaryAction ? "grid-cols-2" : "grid-cols-1",
+        )}
+      >
+        {secondaryAction ? (
+          <Button asChild size="xs" variant="secondary">
+            <Link href={secondaryAction.href} prefetch={false}>
+              {secondaryAction.label}
+            </Link>
+          </Button>
+        ) : null}
         {primaryAction.href ? (
           <Button
             asChild
-            className="gap-1.5"
-            size="sm"
+            size="xs"
             variant={primaryAction.variant ?? "default"}
           >
             <Link href={primaryAction.href} prefetch={false}>
@@ -164,9 +176,8 @@ function QuickActionCard({
           </Button>
         ) : (
           <Button
-            className="gap-1.5"
             onClick={primaryAction.onClick}
-            size="sm"
+            size="xs"
             type="button"
             variant={primaryAction.variant ?? "default"}
           >
@@ -176,17 +187,6 @@ function QuickActionCard({
             {primaryAction.label}
           </Button>
         )}
-        {secondaryAction ? (
-          <Button
-            asChild
-            className="h-auto px-0"
-            variant="link"
-          >
-            <Link href={secondaryAction.href} prefetch={false}>
-              {secondaryAction.label}
-            </Link>
-          </Button>
-        ) : null}
       </div>
     </div>
   );
@@ -220,7 +220,7 @@ function ResourceListCard({
   const isLoading = loadState === "loading";
 
   return (
-    <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card ring-0">
+    <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-card ring-0">
       <CardHeader className="gap-3">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -237,7 +237,7 @@ function ResourceListCard({
             aria-hidden
           />
           <Input
-            className="h-9 pl-9"
+            className="h-9 border-input bg-background pl-9 shadow-sm"
             placeholder={searchPlaceholder}
             type="search"
             value={searchValue}
@@ -247,7 +247,7 @@ function ResourceListCard({
       </CardHeader>
       <CardContent className="min-h-0 flex-1">
         <ScrollArea className="h-full">
-          <div className="space-y-2 pr-3">
+          <div className="w-full space-y-2 pr-3">
             {isLoading ? (
               <p className="text-sm text-muted-foreground">
                 Loading {title.toLowerCase()}...
@@ -255,40 +255,37 @@ function ResourceListCard({
             ) : rows.length === 0 ? (
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">{emptyMessage}</p>
-                <Button asChild className="h-auto px-0" variant="link">
+                <Button asChild size="xs" variant="link">
                   <Link href={emptyHref} prefetch={false}>
                     {emptyCtaLabel}
                   </Link>
                 </Button>
               </div>
             ) : (
-              <ul className="space-y-2">
+              <ul className="w-full space-y-2.5">
                 {rows.map((row) => (
                   <li
-                    className="space-y-2 rounded-md border bg-muted/15 p-3"
+                    className="w-full space-y-2.5 rounded-lg border border-border/70 bg-card/80 p-3 shadow-sm transition-colors hover:bg-accent/40"
                     key={`${row.resourceType}-${row.id}`}
                   >
                     <div className="space-y-1">
-                      <p className="truncate text-sm font-medium md:text-base">
+                      <p className="truncate text-sm font-semibold text-foreground md:text-base">
                         {row.title}
                       </p>
                       <p className="truncate text-xs text-muted-foreground">
                         {row.meta}
                       </p>
                     </div>
+                    <Separator className="bg-border/70" />
                     <div className="flex flex-wrap gap-2">
-                      <Button asChild size="sm" variant="outline">
+                      <Button asChild size="xs" variant="outline">
                         <Link href={row.editHref} prefetch={false}>
                           Edit
                         </Link>
                       </Button>
-                      <Button asChild size="sm">
-                        <Link
-                          className="inline-flex items-center gap-1.5"
-                          href={row.studioHref}
-                          prefetch={false}
-                        >
-                          Open studio
+                      <Button asChild size="xs">
+                        <Link href={row.studioHref} prefetch={false}>
+                          Studio
                           <IconExternalLink className="size-3.5" aria-hidden />
                         </Link>
                       </Button>
@@ -510,12 +507,12 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
         id: "templates",
         primaryAction: {
           icon: IconPlus,
-          label: "Create template",
+          label: "New",
           onClick: createTemplateAndOpenStudio,
         },
         secondaryAction: {
           href: templateCollectionHref,
-          label: "Open templates collection",
+          label: "View All",
         },
         title: "Page templates",
       },
@@ -526,12 +523,12 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
         id: "components",
         primaryAction: {
           icon: IconPlus,
-          label: "Create component",
+          label: "New",
           onClick: createComponentAndOpenStudio,
         },
         secondaryAction: {
           href: componentCollectionHref,
-          label: "Open components collection",
+          label: "View All",
         },
         title: "Components",
       },
@@ -543,7 +540,7 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
         primaryAction: {
           href: designSystemHref,
           icon: IconExternalLink,
-          label: "Open design system",
+          label: "Design system",
         },
         title: "Design system",
       },
@@ -571,7 +568,7 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
   const isError = loadState === "error";
 
   return (
-    <main className="flex h-full min-h-0 w-full flex-col overflow-hidden px-4 py-4 md:px-6 md:py-5 xl:px-8">
+    <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto px-4 py-4 md:px-6 md:py-5 xl:px-8 lg:overflow-hidden">
       <header className="shrink-0 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <p className="text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase">
@@ -586,16 +583,12 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex items-center border border-border bg-muted/40 p-1">
+          <div className="inline-flex items-center rounded-md bg-muted/40 p-1">
             {THEME_OPTIONS.map((option) => {
               const Icon = option.icon;
               const isActive = currentTheme === option.value;
               return (
                 <Button
-                  className={cn(
-                    "h-7 gap-1.5 px-2.5",
-                    !isActive && "text-muted-foreground",
-                  )}
                   key={option.value}
                   onClick={() => setTheme(option.value)}
                   size="sm"
@@ -608,25 +601,20 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
               );
             })}
           </div>
-          <Button
-            className="gap-2"
-            onClick={refreshDashboard}
-            type="button"
-            variant="outline"
-          >
+          <Button onClick={refreshDashboard} type="button" variant="secondary">
             <IconRefresh className="size-4" aria-hidden />
             Refresh
           </Button>
         </div>
       </header>
       {isError ? (
-        <p className="mt-4 shrink-0 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <p className="mt-4 shrink-0 rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
           Could not load dashboard data. Click refresh and try again.
         </p>
       ) : null}
-      <div className="grid min-h-0 flex-1 gap-4 pt-4 md:grid-cols-[minmax(0,1fr)_minmax(19rem,22rem)] xl:grid-cols-[minmax(0,1fr)_minmax(21rem,24rem)]">
-        <div className="flex min-h-0 flex-col gap-4 overflow-hidden">
-          <Card className="shrink-0 rounded-lg border bg-card ring-0">
+      <div className="grid gap-4 pt-4 md:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] lg:min-h-0 lg:flex-1">
+        <div className="flex flex-col gap-4 lg:min-h-0 lg:overflow-hidden">
+          <Card className="shrink-0 rounded-lg bg-card ring-0">
             <CardHeader className="space-y-1">
               <CardTitle className="text-lg">Quick actions</CardTitle>
               <CardDescription>
@@ -647,9 +635,9 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
             </CardContent>
           </Card>
 
-          <section className="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
+          <section className="flex flex-col gap-4 md:flex-row md:items-stretch lg:min-h-0 lg:flex-1">
             <ResourceListCard
-              emptyCtaLabel="Open templates collection"
+              emptyCtaLabel="View templates"
               emptyHref={templateCollectionHref}
               emptyMessage={
                 templateRows.length === 0
@@ -664,9 +652,10 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
               searchValue={templateSearch}
               title="Templates"
             />
+            <Separator className="bg-border/70 md:h-auto md:w-px md:self-stretch" />
 
             <ResourceListCard
-              emptyCtaLabel="Open components collection"
+              emptyCtaLabel="View components"
               emptyHref={componentCollectionHref}
               emptyMessage={
                 componentRows.length === 0
@@ -684,8 +673,8 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
           </section>
         </div>
 
-        <div className="flex min-h-0 flex-col gap-4 overflow-hidden">
-          <Card className="shrink-0 rounded-lg border bg-card ring-0">
+        <div className="flex flex-col gap-4 lg:min-h-0 lg:overflow-hidden">
+          <Card className="shrink-0 rounded-lg bg-card ring-0">
             <CardHeader className="space-y-1">
               <CardTitle className="text-lg">Workspace health</CardTitle>
               <CardDescription>
@@ -696,7 +685,7 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
               <dl className="grid grid-cols-2 gap-2">
                 {overviewStats.map((item) => (
                   <div
-                    className="space-y-1 border border-border bg-muted/30 px-3 py-2"
+                    className="space-y-1 bg-muted/30 px-3 py-2"
                     key={item.label}
                   >
                     <dt className="text-[11px] text-muted-foreground">
@@ -715,26 +704,26 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
               ) : null}
               <Separator />
               <div className="flex flex-col gap-1">
-                <Button asChild className="h-auto justify-start px-0" variant="link">
+                <Button asChild size="xs" variant="link">
                   <Link href={templateCollectionHref} prefetch={false}>
-                    Manage templates
+                    Templates
                   </Link>
                 </Button>
-                <Button asChild className="h-auto justify-start px-0" variant="link">
+                <Button asChild size="xs" variant="link">
                   <Link href={componentCollectionHref} prefetch={false}>
-                    Manage components
+                    Components
                   </Link>
                 </Button>
-                <Button asChild className="h-auto justify-start px-0" variant="link">
+                <Button asChild size="xs" variant="link">
                   <Link href={designSystemHref} prefetch={false}>
-                    Open design system
+                    Design system
                   </Link>
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card ring-0">
+          <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-card ring-0">
             <CardHeader className="space-y-1">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <IconClock className="size-4" aria-hidden />
@@ -760,7 +749,7 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
                     <ul className="grid gap-2">
                       {recentRows.map((row) => (
                         <li
-                          className="flex h-full flex-col justify-between gap-3 rounded-md border border-border bg-muted/15 p-3"
+                          className="flex h-full flex-col justify-between gap-3 rounded-md bg-muted/15 p-3 [&>[data-slot=button]]:w-full [&>[data-slot=button]]:justify-start"
                           key={`recent-${row.resourceType}-${row.id}`}
                         >
                           <div className="space-y-1">
@@ -771,14 +760,9 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
                               {row.resourceType} · {row.meta}
                             </p>
                           </div>
-                          <Button
-                            asChild
-                            className="w-full justify-start"
-                            size="sm"
-                            variant="default"
-                          >
+                          <Button asChild size="xs" variant="default">
                             <Link href={row.studioHref} prefetch={false}>
-                              Open studio
+                              Open
                             </Link>
                           </Button>
                         </li>
