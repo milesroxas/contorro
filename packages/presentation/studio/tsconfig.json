@@ -8,7 +8,6 @@
   "include": ["src/**/*"],
   "references": [
     { "path": "../../kernel" },
-    { "path": "../../application/builder" },
     { "path": "../../contracts/zod" },
     { "path": "../../domains/composition" },
     { "path": "../shared" },

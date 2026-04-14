@@ -1,4 +1,4 @@
-# Plugin usage in Studio
+# Plugin usage in the CMS app
 
 Current `apps/studio/src/payload.config.ts` sets `plugins: []`.
 

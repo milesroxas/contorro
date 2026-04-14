@@ -1,6 +1,6 @@
 # Advanced access control notes
 
-Auth role checks in builder composition API currently allow `admin` and `designer` roles.
+Auth role checks in the **composition API** currently allow `admin` and `designer` roles.
 
 When adding advanced access logic:
 

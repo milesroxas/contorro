@@ -6,6 +6,7 @@ import { builderRowIdForComponent } from "@repo/infrastructure-payload-config/bu
 import {
   IconExternalLink,
   IconLayout,
+  IconPalette,
   IconPlus,
   IconPuzzle,
   IconRefresh,
@@ -162,6 +163,12 @@ export default function BuilderHub() {
     relative: true,
   });
 
+  const designSystemHref = formatAdminURL({
+    adminRoute,
+    path: "/builder?screen=design-system",
+    relative: true,
+  });
+
   const templateEditHref = (id: string) =>
     formatAdminURL({
       adminRoute,
@@ -195,10 +202,10 @@ export default function BuilderHub() {
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
-            Builder dashboard
+            Studio
           </h1>
           <p className="text-sm text-muted-foreground md:text-base">
-            Manage page templates and components from one place.
+            Page templates, components, and the design system in one workspace.
           </p>
         </div>
         <Button
@@ -215,7 +222,7 @@ export default function BuilderHub() {
         </Button>
       </header>
 
-      <section className="grid gap-4 lg:grid-cols-2">
+      <section className="grid gap-4 lg:grid-cols-3">
         <Card>
           <CardHeader className="space-y-1">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -269,6 +276,26 @@ export default function BuilderHub() {
             <Button asChild variant="ghost">
               <Link href={componentCollectionHref} prefetch={false}>
                 Open components collection
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="space-y-1">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <IconPalette className="size-5" aria-hidden />
+              Design system
+            </CardTitle>
+            <CardDescription>
+              Edit design tokens with live preview. Same tools as the layout
+              builder.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button asChild className="w-full gap-2 sm:w-auto">
+              <Link href={designSystemHref} prefetch={false}>
+                Open design system
               </Link>
             </Button>
           </CardContent>

@@ -2,6 +2,7 @@ import type { TokenMeta } from "@repo/config-tailwind";
 import type {
   EditorFieldSpec,
   PageComposition,
+  StudioAuthoringClient,
   StyleProperty,
   StylePropertyEntry,
 } from "@repo/contracts-zod";
@@ -16,12 +17,7 @@ import {
 } from "@repo/domains-composition";
 import { createSafeStore } from "@repo/presentation-shared";
 
-import {
-  fetchComposition,
-  patchName,
-  postDraft,
-  postPublish,
-} from "../lib/builder-api.js";
+import { getDefaultStudioAuthoringClient } from "../lib/fetch-studio-authoring-client.js";
 import { prepareForSave } from "../lib/persist.js";
 
 export type BuilderStoreState = {
@@ -69,7 +65,12 @@ export type BuilderStoreState = {
   rename: (name: string) => Promise<void>;
 };
 
-export function createBuilderStore(compositionId: string) {
+export function createBuilderStore(
+  compositionId: string,
+  options?: { client?: StudioAuthoringClient },
+) {
+  const client = options?.client ?? getDefaultStudioAuthoringClient();
+
   return createSafeStore<BuilderStoreState>((set, get) => ({
     compositionId,
     composition: null,
@@ -130,13 +131,13 @@ export function createBuilderStore(compositionId: string) {
     load: async () => {
       set({ error: null });
       try {
-        const data = await fetchComposition(get().compositionId);
+        const data = await client.fetchComposition(get().compositionId);
         set({
           composition: data.composition,
           name: data.name,
           historyPast: [],
           historyFuture: [],
-          tokenMetadata: data.tokenMetadata,
+          tokenMetadata: data.tokenMetadata as TokenMeta[],
           cssVariables: data.cssVariables,
           updatedAt: data.updatedAt,
           dirty: false,
@@ -339,7 +340,7 @@ export function createBuilderStore(compositionId: string) {
       }
       set({ error: null, saving: true });
       try {
-        const saved = await postDraft(id, {
+        const saved = await client.postDraft(id, {
           composition: prep.data,
           ifMatchUpdatedAt: isBuilderNewCompositionSessionId(id)
             ? null
@@ -378,7 +379,7 @@ export function createBuilderStore(compositionId: string) {
       }
       set({ error: null, saving: true });
       try {
-        const saved = await postPublish(id, {
+        const saved = await client.postPublish(id, {
           composition: prep.data,
           ifMatchUpdatedAt: isBuilderNewCompositionSessionId(id)
             ? null
@@ -416,7 +417,7 @@ export function createBuilderStore(compositionId: string) {
       }
       set({ error: null, renaming: true });
       try {
-        const data = await patchName(id, trimmed);
+        const data = await client.patchCompositionName(id, trimmed);
         set({ name: data.name, updatedAt: data.updatedAt });
       } catch (e) {
         set({

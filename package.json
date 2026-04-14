@@ -4,19 +4,19 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "build": "tsc -b",
-    "dev": "pnpm --filter @repo/presentation-builder-ui dev & pnpm --filter @repo/studio dev & pnpm --filter @repo/gateway dev",
+    "dev": "pnpm --filter @repo/presentation-studio dev & pnpm --filter @repo/cms dev & pnpm --filter @repo/gateway dev",
     "db:up": "docker compose up db -d",
     "db:reset": "docker compose down -v && docker compose up db -d",
     "migrate": "node ./scripts/migrate.mjs",
-    "migrate:create": "pnpm --filter @repo/studio exec payload migrate:create",
+    "migrate:create": "pnpm --filter @repo/cms exec payload migrate:create",
     "vercel:pull:prod": "vercel env pull apps/studio/.env.vercel.production.local --environment production --yes",
     "vercel:pull:preview": "vercel env pull apps/studio/.env.vercel.preview.local --environment preview --yes",
-    "seed": "pnpm --filter @repo/studio exec payload run src/seeds/index.ts",
-    "test": "pnpm --filter @repo/studio run test:int",
-    "test:e2e": "pnpm --filter @repo/studio exec playwright test",
+    "seed": "pnpm --filter @repo/cms exec payload run src/seeds/index.ts",
+    "test": "pnpm --filter @repo/cms run test:int",
+    "test:e2e": "pnpm --filter @repo/cms exec playwright test",
     "lint": "biome check .",
     "format": "biome format --write .",
-    "typecheck": "tsc -b && pnpm --filter @repo/studio exec tsc --noEmit"
+    "typecheck": "tsc -b && pnpm --filter @repo/cms exec tsc --noEmit"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

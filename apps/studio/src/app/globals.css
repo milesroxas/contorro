@@ -7,7 +7,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@source "../../../../packages/presentation/builder-ui/src";
+@source "../../../../packages/presentation/studio/src";
 @source "../../../../packages/presentation/admin-extensions/src";
 @source "../../../../packages/runtime/renderer/src";
 @source "../components";

@@ -6,43 +6,43 @@ Treat this file as source of truth for repo boundaries and delivery rules. For a
 
 Contorro is multi-surface authoring:
 
-- Studio app: Next.js + Payload 3 admin/CMS/auth.
-- Builder UI: composition-tree editor rendered by shared presentation/runtime packages.
-- Gateway app: Hono API mounted under `/api/gateway/*` (same-origin via Studio route).
-- Primary database: Postgres (Neon in production, Docker locally).
+- **CMS app** (`apps/studio`, package **`@repo/cms`**): Next.js + Payload 3 admin/CMS/auth and HTTP APIs that back Studio.
+- **Studio (presentation)** (`@repo/presentation-studio`): visual authoring UI (composition tree, design system screens). Browser code uses **`StudioAuthoringClient`** (`@repo/contracts-zod`) + **`fetch-studio-authoring-client`** to call the CMS app over HTTP — **no** `packages/infrastructure/*` imports and **no** Payload/CMS SDK imports under `packages/presentation/studio/src/`.
+- **Gateway app**: Hono API mounted under `/api/gateway/*` (same-origin via CMS app route).
+- **Primary database**: Postgres (Neon in production, Docker locally).
 
 ## Layer rules (non-negotiable)
 
 - Domain rules live in `packages/domains/*` only.
 - Mutations must enter through `packages/application/*` commands/services.
-- Presentation packages may depend on application + kernel, never import infrastructure directly.
+- Presentation packages **must not** import `packages/infrastructure/*`. Authoring UI (`@repo/presentation-studio`) depends on kernel, contracts, domains, and related presentation/runtime packages; **orchestration** (`@repo/application-builder`) runs in the **CMS app** route handlers, not inside the Studio package.
 - Infrastructure implements ports/adapters and Payload config.
 - Kernel stays minimal (`Result`, errors, IDs, events). Keep runtime deps minimal.
 
 ## Source of truth by concern
 
 - Payload collections/globals: `packages/infrastructure/payload-config`.
-- Studio assembly (`buildConfig`, secrets, import map, migrations): `apps/studio`.
-- Builder API endpoints:
+- CMS app assembly (`buildConfig`, secrets, import map, migrations): `apps/studio` (`@repo/cms`).
+- **Composition HTTP API** (canonical for Studio UI):
   - `apps/studio/src/app/api/builder/compositions/[id]/route.ts` (GET/POST/PATCH)
   - `apps/studio/src/app/api/builder/compositions/route.ts` (POST create)
-- Builder mutation orchestration: `packages/application/builder/*`.
+- Mutation orchestration: `packages/application/builder/*`.
 - Gateway API surface: `apps/gateway/src/app.ts` and `apps/gateway/src/routes/*`.
-- Shared contracts/validation: `packages/contracts/zod` and domain schemas.
-- Builder component row-id mapping (single parser/formatter): `packages/infrastructure/payload-config/src/builder-row-id.ts`.
+- Shared contracts: `packages/contracts/zod` (includes **`StudioAuthoringClient`**); default fetch implementation: `packages/presentation/studio/src/lib/fetch-studio-authoring-client.ts`.
+- Component row-id mapping for Payload `cmp-` IDs (single parser/formatter): `packages/infrastructure/payload-config/src/builder-row-id.ts`.
 
 ## Current API split (important)
 
-- Canonical builder composition API is Studio `/api/builder/compositions/*`.
+- Canonical **composition** API for Studio is the CMS app’s **`/api/builder/compositions/*`** routes.
 - Route handlers orchestrate only; mutation logic goes through `packages/application/builder` commands.
-- Gateway composition mutation routes are intentionally `NOT_IMPLEMENTED`.
-- Gateway remains active for health and contracts endpoints under `/api/gateway/*`.
+- Gateway composition mutation routes are intentionally **`NOT_IMPLEMENTED`**.
+- Gateway remains active for health and contracts under `/api/gateway/*`.
 
 ## Drift prevention rules (important)
 
-- Do not add direct `payload.create/update/delete` mutation logic in Studio builder route handlers; use application commands + repository adapter.
-- Do not reintroduce builder mirror sync hooks for `builder.compositions`; builder state must come from canonical Payload collections + Studio API.
-- When changing builder endpoints, update both:
+- Do not add direct `payload.create/update/delete` mutation logic in composition route handlers; use application commands + repository adapter.
+- Do not reintroduce legacy mirror sync hooks for `builder.compositions`; state must come from canonical Payload collections + the composition API.
+- When changing **`/api/builder/compositions`** behavior or paths, update both:
   - `docs/app/README.md`
   - `apps/studio/.cursor/rules/endpoints.md`
 - Keep `cmp-` logic centralized in `builder-row-id.ts` only.
@@ -51,24 +51,24 @@ Contorro is multi-surface authoring:
 
 - Workspace packages follow `pnpm-workspace.yaml` (`apps/*`, `packages/*` groups).
 - Use `workspace:*` for internal deps.
-- `@payload-config` import is Next/Studio-only.
+- `@payload-config` import is Next/CMS-app-only.
 
 ## Tooling and checks
 
 - Lint/format: Biome only (`pnpm lint`, `pnpm format`).
 - Typecheck: `pnpm typecheck`.
-- Root dev: `pnpm dev` (studio + gateway).
+- Root dev: `pnpm dev` (CMS app + `@repo/presentation-studio` watch + gateway).
 - DB local: `pnpm db:up`.
 
 ## Testing
 
-- Integration tests: `pnpm test` (studio int suite).
+- Integration tests: `pnpm test` (CMS app int suite, `@repo/cms`).
 - E2E tests: `pnpm test:e2e`.
 - Persistence tests expect Postgres available.
 
 ## Default workflow for agents
 
 1. Pick owning layer and keep changes inside it.
-2. For mutations use application -> domain -> infrastructure port flow.
-3. After schema/config changes run required generation/migrations in studio.
+2. For mutations use application → domain → infrastructure port flow.
+3. After schema/config changes run required generation/migrations in the CMS app.
 4. Run lint/typecheck/tests proportional to change before done.

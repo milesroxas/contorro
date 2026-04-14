@@ -2,7 +2,7 @@
 
 ## Database
 
-- Studio Payload uses Postgres via `@payloadcms/db-postgres` through `createPostgresAdapter`.
+- The CMS app’s Payload runtime uses Postgres via `@payloadcms/db-postgres` through `createPostgresAdapter`.
 - Gateway uses `pg` pool directly (`apps/gateway/src/runtime/db.ts`).
 
 ## Infrastructure adapters
@@ -13,4 +13,4 @@
 
 ## Rule
 
-Do not introduce Mongo-specific config/examples in Studio docs or rules. Current runtime is Postgres.
+Do not introduce Mongo-specific config/examples in CMS app docs or rules. Current runtime is Postgres.

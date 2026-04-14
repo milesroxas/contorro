@@ -1,5 +1,5 @@
 {
-  "name": "@repo/studio",
+  "name": "@repo/cms",
   "version": "1.0.0",
   "description": "A blank template to get started with Payload 3.0",
   "license": "MIT",
@@ -42,7 +42,7 @@
     "@repo/infrastructure-telemetry": "workspace:*",
     "@repo/kernel": "workspace:*",
     "@repo/presentation-admin-extensions": "workspace:*",
-    "@repo/presentation-builder-ui": "workspace:*",
+    "@repo/presentation-studio": "workspace:*",
     "@repo/presentation-preview-ui": "workspace:*",
     "@repo/presentation-shared": "workspace:*",
     "@repo/runtime-code-components": "workspace:*",

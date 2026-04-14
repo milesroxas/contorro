@@ -1,17 +1,18 @@
 # Endpoint map
 
-## Studio-owned endpoints
+## CMS-app-owned endpoints (canonical for Studio UI)
 
-- `/api/builder/compositions/:id` (GET/POST/PATCH): canonical composition load/save/rename API.
-- `/api/builder/compositions` (POST): create template/component and open in builder.
-- `/api/gateway/*`: same-origin forwarding to Hono gateway app with JWT bridging.
+- `/api/builder/compositions/:id` (GET/POST/PATCH): composition load, save (draft/publish), rename — **canonical** for `@repo/presentation-studio`.
+- `/api/builder/compositions` (POST): create template/component session and open in Studio.
+- Payload REST for collections/globals (e.g. design token sets, globals) as used by **`StudioAuthoringClient`** (`resourceApiBase`, default `/api`).
+- `/api/gateway/*`: same-origin forwarding to the Hono gateway app with JWT bridging.
 
-Builder endpoint rule: route handlers orchestrate only; mutation logic goes through `@repo/application-builder`.
+**Rule:** composition route handlers orchestrate only; mutation logic goes through `@repo/application-builder` commands and the repository adapter.
 
 ## Gateway-owned endpoints (behind forwarder)
 
 - `/api/gateway/health`
 - `/api/gateway/contracts/components/:key/schema` (GET/POST)
-- `/api/gateway/builder/compositions/:id` currently returns `NOT_IMPLEMENTED`.
+- `/api/gateway/builder/compositions/:id` currently returns **`NOT_IMPLEMENTED`** (use CMS app `/api/builder/*` instead).
 
-Rule: do not re-enable gateway composition mutations unless architecture explicitly changes.
+Do not re-enable gateway composition mutations unless architecture explicitly changes.

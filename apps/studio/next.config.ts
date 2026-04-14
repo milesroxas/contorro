@@ -29,7 +29,7 @@ const nextConfig: NextConfig = {
     "@repo/infrastructure-telemetry",
     "@repo/kernel",
     "@repo/presentation-admin-extensions",
-    "@repo/presentation-builder-ui",
+    "@repo/presentation-studio",
     "@repo/presentation-preview-ui",
     "@repo/presentation-shared",
     "@repo/runtime-code-components",

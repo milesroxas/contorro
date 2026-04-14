@@ -4,7 +4,7 @@ import { useAuth, useConfig } from "@payloadcms/ui";
 import Link from "next/link";
 import { formatAdminURL } from "payload/shared";
 
-/** Sidebar link to the Payload admin visual builder (designer + admin only). */
+/** Sidebar link to Studio (templates, components, design system) — admin + designer only. */
 export default function BuilderNavLink() {
   const { user } = useAuth();
   const { config } = useConfig();
@@ -23,7 +23,7 @@ export default function BuilderNavLink() {
   });
   return (
     <Link className="nav__link" href={href}>
-      Builder
+      Studio
     </Link>
   );
 }

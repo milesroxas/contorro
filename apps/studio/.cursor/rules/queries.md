@@ -1,8 +1,8 @@
 # Query boundaries
 
-Use correct path by purpose:
+Use the correct path by purpose:
 
-- Builder API routes:
+- **Composition API** (Studio):
   - `src/app/api/builder/compositions/[id]/route.ts` (GET/POST/PATCH)
   - `src/app/api/builder/compositions/route.ts` (POST create)
 - Route handlers orchestrate; mutations flow through `@repo/application-builder` commands.

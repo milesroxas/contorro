@@ -1,6 +1,10 @@
 "use client";
 
-import { useAuth } from "@payloadcms/ui";
+import type {
+  StudioAuthoringClient,
+  StudioDesignTokenEntry,
+  StudioDesignTokenSetDoc,
+} from "@repo/contracts-zod";
 import {
   IconDeviceDesktop,
   IconRefresh,
@@ -8,12 +12,18 @@ import {
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import { ScrollArea } from "../../components/scroll-area.js";
+import { Button } from "../../components/ui/button.js";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card.js";
+import { Input } from "../../components/ui/input.js";
+import { Separator } from "../../components/ui/separator.js";
+import { cn } from "../../lib/cn.js";
+import { getDefaultStudioAuthoringClient } from "../../lib/fetch-studio-authoring-client.js";
 
 type TokenCategory =
   | "color"
@@ -30,28 +40,7 @@ type TokenCategory =
   | "container";
 type TokenMode = "light" | "dark";
 
-type DesignToken = {
-  id?: string | null;
-  key: string;
-  mode?: TokenMode | null;
-  category: TokenCategory;
-  resolvedValue: string;
-};
-
-type TokenSetDoc = {
-  id: number;
-  title: string;
-  scopeKey: string;
-  tokens: DesignToken[];
-  updatedAt?: string;
-  _status?: "draft" | "published" | null;
-};
-
-type DesignSystemSettingsDoc = {
-  defaultTokenSet?: number | string | null;
-  activeColorMode?: TokenMode | null;
-};
-
+type DesignToken = StudioDesignTokenEntry & { category: TokenCategory };
 type ActiveTab = "colors" | "typography" | "other";
 
 const COLOR_SECTIONS = [
@@ -177,22 +166,26 @@ function inferCategoryForKey(key: string): TokenCategory {
   return "zIndex";
 }
 
-function normalizeTokens(tokens: DesignToken[]): DesignToken[] {
+function normalizeTokens(tokens: StudioDesignTokenEntry[]): DesignToken[] {
   return tokens
     .map((token) => {
       const mode: TokenMode = token.mode === "dark" ? "dark" : "light";
+      const category =
+        typeof token.category === "string" && token.category.length > 0
+          ? (token.category as TokenCategory)
+          : inferCategoryForKey(token.key);
       return {
         ...token,
         key: token.key.trim(),
         mode,
         resolvedValue: token.resolvedValue.trim(),
-        category: token.category ?? inferCategoryForKey(token.key),
+        category,
       };
     })
     .filter((token) => token.key.length > 0 && token.resolvedValue.length > 0);
 }
 
-function stableTokenSnapshot(tokens: DesignToken[]): string {
+function stableTokenSnapshot(tokens: StudioDesignTokenEntry[]): string {
   return JSON.stringify(
     [...tokens]
       .map((token) => ({
@@ -221,21 +214,21 @@ function ColorSwatch({ value }: { value: string }) {
   );
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
-export default function DesignSystemBuilderView() {
-  const { user } = useAuth();
-  const role =
-    user && typeof user === "object" && "role" in user
-      ? String((user as { role?: unknown }).role)
-      : "";
-
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Large token editor surface; split in a follow-up.
+export function DesignSystemEditor({
+  canAccess,
+  authoringClient = getDefaultStudioAuthoringClient(),
+}: {
+  canAccess: boolean;
+  authoringClient?: StudioAuthoringClient;
+}) {
   const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(
     "loading",
   );
   const [saveState, setSaveState] = useState<"idle" | "saving" | "error">(
     "idle",
   );
-  const [tokenSets, setTokenSets] = useState<TokenSetDoc[]>([]);
+  const [tokenSets, setTokenSets] = useState<StudioDesignTokenSetDoc[]>([]);
   const [selectedSetId, setSelectedSetId] = useState<string>("");
   const [draftTokens, setDraftTokens] = useState<DesignToken[]>([]);
   const [activeMode, setActiveMode] = useState<TokenMode>("light");
@@ -245,62 +238,46 @@ export default function DesignSystemBuilderView() {
   const [previewKey, setPreviewKey] = useState(0);
   const [colorSearch, setColorSearch] = useState("");
 
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
-  const fetchTokenSets = useCallback(async (signal: AbortSignal) => {
-    setLoadState("loading");
-    setStatusMessage("");
-    try {
-      const [setsRes, globalRes] = await Promise.all([
-        fetch("/api/design-token-sets?limit=200&depth=0&sort=-updatedAt", {
-          credentials: "include",
-          headers: { Accept: "application/json" },
-          signal,
-        }),
-        fetch("/api/globals/design-system-settings?depth=0", {
-          credentials: "include",
-          headers: { Accept: "application/json" },
-          signal,
-        }),
-      ]);
+  const fetchTokenSets = useCallback(
+    async (signal: AbortSignal) => {
+      setLoadState("loading");
+      setStatusMessage("");
+      try {
+        const [docs, globalJson] = await Promise.all([
+          authoringClient.listDesignTokenSets(signal),
+          authoringClient.getDesignSystemSettings(signal),
+        ]);
+        setTokenSets(docs);
+        if (docs.length === 0) {
+          setSelectedSetId("");
+          setDraftTokens([]);
+          setLoadState("idle");
+          return;
+        }
 
-      if (!setsRes.ok || !globalRes.ok) {
+        const defaultId =
+          globalJson.defaultTokenSet !== undefined &&
+          globalJson.defaultTokenSet !== null
+            ? String(globalJson.defaultTokenSet)
+            : "";
+        const selected =
+          docs.find((doc) => String(doc.id) === defaultId) ??
+          docs.find((doc) => doc._status === "published") ??
+          docs[0];
+        const selectedId = String(selected.id);
+
+        setSelectedSetId(selectedId);
+        setDraftTokens(normalizeTokens(selected.tokens ?? []));
+        setActiveMode(globalJson.activeColorMode === "dark" ? "dark" : "light");
+        setLoadState("idle");
+      } catch {
+        if (signal.aborted) return;
         setLoadState("error");
         setStatusMessage("Could not load design token sets.");
-        return;
       }
-
-      const setsJson = (await setsRes.json()) as { docs?: TokenSetDoc[] };
-      const globalJson = (await globalRes.json()) as DesignSystemSettingsDoc;
-      const docs = Array.isArray(setsJson.docs) ? setsJson.docs : [];
-      setTokenSets(docs);
-      if (docs.length === 0) {
-        setSelectedSetId("");
-        setDraftTokens([]);
-        setLoadState("idle");
-        return;
-      }
-
-      const defaultId =
-        globalJson.defaultTokenSet !== undefined &&
-        globalJson.defaultTokenSet !== null
-          ? String(globalJson.defaultTokenSet)
-          : "";
-      const selected =
-        docs.find((doc) => String(doc.id) === defaultId) ??
-        docs.find((doc) => doc._status === "published") ??
-        docs[0];
-      const selectedId = String(selected.id);
-
-      setSelectedSetId(selectedId);
-      setDraftTokens(normalizeTokens(selected.tokens ?? []));
-      setActiveMode(globalJson.activeColorMode === "dark" ? "dark" : "light");
-      setLoadState("idle");
-    } catch {
-      if (signal.aborted) return;
-      setLoadState("error");
-      setStatusMessage("Could not load design token sets.");
-    }
-  }, []);
+    },
+    [authoringClient],
+  );
 
   useEffect(() => {
     const ac = new AbortController();
@@ -368,34 +345,15 @@ export default function DesignSystemBuilderView() {
   );
 
   const persistTokens = useCallback(
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
     async (status: "draft" | "published") => {
       if (!selectedSetId) return;
       setSaveState("saving");
       setStatusMessage("");
       try {
-        const res = await fetch(
-          `/api/design-token-sets/${encodeURIComponent(selectedSetId)}`,
-          {
-            method: "PATCH",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              tokens: normalizeTokens(draftTokens),
-              _status: status,
-            }),
-          },
-        );
-        if (!res.ok) {
-          setSaveState("error");
-          setStatusMessage(
-            status === "published"
-              ? "Publish failed. Check token values."
-              : "Save failed. Check token values.",
-          );
-          return;
-        }
-        const json = (await res.json()) as { doc?: TokenSetDoc };
+        const json = await authoringClient.patchDesignTokenSet(selectedSetId, {
+          tokens: normalizeTokens(draftTokens),
+          _status: status,
+        });
         const nextDoc = json.doc;
         const resolvedDoc = nextDoc ?? selectedSet;
         if (nextDoc) {
@@ -409,17 +367,13 @@ export default function DesignSystemBuilderView() {
           setDraftTokens(normalizeTokens(draftTokens));
         }
         if (status === "published" && resolvedDoc) {
-          const globalRes = await fetch("/api/globals/design-system-settings", {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+          try {
+            await authoringClient.postDesignSystemSettings({
               defaultTokenSet: Number(selectedSetId),
               activeBrandKey: resolvedDoc.scopeKey,
               activeColorMode: activeMode,
-            }),
-          });
-          if (!globalRes.ok) {
+            });
+          } catch {
             setSaveState("error");
             setStatusMessage(
               "Published tokens, but failed to update active design system.",
@@ -442,7 +396,7 @@ export default function DesignSystemBuilderView() {
         );
       }
     },
-    [activeMode, draftTokens, selectedSet, selectedSetId],
+    [activeMode, authoringClient, draftTokens, selectedSet, selectedSetId],
   );
 
   const filteredColorSections = useMemo(() => {
@@ -462,7 +416,7 @@ export default function DesignSystemBuilderView() {
     })).filter((section) => section.fields.length > 0);
   }, [colorSearch]);
 
-  if (role !== "admin" && role !== "designer") {
+  if (!canAccess) {
     return (
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center text-muted-foreground">
         <p className="max-w-md text-pretty">

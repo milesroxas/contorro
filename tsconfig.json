@@ -26,7 +26,7 @@
     { "path": "./packages/infrastructure/telemetry" },
     { "path": "./packages/presentation/shared" },
     { "path": "./packages/presentation/admin-extensions" },
-    { "path": "./packages/presentation/builder-ui" },
+    { "path": "./packages/presentation/studio" },
     { "path": "./packages/presentation/preview-ui" },
     { "path": "./apps/gateway" }
   ]

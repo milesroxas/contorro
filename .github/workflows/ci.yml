@@ -65,8 +65,8 @@ jobs:
       - run: pnpm install
       - run: pnpm build
       - name: Apply Payload migrations
-        run: pnpm --filter @repo/studio exec payload migrate
+        run: pnpm --filter @repo/cms exec payload migrate
       - name: Re-run migrations (stability / idempotency check)
-        run: pnpm --filter @repo/studio exec payload migrate
+        run: pnpm --filter @repo/cms exec payload migrate
       - run: pnpm test
 

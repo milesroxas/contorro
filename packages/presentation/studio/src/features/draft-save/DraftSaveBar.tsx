@@ -12,7 +12,7 @@ import { Button } from "../../components/ui/button.js";
 export function DraftSaveBar({
   name,
   canEditName,
-  studioHref,
+  adminHref,
   canUndo,
   canRedo,
   dirty,
@@ -27,7 +27,7 @@ export function DraftSaveBar({
 }: {
   name: string;
   canEditName: boolean;
-  studioHref: string;
+  adminHref: string;
   canUndo: boolean;
   canRedo: boolean;
   dirty: boolean;
@@ -55,7 +55,7 @@ export function DraftSaveBar({
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-muted/20 px-4 py-3 dark:bg-muted/10">
       <Button asChild size="sm" variant="ghost">
-        <a href={studioHref}>Studio</a>
+        <a href={adminHref}>CMS</a>
       </Button>
       <div className="h-5 w-px bg-border" />
       {editingName && canEditName ? (

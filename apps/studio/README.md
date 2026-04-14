@@ -1,21 +1,27 @@
-# Studio app
+# CMS app (`@repo/cms`)
 
-Studio is Next.js + Payload app for CMS/admin/auth and builder-adjacent APIs.
+This app is the **Next.js + Payload** host: admin UI, auth, content API, and **HTTP routes** that match the **`StudioAuthoringClient`** contract consumed by `@repo/presentation-studio` (composition CRUD, design-token sets, design-system globals — implemented with `@repo/application-builder` + Payload adapters in route handlers).
+
+The workspace folder is `apps/studio`; the npm package name is **`@repo/cms`**.
 
 ## What lives here
 
-- Payload runtime assembly in `src/payload.config.ts`
-- Next app routes in `src/app`
-- Builder APIs in:
+- Payload runtime assembly: `src/payload.config.ts`
+- Next app routes: `src/app`
+- **Composition API** (canonical for `@repo/presentation-studio`):
   - `src/app/api/builder/compositions/[id]/route.ts` (GET/POST/PATCH)
   - `src/app/api/builder/compositions/route.ts` (POST create)
-- Builder route mutations orchestrated through `@repo/application-builder` commands
-- Same-origin gateway forwarding in `src/app/api/gateway/[[...route]]/route.ts`
-- Migrations in `src/migrations`
-- Seeds in `src/seeds`
-- Integration tests in `tests/int`
+- Route handlers orchestrate; mutations use **`@repo/application-builder`** commands and the Payload repository adapter.
+- Same-origin gateway forwarding: `src/app/api/gateway/[[...route]]/route.ts`
+- Migrations: `src/migrations`
+- Seeds: `src/seeds`
+- Integration tests: `tests/int`
 
-Collections and globals definitions do not live in this app. Source of truth is `@repo/infrastructure-payload-config`.
+Collection/global **definitions** live in **`@repo/infrastructure-payload-config`**, not duplicated here.
+
+## Visual Studio (presentation package)
+
+Authoring UI is **`@repo/presentation-studio`** (`packages/presentation/studio`). It is embedded in Payload admin (e.g. custom view `/builder`) and uses **`StudioAuthoringClient`** + `fetch-studio-authoring-client` to call this app’s routes — not Payload Local API from the browser.
 
 ## Local development
 
@@ -25,20 +31,20 @@ From repo root:
 2. `pnpm db:up`
 3. `pnpm dev`
 
-Studio runs with gateway in root `dev` command.
+Root `pnpm dev` runs the CMS app, presentation-studio TypeScript watch, and gateway.
 
 ## Useful scripts
 
-- `pnpm --filter @repo/studio dev`
-- `pnpm --filter @repo/studio build`
-- `pnpm --filter @repo/studio exec payload generate:types`
-- `pnpm --filter @repo/studio exec payload generate:importmap`
-- `pnpm --filter @repo/studio run test:int`
-- `pnpm --filter @repo/studio run test:e2e`
+- `pnpm --filter @repo/cms dev`
+- `pnpm --filter @repo/cms build`
+- `pnpm --filter @repo/cms exec payload generate:types`
+- `pnpm --filter @repo/cms exec payload generate:importmap`
+- `pnpm --filter @repo/cms run test:int`
+- `pnpm --filter @repo/cms run test:e2e`
 
 ## Guardrails
 
 - Use Postgres adapter (`@payloadcms/db-postgres`) only.
 - Pass `overrideAccess: false` when Local API call includes `user`.
 - Pass `req` for nested Local API operations inside hooks.
-- Keep business/domain rules in `packages/domains/*` and mutation orchestration in `packages/application/*`.
+- Keep business rules in `packages/domains/*` and mutation orchestration in `packages/application/*`.

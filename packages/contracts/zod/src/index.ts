@@ -54,3 +54,14 @@ export {
   normalizeEditorFieldsContract,
   parseEditorFieldsContract,
 } from "./normalize-editor-fields.js";
+export type {
+  StudioAuthoringClient,
+  StudioAuthoringCompositionPayload,
+  StudioDesignSystemSettingsDoc,
+  StudioDesignTokenEntry,
+  StudioDesignTokenSetDoc,
+  StudioPersistCompositionBody,
+  StudioRenameResult,
+  StudioSaveResult,
+  StudioTokenMeta,
+} from "./studio-authoring-client.js";

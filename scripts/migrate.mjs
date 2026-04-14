@@ -17,7 +17,7 @@ function runDefault() {
   execFileSync("pnpm", ["run", "build"], { stdio: "inherit", cwd: root });
   execFileSync(
     "pnpm",
-    ["--filter", "@repo/studio", "exec", "payload", "migrate"],
+    ["--filter", "@repo/cms", "exec", "payload", "migrate"],
     { stdio: "inherit", cwd: root },
   );
 }
@@ -51,7 +51,7 @@ function runWithEnvFile(relPath) {
       "--",
       "pnpm",
       "--filter",
-      "@repo/studio",
+      "@repo/cms",
       "exec",
       "payload",
       "migrate",

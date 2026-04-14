@@ -10,15 +10,15 @@
 
 - Collections: `packages/infrastructure/payload-config/src/collections`.
 - Globals: `packages/infrastructure/payload-config/src/globals`.
-- Studio should not re-define collection configs.
+- The CMS app must not re-define collection configs outside infrastructure.
 
 ## Route split
 
-- Builder APIs:
+- **Composition API** (Studio UI):
   - `apps/studio/src/app/api/builder/compositions/[id]/route.ts` (GET/POST/PATCH)
   - `apps/studio/src/app/api/builder/compositions/route.ts` (POST create)
 - Gateway proxy route: `apps/studio/src/app/api/gateway/[[...route]]/route.ts`.
 
 ## Core rule
 
-Studio route handlers orchestrate. Domain rules belong in `packages/domains/*`, mutation use-cases in `packages/application/*`.
+CMS app route handlers orchestrate. Domain rules belong in `packages/domains/*`, mutation use-cases in `packages/application/*`.

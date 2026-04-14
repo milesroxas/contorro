@@ -135,15 +135,15 @@ importers:
       '@repo/presentation-admin-extensions':
         specifier: workspace:*
         version: link:../../packages/presentation/admin-extensions
-      '@repo/presentation-builder-ui':
-        specifier: workspace:*
-        version: link:../../packages/presentation/builder-ui
       '@repo/presentation-preview-ui':
         specifier: workspace:*
         version: link:../../packages/presentation/preview-ui
       '@repo/presentation-shared':
         specifier: workspace:*
         version: link:../../packages/presentation/shared
+      '@repo/presentation-studio':
+        specifier: workspace:*
+        version: link:../../packages/presentation/studio
       '@repo/runtime-code-components':
         specifier: workspace:*
         version: link:../../packages/runtime/code-components
@@ -523,7 +523,37 @@ importers:
         specifier: 19.2.3
         version: 19.2.3(@types/react@19.2.14)
 
-  packages/presentation/builder-ui:
+  packages/presentation/preview-ui:
+    dependencies:
+      '@repo/kernel':
+        specifier: workspace:*
+        version: link:../../kernel
+      '@repo/presentation-shared':
+        specifier: workspace:*
+        version: link:../shared
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
+
+  packages/presentation/shared:
+    dependencies:
+      '@repo/contracts-zod':
+        specifier: workspace:*
+        version: link:../../contracts/zod
+      '@repo/domains-composition':
+        specifier: workspace:*
+        version: link:../../domains/composition
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      zustand:
+        specifier: ^5.0.0
+        version: 5.0.12(@types/react@19.2.14)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
+
+  packages/presentation/studio:
     dependencies:
       '@dnd-kit/core':
         specifier: ^6.3.1
@@ -610,36 +640,6 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
-
-  packages/presentation/preview-ui:
-    dependencies:
-      '@repo/kernel':
-        specifier: workspace:*
-        version: link:../../kernel
-      '@repo/presentation-shared':
-        specifier: workspace:*
-        version: link:../shared
-      react:
-        specifier: ^19.0.0
-        version: 19.2.4
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.4(react@19.2.4)
-
-  packages/presentation/shared:
-    dependencies:
-      '@repo/contracts-zod':
-        specifier: workspace:*
-        version: link:../../contracts/zod
-      '@repo/domains-composition':
-        specifier: workspace:*
-        version: link:../../domains/composition
-      react:
-        specifier: ^19.0.0
-        version: 19.2.4
-      zustand:
-        specifier: ^5.0.0
-        version: 5.0.12(@types/react@19.2.14)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
 
   packages/runtime/code-components:
     dependencies:

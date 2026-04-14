@@ -1,6 +1,6 @@
 ---
 title: Critical Security Patterns
-description: Security rules for Studio and Payload Local API usage in this repo
+description: Security rules for the CMS app (Payload) and Local API usage in this repo
 tags: [payload, security, access-control, hooks, postgres]
 priority: high
 ---
@@ -26,4 +26,4 @@ If hook writes back to same collection/doc, use context flag guard to prevent re
 
 ## 4) Gateway auth forwarding
 
-Studio gateway forwarder (`src/app/api/gateway/[[...route]]/route.ts`) injects `Authorization: JWT ...` from Payload cookie when missing. Preserve this behavior when changing gateway proxying.
+CMS app gateway forwarder (`src/app/api/gateway/[[...route]]/route.ts`) injects `Authorization: JWT ...` from Payload cookie when missing. Preserve this behavior when changing gateway proxying.

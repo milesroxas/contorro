@@ -21,6 +21,8 @@ import {
   useState,
 } from "react";
 
+import type { StudioAuthoringClient } from "@repo/contracts-zod";
+
 import { BuilderPanel } from "../components/builder-panel.js";
 import { BuilderCanvas } from "../features/canvas/BuilderCanvas.js";
 import type { InsertDropData } from "../features/dnd/InsertionDropZone.js";
@@ -110,16 +112,19 @@ function BuilderDragPreview({
 
 export function BuilderApp({
   compositionId,
-  studioHref,
+  adminHref,
   canEditName,
+  authoringClient,
 }: {
   compositionId: string;
-  studioHref: string;
+  adminHref: string;
   canEditName: boolean;
+  /** Injected transport (e.g. fetch to your host). Defaults inside the store when omitted. */
+  authoringClient?: StudioAuthoringClient;
 }) {
   const useBuilder = useMemo(
-    () => createBuilderStore(compositionId),
-    [compositionId],
+    () => createBuilderStore(compositionId, { client: authoringClient }),
+    [compositionId, authoringClient],
   );
 
   const sensors = useSensors(
@@ -468,7 +473,7 @@ export function BuilderApp({
           onUndo={() => undo()}
           renaming={renaming}
           saving={saving}
-          studioHref={studioHref}
+          adminHref={adminHref}
         />
         <div
           className={cn(
