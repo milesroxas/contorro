@@ -53,7 +53,7 @@ export function LibraryComponentCatalog() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/builder/library-components", {
+        const res = await fetch("/api/studio/library-components", {
           credentials: "include",
         });
         if (!res.ok) {

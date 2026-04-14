@@ -12,7 +12,7 @@
     { "path": "../../packages/config/env" },
     { "path": "../../packages/contracts/zod" },
     { "path": "../../packages/domains/composition" },
-    { "path": "../../packages/application/builder" },
+    { "path": "../../packages/application/studio" },
     { "path": "../../packages/application/publish-flow" },
     { "path": "../../packages/application/contract-sync" },
     { "path": "../../packages/infrastructure/persistence" }

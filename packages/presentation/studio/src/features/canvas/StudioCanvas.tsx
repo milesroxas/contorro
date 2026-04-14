@@ -517,7 +517,7 @@ function CanvasDropRoot({
     <>
       <div
         className="relative min-h-[max(100%,14rem)] w-full p-4 transition-colors"
-        data-testid="builder-canvas-drop-root"
+        data-testid="studio-canvas-drop-root"
         onContextMenu={(e) => {
           const origin = contextMenuOriginElement(e.target);
           if (origin?.closest("[data-canvas-node]")) {
@@ -542,7 +542,7 @@ function CanvasDropRoot({
   );
 }
 
-export function BuilderCanvas({
+export function StudioCanvas({
   composition,
   selectedNodeId,
   onSelectNode,
@@ -602,7 +602,7 @@ export function BuilderCanvas({
           }}
           onSelectNode={onSelectNode}
         >
-          <div className="text-foreground" data-testid="builder-canvas-preview">
+          <div className="text-foreground" data-testid="studio-canvas-preview">
             {tree}
           </div>
         </CanvasDropRoot>

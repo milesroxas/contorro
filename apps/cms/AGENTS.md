@@ -1,24 +1,24 @@
 # CMS app agent rules
 
-Use this file for changes inside **`apps/studio`** (package **`@repo/cms`**). Root constraints still apply from repo `AGENTS.md`.
+Use this file for changes inside **`apps/cms`** (package **`@repo/cms`**). Root constraints still apply from repo `AGENTS.md`.
 
 ## Ownership boundaries
 
 - This app owns Payload runtime assembly, Next routes, migrations, seeds, and app-level UI wiring for admin + Studio embedding.
 - Collections/globals/hooks source of truth is `packages/infrastructure/payload-config`.
-- Do not duplicate collection definitions in `apps/studio`.
+- Do not duplicate collection definitions in `apps/cms`.
 
 ## Current architecture facts
 
-- Payload config entry: `apps/studio/src/payload.config.ts`
+- Payload config entry: `apps/cms/src/payload.config.ts`
 - DB adapter: Postgres via `createPostgresAdapter` from `@repo/infrastructure-payload-config`
 - **Composition API** (HTTP routes called by `@repo/presentation-studio` via `StudioAuthoringClient`):
-  - `apps/studio/src/app/api/builder/compositions/[id]/route.ts` (GET/POST/PATCH)
-  - `apps/studio/src/app/api/builder/compositions/route.ts` (POST create)
-- Mutation commands: `packages/application/builder/src/commands/*`
-- Payload repository adapter: `apps/studio/src/app/api/builder/_lib/payload-builder-mutation-repository.ts`
-- Gateway forwarding endpoint: `apps/studio/src/app/api/gateway/[[...route]]/route.ts`
-- Studio embed: Payload custom view **`/builder`** → `components/admin/BuilderView.tsx` mounts `@repo/presentation-studio` and injects `createFetchStudioAuthoringClient` (optional env: `NEXT_PUBLIC_STUDIO_COMPOSITION_API_BASE`, `NEXT_PUBLIC_STUDIO_RESOURCE_API_BASE`).
+  - `apps/cms/src/app/api/studio/compositions/[id]/route.ts` (GET/POST/PATCH)
+  - `apps/cms/src/app/api/studio/compositions/route.ts` (POST create)
+- Mutation commands: `packages/application/studio/src/commands/*`
+- Payload repository adapter: `apps/cms/src/app/api/studio/_lib/payload-studio-mutation-repository.ts`
+- Gateway forwarding endpoint: `apps/cms/src/app/api/gateway/[[...route]]/route.ts`
+- Studio embed: Payload custom view **`/studio`** → `components/admin/StudioView.tsx` mounts `@repo/presentation-studio` and injects `createFetchStudioAuthoringClient` (optional env: `NEXT_PUBLIC_STUDIO_COMPOSITION_API_BASE`, `NEXT_PUBLIC_STUDIO_RESOURCE_API_BASE`).
 
 ## Security-critical patterns
 
@@ -31,7 +31,7 @@ Use this file for changes inside **`apps/studio`** (package **`@repo/cms`**). Ro
 - Next route handlers should orchestrate only.
 - Put business rules in domain/application packages.
 - This app can wire dependencies and map HTTP ↔ application/domain contracts.
-- Keep component row-id parsing in `@repo/infrastructure-payload-config/builder-row-id`.
+- Keep component row-id parsing in `@repo/infrastructure-payload-config/studio-row-id`.
 - Do not add legacy mirror sync hooks; avoid dual-write drift.
 
 ## Required checks after relevant changes

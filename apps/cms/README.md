@@ -1,17 +1,17 @@
 # CMS app (`@repo/cms`)
 
-This app is the **Next.js + Payload** host: admin UI, auth, content API, and **HTTP routes** that match the **`StudioAuthoringClient`** contract consumed by `@repo/presentation-studio` (composition CRUD, design-token sets, design-system globals — implemented with `@repo/application-builder` + Payload adapters in route handlers).
+This app is the **Next.js + Payload** host: admin UI, auth, content API, and **HTTP routes** that match the **`StudioAuthoringClient`** contract consumed by `@repo/presentation-studio` (composition CRUD, design-token sets, design-system globals — implemented with `@repo/application-studio` + Payload adapters in route handlers).
 
-The workspace folder is `apps/studio`; the npm package name is **`@repo/cms`**.
+The workspace folder is `apps/cms`; the npm package name is **`@repo/cms`**.
 
 ## What lives here
 
 - Payload runtime assembly: `src/payload.config.ts`
 - Next app routes: `src/app`
 - **Composition API** (canonical for `@repo/presentation-studio`):
-  - `src/app/api/builder/compositions/[id]/route.ts` (GET/POST/PATCH)
-  - `src/app/api/builder/compositions/route.ts` (POST create)
-- Route handlers orchestrate; mutations use **`@repo/application-builder`** commands and the Payload repository adapter.
+  - `src/app/api/studio/compositions/[id]/route.ts` (GET/POST/PATCH)
+  - `src/app/api/studio/compositions/route.ts` (POST create)
+- Route handlers orchestrate; mutations use **`@repo/application-studio`** commands and the Payload repository adapter.
 - Same-origin gateway forwarding: `src/app/api/gateway/[[...route]]/route.ts`
 - Migrations: `src/migrations`
 - Seeds: `src/seeds`
@@ -21,7 +21,7 @@ Collection/global **definitions** live in **`@repo/infrastructure-payload-config
 
 ## Visual Studio (presentation package)
 
-Authoring UI is **`@repo/presentation-studio`** (`packages/presentation/studio`). It is embedded in Payload admin (e.g. custom view `/builder`) and uses **`StudioAuthoringClient`** + `fetch-studio-authoring-client` to call this app’s routes — not Payload Local API from the browser.
+Authoring UI is **`@repo/presentation-studio`** (`packages/presentation/studio`). It is embedded in Payload admin (e.g. custom view `/studio`) and uses **`StudioAuthoringClient`** + `fetch-studio-authoring-client` to call this app’s routes — not Payload Local API from the browser.
 
 ## Local development
 

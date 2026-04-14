@@ -8,7 +8,7 @@ export default async function globalSetup(): Promise<void> {
   const postgresUrl = process.env.POSTGRES_URL;
   if (!postgresUrl) {
     throw new Error(
-      "E2E requires POSTGRES_URL (see apps/studio/.env.example). Copy to .env and run pnpm db:up from repo root.",
+      "E2E requires POSTGRES_URL (see apps/cms/.env.example). Copy to .env and run pnpm db:up from repo root.",
     );
   }
 

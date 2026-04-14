@@ -182,7 +182,7 @@ export function DraftSaveBar({
         <Separator aria-hidden className="h-5 w-px bg-border" />
         <Button
           className="font-semibold"
-          data-testid="publish-builder"
+          data-testid="publish-studio"
           disabled={!dirty || saving}
           onClick={() => onPublish()}
           size="sm"

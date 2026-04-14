@@ -28,14 +28,14 @@ import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { FolderTableCell as FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { FolderField as FolderField_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
-import { default as default_dda01d5396f5fd2dd9333d25a03955b3 } from '../../../components/admin/ComponentOpenBuilder'
-import { default as default_dc8f9b8e23d55e378685fc46c6b4eb5d } from '../../../components/admin/PageCompositionOpenBuilder'
+import { default as default_87e35c11448661d9633f1f1a1f2c5521 } from '../../../components/admin/ComponentOpenStudio'
+import { default as default_8c9b89b59982f178478f894900f16872 } from '../../../components/admin/PageCompositionOpenStudio'
 import { FolderTypeField as FolderTypeField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
 import { default as default_4a6ee751a613d9923e69a9b97ecaf3b4 } from '../../../components/admin/ThemeModeNavToggle'
-import { default as default_117c7ded6016a73915851ae016af1e96 } from '../../../components/admin/BuilderNavLink'
+import { default as default_c0d1034a8709d8a749125120127fbc46 } from '../../../components/admin/StudioNavLink'
 import { default as default_55b8bdcdde915bae2246f3a37b9e345d } from '../../../components/admin/DesignSystemPreviewCallout'
 import { default as default_fddf24e2605d3ae099922bff952ee3f2 } from '../../../components/admin/PayloadAdminTheme'
-import { default as default_f73444f49720bd80d14a8e87f761bcfd } from '../../../components/admin/BuilderView'
+import { default as default_3f3672bcb6213b76cd08a3f66a9e5a54 } from '../../../components/admin/StudioView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 export const importMap = {
@@ -69,13 +69,13 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/next/rsc#FolderTableCell": FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@payloadcms/next/rsc#FolderField": FolderField_f9c02e79a4aed9a3924487c0cd4cafb1,
-  "/components/admin/ComponentOpenBuilder#default": default_dda01d5396f5fd2dd9333d25a03955b3,
-  "/components/admin/PageCompositionOpenBuilder#default": default_dc8f9b8e23d55e378685fc46c6b4eb5d,
+  "/components/admin/ComponentOpenStudio#default": default_87e35c11448661d9633f1f1a1f2c5521,
+  "/components/admin/PageCompositionOpenStudio#default": default_8c9b89b59982f178478f894900f16872,
   "@payloadcms/next/client#FolderTypeField": FolderTypeField_2b8867833a34864a02ddf429b0728a40,
   "/components/admin/ThemeModeNavToggle#default": default_4a6ee751a613d9923e69a9b97ecaf3b4,
-  "/components/admin/BuilderNavLink#default": default_117c7ded6016a73915851ae016af1e96,
+  "/components/admin/StudioNavLink#default": default_c0d1034a8709d8a749125120127fbc46,
   "/components/admin/DesignSystemPreviewCallout#default": default_55b8bdcdde915bae2246f3a37b9e345d,
   "/components/admin/PayloadAdminTheme#default": default_fddf24e2605d3ae099922bff952ee3f2,
-  "/components/admin/BuilderView#default": default_f73444f49720bd80d14a8e87f761bcfd,
+  "/components/admin/StudioView#default": default_3f3672bcb6213b76cd08a3f66a9e5a54,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

@@ -23,10 +23,10 @@ import {
 
 import type { StudioAuthoringClient } from "@repo/contracts-zod";
 
-import { BuilderPanel } from "../components/builder-panel.js";
+import { StudioPanel } from "../components/studio-panel.js";
 import { StudioRoot } from "../components/studio-root.js";
 import { Separator } from "../components/ui/separator.js";
-import { BuilderCanvas } from "../features/canvas/BuilderCanvas.js";
+import { StudioCanvas } from "../features/canvas/StudioCanvas.js";
 import type { InsertDropData } from "../features/dnd/InsertionDropZone.js";
 import { DraftSaveBar } from "../features/draft-save/DraftSaveBar.js";
 import { NodeTree } from "../features/node-tree/NodeTree.js";
@@ -42,24 +42,24 @@ import {
   resolveLeftSidebarPanelShortcut,
 } from "../lib/left-sidebar-panels.js";
 import { getPrimitiveDisplay } from "../lib/primitive-display.js";
-import { createBuilderStore } from "../model/builder-store.js";
+import { createStudioStore } from "../model/studio-store.js";
 
 function runtimeCssVariables(cssVariables: string): string {
   const trimmed = cssVariables.trim();
   if (trimmed.length === 0) {
     return "";
   }
-  // Builder runtime cannot consume Tailwind's @theme directive directly.
+  // Studio runtime cannot consume Tailwind's @theme directive directly.
   // Convert each @theme block to :root.
   const withRuntimeTheme = cssVariables.replace(
     /@theme\s*\{([\s\S]*?)\}/g,
     (_match, body) => `:root {${body}\n}`,
   );
-  // Scope dark-mode token override to builder-only state so parent admin `.dark`
+  // Scope dark-mode token override to Studio-only state so parent admin `.dark`
   // does not force canvas tokens into dark mode.
   return withRuntimeTheme.replace(
     /(^|\n)\s*\.dark\s*\{/g,
-    '$1[data-builder-theme="dark"] {',
+    '$1[data-studio-theme="dark"] {',
   );
 }
 
@@ -78,7 +78,7 @@ const MAX_LEFT_PANEL_WIDTH = 520;
 const MIN_RIGHT_PANEL_WIDTH = 300;
 const MAX_RIGHT_PANEL_WIDTH = 640;
 const MIN_CENTER_WIDTH = 420;
-function BuilderDragPreview({
+function StudioDragPreview({
   activeNodeId,
   activePaletteKey,
   display,
@@ -113,7 +113,7 @@ function BuilderDragPreview({
   );
 }
 
-export function BuilderApp({
+export function StudioApp({
   compositionId,
   adminHref,
   canEditName,
@@ -125,8 +125,8 @@ export function BuilderApp({
   /** Injected transport (e.g. fetch to your host). Defaults inside the store when omitted. */
   authoringClient?: StudioAuthoringClient;
 }) {
-  const useBuilder = useMemo(
-    () => createBuilderStore(compositionId, { client: authoringClient }),
+  const useStudioStore = useMemo(
+    () => createStudioStore(compositionId, { client: authoringClient }),
     [compositionId, authoringClient],
   );
 
@@ -151,48 +151,50 @@ export function BuilderApp({
     rightWidth: number;
   } | null>(null);
 
-  const composition = useBuilder((s) => s.composition);
-  const tokenMetadata = useBuilder((s) => s.tokenMetadata);
-  const cssVariables = useBuilder((s) => s.cssVariables);
+  const composition = useStudioStore((s) => s.composition);
+  const tokenMetadata = useStudioStore((s) => s.tokenMetadata);
+  const cssVariables = useStudioStore((s) => s.cssVariables);
   const runtimeTokenCss = useMemo(
     () => runtimeCssVariables(cssVariables),
     [cssVariables],
   );
-  const name = useBuilder((s) => s.name);
-  const selectedNodeId = useBuilder((s) => s.selectedNodeId);
-  const dirty = useBuilder((s) => s.dirty);
-  const saving = useBuilder((s) => s.saving);
-  const renaming = useBuilder((s) => s.renaming);
-  const canUndo = useBuilder((s) => s.canUndo);
-  const canRedo = useBuilder((s) => s.canRedo);
-  const error = useBuilder((s) => s.error);
-  const selectNode = useBuilder((s) => s.selectNode);
-  const addPrimitive = useBuilder((s) => s.addPrimitive);
-  const moveNode = useBuilder((s) => s.moveNode);
-  const setTextContent = useBuilder((s) => s.setTextContent);
-  const patchNodeProps = useBuilder((s) => s.patchNodeProps);
-  const setNodeStyleEntry = useBuilder((s) => s.setNodeStyleEntry);
-  const storeResetNodePropKey = useBuilder((s) => s.resetNodePropKey);
-  const storeClearNodeStyles = useBuilder((s) => s.clearNodeStyles);
-  const setNodeEditorFieldBinding = useBuilder(
+  const name = useStudioStore((s) => s.name);
+  const selectedNodeId = useStudioStore((s) => s.selectedNodeId);
+  const dirty = useStudioStore((s) => s.dirty);
+  const saving = useStudioStore((s) => s.saving);
+  const renaming = useStudioStore((s) => s.renaming);
+  const canUndo = useStudioStore((s) => s.canUndo);
+  const canRedo = useStudioStore((s) => s.canRedo);
+  const error = useStudioStore((s) => s.error);
+  const selectNode = useStudioStore((s) => s.selectNode);
+  const addPrimitive = useStudioStore((s) => s.addPrimitive);
+  const moveNode = useStudioStore((s) => s.moveNode);
+  const setTextContent = useStudioStore((s) => s.setTextContent);
+  const patchNodeProps = useStudioStore((s) => s.patchNodeProps);
+  const setNodeStyleEntry = useStudioStore((s) => s.setNodeStyleEntry);
+  const storeResetNodePropKey = useStudioStore((s) => s.resetNodePropKey);
+  const storeClearNodeStyles = useStudioStore((s) => s.clearNodeStyles);
+  const setNodeEditorFieldBinding = useStudioStore(
     (s) => s.setNodeEditorFieldBinding,
   );
-  const saveDraft = useBuilder((s) => s.saveDraft);
-  const publish = useBuilder((s) => s.publish);
-  const rename = useBuilder((s) => s.rename);
-  const undo = useBuilder((s) => s.undo);
-  const redo = useBuilder((s) => s.redo);
-  const removeNode = useBuilder((s) => s.removeNode);
+  const saveDraft = useStudioStore((s) => s.saveDraft);
+  const publish = useStudioStore((s) => s.publish);
+  const rename = useStudioStore((s) => s.rename);
+  const undo = useStudioStore((s) => s.undo);
+  const redo = useStudioStore((s) => s.redo);
+  const removeNode = useStudioStore((s) => s.removeNode);
 
   useEffect(() => {
-    void useBuilder.getState().load();
-  }, [useBuilder]);
+    void useStudioStore.getState().load();
+  }, [useStudioStore]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
-    const storedTheme = window.localStorage.getItem("builder-theme");
+    const storedTheme =
+      window.localStorage.getItem("studio-theme") ??
+      window.localStorage.getItem("builder-theme");
     if (storedTheme === "light" || storedTheme === "dark") {
       setTheme(storedTheme);
       return;
@@ -459,8 +461,8 @@ export function BuilderApp({
           "flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-sm",
           theme === "dark" && "dark",
         )}
-        data-builder-theme={theme}
-        data-testid="builder-app"
+        data-studio-theme={theme}
+        data-testid="studio-app"
       >
         <DraftSaveBar
           canEditName={canEditName}
@@ -482,20 +484,20 @@ export function BuilderApp({
         />
         <div
           className={cn(
-            "grid min-h-0 min-w-0 flex-1 grid-cols-1 auto-rows-fr gap-3 overflow-hidden lg:auto-rows-auto lg:grid-cols-[minmax(240px,var(--builder-left-panel-width))_6px_minmax(0,1fr)_6px_minmax(300px,var(--builder-right-panel-width))] lg:grid-rows-1",
+            "grid min-h-0 min-w-0 flex-1 grid-cols-1 auto-rows-fr gap-3 overflow-hidden lg:auto-rows-auto lg:grid-cols-[minmax(240px,var(--studio-left-panel-width))_6px_minmax(0,1fr)_6px_minmax(300px,var(--studio-right-panel-width))] lg:grid-rows-1",
             isResizingPanels && "select-none",
           )}
           ref={layoutRef}
           style={
             {
-              "--builder-left-panel-width": `${leftPanelWidth}px`,
-              "--builder-right-panel-width": `${rightPanelWidth}px`,
+              "--studio-left-panel-width": `${leftPanelWidth}px`,
+              "--studio-right-panel-width": `${rightPanelWidth}px`,
             } as CSSProperties
           }
         >
           <div className="flex min-h-0 min-w-0 overflow-hidden">
             <nav
-              aria-label="Left builder panels"
+              aria-label="Left Studio panels"
               className="flex shrink-0 flex-col items-center gap-1 border-r border-border/70 bg-muted/20 p-1.5 dark:bg-muted/10"
             >
               <div className="flex w-full flex-col items-center gap-1">
@@ -527,14 +529,14 @@ export function BuilderApp({
                 <KeyboardShortcutsDrawer />
               </div>
             </nav>
-            <BuilderPanel
+            <StudioPanel
               className="min-h-0 min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none"
               collapsible={false}
               contentClassName="flex-1"
               title={leftSidebarPanel.label}
             >
               {leftSidebarPanel.content}
-            </BuilderPanel>
+            </StudioPanel>
           </div>
           <button
             aria-label="Resize left panel"
@@ -549,7 +551,7 @@ export function BuilderApp({
           </button>
           <div className="flex min-h-0 min-w-0 flex-col">
             {runtimeTokenCss ? <style>{runtimeTokenCss}</style> : null}
-            <BuilderCanvas
+            <StudioCanvas
               composition={composition}
               onCanvasBackground={() => selectNode(null)}
               onRemoveNode={removeNode}
@@ -557,7 +559,7 @@ export function BuilderApp({
               onToggleTheme={() => {
                 setTheme((prevTheme) => {
                   const nextTheme = prevTheme === "dark" ? "light" : "dark";
-                  window.localStorage.setItem("builder-theme", nextTheme);
+                  window.localStorage.setItem("studio-theme", nextTheme);
                   return nextTheme;
                 });
               }}
@@ -577,7 +579,7 @@ export function BuilderApp({
           >
             <div className="h-full w-px bg-border/75 transition-colors group-hover:bg-primary/60" />
           </button>
-          <BuilderPanel
+          <StudioPanel
             className="min-h-0 min-w-0 rounded-none border-0 bg-transparent shadow-none [&>div:first-child]:hidden"
             collapsible={false}
             contentClassName="flex-1"
@@ -618,12 +620,12 @@ export function BuilderApp({
                 }
               }}
             />
-          </BuilderPanel>
+          </StudioPanel>
         </div>
       </StudioRoot>
       <DragOverlay dropAnimation={null}>
         {overlayDisplay ? (
-          <BuilderDragPreview
+          <StudioDragPreview
             activeNodeId={activeNodeId}
             activePaletteKey={activePaletteKey}
             display={overlayDisplay}

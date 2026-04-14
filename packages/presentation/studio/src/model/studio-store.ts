@@ -9,7 +9,7 @@ import type {
 import {
   addChildNode,
   clearNodeStyleBinding,
-  isBuilderNewCompositionSessionId,
+  isStudioNewCompositionSessionId,
   moveNode as moveNodeInComposition,
   removeSubtree,
   resetNodePropKeyToPrimitiveDefault,
@@ -22,7 +22,7 @@ import { createSafeStore } from "@repo/presentation-shared";
 import { getDefaultStudioAuthoringClient } from "../lib/fetch-studio-authoring-client.js";
 import { prepareForSave } from "../lib/persist.js";
 
-export type BuilderStoreState = {
+export type StudioStoreState = {
   compositionId: string;
   composition: PageComposition | null;
   name: string;
@@ -69,13 +69,13 @@ export type BuilderStoreState = {
   rename: (name: string) => Promise<void>;
 };
 
-export function createBuilderStore(
+export function createStudioStore(
   compositionId: string,
   options?: { client?: StudioAuthoringClient },
 ) {
   const client = options?.client ?? getDefaultStudioAuthoringClient();
 
-  return createSafeStore<BuilderStoreState>((set, get) => ({
+  return createSafeStore<StudioStoreState>((set, get) => ({
     compositionId,
     composition: null,
     name: "",
@@ -388,7 +388,7 @@ export function createBuilderStore(
       try {
         const saved = await client.postDraft(id, {
           composition: prep.data,
-          ifMatchUpdatedAt: isBuilderNewCompositionSessionId(id)
+          ifMatchUpdatedAt: isStudioNewCompositionSessionId(id)
             ? null
             : updatedAt,
           name: get().name,
@@ -427,7 +427,7 @@ export function createBuilderStore(
       try {
         const saved = await client.postPublish(id, {
           composition: prep.data,
-          ifMatchUpdatedAt: isBuilderNewCompositionSessionId(id)
+          ifMatchUpdatedAt: isStudioNewCompositionSessionId(id)
             ? null
             : updatedAt,
           name: get().name,
@@ -457,7 +457,7 @@ export function createBuilderStore(
       if (!trimmed || renaming || trimmed === name) {
         return;
       }
-      if (isBuilderNewCompositionSessionId(id)) {
+      if (isStudioNewCompositionSessionId(id)) {
         set({ name: trimmed });
         return;
       }
@@ -476,4 +476,4 @@ export function createBuilderStore(
   }));
 }
 
-export type BuilderStore = ReturnType<typeof createBuilderStore>;
+export type StudioStore = ReturnType<typeof createStudioStore>;

@@ -12,7 +12,7 @@ export type CompiledTokenOutput = {
   tokenMetadata: TokenMeta[];
 };
 
-export type BuilderStyleProperty =
+export type StudioStyleProperty =
   | "background"
   | "borderColor"
   | "borderRadius"
@@ -58,7 +58,7 @@ export type BuilderStyleProperty =
   | "maxWidth"
   | "maxHeight";
 
-const TOKEN_UTILITY_CLASS_PREFIX: Record<BuilderStyleProperty, string> = {
+const TOKEN_UTILITY_CLASS_PREFIX: Record<StudioStyleProperty, string> = {
   background: "bg",
   borderColor: "border-color",
   borderRadius: "rounded",
@@ -105,7 +105,7 @@ const TOKEN_UTILITY_CLASS_PREFIX: Record<BuilderStyleProperty, string> = {
   maxHeight: "max-h",
 };
 
-const TOKEN_CSS_PROPERTIES: Record<BuilderStyleProperty, string> = {
+const TOKEN_CSS_PROPERTIES: Record<StudioStyleProperty, string> = {
   background: "background-color",
   borderColor: "border-color",
   borderRadius: "border-radius",
@@ -162,7 +162,7 @@ function tokenKeyToClassSegment(key: string): string {
 }
 
 export function styleTokenClassName(
-  property: BuilderStyleProperty,
+  property: StudioStyleProperty,
   tokenKey: string,
 ): string {
   return `${TOKEN_UTILITY_CLASS_PREFIX[property]}-${tokenKeyToClassSegment(tokenKey)}`;
@@ -193,18 +193,18 @@ export function compileTokenSet(
     blocks.push(`.dark {\n${darkLines.join("\n")}\n}`);
   }
 
-  const builderTokenClassLines: string[] = [];
+  const studioTokenClassLines: string[] = [];
   for (const token of meta) {
     for (const [property, cssProperty] of Object.entries(
       TOKEN_CSS_PROPERTIES,
-    ) as [BuilderStyleProperty, string][]) {
-      builderTokenClassLines.push(
+    ) as [StudioStyleProperty, string][]) {
+      studioTokenClassLines.push(
         `.${styleTokenClassName(property, token.key)} { ${cssProperty}: var(${token.cssVar}); }`,
       );
     }
   }
-  if (builderTokenClassLines.length > 0) {
-    blocks.push(builderTokenClassLines.join("\n"));
+  if (studioTokenClassLines.length > 0) {
+    blocks.push(studioTokenClassLines.join("\n"));
   }
 
   return {

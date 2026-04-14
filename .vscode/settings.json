@@ -8,7 +8,7 @@
   "biome.requireConfiguration": true,
   "biome.lsp.bin": "${workspaceFolder}/node_modules/@biomejs/biome/bin/biome",
 
-  "vitest.rootConfig": "apps/studio/vitest.config.mts",
+  "vitest.rootConfig": "apps/cms/vitest.config.mts",
 
   "editor.defaultFormatter": "biomejs.biome",
   "editor.formatOnSave": true,

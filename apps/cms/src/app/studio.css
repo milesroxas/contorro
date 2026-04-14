@@ -1,0 +1,16 @@
+/*
+ * Studio-only Tailwind + shadcn: import from `StudioView` so utilities load after `@payloadcms/next/css`.
+ * Scans `@repo/presentation-studio`, runtime renderer, studio hub, and shared `components/ui`.
+ */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "./_tailwind-safelist.css";
+@import "./_contorro-theme.css";
+
+@source "../../../../packages/presentation/studio/src";
+@source "../../../../packages/runtime/renderer/src";
+@source "../components/ui";
+@source "../components/admin/studio-hub";
+@source "../components/admin/StudioView.tsx";
+@source "../components/admin/StudioHub.tsx";

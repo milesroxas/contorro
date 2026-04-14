@@ -1,8 +1,8 @@
 "use client";
 
 import { useConfig, useTheme } from "@payloadcms/ui";
-import { builderNewCompositionSessionId } from "@repo/domains-composition";
-import { builderRowIdForComponent } from "@repo/infrastructure-payload-config/builder-row-id";
+import { studioNewCompositionSessionId } from "@repo/domains-composition";
+import { studioRowIdForComponent } from "@repo/infrastructure-payload-config/studio-row-id";
 import {
   IconClock,
   IconExternalLink,
@@ -319,7 +319,7 @@ export default function StudioDashboard() {
 
   const openNewStudioSession = useCallback(
     (kind: "template" | "component") => {
-      const tempId = builderNewCompositionSessionId(kind);
+      const tempId = studioNewCompositionSessionId(kind);
       const studioHref = formatAdminURL({
         adminRoute,
         path: `/studio?composition=${encodeURIComponent(tempId)}`,
@@ -466,7 +466,7 @@ export default function StudioDashboard() {
       return {
         studioHref: formatAdminURL({
           adminRoute,
-          path: `/studio?composition=${encodeURIComponent(builderRowIdForComponent(id))}`,
+          path: `/studio?composition=${encodeURIComponent(studioRowIdForComponent(id))}`,
           relative: true,
         }),
         editHref: formatAdminURL({

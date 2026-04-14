@@ -36,7 +36,7 @@ const body = JSON.stringify({
 
 async function one(i) {
   const res = await fetch(
-    `${origin}/api/builder/compositions/${encodeURIComponent(compositionId)}`,
+    `${origin}/api/studio/compositions/${encodeURIComponent(compositionId)}`,
     {
       method: "POST",
       headers: {

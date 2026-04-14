@@ -1,6 +1,6 @@
-export { createBuilderDb, type BuilderDb } from "./create-builder-db.js";
+export { createStudioDb, type StudioDb } from "./create-studio-db.js";
 export { DrizzleCompositionRepository } from "./drizzle-composition-repository.js";
 export {
-  builderCompositions,
-  builderSchema,
-} from "./schema/builder.js";
+  studioCompositions,
+  studioSchema,
+} from "./schema/studio.js";

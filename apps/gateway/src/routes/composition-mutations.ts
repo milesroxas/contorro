@@ -4,7 +4,7 @@ import { Hono } from "hono";
 
 import { resultToResponse } from "../lib/result-to-response.js";
 
-/** Gateway no longer mutates composition state; Payload `/api/builder` is canonical. */
+/** Gateway no longer mutates composition state; CMS `/api/studio` is canonical. */
 export function createCompositionMutationRouter(middleware: MiddlewareHandler) {
   const r = new Hono();
   r.use(middleware);

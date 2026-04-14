@@ -3,13 +3,13 @@ import {
   defaultPageTemplateComposition,
 } from "@repo/domains-composition";
 import {
-  builderRowIdForComponent,
-  componentIdFromBuilderRowId,
-} from "@repo/infrastructure-payload-config/builder-row-id";
+  componentIdFromStudioRowId,
+  studioRowIdForComponent,
+} from "@repo/infrastructure-payload-config/studio-row-id";
 import { err, ok } from "@repo/kernel";
 import type { Payload } from "payload";
 
-import type { BuilderMutationRepository } from "@repo/application-builder";
+import type { StudioMutationRepository } from "@repo/application-studio";
 
 function normalizeUpdatedAt(value: unknown): string {
   if (typeof value === "string") {
@@ -21,14 +21,14 @@ function normalizeUpdatedAt(value: unknown): string {
   return "";
 }
 
-export function payloadBuilderMutationRepository(
+export function payloadStudioMutationRepository(
   payload: Payload,
   user: unknown,
-): BuilderMutationRepository {
+): StudioMutationRepository {
   return {
     async loadRevision(compositionId, actor) {
       void actor;
-      const componentId = componentIdFromBuilderRowId(compositionId);
+      const componentId = componentIdFromStudioRowId(compositionId);
       try {
         if (componentId) {
           const existing = await payload.findByID({
@@ -65,7 +65,7 @@ export function payloadBuilderMutationRepository(
 
     async save(compositionId, composition, intent, actor) {
       void actor;
-      const componentId = componentIdFromBuilderRowId(compositionId);
+      const componentId = componentIdFromStudioRowId(compositionId);
       try {
         if (componentId) {
           const updated = await payload.update({
@@ -171,7 +171,7 @@ export function payloadBuilderMutationRepository(
           overrideAccess: false,
         });
         return ok({
-          compositionId: builderRowIdForComponent(String(created.id)),
+          compositionId: studioRowIdForComponent(String(created.id)),
         });
       } catch {
         return err("PERSISTENCE_ERROR");

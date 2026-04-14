@@ -7,12 +7,12 @@ export { defaultEmptyPageComposition } from "./default-empty-page-composition.js
 export { defaultPageTemplateComposition } from "./default-page-template-composition.js";
 export { normalizeTemplateShell } from "./normalize-template-shell.js";
 export {
-  builderNewCompositionSessionId,
-  isBuilderNewComponentSessionId,
-  isBuilderNewCompositionSessionId,
-  parseBuilderNewCompositionSessionId,
-  type NewBuilderCompositionKind,
-} from "./builder-composition-session.js";
+  studioNewCompositionSessionId,
+  isStudioNewComponentSessionId,
+  isStudioNewCompositionSessionId,
+  parseStudioNewCompositionSessionId,
+  type NewStudioCompositionKind,
+} from "./studio-composition-session.js";
 export { clonePageCompositionWithNewIds } from "./graph/clone-composition.js";
 export { expandLibraryComponentNodes } from "./graph/expand-library-component-nodes.js";
 export {
@@ -50,11 +50,11 @@ export {
 } from "./layout-slot.js";
 export { mergePageContentSlotsToSlotOrder } from "./page-content-slots.js";
 export {
-  BUILDER_PALETTE_PRIMITIVE_KEYS,
+  STUDIO_PALETTE_PRIMITIVE_KEYS,
   KNOWN_PRIMITIVE_KEYS,
   defaultPrimitivePropValues,
-  isBuilderCreatablePrimitiveKey,
-  isBuilderPalettePrimitiveKey,
+  isStudioCreatablePrimitiveKey,
+  isStudioPalettePrimitiveKey,
   isContainerPrimitiveKey,
   isKnownPrimitiveKey,
   primitiveKindForDefinitionKey,

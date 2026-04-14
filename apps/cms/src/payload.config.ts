@@ -49,7 +49,7 @@ const collectionsWithStudioAdmin = (studioBase.collections ?? []).map(
             edit: {
               ...collection.admin?.components?.edit,
               beforeDocumentControls: [
-                "/components/admin/PageCompositionOpenBuilder",
+                "/components/admin/PageCompositionOpenStudio",
               ],
             },
           },
@@ -65,9 +65,7 @@ const collectionsWithStudioAdmin = (studioBase.collections ?? []).map(
             ...collection.admin?.components,
             edit: {
               ...collection.admin?.components?.edit,
-              beforeDocumentControls: [
-                "/components/admin/ComponentOpenBuilder",
-              ],
+              beforeDocumentControls: ["/components/admin/ComponentOpenStudio"],
             },
           },
         },
@@ -92,15 +90,15 @@ export default buildConfig({
     },
     components: {
       providers: ["/components/admin/PayloadAdminTheme"],
-      afterNavLinks: ["/components/admin/BuilderNavLink"],
+      afterNavLinks: ["/components/admin/StudioNavLink"],
       actions: ["/components/admin/ThemeModeNavToggle"],
       beforeDashboard: [
         "/components/admin/DesignSystemPreviewCallout",
-        "/components/admin/PageCompositionOpenBuilder",
+        "/components/admin/PageCompositionOpenStudio",
       ],
       views: {
         studio: {
-          Component: "/components/admin/BuilderView",
+          Component: "/components/admin/StudioView",
           path: "/studio",
         },
       },

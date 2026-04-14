@@ -9,16 +9,16 @@ import {
   CollapsibleTrigger,
 } from "./ui/collapsible.js";
 
-/** Shared chrome for builder side panels (Primitives, Layers, etc.). */
-export const builderPanelSurfaceClass =
+/** Shared chrome for Studio side panels (Primitives, Layers, etc.). */
+export const studioPanelSurfaceClass =
   "flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border/80 bg-card/40 text-card-foreground shadow-sm dark:bg-card/25";
 
-export const builderPanelHeaderClass =
+export const studioPanelHeaderClass =
   "shrink-0 px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground/95";
 
-export const builderPanelBodyClass = "p-3";
+export const studioPanelBodyClass = "p-3";
 
-export function BuilderPanel({
+export function StudioPanel({
   title,
   children,
   className,
@@ -41,8 +41,8 @@ export function BuilderPanel({
 
   if (!collapsible) {
     return (
-      <div className={cn(builderPanelSurfaceClass, className)}>
-        <div className={builderPanelHeaderClass}>{title}</div>
+      <div className={cn(studioPanelSurfaceClass, className)}>
+        <div className={studioPanelHeaderClass}>{title}</div>
         <div
           className={cn(
             "flex min-h-0 flex-1 flex-col overflow-hidden",
@@ -50,7 +50,7 @@ export function BuilderPanel({
           )}
         >
           <ScrollArea className="min-h-0 min-w-0 flex-1">
-            <div className={cn(builderPanelBodyClass, bodyClassName)}>
+            <div className={cn(studioPanelBodyClass, bodyClassName)}>
               {children}
             </div>
           </ScrollArea>
@@ -61,13 +61,13 @@ export function BuilderPanel({
 
   return (
     <Collapsible
-      className={cn(builderPanelSurfaceClass, className)}
+      className={cn(studioPanelSurfaceClass, className)}
       onOpenChange={setOpen}
       open={open}
     >
       <CollapsibleTrigger
         className={cn(
-          builderPanelHeaderClass,
+          studioPanelHeaderClass,
           "flex w-full items-center justify-between gap-2 text-left",
         )}
       >
@@ -85,7 +85,7 @@ export function BuilderPanel({
         )}
       >
         <ScrollArea className="min-h-0 min-w-0 flex-1">
-          <div className={cn(builderPanelBodyClass, bodyClassName)}>
+          <div className={cn(studioPanelBodyClass, bodyClassName)}>
             {children}
           </div>
         </ScrollArea>

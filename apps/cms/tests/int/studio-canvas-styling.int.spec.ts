@@ -10,7 +10,7 @@ import { createElement } from "react";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { StudioRoot } from "../../../../packages/presentation/studio/src/components/studio-root.js";
-import { BuilderCanvas } from "../../../../packages/presentation/studio/src/features/canvas/BuilderCanvas.js";
+import { StudioCanvas } from "../../../../packages/presentation/studio/src/features/canvas/StudioCanvas.js";
 
 function imageComposition(): PageComposition {
   return {
@@ -67,7 +67,7 @@ describe("Builder canvas styling safeguards", () => {
 
   it("keeps globals safelist aligned with aspect ratio utility values", () => {
     const css = readFileSync(
-      resolve(process.cwd(), "src/app/globals.css"),
+      resolve(process.cwd(), "src/app/_tailwind-safelist.css"),
       "utf8",
     );
     const safelistMatch = css.match(/@source inline\("([^"]+)"\);/);
@@ -107,7 +107,7 @@ describe("Builder canvas styling safeguards", () => {
       createElement(
         StudioRoot,
         null,
-        createElement(BuilderCanvas, {
+        createElement(StudioCanvas, {
           composition,
           selectedNodeId: null,
           onSelectNode: () => {},
@@ -120,7 +120,7 @@ describe("Builder canvas styling safeguards", () => {
       ),
     );
 
-    const preview = screen.getByTestId("builder-canvas-preview");
+    const preview = screen.getByTestId("studio-canvas-preview");
     const image = preview.querySelector('img[alt="Preview image"]');
     expect(image).not.toBeNull();
     if (!image) {

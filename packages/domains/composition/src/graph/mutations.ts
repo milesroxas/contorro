@@ -10,7 +10,7 @@ import { makeId } from "@repo/kernel";
 import { type Result, err, ok } from "@repo/kernel";
 import {
   defaultPrimitivePropValues,
-  isBuilderCreatablePrimitiveKey,
+  isStudioCreatablePrimitiveKey,
   primitiveKindForDefinitionKey,
 } from "../primitives.js";
 
@@ -57,7 +57,7 @@ export function addChildNode(
   insertIndex?: number,
   options?: { libraryComponentKey?: string },
 ): Result<PageComposition, "INVALID_NODE"> {
-  if (!isBuilderCreatablePrimitiveKey(definitionKey)) {
+  if (!isStudioCreatablePrimitiveKey(definitionKey)) {
     return err("INVALID_NODE");
   }
   if (definitionKey === "primitive.libraryComponent") {

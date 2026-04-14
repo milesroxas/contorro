@@ -2,9 +2,9 @@
 
 ## Runtime assembly
 
-- Payload config is assembled in `apps/studio/src/payload.config.ts`.
+- Payload config is assembled in `apps/cms/src/payload.config.ts`.
 - Shared base config comes from `@repo/infrastructure-payload-config` (`buildStudioConfig`).
-- DB adapter is Postgres (`createPostgresAdapter`), migrations in `apps/studio/src/migrations`.
+- DB adapter is Postgres (`createPostgresAdapter`), migrations in `apps/cms/src/migrations`.
 
 ## Source of truth
 
@@ -15,9 +15,9 @@
 ## Route split
 
 - **Composition API** (Studio UI):
-  - `apps/studio/src/app/api/builder/compositions/[id]/route.ts` (GET/POST/PATCH)
-  - `apps/studio/src/app/api/builder/compositions/route.ts` (POST create)
-- Gateway proxy route: `apps/studio/src/app/api/gateway/[[...route]]/route.ts`.
+  - `apps/cms/src/app/api/studio/compositions/[id]/route.ts` (GET/POST/PATCH)
+  - `apps/cms/src/app/api/studio/compositions/route.ts` (POST create)
+- Gateway proxy route: `apps/cms/src/app/api/gateway/[[...route]]/route.ts`.
 
 ## Core rule
 

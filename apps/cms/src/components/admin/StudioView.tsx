@@ -1,17 +1,19 @@
 "use client";
 
+import "@/app/studio.css";
+
 import { useAuth, useConfig } from "@payloadcms/ui";
-import { isBuilderNewComponentSessionId } from "@repo/domains-composition";
-import { isBuilderComponentRowId } from "@repo/infrastructure-payload-config/builder-row-id";
+import { isStudioNewComponentSessionId } from "@repo/domains-composition";
+import { isStudioComponentRowId } from "@repo/infrastructure-payload-config/studio-row-id";
 import {
-  BuilderApp,
   DesignSystemEditor,
+  StudioApp,
   createFetchStudioAuthoringClient,
 } from "@repo/presentation-studio";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo } from "react";
 
-import StudioHub from "@/components/admin/BuilderHub";
+import StudioHub from "@/components/admin/StudioHub";
 import { contorroAdminUiRootProps } from "@/components/admin/contorro-admin-ui";
 
 function StudioViewInner() {
@@ -19,7 +21,7 @@ function StudioViewInner() {
     () =>
       createFetchStudioAuthoringClient({
         compositionApiBase:
-          process.env.NEXT_PUBLIC_STUDIO_COMPOSITION_API_BASE ?? "/api/builder",
+          process.env.NEXT_PUBLIC_STUDIO_COMPOSITION_API_BASE ?? "/api/studio",
         resourceApiBase:
           process.env.NEXT_PUBLIC_STUDIO_RESOURCE_API_BASE ?? "/api",
       }),
@@ -33,8 +35,8 @@ function StudioViewInner() {
   const screen = sp.get("screen") ?? "";
   const adminRoute = config.routes?.admin ?? "/admin";
   const isComponentComposition =
-    isBuilderComponentRowId(compositionId) ||
-    isBuilderNewComponentSessionId(compositionId);
+    isStudioComponentRowId(compositionId) ||
+    isStudioNewComponentSessionId(compositionId);
 
   const role =
     user && typeof user === "object" && "role" in user
@@ -73,7 +75,7 @@ function StudioViewInner() {
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <BuilderApp
+        <StudioApp
           adminHref={adminRoute}
           authoringClient={authoringClient}
           canEditName={!isComponentComposition}

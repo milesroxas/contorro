@@ -19,7 +19,7 @@ function joinBase(base: string, path: string): string {
 export type FetchStudioAuthoringClientOptions = {
   /**
    * Base path for composition authoring API (GET/POST/PATCH …/compositions/:id).
-   * Default `/api/builder` matches Contorro Next routes.
+   * Default `/api/studio` matches Contorro Next routes.
    */
   compositionApiBase?: string;
   /**
@@ -29,7 +29,7 @@ export type FetchStudioAuthoringClientOptions = {
   resourceApiBase?: string;
 };
 
-const defaultCompositionApiBase = "/api/builder";
+const defaultCompositionApiBase = "/api/studio";
 const defaultResourceApiBase = "/api";
 
 export function createFetchStudioAuthoringClient(

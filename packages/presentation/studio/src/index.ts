@@ -1,4 +1,4 @@
-export { BuilderApp } from "./app/BuilderApp.js";
+export { StudioApp } from "./app/StudioApp.js";
 export { DesignSystemEditor } from "./features/design-system/DesignSystemEditor.js";
 export {
   createFetchStudioAuthoringClient,

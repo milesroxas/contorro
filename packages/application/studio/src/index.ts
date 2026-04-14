@@ -32,7 +32,7 @@ export {
   type UpdateNodeStyleError,
 } from "./commands/update-node-style.js";
 export type {
-  BuilderMutationRepository,
-  BuilderCompositionRevision,
-} from "./ports/builder-mutation-repository.js";
+  StudioMutationRepository,
+  StudioCompositionRevision,
+} from "./ports/studio-mutation-repository.js";
 export { getCompositionQuery } from "./queries/get-composition.js";

@@ -7,10 +7,11 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-export const builderSchema = pgSchema("builder");
+/** Postgres schema name remains `builder` (existing deployments); tables hold Studio-authored trees. */
+export const studioSchema = pgSchema("builder");
 
-/** Composition trees authored in the builder; ids match legacy `page_compositions.id` as text. */
-export const builderCompositions = builderSchema.table(
+/** Composition trees authored in Studio; ids match legacy `page_compositions.id` as text. */
+export const studioCompositions = studioSchema.table(
   "compositions",
   {
     id: text("id").primaryKey(),

@@ -8,9 +8,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 
 const envFiles = {
-  prod: "apps/studio/.env.vercel.production.local",
-  production: "apps/studio/.env.vercel.production.local",
-  preview: "apps/studio/.env.vercel.preview.local",
+  prod: "apps/cms/.env.vercel.production.local",
+  production: "apps/cms/.env.vercel.production.local",
+  preview: "apps/cms/.env.vercel.preview.local",
 };
 
 function runDefault() {
@@ -68,7 +68,7 @@ if (!target) {
   runWithEnvFile(envFiles[target]);
 } else {
   console.error(
-    `Unknown migrate target "${target}".\nUsage: pnpm migrate [prod|production|preview]\n  (omit the argument to use apps/studio/.env for local Postgres)`,
+    `Unknown migrate target "${target}".\nUsage: pnpm migrate [prod|production|preview]\n  (omit the argument to use apps/cms/.env for local Postgres)`,
   );
   process.exit(1);
 }

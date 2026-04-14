@@ -2,7 +2,7 @@ export {
   compileTokenSet,
   styleTokenClassName,
   tokenKeyToCssVar,
-  type BuilderStyleProperty,
+  type StudioStyleProperty,
   type CompiledTokenOutput,
   type TokenMeta,
 } from "./compiler.js";

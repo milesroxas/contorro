@@ -1,4 +1,4 @@
-import { builderRowIdForComponent } from "@repo/infrastructure-payload-config/builder-row-id";
+import { studioRowIdForComponent } from "@repo/infrastructure-payload-config/studio-row-id";
 import { IconArrowRight } from "@tabler/icons-react";
 import Link from "next/link";
 import { formatAdminURL } from "payload/shared";
@@ -7,12 +7,12 @@ import { useMemo } from "react";
 import {
   COMPONENTS_SLUG,
   PAGE_COMPOSITIONS_SLUG,
-} from "@/components/admin/builder-hub/constants";
-import { formatUpdatedAt } from "@/components/admin/builder-hub/formatters";
+} from "@/components/admin/studio-hub/constants";
+import { formatUpdatedAt } from "@/components/admin/studio-hub/formatters";
 import {
   hubListRowClass,
   hubScrollAreaClass,
-} from "@/components/admin/builder-hub/hub-styles";
+} from "@/components/admin/studio-hub/hub-styles";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -88,7 +88,7 @@ function normalizeRows(
       }),
       studioHref: formatAdminURL({
         adminRoute,
-        path: `/studio?composition=${encodeURIComponent(builderRowIdForComponent(id))}`,
+        path: `/studio?composition=${encodeURIComponent(studioRowIdForComponent(id))}`,
         relative: true,
       }),
     };

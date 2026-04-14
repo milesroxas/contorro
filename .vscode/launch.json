@@ -5,7 +5,7 @@
       "name": "Next.js: debug CMS app (@repo/cms)",
       "type": "node",
       "request": "launch",
-      "program": "${workspaceFolder}/apps/studio/node_modules/next/dist/bin/next",
+      "program": "${workspaceFolder}/apps/cms/node_modules/next/dist/bin/next",
       "runtimeArgs": ["--inspect"],
       "skipFiles": ["<node_internals>/**"],
       "serverReadyAction": {
@@ -13,9 +13,9 @@
         "killOnServerStop": true,
         "pattern": "- Local:.+(https?://.+)",
         "uriFormat": "%s",
-        "webRoot": "${workspaceFolder}/apps/studio"
+        "webRoot": "${workspaceFolder}/apps/cms"
       },
-      "cwd": "${workspaceFolder}/apps/studio"
+      "cwd": "${workspaceFolder}/apps/cms"
     }
   ]
 }

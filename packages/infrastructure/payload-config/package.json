@@ -10,9 +10,9 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./builder-row-id": {
-      "types": "./dist/builder-row-id.d.ts",
-      "import": "./dist/builder-row-id.js"
+    "./studio-row-id": {
+      "types": "./dist/studio-row-id.d.ts",
+      "import": "./dist/studio-row-id.js"
     }
   },
   "scripts": {

@@ -11,7 +11,7 @@ const workspaceRoot = path.resolve(dirname, "../..");
 const nextConfig: NextConfig = {
   transpilePackages: [
     "@repo/gateway",
-    "@repo/application-builder",
+    "@repo/application-studio",
     "@repo/application-publish-flow",
     "@repo/config-env",
     "@repo/config-tailwind",

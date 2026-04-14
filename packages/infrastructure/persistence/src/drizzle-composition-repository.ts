@@ -9,16 +9,16 @@ import { type AsyncResult, err, ok } from "@repo/kernel";
 import { eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
-import * as builderSchema from "./schema/builder.js";
+import * as studioSchema from "./schema/studio.js";
 
-type BuilderDb = NodePgDatabase<typeof builderSchema>;
+type StudioDb = NodePgDatabase<typeof studioSchema>;
 
 /**
  * Reads/writes `builder.compositions` (v0.4). Access control matches Payload:
  * forbidden updates surface as FORBIDDEN when the DB role cannot write (RLS future).
  */
 export class DrizzleCompositionRepository implements CompositionRepository {
-  constructor(private readonly db: BuilderDb) {}
+  constructor(private readonly db: StudioDb) {}
 
   async load(
     id: string,
@@ -27,8 +27,8 @@ export class DrizzleCompositionRepository implements CompositionRepository {
     void actor;
     const rows = await this.db
       .select()
-      .from(builderSchema.builderCompositions)
-      .where(eq(builderSchema.builderCompositions.id, id))
+      .from(studioSchema.studioCompositions)
+      .where(eq(studioSchema.studioCompositions.id, id))
       .limit(1);
     const row = rows[0];
     if (!row) {
@@ -56,13 +56,13 @@ export class DrizzleCompositionRepository implements CompositionRepository {
     const now = new Date().toISOString();
     try {
       const updated = await this.db
-        .update(builderSchema.builderCompositions)
+        .update(studioSchema.studioCompositions)
         .set({
           composition,
           updatedAt: now,
         })
-        .where(eq(builderSchema.builderCompositions.id, id))
-        .returning({ updatedAt: builderSchema.builderCompositions.updatedAt });
+        .where(eq(studioSchema.studioCompositions.id, id))
+        .returning({ updatedAt: studioSchema.studioCompositions.updatedAt });
       const u = updated[0];
       if (!u) {
         return err("PERSISTENCE_ERROR");

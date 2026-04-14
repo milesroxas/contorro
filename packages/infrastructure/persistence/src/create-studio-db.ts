@@ -1,17 +1,17 @@
 import { type NodePgDatabase, drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 
-import * as builderSchema from "./schema/builder.js";
+import * as studioSchema from "./schema/studio.js";
 
 const { Pool } = pg;
 
-export type BuilderDb = NodePgDatabase<typeof builderSchema>;
+export type StudioDb = NodePgDatabase<typeof studioSchema>;
 
-const schema = { ...builderSchema };
+const schema = { ...studioSchema };
 
-export function createBuilderDb(connectionString: string): {
+export function createStudioDb(connectionString: string): {
   pool: pg.Pool;
-  db: BuilderDb;
+  db: StudioDb;
 } {
   const pool = new Pool({ connectionString });
   const db = drizzle(pool, { schema });

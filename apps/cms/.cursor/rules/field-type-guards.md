@@ -1,6 +1,6 @@
 # Field typing guidance
 
-Prefer generated Payload types from `apps/studio/src/payload-types.ts` for document fields.
+Prefer generated Payload types from `apps/cms/src/payload-types.ts` for document fields.
 
 When handling unknown JSON payloads:
 

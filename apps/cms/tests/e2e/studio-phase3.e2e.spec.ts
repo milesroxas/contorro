@@ -5,7 +5,7 @@ import {
   cleanupBuilderE2e,
   designerUser,
   seedDesignerAndComposition,
-} from "../helpers/seedBuilderE2e";
+} from "../helpers/seedStudioE2e";
 
 test.describe("Phase 3 — Studio MVP", () => {
   let page: Page;
@@ -32,12 +32,12 @@ test.describe("Phase 3 — Studio MVP", () => {
   test("designer composes, styles, saves, restores", async () => {
     await page.goto(`/admin/studio?composition=${compositionId}`);
 
-    await expect(page.getByTestId("builder-app")).toBeVisible({
+    await expect(page.getByTestId("studio-app")).toBeVisible({
       timeout: 30_000,
     });
 
     const paletteBox = page.getByTestId("palette-box");
-    const dropRoot = page.getByTestId("builder-canvas-drop-root");
+    const dropRoot = page.getByTestId("studio-canvas-drop-root");
 
     await paletteBox.dragTo(dropRoot);
 
@@ -70,10 +70,10 @@ test.describe("Phase 3 — Studio MVP", () => {
 
     await page.reload();
 
-    await expect(page.getByTestId("builder-app")).toBeVisible({
+    await expect(page.getByTestId("studio-app")).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByTestId("builder-canvas-preview")).toContainText(
+    await expect(page.getByTestId("studio-canvas-preview")).toContainText(
       "Hello",
     );
   });

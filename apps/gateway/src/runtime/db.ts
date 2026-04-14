@@ -1,10 +1,10 @@
 import "../load-env.js";
 import { parseGatewayEnv } from "@repo/config-env/gateway";
-import { createBuilderDb } from "@repo/infrastructure-persistence";
+import { createStudioDb } from "@repo/infrastructure-persistence";
 
 const env = parseGatewayEnv(process.env);
 
-const created = createBuilderDb(env.POSTGRES_URL);
+const created = createStudioDb(env.POSTGRES_URL);
 
 /** Shared Postgres pool (builder Drizzle + raw SQL). */
 export const pool = created.pool;

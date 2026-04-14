@@ -3,15 +3,15 @@ import type { AsyncResult } from "@repo/kernel";
 
 import type { CompositionActor } from "@repo/domains-composition";
 
-export type BuilderCompositionRevision = {
+export type StudioCompositionRevision = {
   updatedAt: string;
 };
 
-export interface BuilderMutationRepository {
+export interface StudioMutationRepository {
   loadRevision(
     compositionId: string,
     actor: CompositionActor,
-  ): Promise<BuilderCompositionRevision | null>;
+  ): Promise<StudioCompositionRevision | null>;
 
   save(
     compositionId: string,

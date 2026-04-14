@@ -2,17 +2,17 @@ const NEW_COMPOSITION_SESSION_PREFIX = "new:";
 const NEW_TEMPLATE_SESSION_PREFIX = "new:template:";
 const NEW_COMPONENT_SESSION_PREFIX = "new:component:";
 
-export type NewBuilderCompositionKind = "template" | "component";
+export type NewStudioCompositionKind = "template" | "component";
 
-export function builderNewCompositionSessionId(
-  kind: NewBuilderCompositionKind,
+export function studioNewCompositionSessionId(
+  kind: NewStudioCompositionKind,
 ): string {
   return `${NEW_COMPOSITION_SESSION_PREFIX}${kind}:${crypto.randomUUID()}`;
 }
 
-export function parseBuilderNewCompositionSessionId(
+export function parseStudioNewCompositionSessionId(
   value: string,
-): { kind: NewBuilderCompositionKind } | null {
+): { kind: NewStudioCompositionKind } | null {
   if (value.startsWith(NEW_TEMPLATE_SESSION_PREFIX)) {
     return { kind: "template" };
   }
@@ -22,10 +22,10 @@ export function parseBuilderNewCompositionSessionId(
   return null;
 }
 
-export function isBuilderNewCompositionSessionId(value: string): boolean {
-  return parseBuilderNewCompositionSessionId(value) !== null;
+export function isStudioNewCompositionSessionId(value: string): boolean {
+  return parseStudioNewCompositionSessionId(value) !== null;
 }
 
-export function isBuilderNewComponentSessionId(value: string): boolean {
+export function isStudioNewComponentSessionId(value: string): boolean {
   return value.startsWith(NEW_COMPONENT_SESSION_PREFIX);
 }

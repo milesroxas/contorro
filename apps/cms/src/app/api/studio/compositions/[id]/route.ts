@@ -2,7 +2,7 @@ import {
   createCompositionEntryCommand,
   renameTemplateCommand,
   saveCompositionCommand,
-} from "@repo/application-builder";
+} from "@repo/application-studio";
 import { type TokenMeta, compileTokenSet } from "@repo/config-tailwind";
 import type { PageComposition } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
@@ -11,20 +11,20 @@ import {
   defaultPageTemplateComposition,
   findInvalidStyleTokens,
   normalizeTemplateShell,
-  parseBuilderNewCompositionSessionId,
+  parseStudioNewCompositionSessionId,
 } from "@repo/domains-composition";
 import {
-  componentIdFromBuilderRowId,
-  isBuilderComponentRowId,
-} from "@repo/infrastructure-payload-config/builder-row-id";
+  componentIdFromStudioRowId,
+  isStudioComponentRowId,
+} from "@repo/infrastructure-payload-config/studio-row-id";
 import type { Payload } from "payload";
 import { getPayload } from "payload";
 
-import { payloadBuilderMutationRepository } from "@/app/api/builder/_lib/payload-builder-mutation-repository";
+import { payloadStudioMutationRepository } from "@/app/api/studio/_lib/payload-studio-mutation-repository";
 import { loadDesignSystemRuntimeForPreview } from "@/lib/load-published-token-set";
 import config from "@/payload.config";
 
-async function designTokensForBuilder(payload: Payload): Promise<{
+async function designTokensForStudio(payload: Payload): Promise<{
   tokenMetadata: TokenMeta[];
   cssVariables: string;
 }> {
@@ -86,9 +86,9 @@ export async function GET(
     );
   }
 
-  const newSession = parseBuilderNewCompositionSessionId(id);
+  const newSession = parseStudioNewCompositionSessionId(id);
   if (newSession) {
-    const designTokens = await designTokensForBuilder(payload);
+    const designTokens = await designTokensForStudio(payload);
     return Response.json({
       data: {
         name:
@@ -106,15 +106,15 @@ export async function GET(
     });
   }
 
-  if (isBuilderComponentRowId(id)) {
-    const componentId = componentIdFromBuilderRowId(id);
+  if (isStudioComponentRowId(id)) {
+    const componentId = componentIdFromStudioRowId(id);
     if (!componentId) {
       return Response.json(
         { error: { code: "VALIDATION_ERROR" as const } },
         { status: 400 },
       );
     }
-    const designTokens = await designTokensForBuilder(payload);
+    const designTokens = await designTokensForStudio(payload);
     let doc: {
       composition?: unknown;
       updatedAt?: unknown;
@@ -168,7 +168,7 @@ export async function GET(
     });
   }
 
-  const designTokens = await designTokensForBuilder(payload);
+  const designTokens = await designTokensForStudio(payload);
 
   let doc: { composition?: unknown; updatedAt?: unknown; title?: unknown };
   try {
@@ -279,7 +279,7 @@ export async function POST(
     );
   }
   const composition = compParsed.data;
-  const designTokens = await designTokensForBuilder(payload);
+  const designTokens = await designTokensForStudio(payload);
   const allowedTokenKeys = new Set(
     designTokens.tokenMetadata.map((token) => token.key),
   );
@@ -303,9 +303,9 @@ export async function POST(
   const ifMatchUpdatedAt = matchRaw as string | null | undefined;
   const nextName = typeof body.name === "string" ? body.name.trim() : "";
 
-  const newSession = parseBuilderNewCompositionSessionId(id);
+  const newSession = parseStudioNewCompositionSessionId(id);
   if (newSession) {
-    const repo = payloadBuilderMutationRepository(payload, user);
+    const repo = payloadStudioMutationRepository(payload, user);
     const created = await createCompositionEntryCommand(repo, {
       kind: newSession.kind,
       title:
@@ -358,7 +358,7 @@ export async function POST(
     });
   }
 
-  const repo = payloadBuilderMutationRepository(payload, user);
+  const repo = payloadStudioMutationRepository(payload, user);
   const saved = await saveCompositionCommand(repo, {
     compositionId: id,
     composition,
@@ -401,7 +401,7 @@ export async function PATCH(
   props: { params: Promise<{ id: string }> },
 ) {
   const { id } = await props.params;
-  if (isBuilderComponentRowId(id)) {
+  if (isStudioComponentRowId(id)) {
     return Response.json(
       { error: { code: "VALIDATION_ERROR" as const } },
       { status: 400 },
@@ -447,7 +447,7 @@ export async function PATCH(
     );
   }
 
-  const repo = payloadBuilderMutationRepository(payload, user);
+  const repo = payloadStudioMutationRepository(payload, user);
   const renamed = await renameTemplateCommand(repo, {
     compositionId: id,
     name: nextName,

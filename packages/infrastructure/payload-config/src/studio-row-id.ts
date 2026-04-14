@@ -1,11 +1,11 @@
 const COMPONENT_ROW_PREFIX = "cmp-";
 
-/** Avoids collisions with page template ids in `builder.compositions` (numeric ids overlap across tables). */
-export function builderRowIdForComponent(componentId: string): string {
+/** Avoids collisions with page template ids in Postgres `builder.compositions` (numeric ids overlap across tables). */
+export function studioRowIdForComponent(componentId: string): string {
   return `${COMPONENT_ROW_PREFIX}${componentId}`;
 }
 
-export function componentIdFromBuilderRowId(rowId: string): string | null {
+export function componentIdFromStudioRowId(rowId: string): string | null {
   if (!rowId.startsWith(COMPONENT_ROW_PREFIX)) {
     return null;
   }
@@ -13,6 +13,6 @@ export function componentIdFromBuilderRowId(rowId: string): string | null {
   return id.length > 0 ? id : null;
 }
 
-export function isBuilderComponentRowId(rowId: string): boolean {
-  return componentIdFromBuilderRowId(rowId) !== null;
+export function isStudioComponentRowId(rowId: string): boolean {
+  return componentIdFromStudioRowId(rowId) !== null;
 }

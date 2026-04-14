@@ -1,0 +1,33 @@
+/*
+ * Payload admin shell: Tailwind + shadcn + custom admin fields (not Studio).
+ * Load order in `(payload)/layout.tsx`: `@payloadcms/next/css` → this file → `custom.scss`.
+ * Do not scan presentation-studio or studio-hub — those live in `studio.css` (loaded after Payload).
+ */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "./_tailwind-safelist.css";
+@import "./_contorro-theme.css";
+
+@source "../../../../packages/presentation/admin-extensions/src";
+@source "../components/ui";
+@source "../components/admin/BlocksRowLabel.tsx";
+@source "../components/admin/ComponentOpenStudio.tsx";
+@source "../components/admin/ContentSlotRowLabel.tsx";
+@source "../components/admin/DesignSystemPreviewCallout.tsx";
+@source "../components/admin/DesignerEditorFieldsField.tsx";
+@source "../components/admin/EditorFieldsInputs.tsx";
+@source "../components/admin/PageCompositionOpenStudio.tsx";
+@source "../components/admin/PageContentSlotsField.tsx";
+@source "../components/admin/PageTemplateEditorFieldsField.tsx";
+@source "../components/admin/PayloadAdminTheme.tsx";
+@source "../components/admin/StudioNavLink.tsx";
+@source "../components/admin/ThemeModeNavToggle.tsx";
+@source "../components/admin/page-composition-form-state.ts";
+
+/* shadcn + Payload: border/outline defaults without forcing body/html (Payload default chrome). */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+}

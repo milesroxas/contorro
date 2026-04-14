@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, useAuth, useConfig, useDocumentInfo } from "@payloadcms/ui";
-import { builderRowIdForComponent } from "@repo/infrastructure-payload-config/builder-row-id";
+import { studioRowIdForComponent } from "@repo/infrastructure-payload-config/studio-row-id";
 import { formatAdminURL } from "payload/shared";
 
 /**
@@ -25,7 +25,7 @@ export default function ComponentOpenStudio() {
   }
 
   const adminRoute = config.routes?.admin ?? "/admin";
-  const compositionParam = builderRowIdForComponent(String(id));
+  const compositionParam = studioRowIdForComponent(String(id));
   const url = formatAdminURL({
     adminRoute,
     path: `/studio?composition=${encodeURIComponent(compositionParam)}`,

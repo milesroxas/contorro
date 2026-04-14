@@ -8,5 +8,5 @@
 
 ## Current role gate in composition API
 
-`apps/studio/src/app/api/builder/compositions/[id]/route.ts` and
-`apps/studio/src/app/api/builder/compositions/route.ts` restrict to `admin` or `designer`.
+`apps/cms/src/app/api/studio/compositions/[id]/route.ts` and
+`apps/cms/src/app/api/studio/compositions/route.ts` restrict to `admin` or `designer`.

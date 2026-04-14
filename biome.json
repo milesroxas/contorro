@@ -10,9 +10,9 @@
       "**/coverage/**",
       "**/playwright-report/**",
       "**/test-results/**",
-      "apps/studio/src/payload-types.ts",
-      "apps/studio/src/payload-generated-schema.ts",
-      "apps/studio/src/app/(payload)/admin/importMap.js"
+      "apps/cms/src/payload-types.ts",
+      "apps/cms/src/payload-generated-schema.ts",
+      "apps/cms/src/app/(payload)/admin/importMap.js"
     ]
   },
   "organizeImports": { "enabled": true },
