@@ -12,11 +12,7 @@ export function Heading({ node, className, style }: RuntimePrimitiveProps) {
     typeof node.propValues?.content === "string" ? node.propValues.content : "";
 
   return (
-    <div
-      className={className}
-      data-definition={node.definitionKey}
-      style={style}
-    >
+    <div className={className} style={style}>
       {level === "h1" ? <h1 style={{ margin: 0 }}>{content}</h1> : null}
       {level === "h2" ? <h2 style={{ margin: 0 }}>{content}</h2> : null}
       {level === "h3" ? <h3 style={{ margin: 0 }}>{content}</h3> : null}

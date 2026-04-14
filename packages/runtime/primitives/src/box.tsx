@@ -22,11 +22,7 @@ export function Box({
   const Tag = tag;
 
   return (
-    <Tag
-      className={className}
-      data-definition={node.definitionKey}
-      style={style}
-    >
+    <Tag className={className} style={style}>
       {children}
     </Tag>
   );

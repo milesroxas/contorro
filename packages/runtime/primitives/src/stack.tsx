@@ -24,13 +24,5 @@ export function Stack({
     ...style,
   };
 
-  return (
-    <div
-      className={className}
-      data-definition={node.definitionKey}
-      style={layout}
-    >
-      {children}
-    </div>
-  );
+  return <div className={className} style={layout}>{children}</div>;
 }

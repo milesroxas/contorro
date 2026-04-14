@@ -30,7 +30,6 @@ export function Button({ node, className, style }: RuntimePrimitiveProps) {
   return (
     <a
       className={className}
-      data-definition={node.definitionKey}
       href={href || undefined}
       rel={openInNewTab ? "noopener noreferrer" : undefined}
       style={style}

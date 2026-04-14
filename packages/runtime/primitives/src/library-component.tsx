@@ -14,11 +14,7 @@ export function LibraryComponent({
       ? node.propValues.componentKey
       : "";
   return (
-    <div
-      className={className}
-      data-definition={node.definitionKey}
-      style={style}
-    >
+    <div className={className} style={style}>
       <div className="rounded-md border border-dashed border-muted-foreground/40 bg-muted/20 px-3 py-4 text-center text-sm text-muted-foreground">
         {key ? (
           <>

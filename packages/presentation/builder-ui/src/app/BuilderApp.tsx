@@ -402,13 +402,6 @@ export function BuilderApp({
           dirty={dirty}
           error={error}
           name={name}
-          onToggleTheme={() => {
-            setTheme((prevTheme) => {
-              const nextTheme = prevTheme === "dark" ? "light" : "dark";
-              window.localStorage.setItem("builder-theme", nextTheme);
-              return nextTheme;
-            });
-          }}
           onPublish={() => void publish()}
           onRedo={() => redo()}
           onRename={async (nextName) => {
@@ -419,7 +412,6 @@ export function BuilderApp({
           renaming={renaming}
           saving={saving}
           studioHref={studioHref}
-          theme={theme}
         />
         <div
           className={cn(
@@ -473,7 +465,15 @@ export function BuilderApp({
               onCanvasBackground={() => selectNode(null)}
               onRemoveNode={removeNode}
               onSelectNode={selectNode}
+              onToggleTheme={() => {
+                setTheme((prevTheme) => {
+                  const nextTheme = prevTheme === "dark" ? "light" : "dark";
+                  window.localStorage.setItem("builder-theme", nextTheme);
+                  return nextTheme;
+                });
+              }}
               selectedNodeId={selectedNodeId}
+              theme={theme}
               tokenMeta={tokenMetadata}
             />
           </div>

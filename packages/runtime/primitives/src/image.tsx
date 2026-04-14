@@ -18,7 +18,6 @@ export function Image({ node, className, style }: RuntimePrimitiveProps) {
       <div
         aria-label={alt || "Image placeholder"}
         className={className}
-        data-definition={node.definitionKey}
         style={{
           alignItems: "center",
           aspectRatio: "16 / 9",
@@ -52,7 +51,6 @@ export function Image({ node, className, style }: RuntimePrimitiveProps) {
     <img
       alt={alt}
       className={className}
-      data-definition={node.definitionKey}
       height={typeof height === "number" ? height : undefined}
       src={src || undefined}
       style={{

@@ -1,6 +1,7 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
+import { IconMoonStars, IconSunHigh } from "@tabler/icons-react";
 import type { TokenMeta } from "@repo/config-tailwind";
 import type { CompositionNode, PageComposition } from "@repo/contracts-zod";
 import { defaultPrimitiveRegistry } from "@repo/runtime-primitives";
@@ -13,6 +14,7 @@ import type {
 import { Fragment, forwardRef, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { Button } from "../../components/ui/button.js";
 import { ScrollArea } from "../../components/scroll-area.js";
 import { cn } from "../../lib/cn.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
@@ -538,6 +540,8 @@ export function BuilderCanvas({
   onSelectNode,
   onRemoveNode,
   onCanvasBackground,
+  theme,
+  onToggleTheme,
   tokenMeta = [],
 }: {
   composition: PageComposition;
@@ -545,6 +549,8 @@ export function BuilderCanvas({
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
   onCanvasBackground?: () => void;
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
   tokenMeta?: TokenMeta[];
 }) {
   const registry = defaultPrimitiveRegistry;
@@ -563,8 +569,22 @@ export function BuilderCanvas({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
-      <div className="shrink-0 text-xs font-medium text-muted-foreground">
-        Canvas
+      <div className="flex shrink-0 items-center justify-between gap-2">
+        <div className="text-xs font-medium text-muted-foreground">Canvas</div>
+        <Button
+          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          onClick={onToggleTheme}
+          size="sm"
+          title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          type="button"
+          variant="ghost"
+        >
+          {theme === "dark" ? (
+            <IconSunHigh className="size-4" />
+          ) : (
+            <IconMoonStars className="size-4" />
+          )}
+        </Button>
       </div>
       <ScrollArea className="min-h-0 flex-1 rounded-md border border-border bg-background shadow-sm dark:bg-card/30">
         <CanvasDropRoot
