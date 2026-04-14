@@ -2,6 +2,10 @@ import { z } from "zod";
 
 export const STYLE_PROPERTY_KEYS = [
   "background",
+  "borderColor",
+  "borderRadius",
+  "borderStyle",
+  "borderWidth",
   "color",
   "fontFamily",
   "fontSize",

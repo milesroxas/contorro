@@ -1,5 +1,7 @@
 import type { RuntimePrimitiveProps } from "@repo/domains-runtime-catalog";
 
+import { PrimitiveEmptyState } from "./primitive-empty-state.js";
+
 /**
  * Fallback when a `primitive.libraryComponent` node was not expanded at render
  * (e.g. missing definition). Expanded trees never hit this component.
@@ -14,17 +16,15 @@ export function LibraryComponent({
       ? node.propValues.componentKey
       : "";
   return (
-    <div className={className} style={style}>
-      <div className="rounded-md border border-dashed border-muted-foreground/40 bg-muted/20 px-3 py-4 text-center text-sm text-muted-foreground">
-        {key ? (
-          <>
-            <span className="font-medium text-foreground">Component</span>
-            <div className="mt-1 font-mono text-xs">{key}</div>
-          </>
-        ) : (
-          "Component"
-        )}
-      </div>
-    </div>
+    <PrimitiveEmptyState className={className} style={style}>
+      {key ? (
+        <>
+          <span className="font-medium text-foreground">Component</span>
+          <div className="mt-1 font-mono text-xs">{key}</div>
+        </>
+      ) : (
+        "Component"
+      )}
+    </PrimitiveEmptyState>
   );
 }

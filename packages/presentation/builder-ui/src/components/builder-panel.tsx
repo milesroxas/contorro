@@ -14,7 +14,7 @@ export const builderPanelSurfaceClass =
   "flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-border/80 bg-card/40 text-card-foreground shadow-sm dark:bg-card/25";
 
 export const builderPanelHeaderClass =
-  "shrink-0 border-b border-border/60 bg-muted/25 px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground dark:bg-muted/15";
+  "shrink-0 px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground/95";
 
 export const builderPanelBodyClass = "p-3";
 

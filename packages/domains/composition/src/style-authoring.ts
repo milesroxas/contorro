@@ -3,6 +3,7 @@ import type { PageComposition, StyleProperty } from "@repo/contracts-zod";
 const EMPTY_STYLE_PROPERTIES: readonly StyleProperty[] = [];
 const STYLE_SECTION_ORDER = [
   "color",
+  "border",
   "text",
   "layout",
   "spacing",
@@ -12,6 +13,10 @@ export type StyleSectionId = (typeof STYLE_SECTION_ORDER)[number];
 
 const BOX_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "background",
+  "borderColor",
+  "borderRadius",
+  "borderStyle",
+  "borderWidth",
   "color",
   "display",
   "flexDirection",
@@ -93,6 +98,10 @@ const HEADING_STYLE_PROPERTIES: readonly StyleProperty[] = [
 
 const BUTTON_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "background",
+  "borderColor",
+  "borderRadius",
+  "borderStyle",
+  "borderWidth",
   "color",
   "fontFamily",
   "fontSize",
@@ -122,6 +131,10 @@ const BUTTON_STYLE_PROPERTIES: readonly StyleProperty[] = [
 ];
 
 const IMAGE_STYLE_PROPERTIES: readonly StyleProperty[] = [
+  "borderColor",
+  "borderRadius",
+  "borderStyle",
+  "borderWidth",
   "margin",
   "marginTop",
   "marginRight",
@@ -138,6 +151,10 @@ const IMAGE_STYLE_PROPERTIES: readonly StyleProperty[] = [
 
 const SLOT_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "background",
+  "borderColor",
+  "borderRadius",
+  "borderStyle",
+  "borderWidth",
   "padding",
   "paddingTop",
   "paddingRight",
@@ -157,6 +174,10 @@ const SLOT_STYLE_PROPERTIES: readonly StyleProperty[] = [
 ];
 
 const LIBRARY_COMPONENT_STYLE_PROPERTIES: readonly StyleProperty[] = [
+  "borderColor",
+  "borderRadius",
+  "borderStyle",
+  "borderWidth",
   "margin",
   "marginTop",
   "marginRight",
@@ -172,6 +193,10 @@ const LIBRARY_COMPONENT_STYLE_PROPERTIES: readonly StyleProperty[] = [
 
 const STYLE_PROPERTY_LABELS: Record<StyleProperty, string> = {
   background: "Background",
+  borderColor: "Border color",
+  borderRadius: "Border radius",
+  borderStyle: "Border style",
+  borderWidth: "Border width",
   color: "Text color",
   fontFamily: "Font family",
   fontSize: "Font size",
@@ -215,6 +240,10 @@ const STYLE_PROPERTY_LABELS: Record<StyleProperty, string> = {
 
 const STYLE_PROPERTY_SECTIONS: Record<StyleProperty, StyleSectionId> = {
   background: "color",
+  borderColor: "border",
+  borderRadius: "border",
+  borderStyle: "border",
+  borderWidth: "border",
   color: "color",
   fontFamily: "text",
   fontSize: "text",

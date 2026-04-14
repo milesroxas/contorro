@@ -39,18 +39,18 @@ function PaletteTile({
     >
       <Icon
         aria-hidden
-        className="size-7 text-muted-foreground"
+        className="size-6.5 text-muted-foreground"
         stroke={1.25}
       />
-      <span className="text-sm font-medium text-foreground capitalize">
+      <span className="text-[15px] leading-tight font-medium text-foreground capitalize">
         {label}
       </span>
     </button>
   );
 }
 
-export function PrimitiveCatalog({ embedded = false }: { embedded?: boolean }) {
-  const grid = (
+export function PrimitiveCatalog() {
+  return (
     <div className="grid grid-cols-2 gap-2">
       {PRIMITIVE_KEYS.map((definitionKey) => {
         const { label, Icon } = getPrimitiveDisplay(definitionKey);
@@ -63,19 +63,6 @@ export function PrimitiveCatalog({ embedded = false }: { embedded?: boolean }) {
           />
         );
       })}
-    </div>
-  );
-
-  if (embedded) {
-    return grid;
-  }
-
-  return (
-    <div className="rounded-lg border border-border bg-muted/15 p-3 dark:bg-muted/10">
-      <div className="mb-2.5 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-        Primitives
-      </div>
-      {grid}
     </div>
   );
 }

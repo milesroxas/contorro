@@ -16,15 +16,18 @@ export function InsertionDropZone({
   variant,
   className,
   testId,
+  droppableScope,
 }: {
   parentId: string;
   insertIndex: number;
   variant: "between" | "empty";
   className?: string;
   testId?: string;
+  /** Canvas and layers tree both render insert zones; ids must stay unique per @dnd-kit/core. */
+  droppableScope: "canvas" | "layers";
 }) {
   const { setNodeRef, isOver } = useDroppable({
-    id: `insert:${parentId}:${insertIndex}`,
+    id: `${droppableScope}-insert:${parentId}:${insertIndex}`,
     data: {
       kind: "insert",
       parentId,
@@ -37,7 +40,11 @@ export function InsertionDropZone({
       className={cn(
         "relative shrink-0 transition-colors",
         variant === "between" && "z-3",
-        variant === "empty" && "min-h-[4.5rem] flex-1 py-2",
+        variant === "empty" &&
+          cn(
+            "min-h-[4.5rem] flex-1",
+            droppableScope === "canvas" ? "p-3" : "py-2",
+          ),
         className,
       )}
       data-testid={testId}
@@ -49,11 +56,18 @@ export function InsertionDropZone({
             "pointer-events-none flex w-full items-center justify-center rounded-md transition-all",
             isOver
               ? "min-h-8 border-2 border-dashed border-primary bg-primary/15 py-1 shadow-md ring-2 ring-primary/30"
-              : "h-0 min-h-0 border-0 bg-transparent py-0",
+              : "min-h-2 border border-transparent bg-transparent py-0",
           )}
         />
       ) : (
-        <div className="pointer-events-none flex h-full min-h-[4rem] items-center justify-center rounded-md border border-dashed border-border/80 bg-muted/15 px-3 text-center text-sm font-medium text-muted-foreground dark:bg-muted/25">
+        <div
+          className={cn(
+            "pointer-events-none flex h-full min-h-[4.5rem] items-center justify-center rounded-lg border-2 border-dashed px-4 py-5 text-center text-sm font-semibold tracking-tight transition-all",
+            isOver
+              ? "border-primary bg-primary/15 text-primary shadow-inner ring-2 ring-primary/25"
+              : "border-muted-foreground/45 bg-muted/40 text-muted-foreground shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] dark:border-muted-foreground/50 dark:bg-muted/35 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]",
+          )}
+        >
           Drop elements here
         </div>
       )}

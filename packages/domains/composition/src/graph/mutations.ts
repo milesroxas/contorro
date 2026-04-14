@@ -267,6 +267,158 @@ export function removeSubtree(
 }
 
 /**
+ * Deep-duplicates `nodeId` and its subtree with fresh ids, inserted as the next
+ * sibling under the same parent. Cannot duplicate the document root.
+ * Editor `contentBinding` entries are cleared on the copy to avoid duplicate field names.
+ * Layout slots in the copy get a fresh `slotId` so layout slot ids stay unique.
+ */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: subtree clone + binding remap.
+export function duplicateNode(
+  composition: PageComposition,
+  nodeId: string,
+): Result<PageComposition, "INVALID_NODE"> {
+  if (nodeId === composition.rootId) {
+    return err("INVALID_NODE");
+  }
+  const node = composition.nodes[nodeId];
+  if (!node || node.parentId === null) {
+    return err("INVALID_NODE");
+  }
+  const parentId = node.parentId;
+  const parent = composition.nodes[parentId];
+  if (!parent) {
+    return err("INVALID_NODE");
+  }
+  if (parent.definitionKey === "primitive.slot") {
+    return err("INVALID_NODE");
+  }
+
+  const descendants = collectDescendants(composition.nodes, nodeId);
+  const nodeIdMap = new Map<string, string>();
+  for (const id of descendants) {
+    nodeIdMap.set(id, makeId());
+  }
+
+  const sbIdMap = new Map<string, string>();
+  for (const [sbId, sb] of Object.entries(composition.styleBindings)) {
+    if (descendants.has(sb.nodeId)) {
+      sbIdMap.set(sbId, makeId());
+    }
+  }
+
+  const nextNodes: PageComposition["nodes"] = { ...composition.nodes };
+
+  for (const oldId of descendants) {
+    const oldNode = composition.nodes[oldId];
+    if (!oldNode) {
+      return err("INVALID_NODE");
+    }
+    const newId = nodeIdMap.get(oldId);
+    if (!newId) {
+      return err("INVALID_NODE");
+    }
+    let newParentId: string | null;
+    if (oldId === nodeId) {
+      newParentId = parentId;
+    } else if (oldNode.parentId === null) {
+      newParentId = null;
+    } else {
+      newParentId = nodeIdMap.get(oldNode.parentId) ?? null;
+    }
+    if (newParentId === null) {
+      return err("INVALID_NODE");
+    }
+
+    let propValues = oldNode.propValues;
+    if (oldNode.definitionKey === "primitive.slot") {
+      propValues = {
+        ...(propValues ?? {}),
+        slotId: makeId(),
+      };
+    }
+
+    const contentBinding =
+      oldNode.contentBinding?.source === "editor"
+        ? undefined
+        : oldNode.contentBinding;
+
+    const newStyleBindingId = oldNode.styleBindingId
+      ? sbIdMap.get(oldNode.styleBindingId)
+      : undefined;
+    if (oldNode.styleBindingId && newStyleBindingId === undefined) {
+      return err("INVALID_NODE");
+    }
+
+    const newChildIds: string[] = [];
+    for (const cid of oldNode.childIds) {
+      const mapped = nodeIdMap.get(cid);
+      if (!mapped) {
+        return err("INVALID_NODE");
+      }
+      newChildIds.push(mapped);
+    }
+
+    const cloned: CompositionNode = {
+      ...oldNode,
+      id: newId,
+      parentId: newParentId,
+      childIds: newChildIds,
+      propValues,
+      contentBinding,
+    };
+    if (newStyleBindingId !== undefined) {
+      cloned.styleBindingId = newStyleBindingId;
+    } else {
+      cloned.styleBindingId = undefined;
+    }
+    nextNodes[newId] = cloned;
+  }
+
+  const newRootDupId = nodeIdMap.get(nodeId);
+  if (!newRootDupId) {
+    return err("INVALID_NODE");
+  }
+  const origIdx = parent.childIds.indexOf(nodeId);
+  if (origIdx === -1) {
+    return err("INVALID_NODE");
+  }
+  const newParentChildren = [...parent.childIds];
+  newParentChildren.splice(origIdx + 1, 0, newRootDupId);
+  nextNodes[parentId] = { ...parent, childIds: newParentChildren };
+
+  const nextStyleBindings: PageComposition["styleBindings"] = {
+    ...composition.styleBindings,
+  };
+  for (const [oldSbId, sb] of Object.entries(composition.styleBindings)) {
+    if (!descendants.has(sb.nodeId)) {
+      continue;
+    }
+    const newSbId = sbIdMap.get(oldSbId);
+    const newNid = nodeIdMap.get(sb.nodeId);
+    if (!newSbId || !newNid) {
+      return err("INVALID_NODE");
+    }
+    nextStyleBindings[newSbId] = {
+      ...sb,
+      id: newSbId,
+      nodeId: newNid,
+    };
+  }
+
+  const assembled: PageComposition = {
+    rootId: composition.rootId,
+    nodes: nextNodes,
+    styleBindings: nextStyleBindings,
+  };
+
+  const parsed = PageCompositionSchema.safeParse(assembled);
+  if (!parsed.success) {
+    return err("INVALID_NODE");
+  }
+  return ok(parsed.data);
+}
+
+/**
  * Shallow merge into `node.propValues`.
  */
 export function updateNodePropValues(

@@ -14,6 +14,7 @@ import {
 } from "@dnd-kit/core";
 import {
   type CSSProperties,
+  type ReactNode,
   useEffect,
   useMemo,
   useRef,
@@ -30,6 +31,11 @@ import { PrimitiveCatalog } from "../features/primitive-catalog/PrimitiveCatalog
 import { PropertyInspector } from "../features/property-inspector/PropertyInspector.js";
 import { cn } from "../lib/cn.js";
 import { computeInsertIndex } from "../lib/compute-insert-index.js";
+import {
+  LEFT_SIDEBAR_PANELS,
+  type LeftSidebarPanelId,
+  resolveLeftSidebarPanelShortcut,
+} from "../lib/left-sidebar-panels.js";
 import { getPrimitiveDisplay } from "../lib/primitive-display.js";
 import { createBuilderStore } from "../model/builder-store.js";
 
@@ -67,7 +73,6 @@ const MAX_LEFT_PANEL_WIDTH = 520;
 const MIN_RIGHT_PANEL_WIDTH = 300;
 const MAX_RIGHT_PANEL_WIDTH = 640;
 const MIN_CENTER_WIDTH = 420;
-
 function BuilderDragPreview({
   activeNodeId,
   activePaletteKey,
@@ -81,20 +86,20 @@ function BuilderDragPreview({
 }) {
   const { Icon, label } = display;
   return (
-    <div className="pointer-events-none flex min-w-[220px] max-w-[min(100vw-2rem,320px)] items-center gap-3 rounded-lg border-2 border-primary/50 bg-card px-4 py-3 text-card-foreground shadow-2xl ring-2 ring-primary/20">
+    <div className="pointer-events-none flex min-w-[150px] max-w-[min(100vw-2rem,240px)] items-center gap-2 rounded-md border-2 border-primary/50 bg-card px-2.5 py-1.5 text-card-foreground shadow-xl ring-2 ring-primary/20">
       <Icon
         aria-hidden
-        className="size-9 shrink-0 text-primary"
+        className="size-6 shrink-0 text-primary"
         stroke={1.25}
       />
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-semibold capitalize">{label}</div>
+        <div className="text-xs font-semibold capitalize">{label}</div>
         {activePaletteKey ? (
-          <div className="mt-0.5 text-xs text-muted-foreground">
+          <div className="mt-0.5 text-[11px] leading-tight text-muted-foreground">
             {paletteSubtitle ?? "Add to layout"}
           </div>
         ) : activeNodeId ? (
-          <div className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
+          <div className="mt-0.5 truncate font-mono text-[11px] leading-tight text-muted-foreground">
             {activeNodeId}
           </div>
         ) : null}
@@ -125,6 +130,8 @@ export function BuilderApp({
   const [paletteSubtitle, setPaletteSubtitle] = useState<string | null>(null);
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [activeLeftSidebarPanel, setActiveLeftSidebarPanel] =
+    useState<LeftSidebarPanelId>("primitives");
   const [leftPanelWidth, setLeftPanelWidth] = useState(300);
   const [rightPanelWidth, setRightPanelWidth] = useState(360);
   const [isResizingPanels, setIsResizingPanels] = useState(false);
@@ -197,6 +204,21 @@ export function BuilderApp({
       ) {
         return;
       }
+      if (!event.metaKey && !event.ctrlKey && !event.altKey) {
+        if (event.key === "Delete" || event.key === "Backspace") {
+          if (selectedNodeId) {
+            event.preventDefault();
+            removeNode(selectedNodeId);
+          }
+          return;
+        }
+        const panel = resolveLeftSidebarPanelShortcut(event.key);
+        if (panel) {
+          event.preventDefault();
+          setActiveLeftSidebarPanel(panel);
+          return;
+        }
+      }
       const key = event.key.toLowerCase();
       const hasModifier = event.metaKey || event.ctrlKey;
       if (!hasModifier) {
@@ -220,7 +242,7 @@ export function BuilderApp({
     return () => {
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [redo, undo]);
+  }, [redo, undo, removeNode, selectedNodeId]);
 
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
@@ -358,6 +380,36 @@ export function BuilderApp({
     setActiveNodeId(null);
   };
 
+  const leftSidebarPanels = useMemo(() => {
+    if (!composition) {
+      return [];
+    }
+    return LEFT_SIDEBAR_PANELS.map((def) => ({
+      ...def,
+      content: ((): ReactNode => {
+        switch (def.id) {
+          case "primitives":
+            return <PrimitiveCatalog />;
+          case "layers":
+            return (
+              <NodeTree
+                composition={composition}
+                onRemoveNode={removeNode}
+                onSelect={selectNode}
+                selectedNodeId={selectedNodeId}
+              />
+            );
+          case "components":
+            return <LibraryComponentCatalog />;
+          default: {
+            const _exhaustive: never = def.id;
+            return _exhaustive;
+          }
+        }
+      })(),
+    }));
+  }, [composition, removeNode, selectNode, selectedNodeId]);
+
   if (!composition) {
     return (
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-4 text-sm text-muted-foreground">
@@ -380,6 +432,9 @@ export function BuilderApp({
   const overlayDisplay = overlayDefinitionKey
     ? getPrimitiveDisplay(overlayDefinitionKey)
     : null;
+  const leftSidebarPanel =
+    leftSidebarPanels.find(({ id }) => id === activeLeftSidebarPanel) ??
+    leftSidebarPanels[0];
 
   return (
     <DndContext
@@ -417,7 +472,7 @@ export function BuilderApp({
         />
         <div
           className={cn(
-            "grid min-h-0 min-w-0 flex-1 grid-cols-1 auto-rows-fr gap-3 overflow-hidden p-3 lg:auto-rows-auto lg:grid-cols-[minmax(240px,var(--builder-left-panel-width))_6px_minmax(0,1fr)_6px_minmax(300px,var(--builder-right-panel-width))] lg:grid-rows-1",
+            "grid min-h-0 min-w-0 flex-1 grid-cols-1 auto-rows-fr gap-3 overflow-hidden lg:auto-rows-auto lg:grid-cols-[minmax(240px,var(--builder-left-panel-width))_6px_minmax(0,1fr)_6px_minmax(300px,var(--builder-right-panel-width))] lg:grid-rows-1",
             isResizingPanels && "select-none",
           )}
           ref={layoutRef}
@@ -428,25 +483,41 @@ export function BuilderApp({
             } as CSSProperties
           }
         >
-          <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden">
-            <BuilderPanel title="Primitives">
-              <PrimitiveCatalog embedded />
-            </BuilderPanel>
-            <BuilderPanel title="Library">
-              <LibraryComponentCatalog embedded />
-            </BuilderPanel>
-            <BuilderPanel
-              className="min-h-[16rem] flex-1"
-              contentClassName="flex-1"
-              title="Layers"
+          <div className="flex min-h-0 min-w-0 overflow-hidden">
+            <nav
+              aria-label="Left builder panels"
+              className="flex shrink-0 flex-col items-center gap-1 border-r border-border/70 bg-muted/20 p-1.5 dark:bg-muted/10"
             >
-              <NodeTree
-                composition={composition}
-                embedded
-                onRemoveNode={removeNode}
-                onSelect={selectNode}
-                selectedNodeId={selectedNodeId}
-              />
+              {leftSidebarPanels.map(({ id, label, Icon, shortcutDigit }) => {
+                const isActive = activeLeftSidebarPanel === id;
+                return (
+                  <button
+                    aria-keyshortcuts={shortcutDigit}
+                    aria-label={label}
+                    aria-pressed={isActive}
+                    className={cn(
+                      "flex size-10 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors",
+                      "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      isActive &&
+                        "border-border bg-background text-foreground shadow-sm",
+                    )}
+                    key={id}
+                    onClick={() => setActiveLeftSidebarPanel(id)}
+                    title={`${label} (${shortcutDigit})`}
+                    type="button"
+                  >
+                    <Icon aria-hidden className="size-5.5" stroke={1.7} />
+                  </button>
+                );
+              })}
+            </nav>
+            <BuilderPanel
+              className="min-h-0 min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none"
+              collapsible={false}
+              contentClassName="flex-1"
+              title={leftSidebarPanel.label}
+            >
+              {leftSidebarPanel.content}
             </BuilderPanel>
           </div>
           <button

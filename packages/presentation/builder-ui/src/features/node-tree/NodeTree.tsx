@@ -1,26 +1,29 @@
 "use client";
 
+import { useDraggable } from "@dnd-kit/core";
 import type { PageComposition } from "@repo/contracts-zod";
 import type { Icon } from "@tabler/icons-react";
 import {
+  IconChevronDown,
+  IconChevronUp,
   IconLayoutGrid,
   IconLayoutList,
   IconSection,
 } from "@tabler/icons-react";
-import { Fragment } from "react";
-
 import {
-  builderPanelBodyClass,
-  builderPanelHeaderClass,
-  builderPanelSurfaceClass,
-} from "../../components/builder-panel.js";
+  Fragment,
+  type ReactNode,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
+
 import { Button } from "../../components/ui/button.js";
 import { cn } from "../../lib/cn.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
 import { isChildContainerPrimitive } from "../../lib/style-controls.js";
 import { PrimitiveNodeContextMenu } from "../context-menu/PrimitiveNodeContextMenu.js";
 import { InsertionDropZone } from "../dnd/InsertionDropZone.js";
-import { NodeDragHandle } from "../dnd/NodeDragHandle.js";
 
 function isTemplateShellSectionTag(
   tag: unknown,
@@ -62,62 +65,181 @@ function isLockedTemplateShellSection(
  * Payload admin base styles add padding on `ul` / `ol`. Reset so this tree’s
  * layout is controlled only here (`!` wins over `payload-default` list rules).
  */
-const layerTreeRootListClass = "list-none space-y-0.5 !p-0";
+const layerTreeRootListClass = "list-none space-y-0 !p-0";
+
+/** Matches list reset on root; repeated on nested `<li>` for Payload list overrides. */
+const layerTreeItemClass = "list-none m-0! p-0! pl-0!";
+
+const treeCollapseIconButtonClass =
+  "h-8 w-8 shrink-0 cursor-pointer rounded-sm border border-transparent px-0 text-muted-foreground hover:border-border/70 hover:bg-muted/45 hover:text-foreground";
+
+const layerRowBaseClass =
+  "flex min-w-0 items-stretch gap-0 rounded-md border px-0.5 py-px transition-colors";
+
+const layerRowSelectedClass =
+  "border-border/55 bg-muted/85 text-foreground shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07)] dark:bg-muted/45 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]";
+
+const layerRowIdleClass =
+  "border-transparent hover:bg-muted/45 dark:hover:bg-muted/25";
 
 function layerTreeNestedListClass(isRoot: boolean) {
   return cn(
-    "ml-2 list-none space-y-0.5 border-l border-border/50 !pl-2 dark:border-border/35",
-    isRoot ? "mt-1.5" : "mt-0",
+    "ml-6 list-none space-y-0 border-l border-border/45 !pl-3.5",
+    isRoot ? "mt-1" : "mt-0",
   );
+}
+
+function DraggableNodeTreeRow({
+  nodeId,
+  selected,
+  onSelect,
+  onRemoveNode,
+  collapseToggleButton,
+  Icon,
+  kindTitle,
+  layerLabel,
+  rootId,
+}: {
+  nodeId: string;
+  selected: boolean;
+  onSelect: (id: string) => void;
+  onRemoveNode: (id: string) => void;
+  collapseToggleButton: ReactNode;
+  Icon: Icon;
+  kindTitle: string;
+  layerLabel: string;
+  rootId: string;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `move:${nodeId}`,
+    data: { kind: "node" as const, nodeId },
+    attributes: {
+      role: "group",
+      tabIndex: -1,
+    },
+  });
+
+  return (
+    <div
+      className={cn("min-w-0", isDragging && "opacity-60")}
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+    >
+      <PrimitiveNodeContextMenu
+        layerLabel={layerLabel}
+        nodeId={nodeId}
+        onRemoveNode={onRemoveNode}
+        onSelectNode={onSelect}
+        rootId={rootId}
+      >
+        <div
+          className={cn(
+            layerRowBaseClass,
+            selected ? layerRowSelectedClass : layerRowIdleClass,
+            "touch-none select-none cursor-grab active:cursor-grabbing",
+            isDragging && "cursor-grabbing",
+          )}
+        >
+          <Button
+            className={cn(
+              "min-h-8 min-w-0 flex-1 justify-start hover:bg-transparent focus-visible:ring-offset-0 [&_svg]:size-4",
+              "!cursor-grab active:!cursor-grabbing",
+              isDragging && "!cursor-grabbing",
+            )}
+            data-testid={`node-tree-${nodeId}`}
+            onClick={() => onSelect(nodeId)}
+            size="tree"
+            type="button"
+            variant="ghost"
+          >
+            <Icon
+              aria-hidden
+              className="size-4 shrink-0 text-muted-foreground opacity-90"
+              stroke={1.5}
+            />
+            <span className="min-w-0 flex-1 cursor-inherit truncate text-left font-medium capitalize leading-none text-foreground/95">
+              {kindTitle}
+            </span>
+          </Button>
+          {collapseToggleButton}
+        </div>
+      </PrimitiveNodeContextMenu>
+    </div>
+  );
+}
+
+function collectExpandableSubtreeNodeIds(
+  composition: PageComposition,
+  rootNodeId: string,
+): string[] {
+  const ids: string[] = [];
+  const stack = [rootNodeId];
+  while (stack.length > 0) {
+    const currentId = stack.pop();
+    if (!currentId) {
+      continue;
+    }
+    const currentNode = composition.nodes[currentId];
+    if (!currentNode) {
+      continue;
+    }
+    const isContainer = isChildContainerPrimitive(currentNode.definitionKey);
+    if (isContainer && currentNode.childIds.length > 0) {
+      ids.push(currentId);
+    }
+    for (const childId of currentNode.childIds) {
+      stack.push(childId);
+    }
+  }
+  return ids;
 }
 
 /** Document root: reads as a section heading; nested rows are the editable layer list. */
 function RootLayerHeading({
   nodeId,
   kindTitle,
-  shortId,
   Icon: LayerIcon,
   selected,
   onSelect,
+  rightControls,
 }: {
   nodeId: string;
   kindTitle: string;
-  shortId: string;
   Icon: Icon;
   selected: boolean;
   onSelect: (id: string) => void;
+  rightControls?: ReactNode;
 }) {
   return (
     <div
       className={cn(
-        "border-b pb-2.5 mb-1 transition-colors",
+        "mb-1.5 border-b pb-2 transition-colors",
         selected ? "border-primary/40" : "border-border/50",
       )}
     >
-      <button
-        className={cn(
-          "flex w-full min-w-0 items-center gap-2 rounded-sm px-0.5 py-1 text-left outline-none transition-colors",
-          "hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-          selected ? "text-foreground" : "text-muted-foreground",
-        )}
-        data-testid={`node-tree-${nodeId}`}
-        onClick={() => onSelect(nodeId)}
-        type="button"
-      >
-        <LayerIcon
-          aria-hidden
-          className="size-3.5 shrink-0 text-muted-foreground opacity-90"
-          stroke={1.5}
-        />
-        <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-          <span className="text-sm font-semibold uppercase tracking-[0.14em] text-foreground">
+      <div className="flex w-full min-w-0 items-center gap-1">
+        <button
+          className={cn(
+            "flex min-w-0 flex-1 items-center gap-2 rounded-sm px-0.5 py-1.5 text-left outline-none transition-colors",
+            "hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            selected ? "text-foreground" : "text-muted-foreground",
+          )}
+          data-testid={`node-tree-${nodeId}`}
+          onClick={() => onSelect(nodeId)}
+          type="button"
+        >
+          <LayerIcon
+            aria-hidden
+            className="size-3.5 shrink-0 text-muted-foreground opacity-90"
+            stroke={1.5}
+          />
+          <span className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-foreground">
             {kindTitle}
           </span>
-          <span className="font-mono text-sm leading-none text-muted-foreground tabular-nums">
-            {shortId}
-          </span>
-        </span>
-      </button>
+        </button>
+        {rightControls}
+      </div>
     </div>
   );
 }
@@ -129,12 +251,18 @@ function LayerSubtree({
   onRemoveNode,
   onSelect,
   selectedNodeId,
+  collapsedNodeIds,
+  onToggleNodeCollapse,
+  onSetNodeCollapseState,
 }: {
   composition: PageComposition;
   nodeId: string;
   onSelect: (id: string) => void;
   onRemoveNode: (id: string) => void;
   selectedNodeId: string | null;
+  collapsedNodeIds: Set<string>;
+  onToggleNodeCollapse: (id: string) => void;
+  onSetNodeCollapseState: (ids: string[], collapsed: boolean) => void;
 }) {
   const node = composition.nodes[nodeId];
   if (!node) {
@@ -159,13 +287,62 @@ function LayerSubtree({
     semanticTag === "footer"
       ? `${semanticTag.charAt(0).toUpperCase()}${semanticTag.slice(1)}`
       : defaultKindTitle;
-  const shortId = node.id.slice(0, 6);
-  const layerLabel = `${kindTitle} · ${shortId}`;
+  const layerLabel = kindTitle;
   const isContainer = isChildContainerPrimitive(node.definitionKey);
+  const hasChildren = isContainer && node.childIds.length > 0;
   const isRoot = nodeId === composition.rootId;
   const isLockedSection = isLockedTemplateShellSection(composition, nodeId);
   const isSectionHeading = isRoot || isLockedSection;
   const selected = selectedNodeId === nodeId;
+  const isCollapsed = hasChildren && collapsedNodeIds.has(nodeId);
+  const sectionExpandableIds = useMemo(
+    () =>
+      isLockedSection
+        ? collectExpandableSubtreeNodeIds(composition, nodeId)
+        : ([] as string[]),
+    [composition, isLockedSection, nodeId],
+  );
+  const sectionAllCollapsed =
+    sectionExpandableIds.length > 0 &&
+    sectionExpandableIds.every((id) => collapsedNodeIds.has(id));
+  const collapseToggleButton = hasChildren ? (
+    <Button
+      aria-label={isCollapsed ? "Expand children" : "Collapse children"}
+      className={treeCollapseIconButtonClass}
+      onClick={() => onToggleNodeCollapse(nodeId)}
+      onPointerDown={(e) => e.stopPropagation()}
+      size="sm"
+      type="button"
+      variant="ghost"
+    >
+      {isCollapsed ? (
+        <IconChevronDown aria-hidden className="size-3.5" stroke={1.8} />
+      ) : (
+        <IconChevronUp aria-hidden className="size-3.5" stroke={1.8} />
+      )}
+    </Button>
+  ) : null;
+  const sectionToggleButton =
+    isLockedSection && sectionExpandableIds.length > 0 ? (
+      <Button
+        aria-label={
+          sectionAllCollapsed ? "Expand all children" : "Collapse all children"
+        }
+        className={treeCollapseIconButtonClass}
+        onClick={() =>
+          onSetNodeCollapseState(sectionExpandableIds, !sectionAllCollapsed)
+        }
+        size="sm"
+        type="button"
+        variant="ghost"
+      >
+        {sectionAllCollapsed ? (
+          <IconChevronDown aria-hidden className="size-3.5" stroke={1.8} />
+        ) : (
+          <IconChevronUp aria-hidden className="size-3.5" stroke={1.8} />
+        )}
+      </Button>
+    ) : null;
 
   const row = isSectionHeading ? (
     <RootLayerHeading
@@ -173,88 +350,72 @@ function LayerSubtree({
       kindTitle={kindTitle}
       nodeId={nodeId}
       onSelect={onSelect}
+      rightControls={sectionToggleButton}
       selected={selected}
-      shortId={shortId}
     />
   ) : (
-    <div
-      className={cn(
-        "flex min-w-0 items-stretch gap-1 rounded-md border px-0.5 py-px transition-colors",
-        selected
-          ? "border-border/55 bg-muted/85 text-foreground shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07)] dark:bg-muted/45 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
-          : "border-transparent hover:bg-muted/45 dark:hover:bg-muted/25",
-      )}
-    >
-      <NodeDragHandle nodeId={nodeId} />
-      <Button
-        className="min-h-8 min-w-0 flex-1 px-1.5 hover:bg-transparent focus-visible:ring-offset-0 [&_svg]:size-3.5"
-        data-testid={`node-tree-${nodeId}`}
-        onClick={() => onSelect(nodeId)}
-        size="tree"
-        type="button"
-        variant="ghost"
-      >
-        <Icon
-          aria-hidden
-          className="shrink-0 text-muted-foreground opacity-90"
-          stroke={1.5}
-        />
-        <span className="min-w-0 flex-1 truncate text-left">
-          <span className="font-medium capitalize text-foreground/95">
-            {kindTitle}
-          </span>
-          <span className="text-muted-foreground"> · </span>
-          <span className="font-mono text-sm text-muted-foreground/95 tabular-nums">
-            {shortId}
-          </span>
-        </span>
-      </Button>
-    </div>
+    <DraggableNodeTreeRow
+      Icon={Icon}
+      collapseToggleButton={collapseToggleButton}
+      kindTitle={kindTitle}
+      layerLabel={layerLabel}
+      nodeId={nodeId}
+      onRemoveNode={onRemoveNode}
+      onSelect={onSelect}
+      rootId={composition.rootId}
+      selected={selected}
+    />
   );
 
   return (
-    <li className="list-none m-0! p-0! pl-0!">
-      {isSectionHeading ? (
-        row
-      ) : (
-        <PrimitiveNodeContextMenu
-          layerLabel={layerLabel}
-          nodeId={nodeId}
-          onRemoveNode={onRemoveNode}
-          onSelectNode={onSelect}
-          rootId={composition.rootId}
-        >
-          {row}
-        </PrimitiveNodeContextMenu>
-      )}
-      {isContainer ? (
+    <li className={layerTreeItemClass}>
+      {row}
+      {isContainer && !isCollapsed ? (
         <ul className={layerTreeNestedListClass(isRoot)}>
-          <li className="list-none m-0! p-0! pl-0!">
-            <InsertionDropZone
-              className="py-0"
-              parentId={nodeId}
-              insertIndex={0}
-              variant="between"
-            />
-          </li>
-          {node.childIds.map((cid, i) => (
-            <Fragment key={cid}>
-              <LayerSubtree
-                composition={composition}
-                nodeId={cid}
-                onRemoveNode={onRemoveNode}
-                onSelect={onSelect}
-                selectedNodeId={selectedNodeId}
+          {node.childIds.length === 0 ? (
+            <li className={layerTreeItemClass}>
+              <InsertionDropZone
+                droppableScope="layers"
+                parentId={nodeId}
+                insertIndex={0}
+                variant="empty"
               />
-              <li className="list-none m-0! p-0! pl-0!">
+            </li>
+          ) : (
+            <>
+              <li className={layerTreeItemClass}>
                 <InsertionDropZone
+                  className="py-0"
+                  droppableScope="layers"
                   parentId={nodeId}
-                  insertIndex={i + 1}
+                  insertIndex={0}
                   variant="between"
                 />
               </li>
-            </Fragment>
-          ))}
+              {node.childIds.map((cid, i) => (
+                <Fragment key={cid}>
+                  <LayerSubtree
+                    composition={composition}
+                    collapsedNodeIds={collapsedNodeIds}
+                    nodeId={cid}
+                    onSetNodeCollapseState={onSetNodeCollapseState}
+                    onToggleNodeCollapse={onToggleNodeCollapse}
+                    onRemoveNode={onRemoveNode}
+                    onSelect={onSelect}
+                    selectedNodeId={selectedNodeId}
+                  />
+                  <li className={layerTreeItemClass}>
+                    <InsertionDropZone
+                      droppableScope="layers"
+                      parentId={nodeId}
+                      insertIndex={i + 1}
+                      variant="between"
+                    />
+                  </li>
+                </Fragment>
+              ))}
+            </>
+          )}
         </ul>
       ) : null}
     </li>
@@ -266,17 +427,47 @@ export function NodeTree({
   selectedNodeId,
   onRemoveNode,
   onSelect,
-  embedded = false,
 }: {
   composition: PageComposition;
   selectedNodeId: string | null;
   onRemoveNode: (id: string) => void;
   onSelect: (id: string) => void;
-  embedded?: boolean;
 }) {
+  const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const toggleNodeCollapse = useCallback((id: string) => {
+    setCollapsedNodeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+  const setNodeCollapseState = useCallback(
+    (ids: string[], collapsed: boolean) => {
+      if (ids.length === 0) {
+        return;
+      }
+      setCollapsedNodeIds((prev) => {
+        const next = new Set(prev);
+        for (const id of ids) {
+          if (collapsed) {
+            next.add(id);
+          } else {
+            next.delete(id);
+          }
+        }
+        return next;
+      });
+    },
+    [],
+  );
   const root = composition.nodes[composition.rootId];
   const templateShell = isTemplateShellRoot(composition);
-  const rootShortId = composition.rootId.slice(0, 6);
   const topLevelIds =
     templateShell && root
       ? root.childIds.filter((childId) => composition.nodes[childId])
@@ -285,22 +476,24 @@ export function NodeTree({
   const tree = (
     <ul className={layerTreeRootListClass}>
       {templateShell ? (
-        <li className="list-none m-0! p-0! pl-0!">
+        <li className={layerTreeItemClass}>
           <RootLayerHeading
             Icon={IconLayoutGrid}
             kindTitle="body"
             nodeId={composition.rootId}
             onSelect={onSelect}
             selected={selectedNodeId === composition.rootId}
-            shortId={rootShortId}
           />
         </li>
       ) : null}
       {topLevelIds.map((nodeId) => (
         <LayerSubtree
           composition={composition}
+          collapsedNodeIds={collapsedNodeIds}
           key={nodeId}
           nodeId={nodeId}
+          onSetNodeCollapseState={setNodeCollapseState}
+          onToggleNodeCollapse={toggleNodeCollapse}
           onRemoveNode={onRemoveNode}
           onSelect={onSelect}
           selectedNodeId={selectedNodeId}
@@ -309,14 +502,5 @@ export function NodeTree({
     </ul>
   );
 
-  if (embedded) {
-    return tree;
-  }
-
-  return (
-    <div className={builderPanelSurfaceClass}>
-      <div className={builderPanelHeaderClass}>Layers</div>
-      <div className={builderPanelBodyClass}>{tree}</div>
-    </div>
-  );
+  return tree;
 }

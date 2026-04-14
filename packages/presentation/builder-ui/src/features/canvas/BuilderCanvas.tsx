@@ -96,6 +96,7 @@ function ContainerChildList({
   if (childIds.length === 0) {
     return (
       <InsertionDropZone
+        droppableScope="canvas"
         insertIndex={0}
         parentId={parentNode.id}
         testId={
@@ -111,17 +112,30 @@ function ContainerChildList({
   if (isTemplateShellRootParent) {
     return (
       <>
-        {childIds.map((cid) => (
-          <CanvasNode
-            composition={composition}
-            key={cid}
-            nodeId={cid}
-            onRemoveNode={onRemoveNode}
-            onSelectNode={onSelectNode}
-            registry={registry}
-            selectedNodeId={selectedNodeId}
-            tokenMeta={tokenMeta}
-          />
+        <InsertionDropZone
+          droppableScope="canvas"
+          insertIndex={0}
+          parentId={parentNode.id}
+          variant="between"
+        />
+        {childIds.map((cid, i) => (
+          <Fragment key={cid}>
+            <CanvasNode
+              composition={composition}
+              nodeId={cid}
+              onRemoveNode={onRemoveNode}
+              onSelectNode={onSelectNode}
+              registry={registry}
+              selectedNodeId={selectedNodeId}
+              tokenMeta={tokenMeta}
+            />
+            <InsertionDropZone
+              droppableScope="canvas"
+              insertIndex={i + 1}
+              parentId={parentNode.id}
+              variant="between"
+            />
+          </Fragment>
         ))}
       </>
     );
@@ -130,6 +144,7 @@ function ContainerChildList({
   return (
     <>
       <InsertionDropZone
+        droppableScope="canvas"
         parentId={parentNode.id}
         insertIndex={0}
         variant="between"
@@ -146,6 +161,7 @@ function ContainerChildList({
             tokenMeta={tokenMeta}
           />
           <InsertionDropZone
+            droppableScope="canvas"
             parentId={parentNode.id}
             insertIndex={i + 1}
             variant="between"
@@ -335,18 +351,20 @@ function CanvasNode({
         : "main";
     primitive = (
       <Cmp className={className} node={node} style={style}>
-        <div
-          className={cn(
-            "flex min-h-[4.5rem] w-full flex-col justify-center rounded-md border-2 border-dashed border-primary/35 bg-muted/25 px-3 py-4 text-center text-xs text-muted-foreground dark:bg-muted/15",
-          )}
-        >
-          <span className="font-medium text-foreground">Layout slot</span>
-          <span className="mt-1 font-mono text-xs text-muted-foreground">
-            {slotId}
-          </span>
-          <span className="mt-2 text-xs leading-snug text-muted-foreground">
-            Page blocks fill this region on the live site.
-          </span>
+        <div className="relative min-h-[4.5rem] w-full flex-1 shrink-0 p-3">
+          <div
+            className={cn(
+              "flex h-full min-h-[4.5rem] w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-accent/35 bg-accent/10 px-4 py-5 text-center text-sm tracking-tight shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] dark:border-accent/28 dark:bg-accent/8 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]",
+              // Slot root can carry author `color` from style bindings; reset so placeholder always uses canvas theme tokens.
+              "!text-muted-foreground",
+            )}
+          >
+            <span className="!font-semibold !text-foreground">Layout slot</span>
+            <span className="mt-1 font-mono text-xs">{slotId}</span>
+            <span className="mt-2 text-xs leading-snug">
+              Page blocks fill this region on the live site.
+            </span>
+          </div>
         </div>
       </Cmp>
     );

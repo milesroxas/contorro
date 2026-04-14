@@ -222,6 +222,42 @@ export const TEXT_DECORATION_LINE_UTILITY_VALUES = [
   "no-underline",
 ] as const;
 
+export const BORDER_RADIUS_UTILITY_VALUES = [
+  "none",
+  "sm",
+  "md",
+  "lg",
+  "xl",
+  "2xl",
+  "3xl",
+  "full",
+] as const;
+
+export const BORDER_STYLE_UTILITY_VALUES = [
+  "solid",
+  "dashed",
+  "dotted",
+  "double",
+  "hidden",
+  "none",
+] as const;
+
+export const BORDER_WIDTH_UTILITY_VALUES = [
+  "DEFAULT",
+  "0",
+  "2",
+  "4",
+  "8",
+] as const;
+
+export const BORDER_COLOR_UTILITY_VALUES = [
+  "inherit",
+  "current",
+  "transparent",
+  "black",
+  "white",
+] as const;
+
 export const FLEX_DIRECTION_UTILITY_VALUES = [
   "row",
   "row-reverse",
@@ -310,6 +346,10 @@ const MARGIN_UTILITY_PROPERTIES = new Set([
 const SIZE_UTILITY_PROPERTIES = new Set(["height"]);
 
 const UTILITY_VALUES_BY_PROPERTY = {
+  borderColor: BORDER_COLOR_UTILITY_VALUES,
+  borderRadius: BORDER_RADIUS_UTILITY_VALUES,
+  borderStyle: BORDER_STYLE_UTILITY_VALUES,
+  borderWidth: BORDER_WIDTH_UTILITY_VALUES,
   fontFamily: FONT_FAMILY_UTILITY_VALUES,
   fontSize: FONT_SIZE_UTILITY_VALUES,
   fontWeight: FONT_WEIGHT_UTILITY_VALUES,

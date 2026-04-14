@@ -35,19 +35,17 @@ function LibraryPaletteTile({ item }: { item: Item }) {
     >
       <IconComponents
         aria-hidden
-        className="size-7 text-muted-foreground"
+        className="size-6.5 text-muted-foreground"
         stroke={1.25}
       />
-      <span className="line-clamp-2 min-h-[2.25rem] text-sm font-medium text-foreground">
+      <span className="line-clamp-2 min-h-8 text-[15px] leading-tight font-medium text-foreground">
         {item.displayName}
       </span>
     </button>
   );
 }
 
-export function LibraryComponentCatalog({
-  embedded = false,
-}: { embedded?: boolean }) {
+export function LibraryComponentCatalog() {
   const [items, setItems] = useState<Item[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -83,9 +81,9 @@ export function LibraryComponentCatalog({
 
   const grid =
     items === null ? (
-      <div className="text-sm text-muted-foreground">Loading…</div>
+      <div className="text-xs text-muted-foreground">Loading…</div>
     ) : items.length === 0 ? (
-      <div className="text-sm leading-snug text-muted-foreground">
+      <div className="text-xs leading-snug text-muted-foreground">
         {loadError ??
           "No library components with a saved layout yet. Publish a component first."}
       </div>
@@ -97,16 +95,5 @@ export function LibraryComponentCatalog({
       </div>
     );
 
-  if (embedded) {
-    return grid;
-  }
-
-  return (
-    <div className="rounded-lg border border-border bg-muted/15 p-3 dark:bg-muted/10">
-      <div className="mb-2.5 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-        Components
-      </div>
-      {grid}
-    </div>
-  );
+  return grid;
 }

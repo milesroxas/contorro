@@ -1,5 +1,7 @@
 import type { RuntimePrimitiveProps } from "@repo/domains-runtime-catalog";
 
+import { PrimitiveEmptyState } from "./primitive-empty-state.js";
+
 /** Image: src, alt, width, height, objectFit */
 export function Image({ node, className, style }: RuntimePrimitiveProps) {
   const src =
@@ -15,35 +17,16 @@ export function Image({ node, className, style }: RuntimePrimitiveProps) {
 
   if (!hasSource) {
     return (
-      <div
+      <PrimitiveEmptyState
         aria-label={alt || "Image placeholder"}
         className={className}
-        style={{
-          alignItems: "center",
-          aspectRatio: "16 / 9",
-          background:
-            "linear-gradient(135deg, color-mix(in oklab, CanvasText 8%, Canvas) 0%, color-mix(in oklab, CanvasText 4%, Canvas) 100%)",
-          border: "1px dashed color-mix(in oklab, CanvasText 22%, Canvas)",
-          color: "color-mix(in oklab, CanvasText 55%, Canvas)",
-          display: "flex",
-          justifyContent: "center",
-          margin: "auto",
-          minHeight: "8rem",
-          width: "100%",
-          ...style,
-        }}
+        style={style}
+        variant="centered"
       >
-        <div
-          style={{
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-          }}
-        >
+        <span className="text-xs font-semibold tracking-widest uppercase">
           Image
-        </div>
-      </div>
+        </span>
+      </PrimitiveEmptyState>
     );
   }
 

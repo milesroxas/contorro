@@ -6,6 +6,7 @@ import {
 import {
   type StyleBinding,
   type StyleProperty,
+  type StylePropertyEntry,
   utilityValuesForStyleProperty,
 } from "@repo/contracts-zod";
 
@@ -19,10 +20,33 @@ type StyleRule = {
   tokenClassName?: string;
 };
 
+const PADDING_SIDE_PROPERTIES: readonly StyleProperty[] = [
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+];
+
 const STYLE_RULES: Record<StyleProperty, StyleRule> = {
   background: {
     property: "background",
     tokenClassName: "bg-[var(--builder-style-background)]",
+  },
+  borderColor: {
+    property: "borderColor",
+    tokenClassName: "border-[var(--builder-style-border-color)]",
+  },
+  borderRadius: {
+    property: "borderRadius",
+    tokenClassName: "rounded-[var(--builder-style-border-radius)]",
+  },
+  borderStyle: {
+    property: "borderStyle",
+    tokenClassName: "[border-style:var(--builder-style-border-style)]",
+  },
+  borderWidth: {
+    property: "borderWidth",
+    tokenClassName: "border-[var(--builder-style-border-width)]",
   },
   color: {
     property: "color",
@@ -188,6 +212,14 @@ function utilityClassNameForPropertyValue(
   value: string,
 ): string | null {
   switch (property) {
+    case "borderColor":
+      return `border-${value}`;
+    case "borderRadius":
+      return `rounded-${value}`;
+    case "borderStyle":
+      return `border-${value}`;
+    case "borderWidth":
+      return value === "DEFAULT" ? "border" : `border-${value}`;
     case "display":
       return value;
     case "fontFamily":
@@ -271,6 +303,33 @@ function utilityClassNameForPropertyValue(
   }
 }
 
+function addClassForStyleEntry(
+  classes: Set<string>,
+  property: StyleProperty,
+  entry: StylePropertyEntry,
+  allowedTokenKeys: ReadonlySet<string>,
+): void {
+  if (entry.type === "token") {
+    if (!allowedTokenKeys.has(entry.token)) {
+      return;
+    }
+    classes.add(
+      styleTokenClassName(STYLE_RULES[property].property, entry.token),
+    );
+    return;
+  }
+  if (!utilityValuesForStyleProperty(property).includes(entry.value)) {
+    return;
+  }
+  const utilityClassName = utilityClassNameForPropertyValue(
+    property,
+    entry.value,
+  );
+  if (utilityClassName) {
+    classes.add(utilityClassName);
+  }
+}
+
 /**
  * Resolves persisted style bindings to utility and token alias classes (§11.4).
  */
@@ -281,25 +340,36 @@ export function resolveStyleBinding(
   const classes = new Set<string>();
   const inlineStyle: Record<string, string> = {};
   const allowedTokenKeys = new Set(tokenMeta.map((token) => token.key));
+  const propertyEntries = new Map<StyleProperty, StylePropertyEntry>();
+  for (const prop of binding.properties) {
+    propertyEntries.set(prop.property, prop);
+  }
+  const hasPaddingSideEntry = PADDING_SIDE_PROPERTIES.some((property) =>
+    propertyEntries.has(property),
+  );
 
   for (const prop of binding.properties) {
-    const rule = STYLE_RULES[prop.property];
-    if (prop.type === "token") {
-      if (!allowedTokenKeys.has(prop.token)) {
+    if (
+      hasPaddingSideEntry &&
+      (prop.property === "padding" ||
+        prop.property === "paddingTop" ||
+        prop.property === "paddingRight" ||
+        prop.property === "paddingBottom" ||
+        prop.property === "paddingLeft")
+    ) {
+      continue;
+    }
+    addClassForStyleEntry(classes, prop.property, prop, allowedTokenKeys);
+  }
+
+  if (hasPaddingSideEntry) {
+    const shorthandEntry = propertyEntries.get("padding");
+    for (const property of PADDING_SIDE_PROPERTIES) {
+      const entry = propertyEntries.get(property) ?? shorthandEntry;
+      if (!entry) {
         continue;
       }
-      classes.add(styleTokenClassName(rule.property, prop.token));
-      continue;
-    }
-    if (!utilityValuesForStyleProperty(prop.property).includes(prop.value)) {
-      continue;
-    }
-    const utilityClassName = utilityClassNameForPropertyValue(
-      prop.property,
-      prop.value,
-    );
-    if (utilityClassName) {
-      classes.add(utilityClassName);
+      addClassForStyleEntry(classes, property, entry, allowedTokenKeys);
     }
   }
 

@@ -14,6 +14,10 @@ export type CompiledTokenOutput = {
 
 export type BuilderStyleProperty =
   | "background"
+  | "borderColor"
+  | "borderRadius"
+  | "borderStyle"
+  | "borderWidth"
   | "color"
   | "fontFamily"
   | "fontSize"
@@ -56,6 +60,10 @@ export type BuilderStyleProperty =
 
 const TOKEN_UTILITY_CLASS_PREFIX: Record<BuilderStyleProperty, string> = {
   background: "bg",
+  borderColor: "border-color",
+  borderRadius: "rounded",
+  borderStyle: "border-style",
+  borderWidth: "border-width",
   color: "text",
   fontFamily: "font",
   fontSize: "text-size",
@@ -99,6 +107,10 @@ const TOKEN_UTILITY_CLASS_PREFIX: Record<BuilderStyleProperty, string> = {
 
 const TOKEN_CSS_PROPERTIES: Record<BuilderStyleProperty, string> = {
   background: "background-color",
+  borderColor: "border-color",
+  borderRadius: "border-radius",
+  borderStyle: "border-style",
+  borderWidth: "border-width",
   color: "color",
   fontFamily: "font-family",
   fontSize: "font-size",
