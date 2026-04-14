@@ -6,7 +6,7 @@ Monorepo for multi-surface authoring: a **CMS app** (Next.js + Payload), a **gat
 |------|--------|---------|
 | CMS host (admin, APIs, Payload) | `apps/cms` | `@repo/cms` |
 | Gateway (Hono) | `apps/gateway` | `@repo/gateway` |
-| Studio UI (embedded in admin, CMS-agnostic transport) | `packages/presentation/studio` | `@repo/presentation-studio` |
+| Studio UI (hosted at `/studio` in the CMS app, CMS-agnostic transport) | `packages/presentation/studio` | `@repo/presentation-studio` |
 
 **Docs**
 

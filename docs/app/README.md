@@ -4,7 +4,7 @@ This document maps what is currently implemented in the repo.
 
 ## Apps
 
-- **CMS app** (`apps/cms`, npm **`@repo/cms`**): Next.js 16 + Payload 3. Hosts admin UI, auth/session, Payload migrations/seeds, **Studio-facing HTTP APIs** under `/api/studio/*` (composition load/save), REST for collections/globals used by the design-system editor, preview routes, and same-origin **gateway** forwarding (`/api/gateway/*`).
+- **CMS app** (`apps/cms`, npm **`@repo/cms`**): Next.js 16 + Payload 3. Hosts admin UI, auth/session, Payload migrations/seeds, the **Studio** surface at **`/studio`** (separate from `/admin`), **Studio-facing HTTP APIs** under `/api/studio/*` (composition load/save), REST for collections/globals used by the design-system editor, preview routes, and same-origin **gateway** forwarding (`/api/gateway/*`).
 - **`apps/gateway`**: Hono app. Exposes `/api/gateway/health`, `/api/gateway/contracts/*`, and a **`/api/gateway/studio/*` namespace** where composition mutations are intentionally **`NOT_IMPLEMENTED`** (canonical mutations go through the CMS app’s `/api/studio/*` routes).
 
 ## Package groups
@@ -12,7 +12,7 @@ This document maps what is currently implemented in the repo.
 - `packages/kernel`: shared `Result`/error primitives.
 - `packages/domains/*`: business/domain logic (`composition`, `design-system`, `publishing`, `runtime-catalog`, `user-access`).
 - `packages/application/*`: command/query services (`studio`, `design-system`, `publish-flow`, `contract-sync`).
-- `packages/infrastructure/*`: adapters and config (`payload-config`, `persistence`, `blob-storage`, `event-bus`, `telemetry`, `cache`).
+- `packages/infrastructure/*`: adapters and config (`payload-config`, `blob-storage`, `event-bus`, `telemetry`, `cache`).
 - `packages/presentation/*`: UI packages — **`@repo/presentation-studio`** (visual Studio: compositions + design-system screens), `preview-ui`, `admin-extensions`, `shared`.
 - `packages/runtime/*`: runtime renderers/primitives/code-components.
 - `packages/contracts/*`: Zod + JSON-schema contracts (includes **`StudioAuthoringClient`** for CMS-agnostic Studio ↔ host transport types).

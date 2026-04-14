@@ -14,7 +14,6 @@
     { "path": "../../packages/domains/composition" },
     { "path": "../../packages/application/studio" },
     { "path": "../../packages/application/publish-flow" },
-    { "path": "../../packages/application/contract-sync" },
-    { "path": "../../packages/infrastructure/persistence" }
+    { "path": "../../packages/application/contract-sync" }
   ]
 }

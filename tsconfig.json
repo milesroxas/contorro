@@ -22,7 +22,6 @@
     { "path": "./packages/infrastructure/cache" },
     { "path": "./packages/infrastructure/event-bus" },
     { "path": "./packages/infrastructure/payload-config" },
-    { "path": "./packages/infrastructure/persistence" },
     { "path": "./packages/infrastructure/telemetry" },
     { "path": "./packages/presentation/shared" },
     { "path": "./packages/presentation/admin-extensions" },

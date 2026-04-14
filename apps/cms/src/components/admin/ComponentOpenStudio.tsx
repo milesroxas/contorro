@@ -1,8 +1,7 @@
 "use client";
 
-import { Button, useAuth, useConfig, useDocumentInfo } from "@payloadcms/ui";
-import { studioRowIdForComponent } from "@repo/infrastructure-payload-config/studio-row-id";
-import { formatAdminURL } from "payload/shared";
+import { Button, useAuth, useDocumentInfo } from "@payloadcms/ui";
+import { studioRowIdForComponent } from "@repo/domains-composition";
 
 /**
  * Opens Studio for this component (composition id is namespaced so it does not
@@ -10,7 +9,6 @@ import { formatAdminURL } from "payload/shared";
  */
 export default function ComponentOpenStudio() {
   const { user } = useAuth();
-  const { config } = useConfig();
   const role =
     user && typeof user === "object" && "role" in user
       ? String((user as { role?: unknown }).role)
@@ -24,13 +22,8 @@ export default function ComponentOpenStudio() {
     return null;
   }
 
-  const adminRoute = config.routes?.admin ?? "/admin";
   const compositionParam = studioRowIdForComponent(String(id));
-  const url = formatAdminURL({
-    adminRoute,
-    path: `/studio?composition=${encodeURIComponent(compositionParam)}`,
-    relative: true,
-  });
+  const url = `/studio?composition=${encodeURIComponent(compositionParam)}`;
 
   return (
     <Button

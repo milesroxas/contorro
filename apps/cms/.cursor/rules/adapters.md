@@ -8,7 +8,6 @@
 ## Infrastructure adapters
 
 - Payload config + collection/globals wiring: `packages/infrastructure/payload-config`.
-- Persistence implementations: `packages/infrastructure/persistence`.
 - Blob/event bus/telemetry live under `packages/infrastructure/*`.
 
 ## Rule

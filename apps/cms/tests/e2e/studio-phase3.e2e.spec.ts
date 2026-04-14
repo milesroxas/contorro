@@ -30,7 +30,7 @@ test.describe("Phase 3 — Studio MVP", () => {
   });
 
   test("designer composes, styles, saves, restores", async () => {
-    await page.goto(`/admin/studio?composition=${compositionId}`);
+    await page.goto(`/studio?composition=${compositionId}`);
 
     await expect(page.getByTestId("studio-app")).toBeVisible({
       timeout: 30_000,

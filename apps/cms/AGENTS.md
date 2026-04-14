@@ -4,7 +4,7 @@ Use this file for changes inside **`apps/cms`** (package **`@repo/cms`**). Root 
 
 ## Ownership boundaries
 
-- This app owns Payload runtime assembly, Next routes, migrations, seeds, and app-level UI wiring for admin + Studio embedding.
+- This app owns Payload runtime assembly, Next routes, migrations, seeds, and app-level UI wiring for admin, Payload custom components, and the **`/studio`** host route.
 - Collections/globals/hooks source of truth is `packages/infrastructure/payload-config`.
 - Do not duplicate collection definitions in `apps/cms`.
 
@@ -18,7 +18,7 @@ Use this file for changes inside **`apps/cms`** (package **`@repo/cms`**). Root 
 - Mutation commands: `packages/application/studio/src/commands/*`
 - Payload repository adapter: `apps/cms/src/app/api/studio/_lib/payload-studio-mutation-repository.ts`
 - Gateway forwarding endpoint: `apps/cms/src/app/api/gateway/[[...route]]/route.ts`
-- Studio embed: Payload custom view **`/studio`** → `components/admin/StudioView.tsx` mounts `@repo/presentation-studio` and injects `createFetchStudioAuthoringClient` (optional env: `NEXT_PUBLIC_STUDIO_COMPOSITION_API_BASE`, `NEXT_PUBLIC_STUDIO_RESOURCE_API_BASE`).
+- Studio UI: Next route **`/studio`** (`app/(studio)/studio/page.tsx`) — `payload.auth` + `StudioShell` from `@repo/presentation-studio` (hub, design system screen, editor) and `createFetchStudioAuthoringClient` (optional env: `NEXT_PUBLIC_STUDIO_COMPOSITION_API_BASE`, `NEXT_PUBLIC_STUDIO_RESOURCE_API_BASE`).
 
 ## Security-critical patterns
 
@@ -31,7 +31,7 @@ Use this file for changes inside **`apps/cms`** (package **`@repo/cms`**). Root 
 - Next route handlers should orchestrate only.
 - Put business rules in domain/application packages.
 - This app can wire dependencies and map HTTP ↔ application/domain contracts.
-- Keep component row-id parsing in `@repo/infrastructure-payload-config/studio-row-id`.
+- Import `cmp-` helpers from `@repo/domains-composition` (or the infrastructure re-export); implementation lives in `studio-component-row-id.ts`.
 - Do not add legacy mirror sync hooks; avoid dual-write drift.
 
 ## Required checks after relevant changes

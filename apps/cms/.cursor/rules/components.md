@@ -5,7 +5,7 @@ Payload admin component wiring is declared in `apps/cms/src/payload.config.ts`:
 - Admin providers: `/components/admin/PayloadAdminTheme`
 - Nav link: `/components/admin/StudioNavLink` (sidebar label: **Studio**)
 - Dashboard callouts/openers
-- Custom admin view: `/studio` (embeds `@repo/presentation-studio`)
+- Studio UI: first-class route **`/studio`** (`app/(studio)/studio/page.tsx`; embeds `@repo/presentation-studio`), linked from admin via `StudioNavLink`
 
 ## Rules
 
@@ -14,7 +14,6 @@ Payload admin component wiring is declared in `apps/cms/src/payload.config.ts`:
 
 ## Custom UI vs Payload’s stylesheet
 
-`@payloadcms/next/css` loads **after** `globals.css`. Payload’s link/button rules can override Tailwind/CVA colors on `<a>` (e.g. `Button` + `asChild` + Next `Link`).
+Studio at **`/studio`** uses `app/(studio)/layout.tsx` and does **not** load Payload admin CSS.
 
-- Put a root on every custom admin surface: `data-contorro-admin-ui` (see `StudioView` and `(payload)/custom.scss`).
-- Scoped repairs use `data-slot="button"` and `data-variant` from `src/components/ui/button.tsx`. For new shadcn surfaces **outside** the `/builder` custom view, wrap the tree with the same attribute or extend `custom.scss` under that scope only.
+For **custom field / admin components** still rendered inside Payload (`(payload)/layout.tsx`), `@payloadcms/next/css` can override Tailwind/CVA on links and buttons. Prefer `data-slot="button"` and `data-variant` from `src/components/ui/button.tsx`. If you add shadcn-heavy UI in admin and hit specificity issues, scope fixes in `(payload)/custom.scss` under a dedicated wrapper attribute.

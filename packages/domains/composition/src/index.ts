@@ -13,6 +13,11 @@ export {
   parseStudioNewCompositionSessionId,
   type NewStudioCompositionKind,
 } from "./studio-composition-session.js";
+export {
+  componentIdFromStudioRowId,
+  isStudioComponentRowId,
+  studioRowIdForComponent,
+} from "./studio-component-row-id.js";
 export { clonePageCompositionWithNewIds } from "./graph/clone-composition.js";
 export { expandLibraryComponentNodes } from "./graph/expand-library-component-nodes.js";
 export {

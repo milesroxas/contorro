@@ -96,12 +96,6 @@ export default buildConfig({
         "/components/admin/DesignSystemPreviewCallout",
         "/components/admin/PageCompositionOpenStudio",
       ],
-      views: {
-        studio: {
-          Component: "/components/admin/StudioView",
-          path: "/studio",
-        },
-      },
     },
   },
   editor: lexicalEditor(),

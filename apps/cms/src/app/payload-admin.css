@@ -1,7 +1,7 @@
 /*
  * Payload admin shell: Tailwind + shadcn + custom admin fields (not Studio).
  * Load order in `(payload)/layout.tsx`: `@payloadcms/next/css` → this file → `custom.scss`.
- * Do not scan presentation-studio or studio-hub — those live in `studio.css` (loaded after Payload).
+ * Do not scan presentation-studio — Studio Tailwind lives in `studio.css` (loaded after Payload).
  */
 @import "tailwindcss";
 @import "tw-animate-css";

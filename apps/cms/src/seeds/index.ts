@@ -762,9 +762,7 @@ async function seed(): Promise<void> {
     for (const [label, u] of Object.entries(SEED_USERS)) {
       console.log(`    ${label}: ${u.email}`);
     }
-    console.log(
-      `\n  Studio:   ${base}/admin/studio?composition=${compositionId}`,
-    );
+    console.log(`\n  Studio:   ${base}/studio?composition=${compositionId}`);
     console.log(
       `  Composer: ${base}/admin/collections/pages (seed page / template in admin)`,
     );

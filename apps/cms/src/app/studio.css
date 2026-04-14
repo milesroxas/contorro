@@ -1,6 +1,6 @@
 /*
- * Studio-only Tailwind + shadcn: import from `StudioView` so utilities load after `@payloadcms/next/css`.
- * Scans `@repo/presentation-studio`, runtime renderer, studio hub, and shared `components/ui`.
+ * Studio-only Tailwind + shadcn: imported from `app/(studio)/layout.tsx` (no Payload admin CSS).
+ * Scans `@repo/presentation-studio`, runtime renderer, and the `(studio)` route layout.
  */
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -8,9 +8,27 @@
 @import "./_tailwind-safelist.css";
 @import "./_contorro-theme.css";
 
+/*
+ * Studio shell (see `StudioRoot` → class `studio-root`): stacking context + compact radii for canvas/node UI.
+ * Lives here, not in `_contorro-theme.css`, so Payload admin and other surfaces stay unchanged.
+ */
+@layer components {
+  .studio-root {
+    contain: layout style;
+    isolation: isolate;
+    --radius-2xl: var(--radius-sm);
+    --radius-3xl: var(--radius-sm);
+    --radius-4xl: var(--radius-sm);
+    --radius-lg: var(--radius-sm);
+    --radius-md: var(--radius-sm);
+    --radius-xl: var(--radius-sm);
+  }
+
+  .studio-root :where(.rounded-full) {
+    border-radius: var(--radius-sm) !important;
+  }
+}
+
 @source "../../../../packages/presentation/studio/src";
 @source "../../../../packages/runtime/renderer/src";
-@source "../components/ui";
-@source "../components/admin/studio-hub";
-@source "../components/admin/StudioView.tsx";
-@source "../components/admin/StudioHub.tsx";
+@source "./(studio)/layout.tsx";

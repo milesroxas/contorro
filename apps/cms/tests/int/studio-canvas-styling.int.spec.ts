@@ -9,8 +9,7 @@ import { render, screen } from "@testing-library/react";
 import { createElement } from "react";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { StudioRoot } from "../../../../packages/presentation/studio/src/components/studio-root.js";
-import { StudioCanvas } from "../../../../packages/presentation/studio/src/features/canvas/StudioCanvas.js";
+import { StudioCanvas, StudioRoot } from "@repo/presentation-studio";
 
 function imageComposition(): PageComposition {
   return {

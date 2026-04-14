@@ -1,8 +1,9 @@
 "use client";
 
-import { useConfig, useTheme } from "@payloadcms/ui";
-import { studioNewCompositionSessionId } from "@repo/domains-composition";
-import { studioRowIdForComponent } from "@repo/infrastructure-payload-config/studio-row-id";
+import {
+  studioNewCompositionSessionId,
+  studioRowIdForComponent,
+} from "@repo/domains-composition";
 import {
   IconClock,
   IconExternalLink,
@@ -17,25 +18,28 @@ import {
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { formatAdminURL } from "payload/shared";
 import type { ComponentProps, ComponentType } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { COMPONENTS_SLUG, PAGE_COMPOSITIONS_SLUG } from "./constants";
-import { formatUpdatedAt } from "./formatters";
-
-import { Button } from "@/components/ui/button";
+import { ScrollArea } from "../components/scroll-area.js";
+import { Button } from "../components/ui/button.js";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+} from "../components/ui/card.js";
+import { Input } from "../components/ui/input.js";
+import { Separator } from "../components/ui/separator.js";
+import { cn } from "../lib/cn.js";
+import { COMPONENTS_SLUG, PAGE_COMPOSITIONS_SLUG } from "./hub/constants.js";
+import { formatUpdatedAt } from "./hub/formatters.js";
+import { useStudioDocumentTheme } from "./hub/use-studio-document-theme.js";
+import {
+  adminCollectionsIndexHref,
+  adminDocumentHref,
+} from "./lib/admin-hrefs.js";
 
 type PageTemplateRow = {
   id: string | number;
@@ -301,11 +305,13 @@ function ResourceListCard({
   );
 }
 
-export default function StudioDashboard() {
+export type StudioDashboardProps = {
+  adminRoute: string;
+};
+
+export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
   const router = useRouter();
-  const { setTheme, theme } = useTheme();
-  const { config } = useConfig();
-  const adminRoute = config.routes?.admin ?? "/admin";
+  const { setTheme, theme } = useStudioDocumentTheme();
 
   const [templateDocs, setTemplateDocs] = useState<PageTemplateRow[] | null>(
     null,
@@ -320,14 +326,10 @@ export default function StudioDashboard() {
   const openNewStudioSession = useCallback(
     (kind: "template" | "component") => {
       const tempId = studioNewCompositionSessionId(kind);
-      const studioHref = formatAdminURL({
-        adminRoute,
-        path: `/studio?composition=${encodeURIComponent(tempId)}`,
-        relative: true,
-      });
+      const studioHref = `/studio?composition=${encodeURIComponent(tempId)}`;
       router.push(studioHref);
     },
-    [adminRoute, router],
+    [router],
   );
 
   const createTemplateAndOpenStudio = useCallback(() => {
@@ -394,32 +396,14 @@ export default function StudioDashboard() {
   }, [fetchDashboardData]);
 
   const templateCollectionHref = useMemo(
-    () =>
-      formatAdminURL({
-        adminRoute,
-        path: `/collections/${PAGE_COMPOSITIONS_SLUG}`,
-        relative: true,
-      }),
+    () => adminCollectionsIndexHref(adminRoute, PAGE_COMPOSITIONS_SLUG),
     [adminRoute],
   );
   const componentCollectionHref = useMemo(
-    () =>
-      formatAdminURL({
-        adminRoute,
-        path: `/collections/${COMPONENTS_SLUG}`,
-        relative: true,
-      }),
+    () => adminCollectionsIndexHref(adminRoute, COMPONENTS_SLUG),
     [adminRoute],
   );
-  const designSystemHref = useMemo(
-    () =>
-      formatAdminURL({
-        adminRoute,
-        path: "/studio?screen=design-system",
-        relative: true,
-      }),
-    [adminRoute],
-  );
+  const designSystemHref = "/studio?screen=design-system";
 
   const templateRows = useMemo<ResourceListRow[]>(() => {
     const docs = templateDocs ?? [];
@@ -430,16 +414,8 @@ export default function StudioDashboard() {
         .filter(Boolean)
         .join(" · ");
       return {
-        studioHref: formatAdminURL({
-          adminRoute,
-          path: `/studio?composition=${encodeURIComponent(id)}`,
-          relative: true,
-        }),
-        editHref: formatAdminURL({
-          adminRoute,
-          path: `/collections/${PAGE_COMPOSITIONS_SLUG}/${encodeURIComponent(id)}`,
-          relative: true,
-        }),
+        studioHref: `/studio?composition=${encodeURIComponent(id)}`,
+        editHref: adminDocumentHref(adminRoute, PAGE_COMPOSITIONS_SLUG, id),
         id,
         meta,
         resourceType: "Template",
@@ -464,16 +440,8 @@ export default function StudioDashboard() {
         .filter(Boolean)
         .join(" · ");
       return {
-        studioHref: formatAdminURL({
-          adminRoute,
-          path: `/studio?composition=${encodeURIComponent(studioRowIdForComponent(id))}`,
-          relative: true,
-        }),
-        editHref: formatAdminURL({
-          adminRoute,
-          path: `/collections/${COMPONENTS_SLUG}/${encodeURIComponent(id)}`,
-          relative: true,
-        }),
+        studioHref: `/studio?composition=${encodeURIComponent(studioRowIdForComponent(id))}`,
+        editHref: adminDocumentHref(adminRoute, COMPONENTS_SLUG, id),
         id,
         meta,
         resourceType: "Component",
@@ -565,7 +533,6 @@ export default function StudioDashboard() {
       componentCollectionHref,
       createComponentAndOpenStudio,
       createTemplateAndOpenStudio,
-      designSystemHref,
       templateCollectionHref,
     ],
   );

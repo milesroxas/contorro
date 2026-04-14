@@ -1,16 +1,13 @@
 "use client";
 
-import { Button, useAuth, useConfig, useDocumentInfo } from "@payloadcms/ui";
-import { formatAdminURL } from "payload/shared";
+import { Button, useAuth, useDocumentInfo } from "@payloadcms/ui";
 
 /**
  * Opens Studio for the current page composition (Payload admin only;
- * designer + admin roles). Resolves the admin base path from config so navigation
- * stays inside the admin shell (not the public site).
+ * designer + admin roles).
  */
 export default function PageCompositionOpenStudio() {
   const { user } = useAuth();
-  const { config } = useConfig();
   const role =
     user && typeof user === "object" && "role" in user
       ? String((user as { role?: unknown }).role)
@@ -24,12 +21,7 @@ export default function PageCompositionOpenStudio() {
     return null;
   }
 
-  const adminRoute = config.routes?.admin ?? "/admin";
-  const url = formatAdminURL({
-    adminRoute,
-    path: `/studio?composition=${encodeURIComponent(String(id))}`,
-    relative: true,
-  });
+  const url = `/studio?composition=${encodeURIComponent(String(id))}`;
 
   return (
     <Button

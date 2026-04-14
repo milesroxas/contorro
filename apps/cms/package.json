@@ -39,7 +39,6 @@
     "@repo/infrastructure-blob-storage": "workspace:*",
     "@repo/infrastructure-event-bus": "workspace:*",
     "@repo/infrastructure-payload-config": "workspace:*",
-    "@repo/infrastructure-persistence": "workspace:*",
     "@repo/infrastructure-telemetry": "workspace:*",
     "@repo/kernel": "workspace:*",
     "@repo/presentation-admin-extensions": "workspace:*",

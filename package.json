@@ -4,6 +4,7 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "build": "tsc -b",
+    "build:cms": "pnpm --filter @repo/cms build",
     "dev": "pnpm --filter @repo/presentation-studio dev & pnpm --filter @repo/cms dev & pnpm --filter @repo/gateway dev",
     "db:up": "docker compose up db -d",
     "db:reset": "docker compose down -v && docker compose up db -d",

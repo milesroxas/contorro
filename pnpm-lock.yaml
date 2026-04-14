@@ -21,52 +21,6 @@ importers:
         specifier: ^50.43.0
         version: 50.43.0(@emnapi/core@1.9.2)(@emnapi/runtime@1.9.2)(rollup@4.60.1)(typescript@6.0.2)
 
-  apps/gateway:
-    dependencies:
-      '@hono/node-server':
-        specifier: ^1.13.0
-        version: 1.19.13(hono@4.12.12)
-      '@repo/application-contract-sync':
-        specifier: workspace:*
-        version: link:../../packages/application/contract-sync
-      '@repo/config-env':
-        specifier: workspace:*
-        version: link:../../packages/config/env
-      '@repo/domains-composition':
-        specifier: workspace:*
-        version: link:../../packages/domains/composition
-      '@repo/infrastructure-persistence':
-        specifier: workspace:*
-        version: link:../../packages/infrastructure/persistence
-      '@repo/kernel':
-        specifier: workspace:*
-        version: link:../../packages/kernel
-      dotenv:
-        specifier: 16.4.7
-        version: 16.4.7
-      hono:
-        specifier: ^4.6.0
-        version: 4.12.12
-      jose:
-        specifier: ^6.0.0
-        version: 6.2.2
-      pg:
-        specifier: ^8.13.0
-        version: 8.16.3
-    devDependencies:
-      '@types/node':
-        specifier: ^22.10.0
-        version: 22.19.9
-      '@types/pg':
-        specifier: ^8.11.0
-        version: 8.11.6
-      tsx:
-        specifier: ^4.21.0
-        version: 4.21.0
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-
   apps/cms:
     dependencies:
       '@payloadcms/db-postgres':
@@ -126,9 +80,6 @@ importers:
       '@repo/infrastructure-payload-config':
         specifier: workspace:*
         version: link:../../packages/infrastructure/payload-config
-      '@repo/infrastructure-persistence':
-        specifier: workspace:*
-        version: link:../../packages/infrastructure/persistence
       '@repo/infrastructure-telemetry':
         specifier: workspace:*
         version: link:../../packages/infrastructure/telemetry
@@ -244,6 +195,49 @@ importers:
       vitest:
         specifier: 4.0.18
         version: 4.0.18(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@22.19.9)(happy-dom@20.8.9(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.6.1)(jsdom@28.0.0(@noble/hashes@1.8.0))(lightningcss@1.32.0)(msw@2.13.2(@types/node@22.19.9)(typescript@6.0.2))(sass@1.77.4)(tsx@4.21.0)
+
+  apps/gateway:
+    dependencies:
+      '@hono/node-server':
+        specifier: ^1.13.0
+        version: 1.19.13(hono@4.12.12)
+      '@repo/application-contract-sync':
+        specifier: workspace:*
+        version: link:../../packages/application/contract-sync
+      '@repo/config-env':
+        specifier: workspace:*
+        version: link:../../packages/config/env
+      '@repo/domains-composition':
+        specifier: workspace:*
+        version: link:../../packages/domains/composition
+      '@repo/kernel':
+        specifier: workspace:*
+        version: link:../../packages/kernel
+      dotenv:
+        specifier: 16.4.7
+        version: 16.4.7
+      hono:
+        specifier: ^4.6.0
+        version: 4.12.12
+      jose:
+        specifier: ^6.0.0
+        version: 6.2.2
+      pg:
+        specifier: ^8.13.0
+        version: 8.16.3
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.19.9
+      '@types/pg':
+        specifier: ^8.11.0
+        version: 8.11.6
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
 
   packages/application/contract-sync:
     dependencies:
@@ -458,37 +452,6 @@ importers:
         specifier: ^8.11.0
         version: 8.11.6
 
-  packages/infrastructure/persistence:
-    dependencies:
-      '@repo/contracts-zod':
-        specifier: workspace:*
-        version: link:../../contracts/zod
-      '@repo/domains-composition':
-        specifier: workspace:*
-        version: link:../../domains/composition
-      '@repo/domains-design-system':
-        specifier: workspace:*
-        version: link:../../domains/design-system
-      '@repo/domains-publishing':
-        specifier: workspace:*
-        version: link:../../domains/publishing
-      '@repo/domains-runtime-catalog':
-        specifier: workspace:*
-        version: link:../../domains/runtime-catalog
-      '@repo/kernel':
-        specifier: workspace:*
-        version: link:../../kernel
-      drizzle-orm:
-        specifier: ^0.44.0
-        version: 0.44.7(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(@vercel/postgres@0.9.0)(pg@8.16.3)
-      pg:
-        specifier: ^8.13.0
-        version: 8.16.3
-    devDependencies:
-      '@types/pg':
-        specifier: ^8.11.0
-        version: 8.11.6
-
   packages/infrastructure/telemetry:
     dependencies:
       '@opentelemetry/exporter-trace-otlp-http':
@@ -624,6 +587,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      next:
+        specifier: ^16.0.0
+        version: 16.2.2(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(@playwright/test@1.58.2)(babel-plugin-macros@3.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.77.4)
       react:
         specifier: ^19.0.0
         version: 19.2.4
@@ -640,6 +606,9 @@ importers:
         specifier: ^5.0.0
         version: 5.0.12(@types/react@19.2.14)(react@19.2.4)(use-sync-external-store@1.6.0(react@19.2.4))
     devDependencies:
+      '@types/node':
+        specifier: ^22.19.9
+        version: 22.19.9
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
@@ -11167,13 +11136,6 @@ snapshots:
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
       '@types/pg': 8.10.2
-      '@vercel/postgres': 0.9.0
-      pg: 8.16.3
-
-  drizzle-orm@0.44.7(@opentelemetry/api@1.9.1)(@types/pg@8.11.6)(@vercel/postgres@0.9.0)(pg@8.16.3):
-    optionalDependencies:
-      '@opentelemetry/api': 1.9.1
-      '@types/pg': 8.11.6
       '@vercel/postgres': 0.9.0
       pg: 8.16.3
 

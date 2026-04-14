@@ -1,22 +1,23 @@
 "use client";
 
-import "@/app/studio.css";
-
-import { useAuth, useConfig } from "@payloadcms/ui";
-import { isStudioNewComponentSessionId } from "@repo/domains-composition";
-import { isStudioComponentRowId } from "@repo/infrastructure-payload-config/studio-row-id";
 import {
-  DesignSystemEditor,
-  StudioApp,
-  createFetchStudioAuthoringClient,
-} from "@repo/presentation-studio";
+  isStudioComponentRowId,
+  isStudioNewComponentSessionId,
+} from "@repo/domains-composition";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useMemo } from "react";
 
-import StudioHub from "@/components/admin/StudioHub";
-import { contorroAdminUiRootProps } from "@/components/admin/contorro-admin-ui";
+import { StudioApp } from "../app/StudioApp.js";
+import { DesignSystemEditor } from "../features/design-system/DesignSystemEditor.js";
+import { createFetchStudioAuthoringClient } from "../lib/fetch-studio-authoring-client.js";
+import StudioDashboard from "./StudioDashboard.js";
 
-function StudioViewInner() {
+export type StudioShellProps = {
+  adminRoute: string;
+  userRole: string;
+};
+
+function StudioShellInner({ adminRoute, userRole }: StudioShellProps) {
   const authoringClient = useMemo(
     () =>
       createFetchStudioAuthoringClient({
@@ -28,22 +29,14 @@ function StudioViewInner() {
     [],
   );
 
-  const { user } = useAuth();
-  const { config } = useConfig();
   const sp = useSearchParams();
   const compositionId = sp.get("composition") ?? "";
   const screen = sp.get("screen") ?? "";
-  const adminRoute = config.routes?.admin ?? "/admin";
   const isComponentComposition =
     isStudioComponentRowId(compositionId) ||
     isStudioNewComponentSessionId(compositionId);
 
-  const role =
-    user && typeof user === "object" && "role" in user
-      ? String((user as { role?: unknown }).role)
-      : "";
-
-  if (role === "contentEditor") {
+  if (userRole === "contentEditor") {
     return (
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center text-muted-foreground">
         <p className="max-w-md text-pretty">
@@ -55,7 +48,7 @@ function StudioViewInner() {
     );
   }
 
-  const canAccessDesignSystem = role === "admin" || role === "designer";
+  const canAccessDesignSystem = userRole === "admin" || userRole === "designer";
 
   if (screen === "design-system") {
     return (
@@ -69,7 +62,7 @@ function StudioViewInner() {
   }
 
   if (!compositionId) {
-    return <StudioHub />;
+    return <StudioDashboard adminRoute={adminRoute} />;
   }
 
   return (
@@ -86,13 +79,10 @@ function StudioViewInner() {
   );
 }
 
-/** Payload admin custom view — architecture spec Phase 3. */
-export default function StudioView() {
+/** Studio route shell: hub, design system screen, and composition editor. */
+export function StudioShell({ adminRoute, userRole }: StudioShellProps) {
   return (
-    <div
-      className="flex h-dvh max-h-dvh w-full min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground"
-      {...contorroAdminUiRootProps}
-    >
+    <div className="flex h-dvh max-h-dvh w-full min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
       <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden">
         <Suspense
           fallback={
@@ -101,7 +91,7 @@ export default function StudioView() {
             </div>
           }
         >
-          <StudioViewInner />
+          <StudioShellInner adminRoute={adminRoute} userRole={userRole} />
         </Suspense>
       </div>
     </div>

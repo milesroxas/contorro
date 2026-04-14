@@ -26,11 +26,7 @@ export function StudioRoot({
   const [portalRoot, setPortalRoot] = useState<HTMLDivElement | null>(null);
   return (
     <StudioPortalRootContext.Provider value={portalRoot}>
-      <div
-        {...props}
-        className={cn("relative", className)}
-        data-contorro-studio=""
-      >
+      <div {...props} className={cn("studio-root relative", className)}>
         {children}
         <div
           ref={setPortalRoot}

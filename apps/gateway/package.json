@@ -25,7 +25,6 @@
     "@repo/application-contract-sync": "workspace:*",
     "@repo/config-env": "workspace:*",
     "@repo/domains-composition": "workspace:*",
-    "@repo/infrastructure-persistence": "workspace:*",
     "@repo/kernel": "workspace:*",
     "dotenv": "16.4.7",
     "hono": "^4.6.0",

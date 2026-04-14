@@ -1,13 +1,9 @@
 import "../load-env.js";
 import { parseGatewayEnv } from "@repo/config-env/gateway";
-import { createStudioDb } from "@repo/infrastructure-persistence";
+import pg from "pg";
 
 const env = parseGatewayEnv(process.env);
+const { Pool } = pg;
 
-const created = createStudioDb(env.POSTGRES_URL);
-
-/** Shared Postgres pool (builder Drizzle + raw SQL). */
-export const pool = created.pool;
-
-/** Drizzle client for `builder` schema. */
-export const builderDb = created.db;
+/** Postgres pool for gateway (health, auth lookups, contracts SQL). */
+export const pool = new Pool({ connectionString: env.POSTGRES_URL });

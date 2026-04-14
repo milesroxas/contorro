@@ -21,7 +21,7 @@ Collection/global **definitions** live in **`@repo/infrastructure-payload-config
 
 ## Visual Studio (presentation package)
 
-Authoring UI is **`@repo/presentation-studio`** (`packages/presentation/studio`). It is embedded in Payload admin (e.g. custom view `/studio`) and uses **`StudioAuthoringClient`** + `fetch-studio-authoring-client` to call this app’s routes — not Payload Local API from the browser.
+Authoring UI is **`@repo/presentation-studio`** (`packages/presentation/studio`). It is mounted at the first-class Next route **`/studio`** (see `app/(studio)/`) with its own layout/CSS, and uses **`StudioAuthoringClient`** + `fetch-studio-authoring-client` to call this app’s routes — not Payload Local API from the browser. The admin sidebar links here via custom components (e.g. `StudioNavLink`).
 
 ## Local development
 

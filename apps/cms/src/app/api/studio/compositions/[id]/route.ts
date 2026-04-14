@@ -7,16 +7,14 @@ import { type TokenMeta, compileTokenSet } from "@repo/config-tailwind";
 import type { PageComposition } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
 import {
+  componentIdFromStudioRowId,
   defaultEmptyPageComposition,
   defaultPageTemplateComposition,
   findInvalidStyleTokens,
+  isStudioComponentRowId,
   normalizeTemplateShell,
   parseStudioNewCompositionSessionId,
 } from "@repo/domains-composition";
-import {
-  componentIdFromStudioRowId,
-  isStudioComponentRowId,
-} from "@repo/infrastructure-payload-config/studio-row-id";
 import type { Payload } from "payload";
 import { getPayload } from "payload";
 

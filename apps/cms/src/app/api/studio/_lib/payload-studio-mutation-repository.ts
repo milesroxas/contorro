@@ -5,7 +5,7 @@ import {
 import {
   componentIdFromStudioRowId,
   studioRowIdForComponent,
-} from "@repo/infrastructure-payload-config/studio-row-id";
+} from "@repo/domains-composition";
 import { err, ok } from "@repo/kernel";
 import type { Payload } from "payload";
 

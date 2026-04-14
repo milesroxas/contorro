@@ -25,7 +25,6 @@ const nextConfig: NextConfig = {
     "@repo/infrastructure-blob-storage",
     "@repo/infrastructure-event-bus",
     "@repo/infrastructure-payload-config",
-    "@repo/infrastructure-persistence",
     "@repo/infrastructure-telemetry",
     "@repo/kernel",
     "@repo/presentation-admin-extensions",

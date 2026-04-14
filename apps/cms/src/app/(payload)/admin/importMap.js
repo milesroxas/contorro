@@ -35,7 +35,6 @@ import { default as default_4a6ee751a613d9923e69a9b97ecaf3b4 } from '../../../co
 import { default as default_c0d1034a8709d8a749125120127fbc46 } from '../../../components/admin/StudioNavLink'
 import { default as default_55b8bdcdde915bae2246f3a37b9e345d } from '../../../components/admin/DesignSystemPreviewCallout'
 import { default as default_fddf24e2605d3ae099922bff952ee3f2 } from '../../../components/admin/PayloadAdminTheme'
-import { default as default_3f3672bcb6213b76cd08a3f66a9e5a54 } from '../../../components/admin/StudioView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 export const importMap = {
@@ -76,6 +75,5 @@ export const importMap = {
   "/components/admin/StudioNavLink#default": default_c0d1034a8709d8a749125120127fbc46,
   "/components/admin/DesignSystemPreviewCallout#default": default_55b8bdcdde915bae2246f3a37b9e345d,
   "/components/admin/PayloadAdminTheme#default": default_fddf24e2605d3ae099922bff952ee3f2,
-  "/components/admin/StudioView#default": default_3f3672bcb6213b76cd08a3f66a9e5a54,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

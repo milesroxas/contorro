@@ -29,7 +29,7 @@ Contorro is multi-surface authoring:
 - Mutation orchestration: `packages/application/studio/*`.
 - Gateway API surface: `apps/gateway/src/app.ts` and `apps/gateway/src/routes/*`.
 - Shared contracts: `packages/contracts/zod` (includes **`StudioAuthoringClient`**); default fetch implementation: `packages/presentation/studio/src/lib/fetch-studio-authoring-client.ts`.
-- Component row-id mapping for Payload `cmp-` IDs (single parser/formatter): `packages/infrastructure/payload-config/src/studio-row-id.ts`.
+- Component row-id mapping for Payload `cmp-` IDs: **`packages/domains/composition/src/studio-component-row-id.ts`** (re-exported from `packages/infrastructure/payload-config/src/studio-row-id.ts` for compatibility).
 
 ## Current API split (important)
 
@@ -41,11 +41,11 @@ Contorro is multi-surface authoring:
 ## Drift prevention rules (important)
 
 - Do not add direct `payload.create/update/delete` mutation logic in composition route handlers; use application commands + repository adapter.
-- Do not reintroduce legacy mirror sync hooks for `builder.compositions`; state must come from canonical Payload collections + the composition API.
+- Do not reintroduce a parallel composition store (e.g. mirrored SQL tables); state must come from Payload collections + the CMS composition API only.
 - When changing **`/api/studio/compositions`** behavior or paths, update both:
   - `docs/app/README.md`
   - `apps/cms/.cursor/rules/endpoints.md`
-- Keep `cmp-` logic centralized in `studio-row-id.ts` only.
+- Keep `cmp-` logic centralized in `studio-component-row-id.ts` (domains) only; do not duplicate parsers elsewhere.
 
 ## Monorepo layout
 
