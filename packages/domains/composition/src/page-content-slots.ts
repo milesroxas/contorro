@@ -16,6 +16,7 @@ function trimSlotId(raw: unknown): string {
  * Aligns page `contentSlots` rows to the template’s slot order. Merges blocks by `slotId`
  * (and strips legacy per-block `layoutSlotId`). Used by Payload `beforeValidate` and admin sync UI.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export function mergePageContentSlotsToSlotOrder(
   slotOrder: string[],
   rawSlots: unknown,

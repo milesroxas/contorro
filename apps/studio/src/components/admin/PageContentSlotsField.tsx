@@ -124,6 +124,7 @@ const PageContentSlotsField: ArrayFieldClientComponent = (props) => {
 
   const compositionRef = useFormFields(
     useCallback(
+      // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
       (ctx: unknown) => {
         const [fields] = ctx as FormFieldsTuple;
         let raw = pageCompositionLooseFromFields(fields);
@@ -195,6 +196,7 @@ const PageContentSlotsField: ArrayFieldClientComponent = (props) => {
     let cancelled = false;
     setSlotIds(null);
 
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
     void (async () => {
       try {
         const res = await fetch(
@@ -246,6 +248,7 @@ const PageContentSlotsField: ArrayFieldClientComponent = (props) => {
     }
 
     let cancelled = false;
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
     void (async () => {
       const doc = documentFormRef.current;
       const frm = formRef.current;

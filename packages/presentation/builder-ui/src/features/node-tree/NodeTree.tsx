@@ -122,6 +122,7 @@ function RootLayerHeading({
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 function LayerSubtree({
   composition,
   nodeId,

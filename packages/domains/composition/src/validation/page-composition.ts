@@ -6,6 +6,7 @@ import { normalizedLayoutSlotId } from "../layout-slot.js";
 /**
  * Graph invariants beyond Zod: single root, parent/child agreement, style binding alignment.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export function validatePageCompositionInvariants(
   c: PageComposition,
 ): Result<void, string> {

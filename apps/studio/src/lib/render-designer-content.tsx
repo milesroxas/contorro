@@ -142,6 +142,7 @@ export type RenderedDesignerBlocksBySlot = {
 };
 
 /** Renders page `content` blocks, grouped for layout slot injection and orphan fallback. */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export async function renderDesignerContentBlocksBySlot(
   payload: Payload,
   contentSlots: unknown,

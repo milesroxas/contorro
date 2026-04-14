@@ -8,6 +8,7 @@ import { makeId } from "@repo/kernel";
 /**
  * Deep-clone a composition with fresh node and style-binding ids (template → new page).
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export function clonePageCompositionWithNewIds(
   composition: PageComposition,
 ): PageComposition {

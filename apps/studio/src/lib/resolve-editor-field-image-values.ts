@@ -4,6 +4,7 @@ import type { Payload } from "payload";
 /**
  * Resolves image editor-field values from Media IDs to URLs for `mergeEditorFieldValuesIntoComposition`.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export async function resolveImageEditorFieldValuesForRender(
   payload: Payload,
   fields: EditorFieldSpec[],

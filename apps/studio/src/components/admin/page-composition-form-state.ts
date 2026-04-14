@@ -3,6 +3,7 @@ import type { FormState } from "payload";
 import type { PageComposition } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export function extractPageCompositionId(raw: unknown): number | undefined {
   if (typeof raw === "number" && Number.isFinite(raw)) {
     return raw;

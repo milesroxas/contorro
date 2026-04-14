@@ -385,6 +385,7 @@ export default function BuilderHub() {
               </p>
             ) : (
               <ul className="space-y-2">
+                {/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog. */}
                 {filteredComponents.map((component, index) => {
                   const id = String(component.id);
                   const updated = formatUpdatedAt(component.updatedAt);

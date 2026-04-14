@@ -1058,6 +1058,7 @@ function entrySelectValue(entry: StylePropertyEntry | undefined): string {
   return `utility:${entry.value}`;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 function StyleValueSelect({
   property,
   valueEntry,
@@ -1773,6 +1774,7 @@ function HeadingPrimitiveInspector({
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 function ButtonPrimitiveInspector({
   node,
   patchNodeProps,
@@ -1987,6 +1989,7 @@ function ButtonPrimitiveInspector({
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 function ImagePrimitiveInspector({
   node,
   fieldBound,
@@ -2382,6 +2385,7 @@ function ImagePrimitiveInspector({
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export function PropertyInspector({
   composition,
   node,
@@ -2449,6 +2453,7 @@ export function PropertyInspector({
         <TabsContent className="mt-4" value="styles">
           {hasStyleControls ? (
             <div className="space-y-4">
+              {/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog. */}
               {STYLE_SECTIONS.map((section, sectionIndex) => {
                 const sectionProperties =
                   stylePropertiesBySection.find((s) => s.id === section.id)

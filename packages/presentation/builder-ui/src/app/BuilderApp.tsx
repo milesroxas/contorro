@@ -186,6 +186,7 @@ export function BuilderApp({
   }, []);
 
   useEffect(() => {
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target;
       if (
@@ -301,6 +302,7 @@ export function BuilderApp({
     setActiveNodeId(null);
   };
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
   const onDragEnd = (event: DragEndEvent) => {
     setActivePaletteKey(null);
     setPaletteSubtitle(null);

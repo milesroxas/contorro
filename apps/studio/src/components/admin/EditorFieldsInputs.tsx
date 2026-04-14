@@ -146,6 +146,7 @@ export function EditorFieldsInputs({
 
   return (
     <div className="space-y-4">
+      {/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog. */}
       {fields.map((field) => {
         const id = `editor-field-${field.name}`;
         const v = current[field.name];

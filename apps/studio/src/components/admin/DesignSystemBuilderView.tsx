@@ -221,6 +221,7 @@ function ColorSwatch({ value }: { value: string }) {
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export default function DesignSystemBuilderView() {
   const { user } = useAuth();
   const role =
@@ -244,6 +245,7 @@ export default function DesignSystemBuilderView() {
   const [previewKey, setPreviewKey] = useState(0);
   const [colorSearch, setColorSearch] = useState("");
 
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
   const fetchTokenSets = useCallback(async (signal: AbortSignal) => {
     setLoadState("loading");
     setStatusMessage("");
@@ -366,6 +368,7 @@ export default function DesignSystemBuilderView() {
   );
 
   const persistTokens = useCallback(
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
     async (status: "draft" | "published") => {
       if (!selectedSetId) return;
       setSaveState("saving");

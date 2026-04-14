@@ -61,6 +61,7 @@ function pageCompositionFieldPairsTemplateEditorFieldsPath(
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 function extractPageCompositionId(raw: unknown): number | undefined {
   if (typeof raw === "number" && Number.isFinite(raw)) {
     return raw;
@@ -318,6 +319,7 @@ function PageTemplateEditorFieldsField(props: JSONFieldClientProps) {
     let cancelled = false;
     setLoadError(null);
 
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
     void (async () => {
       try {
         const res = await fetch(

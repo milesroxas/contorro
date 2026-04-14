@@ -326,6 +326,7 @@ export function createBuilderStore(compositionId: string) {
       });
     },
 
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
     saveDraft: async () => {
       const { composition, updatedAt, compositionId: id, saving } = get();
       if (!composition || saving) {
@@ -364,6 +365,7 @@ export function createBuilderStore(compositionId: string) {
       }
     },
 
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
     publish: async () => {
       const { composition, updatedAt, compositionId: id, saving } = get();
       if (!composition || saving) {

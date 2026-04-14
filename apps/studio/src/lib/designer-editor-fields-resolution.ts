@@ -402,6 +402,7 @@ export function resolveComponentDefinitionRef(args: {
   return undefined;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export function extractDefinitionId(raw: unknown): number | undefined {
   if (typeof raw === "number" && Number.isFinite(raw)) {
     return raw;

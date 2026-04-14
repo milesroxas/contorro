@@ -265,6 +265,7 @@ function CanvasNodeFrame({
   );
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 function CanvasNode({
   composition,
   nodeId,

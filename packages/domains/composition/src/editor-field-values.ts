@@ -32,6 +32,7 @@ export function validateEditorFieldValues(
  * Applies resolved editor field values onto a template composition (mutates propValues on bound nodes).
  * Image fields expect `resolvedValues[name]` to be a URL string (resolved in the app layer).
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export function mergeEditorFieldValuesIntoComposition(
   composition: PageComposition,
   resolvedValues: Record<string, unknown>,

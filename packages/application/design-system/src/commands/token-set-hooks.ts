@@ -18,6 +18,7 @@ import {
 } from "../lib/token-set-doc.js";
 
 export function createDesignTokenSetBeforeValidateHandler(): CollectionBeforeValidateHook {
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
   return (args) => {
     const { data, operation } = args;
     if (!data) {
@@ -62,6 +63,7 @@ export function createDesignTokenSetBeforeValidateHandler(): CollectionBeforeVal
 }
 
 export function createDesignTokenSetBeforeChangeHandler(): CollectionBeforeChangeHook {
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
   return (args) => {
     const { data, originalDoc } = args;
     const incoming = data as DesignTokenSetPayloadDoc;

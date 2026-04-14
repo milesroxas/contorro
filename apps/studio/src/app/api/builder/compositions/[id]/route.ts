@@ -63,6 +63,7 @@ function responseUpdatedAt(value: unknown): string {
   return normalizeUpdatedAt(value) || new Date().toISOString();
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export async function GET(
   request: Request,
   props: { params: Promise<{ id: string }> },
@@ -218,6 +219,7 @@ export async function GET(
   });
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export async function POST(
   request: Request,
   props: { params: Promise<{ id: string }> },

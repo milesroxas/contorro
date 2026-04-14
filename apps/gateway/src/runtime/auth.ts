@@ -68,6 +68,7 @@ function getJwtStringFromRequest(request: Request): string | null {
 /**
  * Verifies Payload JWT (cookie or Authorization) and loads role from `users` when missing in JWT.
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export async function getActorFromRequest(
   pool: Pool,
   request: Request,

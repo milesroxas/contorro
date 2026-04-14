@@ -167,6 +167,7 @@ function DesignerEditorFieldsField(props: JSONFieldClientProps) {
     let cancelled = false;
     setLoadError(null);
 
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
     void (async () => {
       try {
         const res = await fetch(`/api/components/${defId}?depth=0`, {

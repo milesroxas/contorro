@@ -50,6 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title };
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export default async function SitePage({ params }: Props) {
   const { slug } = await params;
   const { isEnabled } = await draftMode();

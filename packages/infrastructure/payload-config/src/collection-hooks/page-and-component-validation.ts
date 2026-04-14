@@ -37,6 +37,7 @@ function relationshipId(ref: unknown): number | undefined {
 const DEFAULT_SLOT_ORDER = ["main"] as const;
 
 export function createPageCompositionBeforeValidateHandler(): CollectionBeforeValidateHook {
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
   return ({ data, operation, originalDoc }) => {
     if (!data || typeof data !== "object") {
       return data;
@@ -93,6 +94,7 @@ export function createPageCompositionBeforeValidateHandler(): CollectionBeforeVa
 }
 
 export function createPagesBeforeValidateHandler(): CollectionBeforeValidateHook {
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
   return async ({ data, req, operation, originalDoc }) => {
     if (!data || typeof data !== "object") {
       return data;
@@ -253,6 +255,7 @@ export function createPagesBeforeValidateHandler(): CollectionBeforeValidateHook
 }
 
 export function createComponentsBeforeValidateHandler(): CollectionBeforeValidateHook {
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
   return async ({ data, operation, originalDoc, req }) => {
     if (!data) {
       return data;
