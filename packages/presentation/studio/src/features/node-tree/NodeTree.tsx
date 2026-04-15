@@ -6,6 +6,7 @@ import type { Icon } from "@tabler/icons-react";
 import {
   IconChevronDown,
   IconChevronUp,
+  IconComponents,
   IconLayoutGrid,
   IconLayoutList,
   IconLayoutRows,
@@ -24,6 +25,11 @@ import { Button } from "../../components/ui/button.js";
 import { cn } from "../../lib/cn.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
 import { isChildContainerPrimitive } from "../../lib/style-controls.js";
+import {
+  libraryComponentEditStudioHref,
+  libraryDisplayNameForKey,
+  useLibraryComponentIndex,
+} from "../../lib/use-library-component-labels.js";
 import { PrimitiveNodeContextMenu } from "../context-menu/PrimitiveNodeContextMenu.js";
 import { InsertionDropZone } from "../dnd/InsertionDropZone.js";
 
@@ -99,8 +105,10 @@ function DraggableNodeTreeRow({
   collapseToggleButton,
   Icon,
   kindTitle,
+  labelUseExactCasing,
   layerLabel,
   rootId,
+  editComponentHref,
 }: {
   nodeId: string;
   selected: boolean;
@@ -109,8 +117,11 @@ function DraggableNodeTreeRow({
   collapseToggleButton: ReactNode;
   Icon: Icon;
   kindTitle: string;
+  /** Library display names from CMS should not get CSS `capitalize`. */
+  labelUseExactCasing?: boolean;
   layerLabel: string;
   rootId: string;
+  editComponentHref?: string | null;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `layers:move:${nodeId}`,
@@ -129,6 +140,7 @@ function DraggableNodeTreeRow({
       {...attributes}
     >
       <PrimitiveNodeContextMenu
+        editComponentHref={editComponentHref}
         layerLabel={layerLabel}
         nodeId={nodeId}
         onRemoveNode={onRemoveNode}
@@ -160,7 +172,12 @@ function DraggableNodeTreeRow({
               className="size-3.5 shrink-0 text-muted-foreground opacity-90"
               stroke={1.5}
             />
-            <span className="min-w-0 flex-1 cursor-inherit truncate text-left font-medium capitalize leading-none text-foreground/95">
+            <span
+              className={cn(
+                "min-w-0 flex-1 cursor-inherit truncate text-left font-medium leading-none text-foreground/95",
+                labelUseExactCasing ? "normal-case" : "capitalize",
+              )}
+            >
               {kindTitle}
             </span>
           </Button>
@@ -477,25 +494,31 @@ function LayerSubtreeNestedList({
   childIds,
   collapsedNodeIds,
   composition,
+  editStudioHrefByKey,
   globalCollapseToggleButton,
   isRoot,
+  libraryLabels,
   nodeId,
   onRemoveNode,
   onSelect,
   onSetNodeCollapseState,
   onToggleNodeCollapse,
+  pageTemplateStudio,
   selectedNodeId,
 }: {
   childIds: string[];
   collapsedNodeIds: Set<string>;
   composition: PageComposition;
+  editStudioHrefByKey: Record<string, string>;
   globalCollapseToggleButton?: ReactNode;
   isRoot: boolean;
+  libraryLabels: Record<string, string>;
   nodeId: string;
   onRemoveNode: (id: string) => void;
   onSelect: (id: string) => void;
   onSetNodeCollapseState: (ids: string[], collapsed: boolean) => void;
   onToggleNodeCollapse: (id: string) => void;
+  pageTemplateStudio: boolean;
   selectedNodeId: string | null;
 }) {
   if (childIds.length === 0) {
@@ -526,12 +549,15 @@ function LayerSubtreeNestedList({
           <LayerSubtree
             composition={composition}
             collapsedNodeIds={collapsedNodeIds}
+            editStudioHrefByKey={editStudioHrefByKey}
             globalCollapseToggleButton={globalCollapseToggleButton}
+            libraryLabels={libraryLabels}
             nodeId={cid}
             onSetNodeCollapseState={onSetNodeCollapseState}
             onToggleNodeCollapse={onToggleNodeCollapse}
             onRemoveNode={onRemoveNode}
             onSelect={onSelect}
+            pageTemplateStudio={pageTemplateStudio}
             selectedNodeId={selectedNodeId}
           />
           <li className={layerTreeItemClass}>
@@ -620,10 +646,12 @@ function LayerSubtreeSectionCollapseButton({
 function LayerSubtreeLayerRow({
   Icon,
   collapseToggleButton,
+  editComponentHref,
   globalCollapseToggleButton,
   isRoot,
   isSectionHeading,
   kindTitle,
+  labelUseExactCasing,
   layerLabel,
   nodeId,
   onRemoveNode,
@@ -634,10 +662,12 @@ function LayerSubtreeLayerRow({
 }: {
   Icon: Icon;
   collapseToggleButton: ReactNode;
+  editComponentHref?: string | null;
   globalCollapseToggleButton?: ReactNode;
   isRoot: boolean;
   isSectionHeading: boolean;
   kindTitle: string;
+  labelUseExactCasing?: boolean;
   layerLabel: string;
   nodeId: string;
   onRemoveNode: (id: string) => void;
@@ -664,7 +694,9 @@ function LayerSubtreeLayerRow({
     <DraggableNodeTreeRow
       Icon={Icon}
       collapseToggleButton={collapseToggleButton}
+      editComponentHref={editComponentHref}
       kindTitle={kindTitle}
+      labelUseExactCasing={labelUseExactCasing}
       layerLabel={layerLabel}
       nodeId={nodeId}
       onRemoveNode={onRemoveNode}
@@ -684,7 +716,10 @@ function LayerSubtree({
   collapsedNodeIds,
   onToggleNodeCollapse,
   onSetNodeCollapseState,
+  editStudioHrefByKey,
   globalCollapseToggleButton,
+  libraryLabels,
+  pageTemplateStudio,
   topLevelSectionIndex,
 }: {
   composition: PageComposition;
@@ -695,7 +730,10 @@ function LayerSubtree({
   collapsedNodeIds: Set<string>;
   onToggleNodeCollapse: (id: string) => void;
   onSetNodeCollapseState: (ids: string[], collapsed: boolean) => void;
+  editStudioHrefByKey: Record<string, string>;
   globalCollapseToggleButton?: ReactNode;
+  libraryLabels: Record<string, string>;
+  pageTemplateStudio: boolean;
   topLevelSectionIndex?: number;
 }) {
   const node = composition.nodes[nodeId];
@@ -705,14 +743,26 @@ function LayerSubtree({
   const { Icon: defaultIcon, label: defaultKindTitle } = getPrimitiveDisplay(
     node.definitionKey,
   );
+  const isLibraryComponent =
+    node.definitionKey === "primitive.libraryComponent";
+  const componentKey =
+    typeof node.propValues?.componentKey === "string"
+      ? node.propValues.componentKey
+      : "";
   const semanticTag =
     typeof node.propValues?.tag === "string" ? node.propValues.tag : null;
-  const { Icon, kindTitle } = layerSubtreeHeadingPresentation(
-    semanticTag,
-    defaultIcon,
-    defaultKindTitle,
-  );
+  const { Icon, kindTitle } = isLibraryComponent
+    ? {
+        Icon: IconComponents,
+        kindTitle: libraryDisplayNameForKey(libraryLabels, componentKey),
+      }
+    : layerSubtreeHeadingPresentation(
+        semanticTag,
+        defaultIcon,
+        defaultKindTitle,
+      );
   const layerLabel = kindTitle;
+  const labelUseExactCasing = isLibraryComponent;
   const isContainer = isChildContainerPrimitive(node.definitionKey);
   const hasChildren = isContainer && node.childIds.length > 0;
   const isRoot = nodeId === composition.rootId;
@@ -747,14 +797,22 @@ function LayerSubtree({
     />
   );
 
+  const editComponentHref = libraryComponentEditStudioHref(
+    editStudioHrefByKey,
+    node,
+    pageTemplateStudio,
+  );
+
   const row = (
     <LayerSubtreeLayerRow
       Icon={Icon}
       collapseToggleButton={collapseToggleButton}
+      editComponentHref={editComponentHref}
       globalCollapseToggleButton={globalCollapseToggleButton}
       isRoot={isRoot}
       isSectionHeading={isSectionHeading}
       kindTitle={kindTitle}
+      labelUseExactCasing={labelUseExactCasing}
       layerLabel={layerLabel}
       nodeId={nodeId}
       onRemoveNode={onRemoveNode}
@@ -779,13 +837,16 @@ function LayerSubtree({
               childIds={node.childIds}
               collapsedNodeIds={collapsedNodeIds}
               composition={composition}
+              editStudioHrefByKey={editStudioHrefByKey}
               globalCollapseToggleButton={globalCollapseToggleButton}
               isRoot={isRoot}
+              libraryLabels={libraryLabels}
               nodeId={nodeId}
               onRemoveNode={onRemoveNode}
               onSelect={onSelect}
               onSetNodeCollapseState={onSetNodeCollapseState}
               onToggleNodeCollapse={onToggleNodeCollapse}
+              pageTemplateStudio={pageTemplateStudio}
               selectedNodeId={selectedNodeId}
             />
           </ul>
@@ -798,14 +859,19 @@ function LayerSubtree({
 export function NodeTree({
   composition,
   selectedNodeId,
+  studioResource,
   onRemoveNode,
   onSelect,
 }: {
   composition: PageComposition;
   selectedNodeId: string | null;
+  studioResource: "pageTemplate" | "component" | null;
   onRemoveNode: (id: string) => void;
   onSelect: (id: string) => void;
 }) {
+  const { editStudioHrefByKey, labels: libraryLabels } =
+    useLibraryComponentIndex();
+  const pageTemplateStudio = studioResource === "pageTemplate";
   const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -928,13 +994,16 @@ export function NodeTree({
         <LayerSubtree
           composition={composition}
           collapsedNodeIds={collapsedNodeIds}
+          editStudioHrefByKey={editStudioHrefByKey}
           globalCollapseToggleButton={globalSectionsToggleButton}
           key={nodeId}
+          libraryLabels={libraryLabels}
           nodeId={nodeId}
           onSetNodeCollapseState={setNodeCollapseState}
           onToggleNodeCollapse={toggleNodeCollapse}
           onRemoveNode={onRemoveNode}
           onSelect={onSelect}
+          pageTemplateStudio={pageTemplateStudio}
           selectedNodeId={selectedNodeId}
           topLevelSectionIndex={index}
         />

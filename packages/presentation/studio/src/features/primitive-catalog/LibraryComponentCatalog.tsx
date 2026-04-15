@@ -4,7 +4,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { IconComponents } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 
-import { cn } from "../../lib/cn.js";
+import { StudioPaletteTile } from "./studio-palette-tile.js";
 
 type Item = { key: string; displayName: string };
 
@@ -20,28 +20,15 @@ function LibraryPaletteTile({ item }: { item: Item }) {
   });
 
   return (
-    <button
-      className={cn(
-        "flex w-full flex-col items-center gap-2 rounded-lg border border-border bg-card p-3 text-center shadow-sm transition-colors",
-        "hover:border-primary/30 hover:bg-accent/50",
-        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-        isDragging && "cursor-grabbing opacity-50",
-        !isDragging && "cursor-grab",
-      )}
-      ref={setNodeRef}
-      type="button"
-      {...listeners}
-      {...attributes}
-    >
-      <IconComponents
-        aria-hidden
-        className="size-6.5 text-muted-foreground"
-        stroke={1.25}
-      />
-      <span className="line-clamp-2 min-h-8 text-[15px] leading-tight font-medium text-foreground">
-        {item.displayName}
-      </span>
-    </button>
+    <StudioPaletteTile
+      Icon={IconComponents}
+      attributes={attributes}
+      isDragging={isDragging}
+      label={item.displayName}
+      labelCapitalize={false}
+      listeners={listeners}
+      tileRef={setNodeRef}
+    />
   );
 }
 

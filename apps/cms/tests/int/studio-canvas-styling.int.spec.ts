@@ -112,6 +112,7 @@ describe("Builder canvas styling safeguards", () => {
           onSelectNode: () => {},
           onRemoveNode: () => {},
           onCanvasBackground: () => {},
+          studioResource: null,
           theme: "light",
           onToggleTheme: () => {},
           tokenMeta: [],

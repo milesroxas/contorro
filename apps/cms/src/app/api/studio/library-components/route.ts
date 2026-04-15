@@ -1,3 +1,4 @@
+import { studioRowIdForComponent } from "@repo/domains-composition";
 import { getPayload } from "payload";
 
 import config from "@/payload.config";
@@ -5,7 +6,40 @@ import config from "@/payload.config";
 export type LibraryComponentListItem = {
   key: string;
   displayName: string;
+  /** Studio `composition` query value (`cmp-…`) for opening Component studio. */
+  studioCompositionId: string;
 };
+
+function listItemFromComponentDoc(
+  doc: unknown,
+): LibraryComponentListItem | null {
+  const row = doc as {
+    id?: unknown;
+    key?: unknown;
+    displayName?: unknown;
+    composition?: unknown;
+  };
+  const key = typeof row.key === "string" ? row.key : "";
+  if (key === "" || key.startsWith("primitive.")) {
+    return null;
+  }
+  if (row.composition === undefined || row.composition === null) {
+    return null;
+  }
+  const displayName =
+    typeof row.displayName === "string" && row.displayName.trim() !== ""
+      ? row.displayName
+      : key;
+  const id = String(row.id ?? "");
+  if (id === "") {
+    return null;
+  }
+  return {
+    displayName,
+    key,
+    studioCompositionId: studioRowIdForComponent(id),
+  };
+}
 
 /**
  * Library components available to place on page templates (designer/admin).
@@ -43,23 +77,10 @@ export async function GET(request: Request) {
 
   const items: LibraryComponentListItem[] = [];
   for (const doc of found.docs) {
-    const row = doc as {
-      key?: unknown;
-      displayName?: unknown;
-      composition?: unknown;
-    };
-    const key = typeof row.key === "string" ? row.key : "";
-    if (key === "" || key.startsWith("primitive.")) {
-      continue;
+    const item = listItemFromComponentDoc(doc);
+    if (item) {
+      items.push(item);
     }
-    if (row.composition === undefined || row.composition === null) {
-      continue;
-    }
-    const displayName =
-      typeof row.displayName === "string" && row.displayName.trim() !== ""
-        ? row.displayName
-        : key;
-    items.push({ key, displayName });
   }
 
   return Response.json({ data: { items } });

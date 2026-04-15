@@ -499,14 +499,13 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
       if (!event.persisted) {
         return;
       }
-      router.refresh();
       void fetchDashboardData();
     };
     window.addEventListener("pageshow", onPageShow);
     return () => {
       window.removeEventListener("pageshow", onPageShow);
     };
-  }, [fetchDashboardData, router]);
+  }, [fetchDashboardData]);
 
   useEffect(() => {
     const onFocus = () => {

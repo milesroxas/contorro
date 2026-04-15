@@ -11,6 +11,8 @@ export type StudioAuthoringCompositionPayload = {
   name: string;
   composition: PageComposition;
   updatedAt: string;
+  /** Which CMS resource this session maps to; prefer over inferring from `compositionId`. */
+  studioResource: "pageTemplate" | "component";
   /** Payload drafts: whether the loaded revision is draft or published in CMS. */
   _status?: "draft" | "published" | null;
   tokenMetadata: StudioTokenMeta[];

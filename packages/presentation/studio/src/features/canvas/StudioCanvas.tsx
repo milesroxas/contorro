@@ -22,8 +22,13 @@ import { Button } from "../../components/ui/button.js";
 import { cn } from "../../lib/cn.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
 import { isChildContainerPrimitive } from "../../lib/style-controls.js";
+import {
+  libraryComponentEditStudioHref,
+  useLibraryComponentIndex,
+} from "../../lib/use-library-component-labels.js";
 import { PrimitiveNodeContextMenu } from "../context-menu/PrimitiveNodeContextMenu.js";
 import { InsertionDropZone } from "../dnd/InsertionDropZone.js";
+import { LibraryCompositionCanvasPreview } from "./library-composition-canvas-preview.js";
 
 type PrimitiveRegistry = typeof defaultPrimitiveRegistry;
 
@@ -213,18 +218,22 @@ function contextMenuOriginElement(target: EventTarget | null): Element | null {
 function ContainerChildList({
   composition,
   childIds,
+  editStudioHrefByKey,
   parentNode,
   registry,
   selectedNodeId,
+  studioResource,
   tokenMeta,
   onSelectNode,
   onRemoveNode,
 }: {
   composition: PageComposition;
   childIds: string[];
+  editStudioHrefByKey: Record<string, string>;
   parentNode: CompositionNode;
   registry: PrimitiveRegistry;
   selectedNodeId: string | null;
+  studioResource: "pageTemplate" | "component" | null;
   tokenMeta: TokenMeta[];
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
@@ -267,11 +276,13 @@ function ContainerChildList({
           <Fragment key={cid}>
             <CanvasNode
               composition={composition}
+              editStudioHrefByKey={editStudioHrefByKey}
               nodeId={cid}
               onRemoveNode={onRemoveNode}
               onSelectNode={onSelectNode}
               registry={registry}
               selectedNodeId={selectedNodeId}
+              studioResource={studioResource}
               tokenMeta={tokenMeta}
             />
             <InsertionDropZone
@@ -298,11 +309,13 @@ function ContainerChildList({
         <Fragment key={cid}>
           <CanvasNode
             composition={composition}
+            editStudioHrefByKey={editStudioHrefByKey}
             nodeId={cid}
             onRemoveNode={onRemoveNode}
             onSelectNode={onSelectNode}
             registry={registry}
             selectedNodeId={selectedNodeId}
+            studioResource={studioResource}
             tokenMeta={tokenMeta}
           />
           <InsertionDropZone
@@ -358,6 +371,7 @@ function CanvasNodeFrame({
   onRemoveNode,
   selected,
   dragContainerOutline,
+  editComponentHref,
   children,
 }: {
   composition: PageComposition;
@@ -366,6 +380,7 @@ function CanvasNodeFrame({
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
   dragContainerOutline: "none" | "idle" | "active";
+  editComponentHref?: string | null;
   children: React.ReactNode;
 }) {
   const isRoot = node.id === composition.rootId;
@@ -409,6 +424,7 @@ function CanvasNodeFrame({
         </NodeChrome>
       ) : (
         <PrimitiveNodeContextMenu
+          editComponentHref={editComponentHref}
           layerLabel={layerLabel}
           nodeId={node.id}
           onRemoveNode={onRemoveNode}
@@ -445,6 +461,8 @@ function CanvasNode({
   registry,
   selectedNodeId,
   tokenMeta,
+  editStudioHrefByKey,
+  studioResource,
   onSelectNode,
   onRemoveNode,
 }: {
@@ -453,6 +471,8 @@ function CanvasNode({
   registry: PrimitiveRegistry;
   selectedNodeId: string | null;
   tokenMeta: TokenMeta[];
+  editStudioHrefByKey: Record<string, string>;
+  studioResource: "pageTemplate" | "component" | null;
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
 }): ReactElement | null {
@@ -465,6 +485,13 @@ function CanvasNode({
   if (!Cmp) {
     return null;
   }
+
+  const pageTemplateStudio = studioResource === "pageTemplate";
+  const editComponentHref = libraryComponentEditStudioHref(
+    editStudioHrefByKey,
+    node,
+    pageTemplateStudio,
+  );
 
   const resolvedNodeStyle = resolveNodeStyle(node, composition, tokenMeta);
   const className = resolvedNodeStyle.className;
@@ -485,15 +512,38 @@ function CanvasNode({
     nodeId: node.id,
   });
 
+  if (node.definitionKey === "primitive.libraryComponent") {
+    return (
+      <CanvasNodeFrame
+        composition={composition}
+        dragContainerOutline={dragContainerOutline}
+        editComponentHref={editComponentHref}
+        node={node}
+        onRemoveNode={onRemoveNode}
+        onSelectNode={onSelectNode}
+        selected={selected}
+      >
+        <LibraryCompositionCanvasPreview
+          className={className ?? ""}
+          node={node}
+          style={style}
+          tokenMeta={tokenMeta}
+        />
+      </CanvasNodeFrame>
+    );
+  }
+
   const childList = isContainer ? (
     <ContainerChildList
       childIds={node.childIds}
       composition={composition}
+      editStudioHrefByKey={editStudioHrefByKey}
       onRemoveNode={onRemoveNode}
       onSelectNode={onSelectNode}
       parentNode={node}
       registry={registry}
       selectedNodeId={selectedNodeId}
+      studioResource={studioResource}
       tokenMeta={tokenMeta}
     />
   ) : null;
@@ -511,6 +561,7 @@ function CanvasNode({
       <CanvasNodeFrame
         composition={composition}
         dragContainerOutline={dragContainerOutline}
+        editComponentHref={editComponentHref}
         node={node}
         onRemoveNode={onRemoveNode}
         onSelectNode={onSelectNode}
@@ -528,6 +579,7 @@ function CanvasNode({
       <CanvasNodeFrame
         composition={composition}
         dragContainerOutline={dragContainerOutline}
+        editComponentHref={editComponentHref}
         node={node}
         onRemoveNode={onRemoveNode}
         onSelectNode={onSelectNode}
@@ -542,6 +594,7 @@ function CanvasNode({
     <CanvasNodeFrame
       composition={composition}
       dragContainerOutline={dragContainerOutline}
+      editComponentHref={editComponentHref}
       node={node}
       onRemoveNode={onRemoveNode}
       onSelectNode={onSelectNode}
@@ -654,6 +707,7 @@ export function StudioCanvas({
   theme,
   onToggleTheme,
   tokenMeta = [],
+  studioResource,
 }: {
   composition: PageComposition;
   selectedNodeId: string | null;
@@ -663,17 +717,21 @@ export function StudioCanvas({
   theme: "light" | "dark";
   onToggleTheme: () => void;
   tokenMeta?: TokenMeta[];
+  studioResource: "pageTemplate" | "component" | null;
 }) {
   const registry = defaultPrimitiveRegistry;
+  const { editStudioHrefByKey } = useLibraryComponentIndex();
 
   const tree = (
     <CanvasNode
       composition={composition}
+      editStudioHrefByKey={editStudioHrefByKey}
       nodeId={composition.rootId}
       onRemoveNode={onRemoveNode}
       onSelectNode={onSelectNode}
       registry={registry}
       selectedNodeId={selectedNodeId}
+      studioResource={studioResource}
       tokenMeta={tokenMeta}
     />
   );

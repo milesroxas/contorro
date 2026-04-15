@@ -2,11 +2,11 @@
 
 import { useDraggable } from "@dnd-kit/core";
 
-import { cn } from "../../lib/cn.js";
 import {
   PRIMITIVE_KEYS,
   getPrimitiveDisplay,
 } from "../../lib/primitive-display.js";
+import { StudioPaletteTile } from "./studio-palette-tile.js";
 
 function PaletteTile({
   definitionKey,
@@ -23,29 +23,16 @@ function PaletteTile({
   });
 
   return (
-    <button
-      className={cn(
-        "flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-3 text-center shadow-sm transition-colors",
-        "hover:border-primary/30 hover:bg-accent/50",
-        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-        isDragging && "cursor-grabbing opacity-50",
-        !isDragging && "cursor-grab",
-      )}
-      data-testid={`palette-${label.toLowerCase()}`}
-      ref={setNodeRef}
-      type="button"
-      {...listeners}
-      {...attributes}
-    >
-      <Icon
-        aria-hidden
-        className="size-6.5 text-muted-foreground"
-        stroke={1.25}
-      />
-      <span className="text-[13px] leading-tight font-medium text-foreground capitalize">
-        {label}
-      </span>
-    </button>
+    <StudioPaletteTile
+      Icon={Icon}
+      attributes={attributes}
+      dataTestId={`palette-${label.toLowerCase()}`}
+      isDragging={isDragging}
+      label={label}
+      labelCapitalize
+      listeners={listeners}
+      tileRef={setNodeRef}
+    />
   );
 }
 

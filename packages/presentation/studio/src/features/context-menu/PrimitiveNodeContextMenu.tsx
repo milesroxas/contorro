@@ -17,6 +17,7 @@ export function PrimitiveNodeContextMenu({
   layerLabel,
   onSelectNode,
   onRemoveNode,
+  editComponentHref,
   children,
 }: {
   nodeId: string;
@@ -25,6 +26,8 @@ export function PrimitiveNodeContextMenu({
   layerLabel: string;
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
+  /** When set (e.g. library block on a page template), opens Component studio. */
+  editComponentHref?: string | null;
   children: ReactNode;
 }) {
   const isRoot = nodeId === rootId;
@@ -43,6 +46,14 @@ export function PrimitiveNodeContextMenu({
           {layerLabel}
         </ContextMenuLabel>
         <ContextMenuSeparator />
+        {editComponentHref ? (
+          <>
+            <ContextMenuItem asChild>
+              <a href={editComponentHref}>Edit component</a>
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+          </>
+        ) : null}
         <ContextMenuItem
           variant="destructive"
           disabled={isRoot}

@@ -27,11 +27,6 @@ import type {
   PageComposition,
   StudioAuthoringClient,
 } from "@repo/contracts-zod";
-import {
-  isStudioComponentRowId,
-  isStudioNewComponentSessionId,
-} from "@repo/domains-composition";
-
 import { StudioPanel } from "../components/studio-panel.js";
 import { StudioRoot } from "../components/studio-root.js";
 import { Card, CardContent } from "../components/ui/card.js";
@@ -107,15 +102,6 @@ const MAX_LEFT_PANEL_WIDTH = 520;
 const MIN_RIGHT_PANEL_WIDTH = 300;
 const MAX_RIGHT_PANEL_WIDTH = 640;
 const MIN_CENTER_WIDTH = 420;
-
-function studioResourceLabel(
-  compositionId: string,
-): "Component" | "Page Template" {
-  return isStudioComponentRowId(compositionId) ||
-    isStudioNewComponentSessionId(compositionId)
-    ? "Component"
-    : "Page Template";
-}
 
 function isStudioGlobalKeyTargetIgnored(target: EventTarget | null): boolean {
   if (target === null) {
@@ -322,7 +308,7 @@ export function StudioApp({
     () => runtimeCssVariables(cssVariables),
     [cssVariables],
   );
-  const currentCompositionId = useStudioStore((s) => s.compositionId);
+  const studioResource = useStudioStore((s) => s.studioResource);
   const name = useStudioStore((s) => s.name);
   const selectedNodeId = useStudioStore((s) => s.selectedNodeId);
   const dirty = useStudioStore((s) => s.dirty);
@@ -500,6 +486,7 @@ export function StudioApp({
                 onRemoveNode={removeNode}
                 onSelect={selectNode}
                 selectedNodeId={selectedNodeId}
+                studioResource={studioResource}
               />
             );
           case "components":
@@ -511,7 +498,7 @@ export function StudioApp({
         }
       })(),
     }));
-  }, [composition, removeNode, selectNode, selectedNodeId]);
+  }, [composition, removeNode, selectNode, selectedNodeId, studioResource]);
 
   if (!composition) {
     return (
@@ -538,7 +525,8 @@ export function StudioApp({
   const leftSidebarPanel =
     leftSidebarPanels.find(({ id }) => id === activeLeftSidebarPanel) ??
     leftSidebarPanels[0];
-  const resourceLabel = studioResourceLabel(currentCompositionId);
+  const resourceLabel =
+    studioResource === "component" ? "Component" : "Page Template";
 
   return (
     <DndContext
@@ -674,6 +662,7 @@ export function StudioApp({
                 });
               }}
               selectedNodeId={selectedNodeId}
+              studioResource={studioResource}
               theme={theme}
               tokenMeta={tokenMetadata}
             />
@@ -701,6 +690,7 @@ export function StudioApp({
                   storeClearNodeStyles(selectedNodeId);
                 }
               }}
+              componentsHref={componentsHref}
               composition={composition}
               inspectorTab={activeInspectorTab}
               node={selectedNode}
@@ -731,6 +721,7 @@ export function StudioApp({
                   setNodeEditorFieldBinding(selectedNodeId, field);
                 }
               }}
+              studioResource={studioResource}
             />
           </StudioPanel>
         </div>

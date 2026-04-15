@@ -105,6 +105,8 @@ async function getNewSessionComposition(
         newSession.kind === "component"
           ? defaultEmptyPageComposition()
           : defaultPageTemplateComposition(),
+      studioResource:
+        newSession.kind === "component" ? "component" : "pageTemplate",
       updatedAt: "",
       _status: null,
       tokenMetadata: designTokens.tokenMetadata,
@@ -176,6 +178,7 @@ async function getComponentComposition(
     data: {
       name: String(doc.displayName ?? "Untitled component"),
       composition,
+      studioResource: "component",
       updatedAt: responseUpdatedAt(doc.updatedAt),
       _status: publicationStatusFromDoc(doc),
       tokenMetadata: designTokens.tokenMetadata,
@@ -236,8 +239,9 @@ async function getPageTemplateComposition(
 
   return Response.json({
     data: {
-      name: String(doc.title ?? "Untitled template"),
+      name: String(doc.title ?? "Untitled page template"),
       composition: normalizeTemplateShell(parsed.data),
+      studioResource: "pageTemplate",
       updatedAt: responseUpdatedAt(doc.updatedAt),
       _status: publicationStatusFromDoc(doc),
       tokenMetadata: designTokens.tokenMetadata,

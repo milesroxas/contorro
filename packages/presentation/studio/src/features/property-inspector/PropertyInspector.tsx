@@ -56,6 +56,7 @@ import {
   type SetStateAction,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -105,6 +106,10 @@ import { cn } from "../../lib/cn.js";
 import type { StudioInspectorTab } from "../../lib/inspector-tab-shortcuts.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
 import {
+  libraryDisplayNameForKey,
+  useLibraryComponentLabels,
+} from "../../lib/use-library-component-labels.js";
+import {
   BorderPropertyRowLabel,
   PropertyControlLabel,
   SettingsFieldRow,
@@ -137,6 +142,61 @@ function semanticShellTagForNode(
   }
   const tag = node.propValues?.tag;
   return tag === "header" || tag === "main" || tag === "footer" ? tag : null;
+}
+
+function boxSupportsDivSectionElementSetting(tag: unknown): boolean {
+  if (tag === undefined || tag === null || tag === "") {
+    return true;
+  }
+  return tag === "div" || tag === "section";
+}
+
+function BoxPrimitiveInspector({
+  node,
+  patchNodeProps,
+  resetNodePropKey,
+}: {
+  node: CompositionNode;
+  patchNodeProps: (patch: Record<string, unknown>) => void;
+  resetNodePropKey: (propKey: string) => void;
+}) {
+  const baseId = useId();
+  if (node.definitionKey !== "primitive.box") {
+    return null;
+  }
+  if (!boxSupportsDivSectionElementSetting(node.propValues?.tag)) {
+    return null;
+  }
+  const rawTag = node.propValues?.tag;
+  const element = rawTag === "section" ? "section" : "div";
+
+  return (
+    <div className="space-y-3 border-t border-border/60 pt-4">
+      <SettingsFieldRow
+        definitionKey={node.definitionKey}
+        htmlFor={`${baseId}-box-element`}
+        label="Element"
+        onResetProp={resetNodePropKey}
+        propKey="tag"
+        propValues={node.propValues}
+      >
+        <Select
+          onValueChange={(value) =>
+            patchNodeProps({ tag: value === "section" ? "section" : "div" })
+          }
+          value={element}
+        >
+          <SelectTrigger id={`${baseId}-box-element`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="div">div</SelectItem>
+            <SelectItem value="section">section</SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingsFieldRow>
+    </div>
+  );
 }
 
 function readStyleProperty(
@@ -4329,6 +4389,7 @@ function InspectorOrderedStyleSectionItem({
 }
 
 function PropertyInspectorSettingsTab({
+  componentsHref,
   content,
   exposeToEditors,
   fieldBound,
@@ -4340,10 +4401,12 @@ function PropertyInspectorSettingsTab({
   isText,
   node,
   onTextChange,
+  pageTemplateStudio,
   patchNodeProps,
   resetNodePropKey,
   setNodeEditorFieldBinding,
 }: {
+  componentsHref: string;
   content: string;
   exposeToEditors: boolean;
   fieldBound: EditorFieldSpec | undefined;
@@ -4355,6 +4418,7 @@ function PropertyInspectorSettingsTab({
   isText: boolean;
   node: CompositionNode;
   onTextChange: (content: string) => void;
+  pageTemplateStudio: boolean;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   resetNodePropKey: (propKey: string) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
@@ -4425,14 +4489,33 @@ function PropertyInspectorSettingsTab({
         </div>
       ) : null}
       {isLibraryComponent ? (
-        <div className="space-y-3 border-t border-border/60 pt-4">
-          <div className="text-xs font-medium text-foreground">Component</div>
-          <div className="rounded-md border border-border bg-muted/30 px-2 py-1.5 font-mono text-xs text-foreground">
-            {typeof node.propValues?.componentKey === "string"
-              ? node.propValues.componentKey
-              : "—"}
-          </div>
+        <div className="space-y-2 border-t border-border/60 pt-4">
+          {pageTemplateStudio ? (
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              This block uses a published library component. Edit its layout and
+              fields in Component studio — open it from{" "}
+              <a
+                className="font-medium text-foreground underline underline-offset-2 hover:no-underline"
+                href={componentsHref}
+              >
+                Components
+              </a>{" "}
+              in the CMS.
+            </p>
+          ) : (
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Open the referenced component in Component studio to edit its
+              definition.
+            </p>
+          )}
         </div>
+      ) : null}
+      {node.definitionKey === "primitive.box" ? (
+        <BoxPrimitiveInspector
+          node={node}
+          patchNodeProps={patchNodeProps}
+          resetNodePropKey={resetNodePropKey}
+        />
       ) : null}
     </>
   );
@@ -4440,12 +4523,14 @@ function PropertyInspectorSettingsTab({
 
 function PropertyInspectorActive({
   clearNodeStyles,
+  componentsHref,
   composition,
   inspectorTab,
   node,
   onInspectorTabChange,
   onNodeStyleEntry,
   onTextChange,
+  pageTemplateStudio,
   patchNodeProps,
   resetNodePropKey,
   setNodeEditorFieldBinding,
@@ -4454,6 +4539,7 @@ function PropertyInspectorActive({
   tokenMetadata,
 }: {
   clearNodeStyles: () => void;
+  componentsHref: string;
   composition: PageComposition;
   inspectorTab: StudioInspectorTab;
   node: CompositionNode;
@@ -4463,6 +4549,7 @@ function PropertyInspectorActive({
     entry: StylePropertyEntry | null,
   ) => void;
   onTextChange: (content: string) => void;
+  pageTemplateStudio: boolean;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   resetNodePropKey: (propKey: string) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
@@ -4480,6 +4567,12 @@ function PropertyInspectorActive({
   const isLibraryComponent =
     node.definitionKey === "primitive.libraryComponent";
 
+  const libraryLabels = useLibraryComponentLabels();
+  const componentKey =
+    typeof node.propValues?.componentKey === "string"
+      ? node.propValues.componentKey
+      : "";
+
   const content =
     typeof node.propValues?.content === "string" ? node.propValues.content : "";
   const fieldBound =
@@ -4487,9 +4580,28 @@ function PropertyInspectorActive({
       ? node.contentBinding.editorField
       : undefined;
   const semanticShellTag = semanticShellTagForNode(node);
-  const nodeLabel = semanticShellTag
-    ? `${semanticShellTag.charAt(0).toUpperCase()}${semanticShellTag.slice(1)}`
-    : getPrimitiveDisplay(node.definitionKey).label;
+  const nodeLabel = useMemo(() => {
+    if (isLibraryComponent) {
+      return libraryDisplayNameForKey(libraryLabels, componentKey);
+    }
+    if (semanticShellTag) {
+      return `${semanticShellTag.charAt(0).toUpperCase()}${semanticShellTag.slice(1)}`;
+    }
+    if (
+      node.definitionKey === "primitive.box" &&
+      node.propValues?.tag === "section"
+    ) {
+      return "Section";
+    }
+    return getPrimitiveDisplay(node.definitionKey).label;
+  }, [
+    componentKey,
+    isLibraryComponent,
+    libraryLabels,
+    node.definitionKey,
+    node.propValues?.tag,
+    semanticShellTag,
+  ]);
   const exposeToEditors = Boolean(fieldBound);
   const stylePropertiesBySection = stylePropertiesBySectionForDefinitionKey(
     node.definitionKey,
@@ -4538,7 +4650,14 @@ function PropertyInspectorActive({
           }}
           value={inspectorTab}
         >
-          <div className="text-base font-semibold uppercase tracking-[0.1em] text-foreground">
+          <div
+            className={cn(
+              "text-base font-semibold text-foreground",
+              isLibraryComponent
+                ? "normal-case tracking-tight"
+                : "uppercase tracking-[0.1em]",
+            )}
+          >
             {nodeLabel}
           </div>
           <div className="mt-3 space-y-2">
@@ -4616,6 +4735,7 @@ function PropertyInspectorActive({
           </TabsContent>
           <TabsContent className="mt-4 space-y-4" value="settings">
             <PropertyInspectorSettingsTab
+              componentsHref={componentsHref}
               content={content}
               exposeToEditors={exposeToEditors}
               fieldBound={fieldBound}
@@ -4627,6 +4747,7 @@ function PropertyInspectorActive({
               isText={isText}
               node={node}
               onTextChange={onTextChange}
+              pageTemplateStudio={pageTemplateStudio}
               patchNodeProps={patchNodeProps}
               resetNodePropKey={resetNodePropKey}
               setNodeEditorFieldBinding={setNodeEditorFieldBinding}
@@ -4640,6 +4761,7 @@ function PropertyInspectorActive({
 
 export function PropertyInspector({
   clearNodeStyles,
+  componentsHref = "",
   composition,
   inspectorTab,
   node,
@@ -4649,9 +4771,11 @@ export function PropertyInspector({
   patchNodeProps,
   resetNodePropKey,
   setNodeEditorFieldBinding,
+  studioResource,
   tokenMetadata,
 }: {
   clearNodeStyles: () => void;
+  componentsHref?: string;
   composition: PageComposition | null;
   inspectorTab: StudioInspectorTab;
   node: CompositionNode | null;
@@ -4664,6 +4788,7 @@ export function PropertyInspector({
   patchNodeProps: (patch: Record<string, unknown>) => void;
   resetNodePropKey: (propKey: string) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
+  studioResource?: "pageTemplate" | "component" | null;
   tokenMetadata: TokenMeta[];
 }) {
   const [styleSectionOpenState, setStyleSectionOpenState] = useState<
@@ -4678,15 +4803,19 @@ export function PropertyInspector({
     );
   }
 
+  const pageTemplateStudio = studioResource === "pageTemplate";
+
   return (
     <PropertyInspectorActive
       clearNodeStyles={clearNodeStyles}
+      componentsHref={componentsHref}
       composition={composition}
       inspectorTab={inspectorTab}
       node={node}
       onInspectorTabChange={onInspectorTabChange}
       onNodeStyleEntry={onNodeStyleEntry}
       onTextChange={onTextChange}
+      pageTemplateStudio={pageTemplateStudio}
       patchNodeProps={patchNodeProps}
       resetNodePropKey={resetNodePropKey}
       setNodeEditorFieldBinding={setNodeEditorFieldBinding}

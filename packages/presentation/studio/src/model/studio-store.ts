@@ -9,8 +9,10 @@ import type {
 import {
   addChildNode,
   clearNodeStyleBinding,
+  isStudioComponentRowId,
   isStudioNewCompositionSessionId,
   moveNode as moveNodeInComposition,
+  parseStudioNewCompositionSessionId,
   removeSubtree,
   resetNodePropKeyToPrimitiveDefault,
   setNodeContentBinding,
@@ -78,6 +80,8 @@ export type StudioStoreState = {
   error: string | null;
   canUndo: boolean;
   canRedo: boolean;
+  /** Authoritative template vs component; from API (or inferred from id when absent). */
+  studioResource: "pageTemplate" | "component" | null;
   load: () => Promise<void>;
   cancel: () => void;
   undo: () => void;
@@ -108,6 +112,19 @@ export type StudioStoreState = {
   publish: () => Promise<void>;
   rename: (name: string) => Promise<void>;
 };
+
+function inferStudioResourceFromId(
+  compositionId: string,
+): "pageTemplate" | "component" {
+  if (isStudioComponentRowId(compositionId)) {
+    return "component";
+  }
+  const session = parseStudioNewCompositionSessionId(compositionId);
+  if (session?.kind === "component") {
+    return "component";
+  }
+  return "pageTemplate";
+}
 
 function replaceCompositionIdInUrl(savedId: string, previousId: string): void {
   if (savedId === previousId || typeof window === "undefined") {
@@ -230,6 +247,7 @@ export function createStudioStore(
     error: null,
     canUndo: false,
     canRedo: false,
+    studioResource: null,
 
     cancel: () => {
       void get().load();
@@ -281,6 +299,9 @@ export function createStudioStore(
         set({
           composition: data.composition,
           name: data.name,
+          studioResource:
+            data.studioResource ??
+            inferStudioResourceFromId(get().compositionId),
           historyPast: [],
           historyFuture: [],
           tokenMetadata: data.tokenMetadata as TokenMeta[],
