@@ -111,6 +111,178 @@ function contentSlotsStructureMatchesTemplate(
   return true;
 }
 
+function pageCompositionFromSiblingFormPaths(
+  documentForm: FormWithReset,
+  form: FormWithReset,
+): unknown {
+  for (const c of [documentForm, form]) {
+    for (const p of ["version.pageComposition", "pageComposition"]) {
+      const v = readPath(c, p);
+      if (isPresentRelationshipValue(v)) {
+        return v;
+      }
+    }
+  }
+  return undefined;
+}
+
+function resolvePageCompositionRelationshipRef(
+  fields: FormState,
+  documentForm: FormWithReset,
+  form: FormWithReset,
+  savedDocumentData: unknown,
+): unknown {
+  let raw = pageCompositionLooseFromFields(fields);
+  if (!isPresentRelationshipValue(raw)) {
+    raw = pageCompositionFromSiblingFormPaths(documentForm, form);
+  }
+  if (!isPresentRelationshipValue(raw)) {
+    const getDataFn =
+      typeof documentForm?.getData === "function"
+        ? documentForm.getData
+        : typeof form?.getData === "function"
+          ? form.getData
+          : undefined;
+    if (typeof getDataFn === "function") {
+      raw = pageCompositionFromDocumentData(getDataFn());
+    }
+  }
+  if (!isPresentRelationshipValue(raw)) {
+    raw = pageCompositionFromDocumentData(savedDocumentData);
+  }
+  return raw;
+}
+
+function contentSlotsValueFromForms(
+  documentForm: FormWithReset | undefined,
+  form: FormWithReset | undefined,
+  path: string,
+  fullData: Record<string, unknown>,
+): unknown {
+  const current: unknown = contentSlotsArrayFromDocumentLike(fullData);
+  if (current !== undefined) {
+    return current;
+  }
+  for (const c of [documentForm, form]) {
+    const v = readPath(c, path);
+    if (v !== undefined) {
+      return v;
+    }
+  }
+  return undefined;
+}
+
+async function resyncMergedContentSlotsToTemplateOrder(
+  slotIds: string[],
+  path: string,
+  documentForm: FormWithReset | undefined,
+  form: FormWithReset | undefined,
+  modifiedRef: { current: boolean },
+  isCancelled: () => boolean,
+): Promise<void> {
+  const doc = documentForm;
+  const frm = form;
+  const rootForm =
+    typeof doc?.reset === "function" && typeof doc?.getData === "function"
+      ? doc
+      : frm;
+  const resetForm = rootForm?.reset;
+  const getFormData = rootForm?.getData;
+  if (
+    rootForm === undefined ||
+    typeof resetForm !== "function" ||
+    typeof getFormData !== "function"
+  ) {
+    return;
+  }
+
+  const fullData = getFormData() as Record<string, unknown>;
+  const current = contentSlotsValueFromForms(doc, frm, path, fullData);
+  if (contentSlotsStructureMatchesTemplate(slotIds, current)) {
+    return;
+  }
+  const next = mergePageContentSlotsToSlotOrder(slotIds, current);
+  const wasModified = modifiedRef.current;
+  const data = getFormData() as Record<string, unknown>;
+  const baseMerged = setValueAtPath(data, path, next);
+  const hadVersionSlots =
+    fullData.version !== null &&
+    typeof fullData.version === "object" &&
+    Array.isArray(
+      (fullData.version as { contentSlots?: unknown }).contentSlots,
+    );
+  const hadTopSlots = Array.isArray(fullData.contentSlots);
+  const merged = mirrorContentSlotsOnVersionPaths(
+    baseMerged,
+    path,
+    next,
+    hadVersionSlots,
+    hadTopSlots,
+  );
+  if (isCancelled()) {
+    return;
+  }
+  await resetForm(merged);
+  if (wasModified && typeof rootForm.setModified === "function") {
+    rootForm.setModified(true);
+  }
+}
+
+function mirrorContentSlotsOnVersionPaths(
+  merged: Record<string, unknown>,
+  path: string,
+  next: ReturnType<typeof mergePageContentSlotsToSlotOrder>,
+  hadVersionSlots: boolean,
+  hadTopSlots: boolean,
+): Record<string, unknown> {
+  if (hadVersionSlots && hadTopSlots) {
+    if (path === "contentSlots") {
+      return setValueAtPath(merged, "version.contentSlots", next);
+    }
+    if (path === "version.contentSlots") {
+      return setValueAtPath(merged, "contentSlots", next);
+    }
+    return merged;
+  }
+  if (hadVersionSlots && path === "contentSlots") {
+    return setValueAtPath(merged, "version.contentSlots", next);
+  }
+  if (hadTopSlots && path === "version.contentSlots") {
+    return setValueAtPath(merged, "contentSlots", next);
+  }
+  return merged;
+}
+
+async function fetchLayoutSlotOrderForComposition(
+  compositionId: number,
+): Promise<string[]> {
+  try {
+    const res = await fetch(`/api/page-compositions/${compositionId}?depth=0`, {
+      credentials: "include",
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const json = (await res.json()) as Record<string, unknown>;
+    const doc =
+      json.doc !== undefined &&
+      json.doc !== null &&
+      typeof json.doc === "object" &&
+      !Array.isArray(json.doc)
+        ? (json.doc as { composition?: unknown })
+        : (json as { composition?: unknown });
+    const raw = doc.composition;
+    const parsed = PageCompositionSchema.safeParse(raw);
+    if (!parsed.success) {
+      return ["main"];
+    }
+    const ids = orderedLayoutSlotIds(parsed.data);
+    return ids.length > 0 ? ids : ["main"];
+  } catch {
+    return ["main"];
+  }
+}
+
 const PageContentSlotsField: ArrayFieldClientComponent = (props) => {
   const { path, schemaPath, field, readOnly } = props;
   const resolvedSchemaPath = schemaPath ?? field.name;
@@ -124,39 +296,14 @@ const PageContentSlotsField: ArrayFieldClientComponent = (props) => {
 
   const compositionRef = useFormFields(
     useCallback(
-      // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
       (ctx: unknown) => {
         const [fields] = ctx as FormFieldsTuple;
-        let raw = pageCompositionLooseFromFields(fields);
-        if (!isPresentRelationshipValue(raw)) {
-          for (const c of [documentForm, form]) {
-            for (const p of ["version.pageComposition", "pageComposition"]) {
-              const v = readPath(c, p);
-              if (isPresentRelationshipValue(v)) {
-                raw = v;
-                break;
-              }
-            }
-            if (isPresentRelationshipValue(raw)) {
-              break;
-            }
-          }
-        }
-        if (!isPresentRelationshipValue(raw)) {
-          const getDataFn =
-            typeof documentForm?.getData === "function"
-              ? documentForm.getData
-              : typeof form?.getData === "function"
-                ? form.getData
-                : undefined;
-          if (typeof getDataFn === "function") {
-            raw = pageCompositionFromDocumentData(getDataFn());
-          }
-        }
-        if (!isPresentRelationshipValue(raw)) {
-          raw = pageCompositionFromDocumentData(savedDocumentData);
-        }
-        return raw;
+        return resolvePageCompositionRelationshipRef(
+          fields,
+          documentForm,
+          form,
+          savedDocumentData,
+        );
       },
       [documentForm, form, savedDocumentData],
     ),
@@ -196,39 +343,10 @@ const PageContentSlotsField: ArrayFieldClientComponent = (props) => {
     let cancelled = false;
     setSlotIds(null);
 
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
     void (async () => {
-      try {
-        const res = await fetch(
-          `/api/page-compositions/${compositionId}?depth=0`,
-          { credentials: "include" },
-        );
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-        const json = (await res.json()) as Record<string, unknown>;
-        const doc =
-          json.doc !== undefined &&
-          json.doc !== null &&
-          typeof json.doc === "object" &&
-          !Array.isArray(json.doc)
-            ? (json.doc as { composition?: unknown })
-            : (json as { composition?: unknown });
-        const raw = doc.composition;
-        const parsed = PageCompositionSchema.safeParse(raw);
-        if (cancelled) {
-          return;
-        }
-        if (!parsed.success) {
-          setSlotIds(["main"]);
-          return;
-        }
-        const ids = orderedLayoutSlotIds(parsed.data);
-        setSlotIds(ids.length > 0 ? ids : ["main"]);
-      } catch {
-        if (!cancelled) {
-          setSlotIds(["main"]);
-        }
+      const ids = await fetchLayoutSlotOrderForComposition(compositionId);
+      if (!cancelled) {
+        setSlotIds(ids);
       }
     })();
 
@@ -248,66 +366,15 @@ const PageContentSlotsField: ArrayFieldClientComponent = (props) => {
     }
 
     let cancelled = false;
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
     void (async () => {
-      const doc = documentFormRef.current;
-      const frm = formRef.current;
-      const rootForm =
-        typeof doc?.reset === "function" && typeof doc?.getData === "function"
-          ? doc
-          : frm;
-      const resetForm = rootForm.reset;
-      const getFormData = rootForm.getData;
-      if (
-        typeof resetForm !== "function" ||
-        typeof getFormData !== "function"
-      ) {
-        return;
-      }
-
-      const fullData = getFormData() as Record<string, unknown>;
-      let current: unknown = contentSlotsArrayFromDocumentLike(fullData);
-      if (current === undefined) {
-        for (const c of [doc, frm]) {
-          const v = readPath(c, path);
-          if (v !== undefined) {
-            current = v;
-            break;
-          }
-        }
-      }
-      if (contentSlotsStructureMatchesTemplate(slotIds, current)) {
-        return;
-      }
-      const next = mergePageContentSlotsToSlotOrder(slotIds, current);
-      const wasModified = modifiedRef.current;
-      const data = getFormData() as Record<string, unknown>;
-      let merged = setValueAtPath(data, path, next);
-      const hadVersionSlots =
-        fullData.version !== null &&
-        typeof fullData.version === "object" &&
-        Array.isArray(
-          (fullData.version as { contentSlots?: unknown }).contentSlots,
-        );
-      const hadTopSlots = Array.isArray(fullData.contentSlots);
-      if (hadVersionSlots && hadTopSlots) {
-        if (path === "contentSlots") {
-          merged = setValueAtPath(merged, "version.contentSlots", next);
-        } else if (path === "version.contentSlots") {
-          merged = setValueAtPath(merged, "contentSlots", next);
-        }
-      } else if (hadVersionSlots && path === "contentSlots") {
-        merged = setValueAtPath(merged, "version.contentSlots", next);
-      } else if (hadTopSlots && path === "version.contentSlots") {
-        merged = setValueAtPath(merged, "contentSlots", next);
-      }
-      if (cancelled) {
-        return;
-      }
-      await resetForm(merged);
-      if (wasModified && typeof rootForm.setModified === "function") {
-        rootForm.setModified(true);
-      }
+      await resyncMergedContentSlotsToTemplateOrder(
+        slotIds,
+        path,
+        documentFormRef.current,
+        formRef.current,
+        modifiedRef,
+        () => cancelled,
+      );
     })();
 
     return () => {

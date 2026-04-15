@@ -29,6 +29,137 @@ type Props = {
   params: Promise<{ slug: string }>;
 };
 
+function contentSlotsHasRenderableBlocks(contentSlots: unknown): boolean {
+  return (
+    Array.isArray(contentSlots) &&
+    contentSlots.some(
+      (row) =>
+        row &&
+        typeof row === "object" &&
+        Array.isArray((row as { blocks?: unknown }).blocks) &&
+        (row as { blocks: unknown[] }).blocks.length > 0,
+    )
+  );
+}
+
+async function compilePageTokenBundle(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+) {
+  const runtime = await loadDesignSystemRuntimeForPreview(payload);
+  const tokenDoc = runtime.tokenSet;
+  const tokens = tokenDoc
+    ? tokenDoc.tokens.map((t) => {
+        const mode: "light" | "dark" = t.mode === "dark" ? "dark" : "light";
+        return {
+          key: t.key,
+          mode,
+          category: t.category,
+          resolvedValue: t.resolvedValue,
+        };
+      })
+    : [];
+  const compiled = compileTokenSet({ tokens });
+  return { runtime, compiled };
+}
+
+async function slotContentAndDesignerSections(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  contentSlots: unknown,
+  tokenMeta: import("@repo/config-tailwind").TokenMeta[],
+  templateTree: PageComposition | null,
+  hasBlocks: boolean,
+): Promise<{
+  slotContent: Record<string, ReactNode> | undefined;
+  designerSections: ReactNode[];
+}> {
+  if (!hasBlocks) {
+    return { slotContent: undefined, designerSections: [] };
+  }
+  const r = await renderDesignerContentBlocksBySlot(
+    payload,
+    contentSlots,
+    tokenMeta,
+    templateTree,
+  );
+  const uses =
+    templateTree !== null && compositionUsesLayoutSlots(templateTree);
+  if (uses) {
+    return { slotContent: r.slotContent, designerSections: r.orphanSections };
+  }
+  return {
+    slotContent: undefined,
+    designerSections: [...Object.values(r.slotContent), ...r.orphanSections],
+  };
+}
+
+async function renderCompositionWithLibraryAndEditorFields(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  page: {
+    templateEditorFields?: Record<string, unknown>;
+  },
+  isEnabled: boolean,
+  templateTree: PageComposition,
+  tokenMeta: import("@repo/config-tailwind").TokenMeta[],
+  slotContent: Record<string, ReactNode> | undefined,
+): Promise<ReactNode> {
+  let tree = await expandLibraryComponentNodes(templateTree, async (key) => {
+    const found = await payload.find({
+      collection: "components",
+      where: { key: { equals: key } },
+      depth: 0,
+      draft: isEnabled,
+      limit: 1,
+      overrideAccess: true,
+    });
+    const doc = found.docs[0] as { composition?: unknown } | undefined;
+    if (!doc?.composition) {
+      return null;
+    }
+    const parsed = PageCompositionSchema.safeParse(doc.composition);
+    return parsed.success ? parsed.data : null;
+  });
+  const tmpl = page.templateEditorFields;
+  if (
+    tmpl &&
+    typeof tmpl === "object" &&
+    !Array.isArray(tmpl) &&
+    Object.keys(tmpl).length > 0
+  ) {
+    const fieldSpecs = editorFieldSpecsFromComposition(tree);
+    const resolved = await resolveImageEditorFieldValuesForRender(
+      payload,
+      fieldSpecs,
+      tmpl,
+    );
+    tree = mergeEditorFieldValuesIntoComposition(tree, resolved);
+  }
+  return renderComposition(
+    tree,
+    defaultPrimitiveRegistry,
+    tokenMeta,
+    slotContent !== undefined ? { slotContent } : undefined,
+  );
+}
+
+function templateTreeFromPageComposition(
+  hasPageComposition: boolean,
+  compositionDoc: { composition?: unknown } | null,
+  hasBlocks: boolean,
+): PageComposition | null {
+  let templateTree: PageComposition | null = null;
+  if (hasPageComposition && compositionDoc) {
+    const parsed = PageCompositionSchema.safeParse(compositionDoc.composition);
+    if (parsed.success) {
+      templateTree = normalizeTemplateShell(parsed.data);
+    } else if (!hasBlocks) {
+      notFound();
+    }
+  } else if (!hasBlocks) {
+    notFound();
+  }
+  return templateTree;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const { isEnabled } = await draftMode();
@@ -50,7 +181,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title };
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export default async function SitePage({ params }: Props) {
   const { slug } = await params;
   const { isEnabled } = await draftMode();
@@ -73,15 +203,7 @@ export default async function SitePage({ params }: Props) {
   }
 
   const contentSlots = (page as { contentSlots?: unknown }).contentSlots;
-  const hasBlocks =
-    Array.isArray(contentSlots) &&
-    contentSlots.some(
-      (row) =>
-        row &&
-        typeof row === "object" &&
-        Array.isArray((row as { blocks?: unknown }).blocks) &&
-        (row as { blocks: unknown[] }).blocks.length > 0,
-    );
+  const hasBlocks = contentSlotsHasRenderableBlocks(contentSlots);
 
   const rel = page.pageComposition;
   const compositionDoc =
@@ -95,92 +217,32 @@ export default async function SitePage({ params }: Props) {
     notFound();
   }
 
-  const runtime = await loadDesignSystemRuntimeForPreview(payload);
-  const tokenDoc = runtime.tokenSet;
-  const tokens = tokenDoc
-    ? tokenDoc.tokens.map((t) => {
-        const mode: "light" | "dark" = t.mode === "dark" ? "dark" : "light";
-        return {
-          key: t.key,
-          mode,
-          category: t.category,
-          resolvedValue: t.resolvedValue,
-        };
-      })
-    : [];
+  const { runtime, compiled } = await compilePageTokenBundle(payload);
 
-  const compiled = compileTokenSet({ tokens });
+  const templateTree = templateTreeFromPageComposition(
+    hasPageComposition,
+    compositionDoc,
+    hasBlocks,
+  );
 
-  let templateTree: PageComposition | null = null;
-  if (hasPageComposition && compositionDoc) {
-    const parsed = PageCompositionSchema.safeParse(compositionDoc.composition);
-    if (parsed.success) {
-      templateTree = normalizeTemplateShell(parsed.data);
-    } else if (!hasBlocks) {
-      notFound();
-    }
-  } else if (!hasBlocks) {
-    notFound();
-  }
-
-  let slotContent: Record<string, ReactNode> | undefined;
-  let designerSections: ReactNode[] = [];
-  if (hasBlocks) {
-    const r = await renderDesignerContentBlocksBySlot(
+  const { slotContent, designerSections } =
+    await slotContentAndDesignerSections(
       payload,
       contentSlots,
       compiled.tokenMetadata,
       templateTree,
+      hasBlocks,
     );
-    const uses =
-      templateTree !== null && compositionUsesLayoutSlots(templateTree);
-    if (uses) {
-      slotContent = r.slotContent;
-      designerSections = r.orphanSections;
-    } else {
-      designerSections = [...Object.values(r.slotContent), ...r.orphanSections];
-    }
-  }
 
   let compositionTree: ReactNode = null;
   if (hasPageComposition && compositionDoc && templateTree) {
-    let tree = await expandLibraryComponentNodes(templateTree, async (key) => {
-      const found = await payload.find({
-        collection: "components",
-        where: { key: { equals: key } },
-        depth: 0,
-        draft: isEnabled,
-        limit: 1,
-        overrideAccess: true,
-      });
-      const doc = found.docs[0] as { composition?: unknown } | undefined;
-      if (!doc?.composition) {
-        return null;
-      }
-      const parsed = PageCompositionSchema.safeParse(doc.composition);
-      return parsed.success ? parsed.data : null;
-    });
-    const tmpl = (page as { templateEditorFields?: Record<string, unknown> })
-      .templateEditorFields;
-    if (
-      tmpl &&
-      typeof tmpl === "object" &&
-      !Array.isArray(tmpl) &&
-      Object.keys(tmpl).length > 0
-    ) {
-      const fieldSpecs = editorFieldSpecsFromComposition(tree);
-      const resolved = await resolveImageEditorFieldValuesForRender(
-        payload,
-        fieldSpecs,
-        tmpl,
-      );
-      tree = mergeEditorFieldValuesIntoComposition(tree, resolved);
-    }
-    compositionTree = renderComposition(
-      tree,
-      defaultPrimitiveRegistry,
+    compositionTree = await renderCompositionWithLibraryAndEditorFields(
+      payload,
+      page as { templateEditorFields?: Record<string, unknown> },
+      isEnabled,
+      templateTree,
       compiled.tokenMetadata,
-      slotContent !== undefined ? { slotContent } : undefined,
+      slotContent,
     );
   }
 

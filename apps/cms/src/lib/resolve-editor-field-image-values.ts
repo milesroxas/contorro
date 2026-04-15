@@ -1,10 +1,48 @@
 import type { EditorFieldSpec } from "@repo/contracts-zod";
 import type { Payload } from "payload";
 
+function parseMediaIdFromRaw(raw: unknown): number | undefined {
+  if (typeof raw === "number") {
+    return raw;
+  }
+  if (typeof raw === "string" && /^\d+$/.test(raw)) {
+    return Number.parseInt(raw, 10);
+  }
+  if (
+    raw &&
+    typeof raw === "object" &&
+    "id" in raw &&
+    typeof (raw as { id: unknown }).id === "number"
+  ) {
+    return (raw as { id: number }).id;
+  }
+  return undefined;
+}
+
+async function mediaUrlForId(payload: Payload, mid: number): Promise<string> {
+  try {
+    const media = await payload.findByID({
+      collection: "media",
+      id: mid,
+      depth: 0,
+    });
+    if (
+      media &&
+      typeof media === "object" &&
+      "url" in media &&
+      typeof (media as { url: unknown }).url === "string"
+    ) {
+      return (media as { url: string }).url;
+    }
+    return "";
+  } catch {
+    return "";
+  }
+}
+
 /**
  * Resolves image editor-field values from Media IDs to URLs for `mergeEditorFieldValuesIntoComposition`.
  */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export async function resolveImageEditorFieldValuesForRender(
   payload: Payload,
   fields: EditorFieldSpec[],
@@ -16,38 +54,11 @@ export async function resolveImageEditorFieldValuesForRender(
     if (field.type !== "image") {
       continue;
     }
-    const raw = rawValues[field.name];
-    const mid =
-      typeof raw === "number"
-        ? raw
-        : typeof raw === "string" && /^\d+$/.test(raw)
-          ? Number.parseInt(raw, 10)
-          : raw &&
-              typeof raw === "object" &&
-              "id" in raw &&
-              typeof (raw as { id: unknown }).id === "number"
-            ? (raw as { id: number }).id
-            : undefined;
+    const mid = parseMediaIdFromRaw(rawValues[field.name]);
     if (mid === undefined) {
       continue;
     }
-    try {
-      const media = await payload.findByID({
-        collection: "media",
-        id: mid,
-        depth: 0,
-      });
-      const url =
-        media &&
-        typeof media === "object" &&
-        "url" in media &&
-        typeof (media as { url: unknown }).url === "string"
-          ? (media as { url: string }).url
-          : "";
-      resolved[field.name] = url;
-    } catch {
-      resolved[field.name] = "";
-    }
+    resolved[field.name] = await mediaUrlForId(payload, mid);
   }
 
   return resolved;

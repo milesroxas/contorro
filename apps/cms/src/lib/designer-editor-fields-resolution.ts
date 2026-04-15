@@ -402,27 +402,31 @@ export function resolveComponentDefinitionRef(args: {
   return undefined;
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
-export function extractDefinitionId(raw: unknown): number | undefined {
+function parseFinitePositiveInt(raw: unknown): number | undefined {
   if (typeof raw === "number" && Number.isFinite(raw)) {
     return raw;
   }
   if (typeof raw === "string" && /^\d+$/.test(raw)) {
     return Number.parseInt(raw, 10);
   }
-  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-    if ("id" in raw) {
-      const id = (raw as { id: unknown }).id;
-      if (typeof id === "number" && Number.isFinite(id)) {
-        return id;
-      }
-      if (typeof id === "string" && /^\d+$/.test(id)) {
-        return Number.parseInt(id, 10);
-      }
-    }
-    if ("value" in raw) {
-      return extractDefinitionId((raw as { value: unknown }).value);
-    }
+  return undefined;
+}
+
+export function extractDefinitionId(raw: unknown): number | undefined {
+  const direct = parseFinitePositiveInt(raw);
+  if (direct !== undefined) {
+    return direct;
+  }
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return undefined;
+  }
+  const obj = raw as { id?: unknown; value?: unknown };
+  const fromId = parseFinitePositiveInt(obj.id);
+  if (fromId !== undefined) {
+    return fromId;
+  }
+  if ("value" in obj) {
+    return extractDefinitionId(obj.value);
   }
   return undefined;
 }

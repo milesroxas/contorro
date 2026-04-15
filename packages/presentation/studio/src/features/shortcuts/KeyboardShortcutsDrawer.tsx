@@ -66,9 +66,19 @@ const SHORTCUT_SECTIONS: readonly ShortcutSection[] = [
     description: "Core editing and panel shortcuts for fast authoring.",
     shortcuts: [
       {
+        action: "Open keyboard shortcuts",
+        detail: "Opens this reference of available shortcuts.",
+        combos: [["`"]],
+      },
+      {
         action: "Open Primitives / Layers / Components",
         detail: "Switches left sidebar tabs.",
         combos: [["1"], ["2"], ["3"]],
+      },
+      {
+        action: "Open Styles / Settings",
+        detail: "Switches inspector tabs on the right.",
+        combos: [["4"], ["5"]],
       },
       {
         action: "Delete selected node",
@@ -163,17 +173,24 @@ function ShortcutRow({
   );
 }
 
-export function KeyboardShortcutsDrawer() {
+export function KeyboardShortcutsDrawer({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   return (
-    <Drawer direction="bottom">
+    <Drawer direction="bottom" onOpenChange={onOpenChange} open={open}>
       <DrawerTrigger asChild>
         <button
+          aria-keyshortcuts="`"
           aria-label="Keyboard shortcuts"
           className={cn(
             "flex size-10 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors",
             "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           )}
-          title="Keyboard shortcuts"
+          title="Keyboard shortcuts (`)"
           type="button"
         >
           <IconKeyboard aria-hidden className="size-5.5" stroke={1.7} />

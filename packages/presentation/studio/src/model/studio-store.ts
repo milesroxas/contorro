@@ -22,6 +22,44 @@ import { createSafeStore } from "@repo/presentation-shared";
 import { getDefaultStudioAuthoringClient } from "../lib/fetch-studio-authoring-client.js";
 import { prepareForSave } from "../lib/persist.js";
 
+/**
+ * Nested primitives (links, etc.) or text ranges can retain browser focus/selection
+ * after `selectedNodeId` moves to an ancestor — clear those so canvas chrome matches
+ * the store (single source of truth for which node is active).
+ */
+function clearCanvasPreviewDomUiState(): void {
+  if (typeof document === "undefined") {
+    return;
+  }
+  const preview = document.querySelector(
+    '[data-testid="studio-canvas-preview"]',
+  );
+  if (!(preview instanceof HTMLElement)) {
+    return;
+  }
+  const active = document.activeElement;
+  if (active instanceof HTMLElement) {
+    const inFormField =
+      active instanceof HTMLInputElement ||
+      active instanceof HTMLTextAreaElement ||
+      active instanceof HTMLSelectElement ||
+      active.isContentEditable;
+    if (preview.contains(active) && !inFormField) {
+      active.blur();
+    }
+  }
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) {
+    return;
+  }
+  const anchor = sel.anchorNode;
+  const anchorEl =
+    anchor instanceof Element ? anchor : (anchor?.parentElement ?? null);
+  if (anchorEl && preview.contains(anchorEl)) {
+    sel.removeAllRanges();
+  }
+}
+
 export type StudioStoreState = {
   compositionId: string;
   composition: PageComposition | null;
@@ -31,6 +69,8 @@ export type StudioStoreState = {
   tokenMetadata: TokenMeta[];
   cssVariables: string;
   updatedAt: string | null;
+  /** Payload CMS publication state for the loaded composition revision. */
+  cmsPublicationStatus: "draft" | "published" | null;
   selectedNodeId: string | null;
   dirty: boolean;
   saving: boolean;
@@ -69,6 +109,104 @@ export type StudioStoreState = {
   rename: (name: string) => Promise<void>;
 };
 
+function replaceCompositionIdInUrl(savedId: string, previousId: string): void {
+  if (savedId === previousId || typeof window === "undefined") {
+    return;
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.set("composition", savedId);
+  window.history.replaceState({}, "", url.toString());
+}
+
+async function saveOrPublishComposition(args: {
+  get: () => StudioStoreState;
+  set: (
+    partial:
+      | Partial<StudioStoreState>
+      | ((state: StudioStoreState) => Partial<StudioStoreState>),
+  ) => void;
+  client: StudioAuthoringClient;
+  mode: "draft" | "publish";
+}): Promise<void> {
+  const { get, set, client, mode } = args;
+  const { composition, updatedAt, compositionId: id, saving } = get();
+  if (!composition || saving) {
+    return;
+  }
+  const prep = prepareForSave(composition);
+  if (!prep.ok) {
+    set({ error: "Invalid composition" });
+    return;
+  }
+  set({ error: null, saving: true });
+  try {
+    const payload = {
+      composition: prep.data,
+      ifMatchUpdatedAt: isStudioNewCompositionSessionId(id) ? null : updatedAt,
+      name: get().name,
+    };
+    const saved =
+      mode === "draft"
+        ? await client.postDraft(id, payload)
+        : await client.postPublish(id, payload);
+    set({
+      compositionId: saved.id,
+      updatedAt: saved.updatedAt,
+      dirty: false,
+      cmsPublicationStatus:
+        saved._status !== undefined
+          ? saved._status
+          : get().cmsPublicationStatus,
+    });
+    replaceCompositionIdInUrl(saved.id, id);
+  } catch (e) {
+    const fallback = mode === "draft" ? "save failed" : "publish failed";
+    set({
+      error: e instanceof Error ? e.message : fallback,
+    });
+  } finally {
+    set({ saving: false });
+  }
+}
+
+async function applyCompositionRename(args: {
+  get: () => StudioStoreState;
+  set: (
+    partial:
+      | Partial<StudioStoreState>
+      | ((state: StudioStoreState) => Partial<StudioStoreState>),
+  ) => void;
+  client: StudioAuthoringClient;
+  nextName: string;
+}): Promise<void> {
+  const { get, set, client } = args;
+  const trimmed = args.nextName.trim();
+  const { compositionId: id, renaming, name } = get();
+  if (!trimmed || renaming || trimmed === name) {
+    return;
+  }
+  if (isStudioNewCompositionSessionId(id)) {
+    set({ name: trimmed });
+    return;
+  }
+  set({ error: null, renaming: true });
+  try {
+    const data = await client.patchCompositionName(id, trimmed);
+    const cmsPublicationStatus =
+      data._status !== undefined ? data._status : get().cmsPublicationStatus;
+    set({
+      name: data.name,
+      updatedAt: data.updatedAt,
+      cmsPublicationStatus,
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "rename failed";
+    set({ error: message });
+  } finally {
+    set({ renaming: false });
+  }
+}
+
 export function createStudioStore(
   compositionId: string,
   options?: { client?: StudioAuthoringClient },
@@ -84,6 +222,7 @@ export function createStudioStore(
     tokenMetadata: [],
     cssVariables: "",
     updatedAt: null,
+    cmsPublicationStatus: null,
     selectedNodeId: null,
     dirty: false,
     saving: false,
@@ -147,6 +286,7 @@ export function createStudioStore(
           tokenMetadata: data.tokenMetadata as TokenMeta[],
           cssVariables: data.cssVariables,
           updatedAt: data.updatedAt,
+          cmsPublicationStatus: data._status ?? null,
           // New sessions are not persisted yet; keep save actions enabled.
           dirty: isNewSession,
           canUndo: false,
@@ -160,7 +300,13 @@ export function createStudioStore(
       }
     },
 
-    selectNode: (id) => set({ selectedNodeId: id }),
+    selectNode: (id) => {
+      const previousId = get().selectedNodeId;
+      if (id !== previousId) {
+        clearCanvasPreviewDomUiState();
+      }
+      set({ selectedNodeId: id });
+    },
 
     addPrimitive: (
       parentId,
@@ -377,105 +523,16 @@ export function createStudioStore(
       });
     },
 
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
     saveDraft: async () => {
-      const { composition, updatedAt, compositionId: id, saving } = get();
-      if (!composition || saving) {
-        return;
-      }
-      const prep = prepareForSave(composition);
-      if (!prep.ok) {
-        set({ error: "Invalid composition" });
-        return;
-      }
-      set({ error: null, saving: true });
-      try {
-        const saved = await client.postDraft(id, {
-          composition: prep.data,
-          ifMatchUpdatedAt: isStudioNewCompositionSessionId(id)
-            ? null
-            : updatedAt,
-          name: get().name,
-        });
-        set({
-          compositionId: saved.id,
-          updatedAt: saved.updatedAt,
-          dirty: false,
-        });
-        if (saved.id !== id && typeof window !== "undefined") {
-          const url = new URL(window.location.href);
-          url.searchParams.set("composition", saved.id);
-          window.history.replaceState({}, "", url.toString());
-        }
-      } catch (e) {
-        set({
-          error: e instanceof Error ? e.message : "save failed",
-        });
-      } finally {
-        set({ saving: false });
-      }
+      await saveOrPublishComposition({ get, set, client, mode: "draft" });
     },
 
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
     publish: async () => {
-      const { composition, updatedAt, compositionId: id, saving } = get();
-      if (!composition || saving) {
-        return;
-      }
-      const prep = prepareForSave(composition);
-      if (!prep.ok) {
-        set({ error: "Invalid composition" });
-        return;
-      }
-      set({ error: null, saving: true });
-      try {
-        const saved = await client.postPublish(id, {
-          composition: prep.data,
-          ifMatchUpdatedAt: isStudioNewCompositionSessionId(id)
-            ? null
-            : updatedAt,
-          name: get().name,
-        });
-        set({
-          compositionId: saved.id,
-          updatedAt: saved.updatedAt,
-          dirty: false,
-        });
-        if (saved.id !== id && typeof window !== "undefined") {
-          const url = new URL(window.location.href);
-          url.searchParams.set("composition", saved.id);
-          window.history.replaceState({}, "", url.toString());
-        }
-      } catch (e) {
-        set({
-          error: e instanceof Error ? e.message : "publish failed",
-        });
-      } finally {
-        set({ saving: false });
-      }
+      await saveOrPublishComposition({ get, set, client, mode: "publish" });
     },
 
     rename: async (nextName) => {
-      const trimmed = nextName.trim();
-      const { compositionId: id, renaming, name } = get();
-      if (!trimmed || renaming || trimmed === name) {
-        return;
-      }
-      if (isStudioNewCompositionSessionId(id)) {
-        set({ name: trimmed });
-        return;
-      }
-      set({ error: null, renaming: true });
-      try {
-        const data = await client.patchCompositionName(id, trimmed);
-        set({ name: data.name, updatedAt: data.updatedAt });
-      } catch (e) {
-        set({
-          error: e instanceof Error ? e.message : "rename failed",
-        });
-      } finally {
-        set({ renaming: false });
-      }
+      await applyCompositionRename({ get, set, client, nextName });
     },
   }));
 }

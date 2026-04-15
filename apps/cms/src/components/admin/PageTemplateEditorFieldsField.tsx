@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
 
 import { EditorFieldsInputs } from "./EditorFieldsInputs";
+import { extractPageCompositionId } from "./page-composition-form-state";
 
 type FormFieldsTuple = [FormState, (action: never) => void];
 
@@ -59,31 +60,6 @@ function pageCompositionFieldPairsTemplateEditorFieldsPath(
     templateEditorFieldsPath === "version.templateEditorFields" &&
     pageCompositionFieldKey === "pageComposition"
   );
-}
-
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
-function extractPageCompositionId(raw: unknown): number | undefined {
-  if (typeof raw === "number" && Number.isFinite(raw)) {
-    return raw;
-  }
-  if (typeof raw === "string" && /^\d+$/.test(raw)) {
-    return Number.parseInt(raw, 10);
-  }
-  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-    if ("id" in raw) {
-      const id = (raw as { id: unknown }).id;
-      if (typeof id === "number" && Number.isFinite(id)) {
-        return id;
-      }
-      if (typeof id === "string" && /^\d+$/.test(id)) {
-        return Number.parseInt(id, 10);
-      }
-    }
-    if ("value" in raw) {
-      return extractPageCompositionId((raw as { value: unknown }).value);
-    }
-  }
-  return undefined;
 }
 
 /**
@@ -225,6 +201,43 @@ function pageCompositionFromDocumentData(data: unknown): unknown {
   return undefined;
 }
 
+async function fetchEditorFieldSpecsForPageComposition(
+  compositionId: number,
+): Promise<
+  { ok: true; fields: EditorFieldSpec[] } | { ok: false; message: string }
+> {
+  try {
+    const res = await fetch(`/api/page-compositions/${compositionId}?depth=0`, {
+      credentials: "include",
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const json = (await res.json()) as Record<string, unknown>;
+    const doc =
+      json.doc !== undefined &&
+      json.doc !== null &&
+      typeof json.doc === "object" &&
+      !Array.isArray(json.doc)
+        ? (json.doc as { composition?: unknown })
+        : (json as { composition?: unknown });
+    const raw = doc.composition;
+    const parsed = PageCompositionSchema.safeParse(raw);
+    if (!parsed.success) {
+      return { ok: false, message: "Invalid page template tree." };
+    }
+    return {
+      ok: true,
+      fields: editorFieldSpecsFromComposition(parsed.data),
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Failed to load page template",
+    };
+  }
+}
+
 /** When the relationship is populated (admin depth), the tree is already on the form — no REST round-trip. */
 function parseEmbeddedPageComposition(raw: unknown): PageComposition | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
@@ -319,44 +332,18 @@ function PageTemplateEditorFieldsField(props: JSONFieldClientProps) {
     let cancelled = false;
     setLoadError(null);
 
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
     void (async () => {
-      try {
-        const res = await fetch(
-          `/api/page-compositions/${compositionId}?depth=0`,
-          { credentials: "include" },
-        );
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-        // REST `GET /api/:collection/:id` returns the document as the JSON body (see Payload REST docs).
-        // Some responses may nest under `doc` instead; support both.
-        const json = (await res.json()) as Record<string, unknown>;
-        const doc =
-          json.doc !== undefined &&
-          json.doc !== null &&
-          typeof json.doc === "object" &&
-          !Array.isArray(json.doc)
-            ? (json.doc as { composition?: unknown })
-            : (json as { composition?: unknown });
-        const raw = doc.composition;
-        const parsed = PageCompositionSchema.safeParse(raw);
-        if (!cancelled) {
-          if (!parsed.success) {
-            setRemoteEditorFields([]);
-            setLoadError("Invalid page template tree.");
-            return;
-          }
-          setRemoteEditorFields(editorFieldSpecsFromComposition(parsed.data));
-          setLoadError(null);
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setRemoteEditorFields([]);
-          setLoadError(
-            e instanceof Error ? e.message : "Failed to load page template",
-          );
-        }
+      const result =
+        await fetchEditorFieldSpecsForPageComposition(compositionId);
+      if (cancelled) {
+        return;
+      }
+      if (result.ok) {
+        setRemoteEditorFields(result.fields);
+        setLoadError(null);
+      } else {
+        setRemoteEditorFields([]);
+        setLoadError(result.message);
       }
     })();
 

@@ -5,10 +5,50 @@ import type {
 } from "@repo/contracts-zod";
 import { makeId } from "@repo/kernel";
 
+function remapChildIds(
+  nodeIdMap: Map<string, string>,
+  childIds: string[],
+): string[] {
+  return childIds.map((cid) => {
+    const mapped = nodeIdMap.get(cid);
+    if (!mapped) {
+      throw new Error("clonePageCompositionWithNewIds: missing child mapping");
+    }
+    return mapped;
+  });
+}
+
+function cloneNodeWithMappedIds(
+  nodeIdMap: Map<string, string>,
+  sbIdMap: Map<string, string>,
+  oldId: string,
+  node: CompositionNode,
+): CompositionNode {
+  const newId = nodeIdMap.get(oldId);
+  if (!newId) {
+    throw new Error("clonePageCompositionWithNewIds: missing node mapping");
+  }
+  const newParentId =
+    node.parentId === null ? null : (nodeIdMap.get(node.parentId) ?? null);
+  const newChildIds = remapChildIds(nodeIdMap, node.childIds);
+  const newStyleBindingId = node.styleBindingId
+    ? sbIdMap.get(node.styleBindingId)
+    : undefined;
+
+  return {
+    ...node,
+    id: newId,
+    parentId: newParentId,
+    childIds: newChildIds,
+    ...(newStyleBindingId !== undefined
+      ? { styleBindingId: newStyleBindingId }
+      : {}),
+  };
+}
+
 /**
  * Deep-clone a composition with fresh node and style-binding ids (template → new page).
  */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export function clonePageCompositionWithNewIds(
   composition: PageComposition,
 ): PageComposition {
@@ -28,34 +68,8 @@ export function clonePageCompositionWithNewIds(
 
   const nodes: Record<string, CompositionNode> = {};
   for (const [oldId, node] of Object.entries(composition.nodes)) {
-    const newId = nodeIdMap.get(oldId);
-    if (!newId) {
-      throw new Error("clonePageCompositionWithNewIds: missing node mapping");
-    }
-    const newParentId =
-      node.parentId === null ? null : (nodeIdMap.get(node.parentId) ?? null);
-    const newChildIds = node.childIds.map((cid) => {
-      const mapped = nodeIdMap.get(cid);
-      if (!mapped) {
-        throw new Error(
-          "clonePageCompositionWithNewIds: missing child mapping",
-        );
-      }
-      return mapped;
-    });
-    const newStyleBindingId = node.styleBindingId
-      ? sbIdMap.get(node.styleBindingId)
-      : undefined;
-
-    nodes[newId] = {
-      ...node,
-      id: newId,
-      parentId: newParentId,
-      childIds: newChildIds,
-      ...(newStyleBindingId !== undefined
-        ? { styleBindingId: newStyleBindingId }
-        : {}),
-    };
+    const cloned = cloneNodeWithMappedIds(nodeIdMap, sbIdMap, oldId, node);
+    nodes[cloned.id] = cloned;
   }
 
   const styleBindings: Record<string, StyleBinding> = {};

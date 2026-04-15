@@ -10,7 +10,14 @@ import {
   IconRefresh,
   IconTypography,
 } from "@tabler/icons-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import { ScrollArea } from "../../components/scroll-area.js";
 import { StudioRoot } from "../../components/studio-root.js";
@@ -43,6 +50,12 @@ type TokenMode = "light" | "dark";
 
 type DesignToken = StudioDesignTokenEntry & { category: TokenCategory };
 type ActiveTab = "colors" | "typography" | "other";
+
+type DesignSystemColorSection = {
+  readonly id: string;
+  readonly label: string;
+  readonly fields: readonly { readonly key: string; readonly label: string }[];
+};
 
 const COLOR_SECTIONS = [
   {
@@ -215,7 +228,252 @@ function ColorSwatch({ value }: { value: string }) {
   );
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Large token editor surface; split in a follow-up.
+function DesignSystemEditorColorsTab({
+  colorSearch,
+  filteredColorSections,
+  getTokenValue,
+  setColorSearch,
+  setTokenValue,
+}: {
+  colorSearch: string;
+  filteredColorSections: readonly DesignSystemColorSection[];
+  getTokenValue: (key: string) => string;
+  setColorSearch: (value: string) => void;
+  setTokenValue: (key: string, value: string) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="relative">
+        <Input
+          onChange={(event) => setColorSearch(event.target.value)}
+          placeholder="Search colors..."
+          type="search"
+          value={colorSearch}
+        />
+      </div>
+      {filteredColorSections.map((section) => (
+        <details
+          className="rounded-lg border border-border bg-card px-3 py-2"
+          key={section.id}
+          open
+        >
+          <summary className="cursor-pointer text-sm font-semibold tracking-[0.08em] text-muted-foreground uppercase">
+            {section.label}
+          </summary>
+          <div className="mt-3 space-y-3">
+            {section.fields.map((field) => {
+              const value = getTokenValue(field.key);
+              return (
+                <div
+                  className="grid grid-cols-[auto_1fr] items-center gap-2"
+                  key={field.key}
+                >
+                  <ColorSwatch value={value} />
+                  <div className="space-y-1">
+                    <span className="block text-xs text-muted-foreground">
+                      {field.label}
+                    </span>
+                    <Input
+                      onChange={(event) => {
+                        setTokenValue(field.key, event.target.value);
+                      }}
+                      placeholder="oklch(...) or #hex"
+                      value={value}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </details>
+      ))}
+    </div>
+  );
+}
+
+function DesignSystemEditorTypographyTab({
+  getTokenValue,
+  setTokenValue,
+}: {
+  getTokenValue: (key: string) => string;
+  setTokenValue: (key: string, value: string) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        <IconTypography className="size-4" aria-hidden />
+        Typography tokens
+      </p>
+      {TYPOGRAPHY_FIELDS.map((field) => (
+        <div className="space-y-1" key={field.key}>
+          <span className="text-xs text-muted-foreground">{field.label}</span>
+          <Input
+            onChange={(event) => {
+              setTokenValue(field.key, event.target.value);
+            }}
+            placeholder="Token value"
+            value={getTokenValue(field.key)}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DesignSystemEditorOtherTab({
+  getTokenValue,
+  setTokenValue,
+}: {
+  getTokenValue: (key: string) => string;
+  setTokenValue: (key: string, value: string) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      {OTHER_FIELDS.map((field) => (
+        <div className="space-y-1" key={field.key}>
+          <span className="text-xs text-muted-foreground">{field.label}</span>
+          <Input
+            onChange={(event) => {
+              setTokenValue(field.key, event.target.value);
+            }}
+            placeholder="Token value"
+            value={getTokenValue(field.key)}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DesignSystemEditorTokenScrollBody({
+  activeTab,
+  colorSearch,
+  filteredColorSections,
+  getTokenValue,
+  loadState,
+  setColorSearch,
+  setTokenValue,
+  tokenSets,
+}: {
+  activeTab: ActiveTab;
+  colorSearch: string;
+  filteredColorSections: readonly DesignSystemColorSection[];
+  getTokenValue: (key: string) => string;
+  loadState: "idle" | "loading" | "error";
+  setColorSearch: (value: string) => void;
+  setTokenValue: (key: string, value: string) => void;
+  tokenSets: StudioDesignTokenSetDoc[];
+}) {
+  if (loadState === "loading") {
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
+  }
+  if (tokenSets.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        No token set found. Create one in collection:{" "}
+        <code>design-token-sets</code>.
+      </p>
+    );
+  }
+  if (activeTab === "colors") {
+    return (
+      <DesignSystemEditorColorsTab
+        colorSearch={colorSearch}
+        filteredColorSections={filteredColorSections}
+        getTokenValue={getTokenValue}
+        setColorSearch={setColorSearch}
+        setTokenValue={setTokenValue}
+      />
+    );
+  }
+  if (activeTab === "typography") {
+    return (
+      <DesignSystemEditorTypographyTab
+        getTokenValue={getTokenValue}
+        setTokenValue={setTokenValue}
+      />
+    );
+  }
+  if (activeTab === "other") {
+    return (
+      <DesignSystemEditorOtherTab
+        getTokenValue={getTokenValue}
+        setTokenValue={setTokenValue}
+      />
+    );
+  }
+  return null;
+}
+
+function DesignSystemEditorPreviewCard({
+  isDirty,
+  previewKey,
+  previewPath,
+  previewUrl,
+  selectedSetTitle,
+  setPreviewKey,
+  setPreviewPath,
+}: {
+  isDirty: boolean;
+  previewKey: number;
+  previewPath: string;
+  previewUrl: string;
+  selectedSetTitle: string;
+  setPreviewKey: Dispatch<SetStateAction<number>>;
+  setPreviewPath: Dispatch<SetStateAction<string>>;
+}) {
+  return (
+    <Card className="min-h-0 overflow-hidden">
+      <CardHeader className="space-y-3 border-b border-border/70 pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <IconDeviceDesktop className="size-4" aria-hidden />
+            Preview
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Uses live page route in iframe.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            className="min-w-[220px] flex-1"
+            onChange={(event) => setPreviewPath(event.target.value)}
+            placeholder="/"
+            value={previewPath}
+          />
+          <Button
+            className="gap-2"
+            onClick={() => setPreviewKey((value) => value + 1)}
+            type="button"
+            variant="outline"
+          >
+            <IconRefresh className="size-4" aria-hidden />
+            Reload
+          </Button>
+        </div>
+        <Separator />
+        <div className="text-xs text-muted-foreground">
+          Active set:{" "}
+          <span className="font-medium text-foreground">
+            {selectedSetTitle}
+          </span>
+          {isDirty ? " · Unsaved changes" : ""}
+        </div>
+      </CardHeader>
+      <CardContent className="min-h-0 p-2">
+        <div className="h-[calc(100dvh-12rem)] overflow-hidden rounded-md border border-border">
+          <iframe
+            className="h-full w-full bg-white"
+            key={`${previewUrl}-${previewKey}`}
+            src={previewUrl}
+            title="Design system preview"
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function DesignSystemEditor({
   canAccess,
   authoringClient = getDefaultStudioAuthoringClient(),
@@ -561,157 +819,30 @@ export function DesignSystemEditor({
                   ))}
                 </div>
                 <ScrollArea className="h-[calc(100dvh-18rem)] px-4 py-4">
-                  {loadState === "loading" ? (
-                    <p className="text-sm text-muted-foreground">Loading…</p>
-                  ) : tokenSets.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No token set found. Create one in collection:{" "}
-                      <code>design-token-sets</code>.
-                    </p>
-                  ) : activeTab === "colors" ? (
-                    <div className="space-y-4">
-                      <div className="relative">
-                        <Input
-                          placeholder="Search colors..."
-                          type="search"
-                          value={colorSearch}
-                          onChange={(event) =>
-                            setColorSearch(event.target.value)
-                          }
-                        />
-                      </div>
-                      {filteredColorSections.map((section) => (
-                        <details
-                          key={section.id}
-                          className="rounded-lg border border-border bg-card px-3 py-2"
-                          open
-                        >
-                          <summary className="cursor-pointer text-sm font-semibold tracking-[0.08em] text-muted-foreground uppercase">
-                            {section.label}
-                          </summary>
-                          <div className="mt-3 space-y-3">
-                            {section.fields.map((field) => {
-                              const value = getTokenValue(field.key);
-                              return (
-                                <div
-                                  key={field.key}
-                                  className="grid grid-cols-[auto_1fr] items-center gap-2"
-                                >
-                                  <ColorSwatch value={value} />
-                                  <div className="space-y-1">
-                                    <span className="block text-xs text-muted-foreground">
-                                      {field.label}
-                                    </span>
-                                    <Input
-                                      placeholder="oklch(...) or #hex"
-                                      value={value}
-                                      onChange={(event) => {
-                                        setTokenValue(
-                                          field.key,
-                                          event.target.value,
-                                        );
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </details>
-                      ))}
-                    </div>
-                  ) : activeTab === "typography" ? (
-                    <div className="space-y-3">
-                      <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <IconTypography className="size-4" aria-hidden />
-                        Typography tokens
-                      </p>
-                      {TYPOGRAPHY_FIELDS.map((field) => (
-                        <div key={field.key} className="space-y-1">
-                          <span className="text-xs text-muted-foreground">
-                            {field.label}
-                          </span>
-                          <Input
-                            placeholder="Token value"
-                            value={getTokenValue(field.key)}
-                            onChange={(event) => {
-                              setTokenValue(field.key, event.target.value);
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  ) : activeTab === "other" ? (
-                    <div className="space-y-3">
-                      {OTHER_FIELDS.map((field) => (
-                        <div key={field.key} className="space-y-1">
-                          <span className="text-xs text-muted-foreground">
-                            {field.label}
-                          </span>
-                          <Input
-                            placeholder="Token value"
-                            value={getTokenValue(field.key)}
-                            onChange={(event) => {
-                              setTokenValue(field.key, event.target.value);
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
+                  <DesignSystemEditorTokenScrollBody
+                    activeTab={activeTab}
+                    colorSearch={colorSearch}
+                    filteredColorSections={filteredColorSections}
+                    getTokenValue={getTokenValue}
+                    loadState={loadState}
+                    setColorSearch={setColorSearch}
+                    setTokenValue={setTokenValue}
+                    tokenSets={tokenSets}
+                  />
                 </ScrollArea>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="min-h-0 overflow-hidden">
-            <CardHeader className="space-y-3 border-b border-border/70 pb-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <IconDeviceDesktop className="size-4" aria-hidden />
-                  Preview
-                </CardTitle>
-                <p className="text-xs text-muted-foreground">
-                  Uses live page route in iframe.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Input
-                  className="min-w-[220px] flex-1"
-                  placeholder="/"
-                  value={previewPath}
-                  onChange={(event) => setPreviewPath(event.target.value)}
-                />
-                <Button
-                  className="gap-2"
-                  type="button"
-                  variant="outline"
-                  onClick={() => setPreviewKey((value) => value + 1)}
-                >
-                  <IconRefresh className="size-4" aria-hidden />
-                  Reload
-                </Button>
-              </div>
-              <Separator />
-              <div className="text-xs text-muted-foreground">
-                Active set:{" "}
-                <span className="font-medium text-foreground">
-                  {selectedSet?.title ?? "None"}
-                </span>
-                {isDirty ? " · Unsaved changes" : ""}
-              </div>
-            </CardHeader>
-            <CardContent className="min-h-0 p-2">
-              <div className="h-[calc(100dvh-12rem)] overflow-hidden rounded-md border border-border">
-                <iframe
-                  key={`${previewUrl}-${previewKey}`}
-                  className="h-full w-full bg-white"
-                  src={previewUrl}
-                  title="Design system preview"
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <DesignSystemEditorPreviewCard
+            isDirty={isDirty}
+            previewKey={previewKey}
+            previewPath={previewPath}
+            previewUrl={previewUrl}
+            selectedSetTitle={selectedSet?.title ?? "None"}
+            setPreviewKey={setPreviewKey}
+            setPreviewPath={setPreviewPath}
+          />
         </div>
       </div>
     </StudioRoot>

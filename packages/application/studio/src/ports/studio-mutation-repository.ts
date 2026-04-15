@@ -18,14 +18,22 @@ export interface StudioMutationRepository {
     composition: PageComposition,
     intent: "draft" | "publish",
     actor: CompositionActor,
-  ): AsyncResult<{ updatedAt: string }, "PERSISTENCE_ERROR" | "FORBIDDEN">;
+  ): AsyncResult<
+    { updatedAt: string; _status: "draft" | "published" | null },
+    "PERSISTENCE_ERROR" | "FORBIDDEN"
+  >;
 
   renameTemplate(
     compositionId: string,
     name: string,
     actor: CompositionActor,
+    intent: "draft" | "publish",
   ): AsyncResult<
-    { name: string; updatedAt: string },
+    {
+      name: string;
+      updatedAt: string;
+      _status?: "draft" | "published" | null;
+    },
     "PERSISTENCE_ERROR" | "FORBIDDEN"
   >;
 

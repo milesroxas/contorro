@@ -37,6 +37,6 @@ Use this file for changes inside **`apps/cms`** (package **`@repo/cms`**). Root 
 ## Required checks after relevant changes
 
 - Schema/config changes: run `payload generate:types` and `payload generate:importmap` as needed.
-- Run `pnpm lint`.
+- Run `pnpm lint` (no `biome-ignore` or other suppressions to silence rules — see root `AGENTS.md`).
 - Run `pnpm typecheck` for cross-package impact.
 - Run `pnpm --filter @repo/cms run test:int` for behavior changes.

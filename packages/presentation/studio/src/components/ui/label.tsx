@@ -5,20 +5,25 @@ import { cn } from "../../lib/cn.js";
 function Label({
   className,
   htmlFor,
+  children,
   ...props
 }: React.ComponentProps<"label">) {
+  const classes = cn(
+    "text-sm font-medium leading-snug text-foreground select-none",
+    "peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+    className,
+  );
+  if (htmlFor !== undefined && htmlFor !== "") {
+    return (
+      <label className={classes} data-slot="label" htmlFor={htmlFor} {...props}>
+        {children}
+      </label>
+    );
+  }
   return (
-    // biome-ignore lint/a11y/noLabelWithoutControl: thin primitive; callers pair with controls via htmlFor
-    <label
-      data-slot="label"
-      htmlFor={htmlFor}
-      className={cn(
-        "text-sm font-medium leading-snug text-foreground select-none",
-        "peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
-        className,
-      )}
-      {...props}
-    />
+    <span className={classes} data-slot="label" {...props}>
+      {children}
+    </span>
   );
 }
 

@@ -18,7 +18,10 @@ import {
 import type { Payload } from "payload";
 import { getPayload } from "payload";
 
-import { payloadStudioMutationRepository } from "@/app/api/studio/_lib/payload-studio-mutation-repository";
+import {
+  payloadStudioMutationRepository,
+  publicationStatusFromDoc,
+} from "@/app/api/studio/_lib/payload-studio-mutation-repository";
 import { loadDesignSystemRuntimeForPreview } from "@/lib/load-published-token-set";
 import config from "@/payload.config";
 
@@ -61,12 +64,9 @@ function responseUpdatedAt(value: unknown): string {
   return normalizeUpdatedAt(value) || new Date().toISOString();
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
-export async function GET(
+async function requireStudioDesigner(
   request: Request,
-  props: { params: Promise<{ id: string }> },
-) {
-  const { id } = await props.params;
+): Promise<Response | { payload: Payload; user: unknown }> {
   const payloadConfig = await config;
   const payload = await getPayload({ config: payloadConfig });
   const { user } = await payload.auth({ headers: request.headers });
@@ -83,92 +83,120 @@ export async function GET(
       { status: 403 },
     );
   }
+  return { payload, user };
+}
 
+async function getNewSessionComposition(
+  payload: Payload,
+  id: string,
+): Promise<Response | null> {
   const newSession = parseStudioNewCompositionSessionId(id);
-  if (newSession) {
-    const designTokens = await designTokensForStudio(payload);
-    return Response.json({
-      data: {
-        name:
-          newSession.kind === "component"
-            ? "Untitled component"
-            : "Untitled page template",
-        composition:
-          newSession.kind === "component"
-            ? defaultEmptyPageComposition()
-            : defaultPageTemplateComposition(),
-        updatedAt: "",
-        tokenMetadata: designTokens.tokenMetadata,
-        cssVariables: designTokens.cssVariables,
-      },
+  if (!newSession) {
+    return null;
+  }
+  const designTokens = await designTokensForStudio(payload);
+  return Response.json({
+    data: {
+      name:
+        newSession.kind === "component"
+          ? "Untitled component"
+          : "Untitled page template",
+      composition:
+        newSession.kind === "component"
+          ? defaultEmptyPageComposition()
+          : defaultPageTemplateComposition(),
+      updatedAt: "",
+      _status: null,
+      tokenMetadata: designTokens.tokenMetadata,
+      cssVariables: designTokens.cssVariables,
+    },
+  });
+}
+
+async function getComponentComposition(
+  payload: Payload,
+  user: unknown,
+  id: string,
+): Promise<Response | null> {
+  if (!isStudioComponentRowId(id)) {
+    return null;
+  }
+  const componentId = componentIdFromStudioRowId(id);
+  if (!componentId) {
+    return Response.json(
+      { error: { code: "VALIDATION_ERROR" as const } },
+      { status: 400 },
+    );
+  }
+  const designTokens = await designTokensForStudio(payload);
+  let doc: {
+    composition?: unknown;
+    updatedAt?: unknown;
+    displayName?: unknown;
+    _status?: unknown;
+  };
+  try {
+    doc = await payload.findByID({
+      collection: "components",
+      id: componentId,
+      depth: 0,
+      draft: true,
+      user,
+      overrideAccess: false,
     });
+  } catch {
+    return Response.json(
+      { error: { code: "NOT_FOUND" as const } },
+      { status: 404 },
+    );
+  }
+  if (!doc) {
+    return Response.json(
+      { error: { code: "NOT_FOUND" as const } },
+      { status: 404 },
+    );
   }
 
-  if (isStudioComponentRowId(id)) {
-    const componentId = componentIdFromStudioRowId(id);
-    if (!componentId) {
+  const raw = doc.composition;
+  let composition: PageComposition;
+  if (raw === undefined || raw === null) {
+    composition = defaultEmptyPageComposition();
+  } else {
+    const parsed = PageCompositionSchema.safeParse(raw);
+    if (!parsed.success) {
       return Response.json(
         { error: { code: "VALIDATION_ERROR" as const } },
         { status: 400 },
       );
     }
-    const designTokens = await designTokensForStudio(payload);
-    let doc: {
-      composition?: unknown;
-      updatedAt?: unknown;
-      displayName?: unknown;
-    };
-    try {
-      doc = await payload.findByID({
-        collection: "components",
-        id: componentId,
-        depth: 0,
-        draft: true,
-        user,
-        overrideAccess: false,
-      });
-    } catch {
-      return Response.json(
-        { error: { code: "NOT_FOUND" as const } },
-        { status: 404 },
-      );
-    }
-    if (!doc) {
-      return Response.json(
-        { error: { code: "NOT_FOUND" as const } },
-        { status: 404 },
-      );
-    }
-
-    const raw = doc.composition;
-    let composition: PageComposition;
-    if (raw === undefined || raw === null) {
-      composition = defaultEmptyPageComposition();
-    } else {
-      const parsed = PageCompositionSchema.safeParse(raw);
-      if (!parsed.success) {
-        return Response.json(
-          { error: { code: "VALIDATION_ERROR" as const } },
-          { status: 400 },
-        );
-      }
-      composition = parsed.data;
-    }
-
-    return Response.json({
-      data: {
-        name: String(doc.displayName ?? "Untitled component"),
-        composition,
-        updatedAt: responseUpdatedAt(doc.updatedAt),
-        tokenMetadata: designTokens.tokenMetadata,
-        cssVariables: designTokens.cssVariables,
-      },
-    });
+    composition = parsed.data;
   }
 
+  return Response.json({
+    data: {
+      name: String(doc.displayName ?? "Untitled component"),
+      composition,
+      updatedAt: responseUpdatedAt(doc.updatedAt),
+      _status: publicationStatusFromDoc(doc),
+      tokenMetadata: designTokens.tokenMetadata,
+      cssVariables: designTokens.cssVariables,
+    },
+  });
+}
+
+async function getPageTemplateComposition(
+  payload: Payload,
+  user: unknown,
+  id: string,
+): Promise<Response> {
   const designTokens = await designTokensForStudio(payload);
 
-  let doc: { composition?: unknown; updatedAt?: unknown; title?: unknown };
+  let doc: {
+    composition?: unknown;
+    updatedAt?: unknown;
+    title?: unknown;
+    _status?: unknown;
+  };
   try {
     doc = await payload.findByID({
       collection: "page-compositions",
@@ -211,34 +239,146 @@ export async function GET(
       name: String(doc.title ?? "Untitled template"),
       composition: normalizeTemplateShell(parsed.data),
       updatedAt: responseUpdatedAt(doc.updatedAt),
+      _status: publicationStatusFromDoc(doc),
       tokenMetadata: designTokens.tokenMetadata,
       cssVariables: designTokens.cssVariables,
     },
   });
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
+export async function GET(
+  request: Request,
+  props: { params: Promise<{ id: string }> },
+) {
+  const { id } = await props.params;
+  const auth = await requireStudioDesigner(request);
+  if (auth instanceof Response) {
+    return auth;
+  }
+  const { payload, user } = auth;
+
+  const sessionResponse = await getNewSessionComposition(payload, id);
+  if (sessionResponse) {
+    return sessionResponse;
+  }
+
+  const componentResponse = await getComponentComposition(payload, user, id);
+  if (componentResponse) {
+    return componentResponse;
+  }
+
+  return getPageTemplateComposition(payload, user, id);
+}
+
+async function createAndSaveNewSessionComposition(
+  payload: Payload,
+  user: unknown,
+  newSession: NonNullable<
+    ReturnType<typeof parseStudioNewCompositionSessionId>
+  >,
+  composition: PageComposition,
+  intent: "draft" | "publish",
+  nextName: string,
+): Promise<Response> {
+  const repo = payloadStudioMutationRepository(payload, user);
+  const created = await createCompositionEntryCommand(repo, {
+    kind: newSession.kind,
+    title:
+      nextName ||
+      (newSession.kind === "component"
+        ? "Untitled component"
+        : "Untitled page template"),
+    actor: user,
+  });
+  if (!created.ok) {
+    const status = created.error === "VALIDATION_ERROR" ? 400 : 500;
+    return Response.json(
+      {
+        error: {
+          code:
+            created.error === "VALIDATION_ERROR"
+              ? ("VALIDATION_ERROR" as const)
+              : ("CREATE_FAILED" as const),
+        },
+      },
+      { status },
+    );
+  }
+
+  const saved = await saveCompositionCommand(repo, {
+    compositionId: created.value.compositionId,
+    composition,
+    ifMatchUpdatedAt: null,
+    intent,
+    actor: user,
+  });
+  if (!saved.ok) {
+    if (saved.error === "VALIDATION_ERROR") {
+      return Response.json(
+        { error: { code: "VALIDATION_ERROR" as const } },
+        { status: 400 },
+      );
+    }
+    return Response.json(
+      { error: { code: "UPDATE_FAILED" as const } },
+      { status: 500 },
+    );
+  }
+
+  return Response.json({
+    data: {
+      id: created.value.compositionId,
+      updatedAt: saved.value.updatedAt,
+      _status: saved.value._status,
+    },
+  });
+}
+
+function responseForSaveExisting(
+  saved: Awaited<ReturnType<typeof saveCompositionCommand>>,
+): Response {
+  if (saved.ok) {
+    return Response.json({
+      data: {
+        updatedAt: saved.value.updatedAt,
+        _status: saved.value._status,
+      },
+    });
+  }
+  if (saved.error === "COMPOSITION_NOT_FOUND") {
+    return Response.json(
+      { error: { code: "NOT_FOUND" as const } },
+      { status: 404 },
+    );
+  }
+  if (saved.error === "COMPOSITION_CONFLICT") {
+    return Response.json(
+      { error: { code: "COMPOSITION_CONFLICT" as const } },
+      { status: 409 },
+    );
+  }
+  if (saved.error === "VALIDATION_ERROR") {
+    return Response.json(
+      { error: { code: "VALIDATION_ERROR" as const } },
+      { status: 400 },
+    );
+  }
+  return Response.json(
+    { error: { code: "UPDATE_FAILED" as const } },
+    { status: 500 },
+  );
+}
+
 export async function POST(
   request: Request,
   props: { params: Promise<{ id: string }> },
 ) {
   const { id } = await props.params;
-  const payloadConfig = await config;
-  const payload = await getPayload({ config: payloadConfig });
-  const { user } = await payload.auth({ headers: request.headers });
-  if (!user) {
-    return Response.json(
-      { error: { code: "UNAUTHORIZED" as const } },
-      { status: 401 },
-    );
+  const auth = await requireStudioDesigner(request);
+  if (auth instanceof Response) {
+    return auth;
   }
-  const role = (user as { role?: string }).role;
-  if (role !== "admin" && role !== "designer") {
-    return Response.json(
-      { error: { code: "FORBIDDEN" as const } },
-      { status: 403 },
-    );
-  }
+  const { payload, user } = auth;
 
   let raw: unknown;
   try {
@@ -303,57 +443,14 @@ export async function POST(
 
   const newSession = parseStudioNewCompositionSessionId(id);
   if (newSession) {
-    const repo = payloadStudioMutationRepository(payload, user);
-    const created = await createCompositionEntryCommand(repo, {
-      kind: newSession.kind,
-      title:
-        nextName ||
-        (newSession.kind === "component"
-          ? "Untitled component"
-          : "Untitled page template"),
-      actor: user,
-    });
-    if (!created.ok) {
-      const status = created.error === "VALIDATION_ERROR" ? 400 : 500;
-      return Response.json(
-        {
-          error: {
-            code:
-              created.error === "VALIDATION_ERROR"
-                ? ("VALIDATION_ERROR" as const)
-                : ("CREATE_FAILED" as const),
-          },
-        },
-        { status },
-      );
-    }
-
-    const saved = await saveCompositionCommand(repo, {
-      compositionId: created.value.compositionId,
+    return createAndSaveNewSessionComposition(
+      payload,
+      user,
+      newSession,
       composition,
-      ifMatchUpdatedAt: null,
       intent,
-      actor: user,
-    });
-    if (!saved.ok) {
-      if (saved.error === "VALIDATION_ERROR") {
-        return Response.json(
-          { error: { code: "VALIDATION_ERROR" as const } },
-          { status: 400 },
-        );
-      }
-      return Response.json(
-        { error: { code: "UPDATE_FAILED" as const } },
-        { status: 500 },
-      );
-    }
-
-    return Response.json({
-      data: {
-        id: created.value.compositionId,
-        updatedAt: saved.value.updatedAt,
-      },
-    });
+      nextName,
+    );
   }
 
   const repo = payloadStudioMutationRepository(payload, user);
@@ -364,33 +461,20 @@ export async function POST(
     intent,
     actor: user,
   });
-  if (!saved.ok) {
-    if (saved.error === "COMPOSITION_NOT_FOUND") {
-      return Response.json(
-        { error: { code: "NOT_FOUND" as const } },
-        { status: 404 },
-      );
-    }
-    if (saved.error === "COMPOSITION_CONFLICT") {
-      return Response.json(
-        { error: { code: "COMPOSITION_CONFLICT" as const } },
-        { status: 409 },
-      );
-    }
-    if (saved.error === "VALIDATION_ERROR") {
-      return Response.json(
-        { error: { code: "VALIDATION_ERROR" as const } },
-        { status: 400 },
-      );
-    }
-    return Response.json(
-      { error: { code: "UPDATE_FAILED" as const } },
-      { status: 500 },
-    );
-  }
+  return responseForSaveExisting(saved);
+}
 
+function responseForRenameSuccess(value: {
+  name: string;
+  updatedAt: string;
+  _status?: "draft" | "published" | null;
+}): Response {
   return Response.json({
-    data: { updatedAt: saved.value.updatedAt },
+    data: {
+      name: value.name,
+      updatedAt: responseUpdatedAt(value.updatedAt),
+      ...(value._status != null ? { _status: value._status } : {}),
+    },
   });
 }
 
@@ -429,7 +513,7 @@ export async function PATCH(
 
   const body =
     raw && typeof raw === "object" && !Array.isArray(raw)
-      ? (raw as { name?: unknown })
+      ? (raw as { name?: unknown; intent?: unknown })
       : null;
   const nextName = typeof body?.name === "string" ? body.name.trim() : "";
   if (!nextName) {
@@ -438,12 +522,15 @@ export async function PATCH(
       { status: 400 },
     );
   }
+  const intentRaw = body?.intent;
+  const intent = intentRaw === "publish" ? "publish" : "draft";
 
   const repo = payloadStudioMutationRepository(payload, user);
   const renamed = await renameTemplateCommand(repo, {
     compositionId: id,
     name: nextName,
     actor: user,
+    intent,
   });
   if (!renamed.ok) {
     if (renamed.error === "COMPOSITION_NOT_FOUND") {
@@ -464,10 +551,5 @@ export async function PATCH(
     );
   }
 
-  return Response.json({
-    data: {
-      name: renamed.value.name,
-      updatedAt: responseUpdatedAt(renamed.value.updatedAt),
-    },
-  });
+  return responseForRenameSuccess(renamed.value);
 }

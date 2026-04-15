@@ -268,6 +268,167 @@ function resolveTemplateShellSectionId(
   return null;
 }
 
+function layerTreeGlobalKeyEventIgnored(event: KeyboardEvent): boolean {
+  const { target } = event;
+  return (
+    Boolean(event.metaKey || event.ctrlKey || event.altKey) ||
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement ||
+    (target instanceof HTMLElement && target.isContentEditable)
+  );
+}
+
+function verticalLayerNeighbor(
+  key: "w" | "s",
+  visibleNodeIds: string[],
+  currentNodeId: string,
+): string | null {
+  const currentIndex = visibleNodeIds.indexOf(currentNodeId);
+  if (currentIndex < 0) {
+    return null;
+  }
+  if (key === "w" && currentIndex > 0) {
+    return visibleNodeIds[currentIndex - 1];
+  }
+  if (key === "s" && currentIndex < visibleNodeIds.length - 1) {
+    return visibleNodeIds[currentIndex + 1];
+  }
+  return null;
+}
+
+function nextLayerNodeForChildDrill(args: {
+  composition: PageComposition;
+  currentNodeId: string;
+  collapsedNodeIds: ReadonlySet<string>;
+  hasValidSelection: boolean;
+  uncollapseNode: (nodeId: string) => void;
+}): string | null {
+  const {
+    composition,
+    currentNodeId,
+    collapsedNodeIds,
+    hasValidSelection,
+    uncollapseNode,
+  } = args;
+  const firstChildId = composition.nodes[currentNodeId]?.childIds.find(
+    (childId) => Boolean(composition.nodes[childId]),
+  );
+  if (firstChildId) {
+    if (collapsedNodeIds.has(currentNodeId)) {
+      uncollapseNode(currentNodeId);
+    }
+    return firstChildId;
+  }
+  if (!hasValidSelection) {
+    return currentNodeId;
+  }
+  return null;
+}
+
+function nextLayerNodeForSectionJump(
+  key: "q" | "e",
+  composition: PageComposition,
+  currentNodeId: string,
+): string | null {
+  const sectionIds = collectTemplateShellSectionIds(composition);
+  if (sectionIds.length === 0) {
+    return null;
+  }
+  if (currentNodeId === composition.rootId) {
+    return key === "q" ? sectionIds[sectionIds.length - 1] : sectionIds[0];
+  }
+  const currentSectionId = resolveTemplateShellSectionId(
+    composition,
+    currentNodeId,
+  );
+  if (!currentSectionId) {
+    return null;
+  }
+  const currentSectionIndex = sectionIds.indexOf(currentSectionId);
+  if (currentSectionIndex < 0) {
+    return null;
+  }
+  if (key === "q" && currentSectionIndex > 0) {
+    return sectionIds[currentSectionIndex - 1];
+  }
+  if (key === "e" && currentSectionIndex < sectionIds.length - 1) {
+    return sectionIds[currentSectionIndex + 1];
+  }
+  return null;
+}
+
+function computeNextLayerTreeNodeId(args: {
+  key: string;
+  composition: PageComposition;
+  collapsedNodeIds: ReadonlySet<string>;
+  selectedNodeId: string | null;
+  uncollapseNode: (nodeId: string) => void;
+}): string | null {
+  const { key, composition, collapsedNodeIds, selectedNodeId, uncollapseNode } =
+    args;
+  const visibleNodeIds = collectVisibleLayerNodeIds(
+    composition,
+    collapsedNodeIds,
+  );
+  if (visibleNodeIds.length === 0) {
+    return null;
+  }
+  const hasValidSelection = Boolean(
+    selectedNodeId && composition.nodes[selectedNodeId],
+  );
+  const currentNodeId =
+    hasValidSelection && selectedNodeId ? selectedNodeId : visibleNodeIds[0];
+
+  if (!hasValidSelection && (key === "w" || key === "a" || key === "s")) {
+    return currentNodeId;
+  }
+  if (key === "w" || key === "s") {
+    return verticalLayerNeighbor(
+      key as "w" | "s",
+      visibleNodeIds,
+      currentNodeId,
+    );
+  }
+  if (key === "a") {
+    return composition.nodes[currentNodeId]?.parentId ?? null;
+  }
+  if (key === "d") {
+    return nextLayerNodeForChildDrill({
+      collapsedNodeIds,
+      composition,
+      currentNodeId,
+      hasValidSelection,
+      uncollapseNode,
+    });
+  }
+  if (key === "q" || key === "e") {
+    return nextLayerNodeForSectionJump(
+      key as "q" | "e",
+      composition,
+      currentNodeId,
+    );
+  }
+  return null;
+}
+
+function layerSubtreeHeadingPresentation(
+  semanticTag: string | null,
+  defaultIcon: Icon,
+  defaultKindTitle: string,
+): { Icon: Icon; kindTitle: string } {
+  if (semanticTag === "header") {
+    return { Icon: IconLayoutList, kindTitle: "Header" };
+  }
+  if (semanticTag === "main") {
+    return { Icon: IconLayoutRows, kindTitle: "Main" };
+  }
+  if (semanticTag === "footer") {
+    return { Icon: IconLayoutGrid, kindTitle: "Footer" };
+  }
+  return { Icon: defaultIcon, kindTitle: defaultKindTitle };
+}
+
 /** Document root: reads as a section heading; nested rows are the editable layer list. */
 function RootLayerHeading({
   nodeId,
@@ -312,7 +473,208 @@ function RootLayerHeading({
   );
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
+function LayerSubtreeNestedList({
+  childIds,
+  collapsedNodeIds,
+  composition,
+  globalCollapseToggleButton,
+  isRoot,
+  nodeId,
+  onRemoveNode,
+  onSelect,
+  onSetNodeCollapseState,
+  onToggleNodeCollapse,
+  selectedNodeId,
+}: {
+  childIds: string[];
+  collapsedNodeIds: Set<string>;
+  composition: PageComposition;
+  globalCollapseToggleButton?: ReactNode;
+  isRoot: boolean;
+  nodeId: string;
+  onRemoveNode: (id: string) => void;
+  onSelect: (id: string) => void;
+  onSetNodeCollapseState: (ids: string[], collapsed: boolean) => void;
+  onToggleNodeCollapse: (id: string) => void;
+  selectedNodeId: string | null;
+}) {
+  if (childIds.length === 0) {
+    return (
+      <li className={layerTreeItemClass}>
+        <InsertionDropZone
+          droppableScope="layers"
+          parentId={nodeId}
+          insertIndex={0}
+          variant="empty"
+        />
+      </li>
+    );
+  }
+  return (
+    <>
+      <li className={layerTreeItemClass}>
+        <InsertionDropZone
+          className="py-0"
+          droppableScope="layers"
+          parentId={nodeId}
+          insertIndex={0}
+          variant="between"
+        />
+      </li>
+      {childIds.map((cid, i) => (
+        <Fragment key={cid}>
+          <LayerSubtree
+            composition={composition}
+            collapsedNodeIds={collapsedNodeIds}
+            globalCollapseToggleButton={globalCollapseToggleButton}
+            nodeId={cid}
+            onSetNodeCollapseState={onSetNodeCollapseState}
+            onToggleNodeCollapse={onToggleNodeCollapse}
+            onRemoveNode={onRemoveNode}
+            onSelect={onSelect}
+            selectedNodeId={selectedNodeId}
+          />
+          <li className={layerTreeItemClass}>
+            <InsertionDropZone
+              droppableScope="layers"
+              parentId={nodeId}
+              insertIndex={i + 1}
+              variant="between"
+            />
+          </li>
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
+function LayerSubtreeChildCollapseButton({
+  hasChildren,
+  isCollapsed,
+  nodeId,
+  onToggleNodeCollapse,
+}: {
+  hasChildren: boolean;
+  isCollapsed: boolean;
+  nodeId: string;
+  onToggleNodeCollapse: (id: string) => void;
+}) {
+  if (!hasChildren) {
+    return null;
+  }
+  return (
+    <Button
+      aria-label={isCollapsed ? "Expand children" : "Collapse children"}
+      className={treeCollapseIconButtonClass}
+      onClick={() => onToggleNodeCollapse(nodeId)}
+      onPointerDown={(e) => e.stopPropagation()}
+      size="sm"
+      type="button"
+      variant="ghost"
+    >
+      {isCollapsed ? (
+        <IconChevronDown aria-hidden className="size-3.5" stroke={1.8} />
+      ) : (
+        <IconChevronUp aria-hidden className="size-3.5" stroke={1.8} />
+      )}
+    </Button>
+  );
+}
+
+function LayerSubtreeSectionCollapseButton({
+  isLockedSection,
+  onSetNodeCollapseState,
+  sectionAllCollapsed,
+  sectionExpandableIds,
+}: {
+  isLockedSection: boolean;
+  onSetNodeCollapseState: (ids: string[], collapsed: boolean) => void;
+  sectionAllCollapsed: boolean;
+  sectionExpandableIds: string[];
+}) {
+  if (!isLockedSection || sectionExpandableIds.length === 0) {
+    return null;
+  }
+  return (
+    <Button
+      aria-label={
+        sectionAllCollapsed ? "Expand all children" : "Collapse all children"
+      }
+      className={treeCollapseIconButtonClass}
+      onClick={() =>
+        onSetNodeCollapseState(sectionExpandableIds, !sectionAllCollapsed)
+      }
+      size="sm"
+      type="button"
+      variant="ghost"
+    >
+      {sectionAllCollapsed ? (
+        <IconChevronDown aria-hidden className="size-3.5" stroke={1.8} />
+      ) : (
+        <IconChevronUp aria-hidden className="size-3.5" stroke={1.8} />
+      )}
+    </Button>
+  );
+}
+
+function LayerSubtreeLayerRow({
+  Icon,
+  collapseToggleButton,
+  globalCollapseToggleButton,
+  isRoot,
+  isSectionHeading,
+  kindTitle,
+  layerLabel,
+  nodeId,
+  onRemoveNode,
+  onSelect,
+  rootId,
+  sectionToggleButton,
+  selected,
+}: {
+  Icon: Icon;
+  collapseToggleButton: ReactNode;
+  globalCollapseToggleButton?: ReactNode;
+  isRoot: boolean;
+  isSectionHeading: boolean;
+  kindTitle: string;
+  layerLabel: string;
+  nodeId: string;
+  onRemoveNode: (id: string) => void;
+  onSelect: (id: string) => void;
+  rootId: string;
+  sectionToggleButton: ReactNode;
+  selected: boolean;
+}) {
+  if (isSectionHeading) {
+    return (
+      <RootLayerHeading
+        Icon={Icon}
+        kindTitle={kindTitle}
+        nodeId={nodeId}
+        onSelect={onSelect}
+        rightControls={
+          isRoot ? globalCollapseToggleButton : sectionToggleButton
+        }
+        selected={selected}
+      />
+    );
+  }
+  return (
+    <DraggableNodeTreeRow
+      Icon={Icon}
+      collapseToggleButton={collapseToggleButton}
+      kindTitle={kindTitle}
+      layerLabel={layerLabel}
+      nodeId={nodeId}
+      onRemoveNode={onRemoveNode}
+      onSelect={onSelect}
+      rootId={rootId}
+      selected={selected}
+    />
+  );
+}
+
 function LayerSubtree({
   composition,
   nodeId,
@@ -345,20 +707,11 @@ function LayerSubtree({
   );
   const semanticTag =
     typeof node.propValues?.tag === "string" ? node.propValues.tag : null;
-  const Icon =
-    semanticTag === "header"
-      ? IconLayoutList
-      : semanticTag === "main"
-        ? IconLayoutRows
-        : semanticTag === "footer"
-          ? IconLayoutGrid
-          : defaultIcon;
-  const kindTitle =
-    semanticTag === "header" ||
-    semanticTag === "main" ||
-    semanticTag === "footer"
-      ? `${semanticTag.charAt(0).toUpperCase()}${semanticTag.slice(1)}`
-      : defaultKindTitle;
+  const { Icon, kindTitle } = layerSubtreeHeadingPresentation(
+    semanticTag,
+    defaultIcon,
+    defaultKindTitle,
+  );
   const layerLabel = kindTitle;
   const isContainer = isChildContainerPrimitive(node.definitionKey);
   const hasChildren = isContainer && node.childIds.length > 0;
@@ -377,64 +730,37 @@ function LayerSubtree({
   const sectionAllCollapsed =
     sectionExpandableIds.length > 0 &&
     sectionExpandableIds.every((id) => collapsedNodeIds.has(id));
-  const collapseToggleButton = hasChildren ? (
-    <Button
-      aria-label={isCollapsed ? "Expand children" : "Collapse children"}
-      className={treeCollapseIconButtonClass}
-      onClick={() => onToggleNodeCollapse(nodeId)}
-      onPointerDown={(e) => e.stopPropagation()}
-      size="sm"
-      type="button"
-      variant="ghost"
-    >
-      {isCollapsed ? (
-        <IconChevronDown aria-hidden className="size-3.5" stroke={1.8} />
-      ) : (
-        <IconChevronUp aria-hidden className="size-3.5" stroke={1.8} />
-      )}
-    </Button>
-  ) : null;
-  const sectionToggleButton =
-    isLockedSection && sectionExpandableIds.length > 0 ? (
-      <Button
-        aria-label={
-          sectionAllCollapsed ? "Expand all children" : "Collapse all children"
-        }
-        className={treeCollapseIconButtonClass}
-        onClick={() =>
-          onSetNodeCollapseState(sectionExpandableIds, !sectionAllCollapsed)
-        }
-        size="sm"
-        type="button"
-        variant="ghost"
-      >
-        {sectionAllCollapsed ? (
-          <IconChevronDown aria-hidden className="size-3.5" stroke={1.8} />
-        ) : (
-          <IconChevronUp aria-hidden className="size-3.5" stroke={1.8} />
-        )}
-      </Button>
-    ) : null;
-
-  const row = isSectionHeading ? (
-    <RootLayerHeading
-      Icon={Icon}
-      kindTitle={kindTitle}
+  const collapseToggleButton = (
+    <LayerSubtreeChildCollapseButton
+      hasChildren={hasChildren}
+      isCollapsed={isCollapsed}
       nodeId={nodeId}
-      onSelect={onSelect}
-      rightControls={isRoot ? globalCollapseToggleButton : sectionToggleButton}
-      selected={selected}
+      onToggleNodeCollapse={onToggleNodeCollapse}
     />
-  ) : (
-    <DraggableNodeTreeRow
+  );
+  const sectionToggleButton = (
+    <LayerSubtreeSectionCollapseButton
+      isLockedSection={isLockedSection}
+      onSetNodeCollapseState={onSetNodeCollapseState}
+      sectionAllCollapsed={sectionAllCollapsed}
+      sectionExpandableIds={sectionExpandableIds}
+    />
+  );
+
+  const row = (
+    <LayerSubtreeLayerRow
       Icon={Icon}
       collapseToggleButton={collapseToggleButton}
+      globalCollapseToggleButton={globalCollapseToggleButton}
+      isRoot={isRoot}
+      isSectionHeading={isSectionHeading}
       kindTitle={kindTitle}
       layerLabel={layerLabel}
       nodeId={nodeId}
       onRemoveNode={onRemoveNode}
       onSelect={onSelect}
       rootId={composition.rootId}
+      sectionToggleButton={sectionToggleButton}
       selected={selected}
     />
   );
@@ -449,51 +775,19 @@ function LayerSubtree({
         {row}
         {isContainer && !isCollapsed ? (
           <ul className={layerTreeNestedListClass(isRoot)}>
-            {node.childIds.length === 0 ? (
-              <li className={layerTreeItemClass}>
-                <InsertionDropZone
-                  droppableScope="layers"
-                  parentId={nodeId}
-                  insertIndex={0}
-                  variant="empty"
-                />
-              </li>
-            ) : (
-              <>
-                <li className={layerTreeItemClass}>
-                  <InsertionDropZone
-                    className="py-0"
-                    droppableScope="layers"
-                    parentId={nodeId}
-                    insertIndex={0}
-                    variant="between"
-                  />
-                </li>
-                {node.childIds.map((cid, i) => (
-                  <Fragment key={cid}>
-                    <LayerSubtree
-                      composition={composition}
-                      collapsedNodeIds={collapsedNodeIds}
-                      globalCollapseToggleButton={globalCollapseToggleButton}
-                      nodeId={cid}
-                      onSetNodeCollapseState={onSetNodeCollapseState}
-                      onToggleNodeCollapse={onToggleNodeCollapse}
-                      onRemoveNode={onRemoveNode}
-                      onSelect={onSelect}
-                      selectedNodeId={selectedNodeId}
-                    />
-                    <li className={layerTreeItemClass}>
-                      <InsertionDropZone
-                        droppableScope="layers"
-                        parentId={nodeId}
-                        insertIndex={i + 1}
-                        variant="between"
-                      />
-                    </li>
-                  </Fragment>
-                ))}
-              </>
-            )}
+            <LayerSubtreeNestedList
+              childIds={node.childIds}
+              collapsedNodeIds={collapsedNodeIds}
+              composition={composition}
+              globalCollapseToggleButton={globalCollapseToggleButton}
+              isRoot={isRoot}
+              nodeId={nodeId}
+              onRemoveNode={onRemoveNode}
+              onSelect={onSelect}
+              onSetNodeCollapseState={onSetNodeCollapseState}
+              onToggleNodeCollapse={onToggleNodeCollapse}
+              selectedNodeId={selectedNodeId}
+            />
           </ul>
         ) : null}
       </div>
@@ -546,18 +840,8 @@ export function NodeTree({
     [],
   );
   useEffect(() => {
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Key-specific tree navigation branches by design.
     const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target;
-      if (
-        event.metaKey ||
-        event.ctrlKey ||
-        event.altKey ||
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target instanceof HTMLSelectElement ||
-        (target instanceof HTMLElement && target.isContentEditable)
-      ) {
+      if (layerTreeGlobalKeyEventIgnored(event)) {
         return;
       }
       const key = event.key.toLowerCase();
@@ -571,87 +855,23 @@ export function NodeTree({
       ) {
         return;
       }
-
-      const visibleNodeIds = collectVisibleLayerNodeIds(
-        composition,
+      const uncollapseNode = (nodeId: string) => {
+        setCollapsedNodeIds((prev) => {
+          if (!prev.has(nodeId)) {
+            return prev;
+          }
+          const next = new Set(prev);
+          next.delete(nodeId);
+          return next;
+        });
+      };
+      const nextNodeId = computeNextLayerTreeNodeId({
         collapsedNodeIds,
-      );
-      if (visibleNodeIds.length === 0) {
-        return;
-      }
-
-      const hasValidSelection = Boolean(
-        selectedNodeId && composition.nodes[selectedNodeId],
-      );
-      const currentNodeId =
-        hasValidSelection && selectedNodeId
-          ? selectedNodeId
-          : visibleNodeIds[0];
-      let nextNodeId: string | null = null;
-
-      if (!hasValidSelection && (key === "w" || key === "a" || key === "s")) {
-        nextNodeId = currentNodeId;
-      } else if (key === "w" || key === "s") {
-        const currentIndex = visibleNodeIds.indexOf(currentNodeId);
-        if (currentIndex >= 0) {
-          if (key === "w" && currentIndex > 0) {
-            nextNodeId = visibleNodeIds[currentIndex - 1];
-          } else if (key === "s" && currentIndex < visibleNodeIds.length - 1) {
-            nextNodeId = visibleNodeIds[currentIndex + 1];
-          }
-        }
-      } else if (key === "a") {
-        const parentId = composition.nodes[currentNodeId]?.parentId;
-        if (parentId) {
-          nextNodeId = parentId;
-        }
-      } else if (key === "d") {
-        const firstChildId = composition.nodes[currentNodeId]?.childIds.find(
-          (childId) => Boolean(composition.nodes[childId]),
-        );
-        if (firstChildId) {
-          if (collapsedNodeIds.has(currentNodeId)) {
-            setCollapsedNodeIds((prev) => {
-              if (!prev.has(currentNodeId)) {
-                return prev;
-              }
-              const next = new Set(prev);
-              next.delete(currentNodeId);
-              return next;
-            });
-          }
-          nextNodeId = firstChildId;
-        } else if (!hasValidSelection) {
-          nextNodeId = currentNodeId;
-        }
-      } else if (key === "q" || key === "e") {
-        const sectionIds = collectTemplateShellSectionIds(composition);
-        if (sectionIds.length > 0) {
-          if (currentNodeId === composition.rootId) {
-            nextNodeId =
-              key === "q" ? sectionIds[sectionIds.length - 1] : sectionIds[0];
-          } else {
-            const currentSectionId = resolveTemplateShellSectionId(
-              composition,
-              currentNodeId,
-            );
-            if (currentSectionId) {
-              const currentSectionIndex = sectionIds.indexOf(currentSectionId);
-              if (currentSectionIndex >= 0) {
-                if (key === "q" && currentSectionIndex > 0) {
-                  nextNodeId = sectionIds[currentSectionIndex - 1];
-                } else if (
-                  key === "e" &&
-                  currentSectionIndex < sectionIds.length - 1
-                ) {
-                  nextNodeId = sectionIds[currentSectionIndex + 1];
-                }
-              }
-            }
-          }
-        }
-      }
-
+        composition,
+        key,
+        selectedNodeId,
+        uncollapseNode,
+      });
       if (!nextNodeId || nextNodeId === selectedNodeId) {
         return;
       }

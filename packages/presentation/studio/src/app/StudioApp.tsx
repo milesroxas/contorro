@@ -16,13 +16,17 @@ import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import {
   type CSSProperties,
   type ReactNode,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 
-import type { StudioAuthoringClient } from "@repo/contracts-zod";
+import type {
+  PageComposition,
+  StudioAuthoringClient,
+} from "@repo/contracts-zod";
 import {
   isStudioComponentRowId,
   isStudioNewComponentSessionId,
@@ -30,6 +34,7 @@ import {
 
 import { StudioPanel } from "../components/studio-panel.js";
 import { StudioRoot } from "../components/studio-root.js";
+import { Card, CardContent } from "../components/ui/card.js";
 import { Separator } from "../components/ui/separator.js";
 import { StudioCanvas } from "../features/canvas/StudioCanvas.js";
 import type { InsertDropData } from "../features/dnd/InsertionDropZone.js";
@@ -39,8 +44,13 @@ import { LibraryComponentCatalog } from "../features/primitive-catalog/LibraryCo
 import { PrimitiveCatalog } from "../features/primitive-catalog/PrimitiveCatalog.js";
 import { PropertyInspector } from "../features/property-inspector/PropertyInspector.js";
 import { KeyboardShortcutsDrawer } from "../features/shortcuts/KeyboardShortcutsDrawer.js";
+import { StudioUnsavedChangesGuard } from "../features/unsaved-changes/StudioUnsavedChangesGuard.js";
 import { cn } from "../lib/cn.js";
 import { computeInsertIndex } from "../lib/compute-insert-index.js";
+import {
+  type StudioInspectorTab,
+  resolveInspectorTabShortcut,
+} from "../lib/inspector-tab-shortcuts.js";
 import {
   LEFT_SIDEBAR_PANELS,
   type LeftSidebarPanelId,
@@ -71,7 +81,21 @@ function runtimeCssVariables(cssVariables: string): string {
 const pointerFirstCollisionDetection: CollisionDetection = (args) => {
   const pointerCollisions = pointerWithin(args);
   if (pointerCollisions.length > 0) {
-    return pointerCollisions;
+    if (pointerCollisions.length === 1) {
+      return pointerCollisions;
+    }
+    // Nested canvas insert strips often sit inside wider ancestors; prefer the
+    // smallest rect under the pointer so inner boxes win over outer drop lines.
+    const scored = pointerCollisions.map((collision) => {
+      const rect = args.droppableRects.get(collision.id);
+      const area =
+        rect && rect.width > 0 && rect.height > 0
+          ? rect.width * rect.height
+          : Number.POSITIVE_INFINITY;
+      return { collision, area };
+    });
+    scored.sort((a, b) => a.area - b.area);
+    return [scored[0].collision];
   }
   return closestCenter(args);
 };
@@ -93,38 +117,155 @@ function studioResourceLabel(
     : "Page Template";
 }
 
+function isStudioGlobalKeyTargetIgnored(target: EventTarget | null): boolean {
+  if (target === null) {
+    return true;
+  }
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement ||
+    (target instanceof HTMLElement && target.isContentEditable)
+  );
+}
+
+function studioHandleModifierUndoRedo(
+  event: KeyboardEvent,
+  actions: { undo: () => void; redo: () => void },
+): void {
+  const key = event.key.toLowerCase();
+  if (!(event.metaKey || event.ctrlKey)) {
+    return;
+  }
+  if (key === "z") {
+    event.preventDefault();
+    if (event.shiftKey) {
+      actions.redo();
+    } else {
+      actions.undo();
+    }
+    return;
+  }
+  if (key === "y" && event.ctrlKey && !event.metaKey) {
+    event.preventDefault();
+    actions.redo();
+  }
+}
+
+type StudioPlainGlobalKeyActions = {
+  selectedNodeId: string | null;
+  removeNode: (id: string) => void;
+  setActiveLeftSidebarPanel: (id: LeftSidebarPanelId) => void;
+  setActiveInspectorTab: (tab: StudioInspectorTab) => void;
+  setKeyboardShortcutsOpen: (open: boolean) => void;
+};
+
+function studioHandlePlainGlobalKeys(
+  event: KeyboardEvent,
+  actions: StudioPlainGlobalKeyActions,
+): void {
+  if (event.metaKey || event.ctrlKey || event.altKey) {
+    return;
+  }
+  if (event.key === "`" && !event.shiftKey) {
+    event.preventDefault();
+    actions.setKeyboardShortcutsOpen(true);
+    return;
+  }
+  if (event.key === "Delete" || event.key === "Backspace") {
+    if (actions.selectedNodeId) {
+      event.preventDefault();
+      actions.removeNode(actions.selectedNodeId);
+    }
+    return;
+  }
+  const panel = resolveLeftSidebarPanelShortcut(event.key);
+  if (panel) {
+    event.preventDefault();
+    actions.setActiveLeftSidebarPanel(panel);
+    return;
+  }
+  const inspectorTab = resolveInspectorTabShortcut(event.key);
+  if (inspectorTab) {
+    event.preventDefault();
+    actions.setActiveInspectorTab(inspectorTab);
+  }
+}
+
+function handleStudioGlobalKeyDown(
+  event: KeyboardEvent,
+  actions: StudioPlainGlobalKeyActions & { undo: () => void; redo: () => void },
+): void {
+  if (isStudioGlobalKeyTargetIgnored(event.target)) {
+    return;
+  }
+  studioHandlePlainGlobalKeys(event, actions);
+  studioHandleModifierUndoRedo(event, actions);
+}
+
+function applyStudioDragEndMutation(
+  event: DragEndEvent,
+  composition: PageComposition,
+  addPrimitive: (
+    parentId: string,
+    definitionKey: string,
+    idx: number,
+    libKey: string | undefined,
+  ) => void,
+  moveNode: (nodeId: string, parentId: string, idx: number) => void,
+): void {
+  const { active, over } = event;
+  if (!over) {
+    return;
+  }
+  const overData = over.data.current as InsertDropData | undefined;
+  if (overData?.kind !== "insert") {
+    return;
+  }
+  const { parentId, insertIndex } = overData;
+  const activeData = active.data.current;
+  if (
+    activeData?.kind === "palette" &&
+    typeof activeData.definitionKey === "string"
+  ) {
+    const idx = computeInsertIndex(composition, parentId, insertIndex, null);
+    const libKey =
+      activeData.definitionKey === "primitive.libraryComponent" &&
+      typeof activeData.libraryComponentKey === "string"
+        ? activeData.libraryComponentKey
+        : undefined;
+    addPrimitive(parentId, activeData.definitionKey, idx, libKey);
+    return;
+  }
+  if (activeData?.kind === "node" && typeof activeData.nodeId === "string") {
+    const nodeId = activeData.nodeId;
+    if (nodeId === composition.rootId) {
+      return;
+    }
+    const idx = computeInsertIndex(composition, parentId, insertIndex, nodeId);
+    moveNode(nodeId, parentId, idx);
+  }
+}
+
 function StudioDragPreview({
-  activeNodeId,
-  activePaletteKey,
   display,
-  paletteSubtitle,
 }: {
   display: ReturnType<typeof getPrimitiveDisplay>;
-  activePaletteKey: string | null;
-  activeNodeId: string | null;
-  paletteSubtitle: string | null;
 }) {
   const { Icon, label } = display;
   return (
-    <div className="pointer-events-none flex min-w-[150px] max-w-[min(100vw-2rem,240px)] items-center gap-2 rounded-sm border-2 border-primary/50 bg-card px-2.5 py-1.5 text-card-foreground shadow-xl ring-2 ring-primary/20">
-      <Icon
-        aria-hidden
-        className="size-6 shrink-0 text-primary"
-        stroke={1.25}
-      />
-      <div className="min-w-0 flex-1">
-        <div className="text-xs font-semibold capitalize">{label}</div>
-        {activePaletteKey ? (
-          <div className="mt-0.5 text-[11px] leading-tight text-muted-foreground">
-            {paletteSubtitle ?? "Add to layout"}
-          </div>
-        ) : activeNodeId ? (
-          <div className="mt-0.5 truncate font-mono text-[11px] leading-tight text-muted-foreground">
-            {activeNodeId}
-          </div>
-        ) : null}
-      </div>
-    </div>
+    <Card size="sm" variant="dragPreview">
+      <CardContent>
+        <Icon
+          aria-hidden
+          className="size-4 shrink-0 text-primary"
+          stroke={1.6}
+        />
+        <div className="truncate text-xs font-medium capitalize leading-none">
+          {label}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -156,14 +297,16 @@ export function StudioApp({
   );
 
   const [activePaletteKey, setActivePaletteKey] = useState<string | null>(null);
-  const [paletteSubtitle, setPaletteSubtitle] = useState<string | null>(null);
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [activeLeftSidebarPanel, setActiveLeftSidebarPanel] =
     useState<LeftSidebarPanelId>("primitives");
+  const [activeInspectorTab, setActiveInspectorTab] =
+    useState<StudioInspectorTab>("styles");
   const [leftPanelWidth, setLeftPanelWidth] = useState(300);
   const [rightPanelWidth, setRightPanelWidth] = useState(360);
   const [isResizingPanels, setIsResizingPanels] = useState(false);
+  const [keyboardShortcutsOpen, setKeyboardShortcutsOpen] = useState(false);
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const resizeStateRef = useRef<{
     side: ResizeSide;
@@ -188,6 +331,7 @@ export function StudioApp({
   const canUndo = useStudioStore((s) => s.canUndo);
   const canRedo = useStudioStore((s) => s.canRedo);
   const error = useStudioStore((s) => s.error);
+  const cmsPublicationStatus = useStudioStore((s) => s.cmsPublicationStatus);
   const selectNode = useStudioStore((s) => s.selectNode);
   const addPrimitive = useStudioStore((s) => s.addPrimitive);
   const moveNode = useStudioStore((s) => s.moveNode);
@@ -205,6 +349,12 @@ export function StudioApp({
   const undo = useStudioStore((s) => s.undo);
   const redo = useStudioStore((s) => s.redo);
   const removeNode = useStudioStore((s) => s.removeNode);
+
+  const trySaveDraft = useCallback(async () => {
+    await saveDraft();
+    const { error: saveError, dirty: stillDirty } = useStudioStore.getState();
+    return saveError === null && !stillDirty;
+  }, [saveDraft, useStudioStore]);
 
   useEffect(() => {
     void useStudioStore.getState().load();
@@ -227,56 +377,22 @@ export function StudioApp({
   }, []);
 
   useEffect(() => {
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
     const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target;
-      if (
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target instanceof HTMLSelectElement ||
-        (target instanceof HTMLElement && target.isContentEditable)
-      ) {
-        return;
-      }
-      if (!event.metaKey && !event.ctrlKey && !event.altKey) {
-        if (event.key === "Delete" || event.key === "Backspace") {
-          if (selectedNodeId) {
-            event.preventDefault();
-            removeNode(selectedNodeId);
-          }
-          return;
-        }
-        const panel = resolveLeftSidebarPanelShortcut(event.key);
-        if (panel) {
-          event.preventDefault();
-          setActiveLeftSidebarPanel(panel);
-          return;
-        }
-      }
-      const key = event.key.toLowerCase();
-      const hasModifier = event.metaKey || event.ctrlKey;
-      if (!hasModifier) {
-        return;
-      }
-      if (key === "z") {
-        event.preventDefault();
-        if (event.shiftKey) {
-          redo();
-          return;
-        }
-        undo();
-        return;
-      }
-      if (key === "y" && event.ctrlKey && !event.metaKey) {
-        event.preventDefault();
-        redo();
-      }
+      handleStudioGlobalKeyDown(event, {
+        redo,
+        removeNode,
+        selectedNodeId,
+        setActiveInspectorTab,
+        setActiveLeftSidebarPanel,
+        setKeyboardShortcutsOpen,
+        undo,
+      });
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [redo, undo, removeNode, selectedNodeId]);
+  }, [redo, removeNode, selectedNodeId, undo]);
 
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
@@ -341,76 +457,29 @@ export function StudioApp({
     const d = event.active.data.current;
     if (d?.kind === "palette" && typeof d.definitionKey === "string") {
       setActivePaletteKey(d.definitionKey);
-      setPaletteSubtitle(
-        typeof d.displayName === "string" ? d.displayName : null,
-      );
       setActiveNodeId(null);
       return;
     }
     if (d?.kind === "node" && typeof d.nodeId === "string") {
       setActiveNodeId(d.nodeId);
       setActivePaletteKey(null);
-      setPaletteSubtitle(null);
       return;
     }
     setActivePaletteKey(null);
-    setPaletteSubtitle(null);
     setActiveNodeId(null);
   };
 
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
   const onDragEnd = (event: DragEndEvent) => {
     setActivePaletteKey(null);
-    setPaletteSubtitle(null);
     setActiveNodeId(null);
     if (!composition) {
       return;
     }
-    const { active, over } = event;
-    if (!over) {
-      return;
-    }
-
-    const overData = over.data.current as InsertDropData | undefined;
-    if (overData?.kind !== "insert") {
-      return;
-    }
-
-    const { parentId, insertIndex } = overData;
-    const activeData = active.data.current;
-
-    if (
-      activeData?.kind === "palette" &&
-      typeof activeData.definitionKey === "string"
-    ) {
-      const idx = computeInsertIndex(composition, parentId, insertIndex, null);
-      const libKey =
-        activeData.definitionKey === "primitive.libraryComponent" &&
-        typeof activeData.libraryComponentKey === "string"
-          ? activeData.libraryComponentKey
-          : undefined;
-      addPrimitive(parentId, activeData.definitionKey, idx, libKey);
-      return;
-    }
-
-    if (activeData?.kind === "node" && typeof activeData.nodeId === "string") {
-      const nodeId = activeData.nodeId;
-      if (nodeId === composition.rootId) {
-        return;
-      }
-      const idx = computeInsertIndex(
-        composition,
-        parentId,
-        insertIndex,
-        nodeId,
-      );
-      moveNode(nodeId, parentId, idx);
-    }
+    applyStudioDragEndMutation(event, composition, addPrimitive, moveNode);
   };
 
   const onDragCancel = () => {
     setActivePaletteKey(null);
-    setPaletteSubtitle(null);
     setActiveNodeId(null);
   };
 
@@ -491,6 +560,7 @@ export function StudioApp({
           canEditName={canEditName}
           canRedo={canRedo}
           canUndo={canUndo}
+          cmsPublicationStatus={cmsPublicationStatus}
           dirty={dirty}
           error={error}
           name={name}
@@ -508,6 +578,11 @@ export function StudioApp({
           renaming={renaming}
           saving={saving}
           adminHref={adminHref}
+        />
+        <StudioUnsavedChangesGuard
+          dirty={dirty}
+          saving={saving}
+          trySaveDraft={trySaveDraft}
         />
         <div
           className={cn(
@@ -553,7 +628,10 @@ export function StudioApp({
               </div>
               <div className="mt-auto flex w-full flex-col items-center gap-2 pt-2">
                 <Separator className="w-8 bg-border/70" />
-                <KeyboardShortcutsDrawer />
+                <KeyboardShortcutsDrawer
+                  onOpenChange={setKeyboardShortcutsOpen}
+                  open={keyboardShortcutsOpen}
+                />
               </div>
             </nav>
             <StudioPanel
@@ -624,7 +702,9 @@ export function StudioApp({
                 }
               }}
               composition={composition}
+              inspectorTab={activeInspectorTab}
               node={selectedNode}
+              onInspectorTabChange={setActiveInspectorTab}
               resetNodePropKey={(propKey) => {
                 if (selectedNodeId) {
                   storeResetNodePropKey(selectedNodeId, propKey);
@@ -660,14 +740,7 @@ export function StudioApp({
         dropAnimation={null}
         modifiers={[snapCenterToCursor]}
       >
-        {overlayDisplay ? (
-          <StudioDragPreview
-            activeNodeId={activeNodeId}
-            activePaletteKey={activePaletteKey}
-            display={overlayDisplay}
-            paletteSubtitle={paletteSubtitle}
-          />
-        ) : null}
+        {overlayDisplay ? <StudioDragPreview display={overlayDisplay} /> : null}
       </DragOverlay>
     </DndContext>
   );

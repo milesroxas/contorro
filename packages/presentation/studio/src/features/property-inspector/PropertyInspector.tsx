@@ -50,7 +50,15 @@ import {
   IconUpload,
   IconX,
 } from "@tabler/icons-react";
-import { useEffect, useId, useRef, useState } from "react";
+import {
+  type Dispatch,
+  type RefObject,
+  type SetStateAction,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 
 import { ScrollArea } from "../../components/scroll-area.js";
 import { StudioBulkCollapseButton } from "../../components/studio-panel.js";
@@ -94,6 +102,7 @@ import {
 } from "../../components/ui/tabs.js";
 import { TooltipProvider } from "../../components/ui/tooltip.js";
 import { cn } from "../../lib/cn.js";
+import type { StudioInspectorTab } from "../../lib/inspector-tab-shortcuts.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
 import {
   BorderPropertyRowLabel,
@@ -719,7 +728,7 @@ function SpacingPropertyPanel({
     Boolean(shorthandEntry) ||
     SPACING_SIDE_KEYS.some((side) => Boolean(sideEntries[side]));
   const [targetMode, setTargetMode] = useState<"sides" | "axis" | "all">(
-    "sides",
+    "axis",
   );
 
   return (
@@ -2093,6 +2102,103 @@ function moreOptionsGridClassName(sectionId: StyleSectionId): string {
     : "grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4";
 }
 
+type InspectorOrderedStyleSection = ReturnType<
+  typeof orderedStyleSectionsForInspector
+>[number];
+
+function inspectorStyleSectionTopClass(sectionIndex: number): string {
+  return sectionIndex === 0 ? "" : "border-t border-border/60 pt-4 ";
+}
+
+function collectStyleSectionIdsWithControls(
+  orderedSections: InspectorOrderedStyleSection[],
+  gapPropertyAvailable: boolean,
+): StyleSectionId[] {
+  const ids: StyleSectionId[] = [];
+  for (const section of orderedSections) {
+    let sectionProperties = [...section.properties];
+    if (section.id === "spacing") {
+      sectionProperties = sectionProperties.filter(
+        (property) => property !== "gap",
+      );
+    }
+    if (
+      section.id === "layout" &&
+      gapPropertyAvailable &&
+      !sectionProperties.includes("gap")
+    ) {
+      sectionProperties = [...sectionProperties, "gap"];
+    }
+    if (sectionProperties.length > 0) {
+      ids.push(section.id);
+    }
+  }
+  return ids;
+}
+
+function inspectorStyleSectionModelFromSection(
+  section: InspectorOrderedStyleSection,
+  gapPropertyAvailable: boolean,
+): {
+  sectionProperties: StyleProperty[];
+  filteredSectionProperties: StyleProperty[];
+  primaryProperties: StyleProperty[];
+  secondaryProperties: StyleProperty[];
+  groupedSecondaryProperties: StyleProperty[];
+  visibleProperties: StyleProperty[];
+} | null {
+  let sectionProperties = [...section.properties];
+  if (section.id === "spacing") {
+    sectionProperties = sectionProperties.filter(
+      (property) => property !== "gap",
+    );
+  }
+  if (
+    section.id === "layout" &&
+    gapPropertyAvailable &&
+    !sectionProperties.includes("gap")
+  ) {
+    sectionProperties = [...sectionProperties, "gap"];
+  }
+  if (sectionProperties.length === 0) {
+    return null;
+  }
+  const filteredSectionProperties =
+    section.id === "spacing"
+      ? sectionProperties.filter(
+          (property) => !SPACING_RING_PROPERTIES.has(property),
+        )
+      : sectionProperties;
+  let primaryProperties = filteredSectionProperties.filter((property) =>
+    PRIMARY_STYLE_PROPERTIES.has(property),
+  );
+  if (section.id === "layout" && primaryProperties.includes("gap")) {
+    primaryProperties = [
+      ...primaryProperties.filter((property) => property !== "gap"),
+      "gap",
+    ];
+  }
+  const secondaryProperties = filteredSectionProperties.filter(
+    (property) => !PRIMARY_STYLE_PROPERTIES.has(property),
+  );
+  const groupedSecondaryProperties = groupedMoreOptionsProperties(
+    section.id,
+    secondaryProperties,
+  );
+  const visibleProperties =
+    primaryProperties.length > 0
+      ? primaryProperties
+      : filteredSectionProperties;
+  return {
+    filteredSectionProperties,
+    groupedSecondaryProperties,
+    primaryProperties,
+    secondaryProperties,
+    sectionProperties,
+    visibleProperties,
+  };
+}
+
 const COLOR_CATEGORIES = new Set(["color"]);
 const TYPOGRAPHY_CATEGORIES = new Set([
   "typography",
@@ -2171,7 +2277,151 @@ function entrySelectValue(entry: StylePropertyEntry | undefined): string {
   return `utility:${entry.value}`;
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
+function StylePropertyTokenUtilityPicker({
+  currentValue,
+  property,
+  utilityValues,
+  visibleTokens,
+  onNodeStyleEntry,
+}: {
+  property: StyleProperty;
+  utilityValues: readonly string[];
+  visibleTokens: TokenMeta[];
+  currentValue: string;
+  onNodeStyleEntry: (
+    property: StyleProperty,
+    entry: StylePropertyEntry | null,
+  ) => void;
+}) {
+  return (
+    <Select
+      data-testid={`inspector-style-token-${property}`}
+      onValueChange={(next) => {
+        if (next === NONE_SELECT_VALUE) {
+          onNodeStyleEntry(property, null);
+          return;
+        }
+        if (next.startsWith("utility:")) {
+          onNodeStyleEntry(property, {
+            type: "utility",
+            property,
+            value: next.slice("utility:".length),
+          });
+          return;
+        }
+        if (next.startsWith("token:")) {
+          onNodeStyleEntry(property, {
+            type: "token",
+            property,
+            token: next.slice("token:".length),
+          });
+        }
+      }}
+      value={currentValue}
+    >
+      <SelectTrigger id={`style-${property}`}>
+        <SelectValue placeholder={stylePropertyDefaultOptionLabel(property)} />
+      </SelectTrigger>
+      <SelectContent
+        className={
+          isColorStyleProperty(property)
+            ? "**:data-[slot=select-item]:pl-2 [&_[data-slot=select-item]>span.absolute]:hidden"
+            : undefined
+        }
+      >
+        <SelectItem value={NONE_SELECT_VALUE}>
+          {stylePropertyDefaultOptionLabel(property)}
+        </SelectItem>
+        {utilityValues.length > 0 ? (
+          <SelectGroup>
+            <SelectLabel>Tailwind values</SelectLabel>
+            {utilityValues.map((value) => (
+              <SelectItem key={value} value={`utility:${value}`}>
+                {renderUtilityOptionLabel(property, value)}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        ) : null}
+        {visibleTokens.length > 0 ? (
+          <SelectGroup>
+            <SelectLabel>Tokens</SelectLabel>
+            {visibleTokens.map((token) => (
+              <SelectItem key={token.key} value={`token:${token.key}`}>
+                {isColorStyleProperty(property) ? (
+                  <ColorOptionLabel
+                    label={tokenSemanticLabel(token.key)}
+                    style={{ backgroundColor: `var(${token.cssVar})` }}
+                  />
+                ) : (
+                  tokenSemanticLabel(token.key)
+                )}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        ) : null}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function stylePropertyValueEditor(args: {
+  property: StyleProperty;
+  valueEntry: StylePropertyEntry | undefined;
+  utilityValues: readonly string[];
+  visibleTokens: TokenMeta[];
+  currentValue: string;
+  onNodeStyleEntry: (
+    property: StyleProperty,
+    entry: StylePropertyEntry | null,
+  ) => void;
+}) {
+  const {
+    property,
+    valueEntry,
+    onNodeStyleEntry,
+    utilityValues,
+    visibleTokens,
+    currentValue,
+  } = args;
+  if (property === "display") {
+    return (
+      <DisplayStyleValueControl
+        onNodeStyleEntry={onNodeStyleEntry}
+        valueEntry={valueEntry}
+      />
+    );
+  }
+  if (isDimensionProperty(property)) {
+    return (
+      <DimensionStyleValueControl
+        onNodeStyleEntry={onNodeStyleEntry}
+        property={property}
+        utilityValues={utilityValues}
+        valueEntry={valueEntry}
+        visibleTokens={visibleTokens}
+      />
+    );
+  }
+  if (isFlexIconProperty(property)) {
+    return (
+      <FlexIconStyleValueControl
+        onNodeStyleEntry={onNodeStyleEntry}
+        property={property}
+        valueEntry={valueEntry}
+      />
+    );
+  }
+  return (
+    <StylePropertyTokenUtilityPicker
+      currentValue={currentValue}
+      onNodeStyleEntry={onNodeStyleEntry}
+      property={property}
+      utilityValues={utilityValues}
+      visibleTokens={visibleTokens}
+    />
+  );
+}
+
 function StyleValueSelect({
   property,
   valueEntry,
@@ -2209,96 +2459,14 @@ function StyleValueSelect({
         }
         showModified={showModified}
       />
-      {property === "display" ? (
-        <DisplayStyleValueControl
-          onNodeStyleEntry={onNodeStyleEntry}
-          valueEntry={valueEntry}
-        />
-      ) : isDimensionProperty(property) ? (
-        <DimensionStyleValueControl
-          onNodeStyleEntry={onNodeStyleEntry}
-          property={property}
-          utilityValues={utilityValues}
-          valueEntry={valueEntry}
-          visibleTokens={visibleTokens}
-        />
-      ) : isFlexIconProperty(property) ? (
-        <FlexIconStyleValueControl
-          onNodeStyleEntry={onNodeStyleEntry}
-          property={property}
-          valueEntry={valueEntry}
-        />
-      ) : (
-        <Select
-          data-testid={`inspector-style-token-${property}`}
-          onValueChange={(next) => {
-            if (next === NONE_SELECT_VALUE) {
-              onNodeStyleEntry(property, null);
-              return;
-            }
-            if (next.startsWith("utility:")) {
-              onNodeStyleEntry(property, {
-                type: "utility",
-                property,
-                value: next.slice("utility:".length),
-              });
-              return;
-            }
-            if (next.startsWith("token:")) {
-              onNodeStyleEntry(property, {
-                type: "token",
-                property,
-                token: next.slice("token:".length),
-              });
-            }
-          }}
-          value={currentValue}
-        >
-          <SelectTrigger id={`style-${property}`}>
-            <SelectValue
-              placeholder={stylePropertyDefaultOptionLabel(property)}
-            />
-          </SelectTrigger>
-          <SelectContent
-            className={
-              isColorStyleProperty(property)
-                ? "**:data-[slot=select-item]:pl-2 [&_[data-slot=select-item]>span.absolute]:hidden"
-                : undefined
-            }
-          >
-            <SelectItem value={NONE_SELECT_VALUE}>
-              {stylePropertyDefaultOptionLabel(property)}
-            </SelectItem>
-            {utilityValues.length > 0 ? (
-              <SelectGroup>
-                <SelectLabel>Tailwind values</SelectLabel>
-                {utilityValues.map((value) => (
-                  <SelectItem key={value} value={`utility:${value}`}>
-                    {renderUtilityOptionLabel(property, value)}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            ) : null}
-            {visibleTokens.length > 0 ? (
-              <SelectGroup>
-                <SelectLabel>Tokens</SelectLabel>
-                {visibleTokens.map((token) => (
-                  <SelectItem key={token.key} value={`token:${token.key}`}>
-                    {isColorStyleProperty(property) ? (
-                      <ColorOptionLabel
-                        label={tokenSemanticLabel(token.key)}
-                        style={{ backgroundColor: `var(${token.cssVar})` }}
-                      />
-                    ) : (
-                      tokenSemanticLabel(token.key)
-                    )}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            ) : null}
-          </SelectContent>
-        </Select>
-      )}
+      {stylePropertyValueEditor({
+        currentValue,
+        onNodeStyleEntry,
+        property,
+        utilityValues,
+        valueEntry,
+        visibleTokens,
+      })}
     </div>
   );
 }
@@ -2437,8 +2605,9 @@ function TextPrimitiveInspector({
   const [nameDraft, setNameDraft] = useState(() => fieldBound?.name ?? "");
   const [labelDraft, setLabelDraft] = useState(() => fieldBound?.label ?? "");
   const [fieldError, setFieldError] = useState<string | null>(null);
+  const committedName = fieldBound?.name;
+  const committedLabel = fieldBound?.label;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: sync drafts from committed slot fields only; fieldBound identity changes every parent render
   useEffect(() => {
     if (!exposeToEditors) {
       setNameDraft("");
@@ -2446,13 +2615,13 @@ function TextPrimitiveInspector({
       setFieldError(null);
       return;
     }
-    if (!fieldBound) {
+    if (committedName === undefined || committedLabel === undefined) {
       return;
     }
-    setNameDraft(fieldBound.name);
-    setLabelDraft(fieldBound.label);
+    setNameDraft(committedName);
+    setLabelDraft(committedLabel);
     setFieldError(null);
-  }, [node.id, exposeToEditors, fieldBound?.name, fieldBound?.label]);
+  }, [committedLabel, committedName, exposeToEditors]);
 
   function applyEditorField(next: EditorFieldSpec) {
     const parsed = EditorFieldSpecSchema.safeParse(next);
@@ -2683,8 +2852,9 @@ function HeadingPrimitiveInspector({
   const [nameDraft, setNameDraft] = useState(() => fieldBound?.name ?? "");
   const [labelDraft, setLabelDraft] = useState(() => fieldBound?.label ?? "");
   const [fieldError, setFieldError] = useState<string | null>(null);
+  const committedName = fieldBound?.name;
+  const committedLabel = fieldBound?.label;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: sync drafts from committed slot fields only; fieldBound identity changes every parent render
   useEffect(() => {
     if (!exposeToEditors) {
       setNameDraft("");
@@ -2692,13 +2862,13 @@ function HeadingPrimitiveInspector({
       setFieldError(null);
       return;
     }
-    if (!fieldBound) {
+    if (committedName === undefined || committedLabel === undefined) {
       return;
     }
-    setNameDraft(fieldBound.name);
-    setLabelDraft(fieldBound.label);
+    setNameDraft(committedName);
+    setLabelDraft(committedLabel);
     setFieldError(null);
-  }, [node.id, exposeToEditors, fieldBound?.name, fieldBound?.label]);
+  }, [committedLabel, committedName, exposeToEditors]);
 
   function applyEditorField(next: EditorFieldSpec) {
     const parsed = EditorFieldSpecSchema.safeParse(next);
@@ -2920,7 +3090,143 @@ function HeadingPrimitiveInspector({
   );
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
+function ButtonPrimitivePayloadCollectionFields({
+  baseId,
+  collectionSlug,
+  definitionKey,
+  entries,
+  entryLoadError,
+  entryLoading,
+  entryPickerOpen,
+  entrySlug,
+  nodePropValues,
+  patchNodeProps,
+  resetNodePropKey,
+  setEntryPickerOpen,
+}: {
+  baseId: string;
+  collectionSlug: string;
+  definitionKey: string;
+  entries: PayloadCollectionEntry[];
+  entryLoadError: string | null;
+  entryLoading: boolean;
+  entryPickerOpen: boolean;
+  entrySlug: string;
+  nodePropValues: CompositionNode["propValues"];
+  patchNodeProps: (patch: Record<string, unknown>) => void;
+  resetNodePropKey: (propKey: string) => void;
+  setEntryPickerOpen: (open: boolean) => void;
+}) {
+  return (
+    <>
+      <SettingsFieldRow
+        definitionKey={definitionKey}
+        htmlFor={`${baseId}-button-collection`}
+        label="Collection slug"
+        onResetProp={resetNodePropKey}
+        propKey="collectionSlug"
+        propValues={nodePropValues}
+      >
+        <Input
+          id={`${baseId}-button-collection`}
+          onChange={(e) =>
+            patchNodeProps({
+              collectionSlug: e.target.value,
+            })
+          }
+          placeholder="pages"
+          type="text"
+          value={collectionSlug}
+        />
+      </SettingsFieldRow>
+      <SettingsFieldRow
+        definitionKey={definitionKey}
+        htmlFor={`${baseId}-button-entry`}
+        label="Entry slug (optional)"
+        onResetProp={resetNodePropKey}
+        propKey="entrySlug"
+        propValues={nodePropValues}
+      >
+        <div className="flex items-center gap-2">
+          <Input
+            id={`${baseId}-button-entry`}
+            onChange={(e) =>
+              patchNodeProps({
+                entrySlug: e.target.value,
+              })
+            }
+            placeholder="about"
+            type="text"
+            value={entrySlug}
+          />
+          <Sheet onOpenChange={setEntryPickerOpen} open={entryPickerOpen}>
+            <SheetTrigger asChild>
+              <Button
+                disabled={!collectionSlug.trim()}
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                Browse
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>
+                  Select {collectionSlug || "collection"} entry
+                </SheetTitle>
+                <SheetDescription>
+                  Pick an entry and we will set its slug.
+                </SheetDescription>
+              </SheetHeader>
+              <ScrollArea className="min-h-0 flex-1">
+                <div className="space-y-2 py-1 pr-2">
+                  {entryLoading ? (
+                    <p className="text-sm text-muted-foreground">Loading…</p>
+                  ) : entryLoadError ? (
+                    <p className="text-sm text-red-500">{entryLoadError}</p>
+                  ) : entries.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No entries found.
+                    </p>
+                  ) : (
+                    entries.map((entry) => (
+                      <button
+                        className="w-full rounded-md border border-border/60 p-2 text-left hover:bg-accent/50"
+                        key={`${entry.id}-${entry.slug}`}
+                        onClick={() => {
+                          patchNodeProps({
+                            collectionSlug: collectionSlug.trim(),
+                            entrySlug: entry.slug,
+                          });
+                          setEntryPickerOpen(false);
+                        }}
+                        type="button"
+                      >
+                        <div className="text-sm font-medium">{entry.label}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {entry.slug}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+              <div className="pt-3">
+                <SheetClose asChild>
+                  <Button size="sm" type="button" variant="ghost">
+                    Close
+                  </Button>
+                </SheetClose>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </SettingsFieldRow>
+    </>
+  );
+}
+
 function ButtonPrimitiveInspector({
   node,
   patchNodeProps,
@@ -3035,116 +3341,20 @@ function ButtonPrimitiveInspector({
           />
         </SettingsFieldRow>
       ) : (
-        <>
-          <SettingsFieldRow
-            definitionKey={node.definitionKey}
-            htmlFor={`${baseId}-button-collection`}
-            label="Collection slug"
-            onResetProp={resetNodePropKey}
-            propKey="collectionSlug"
-            propValues={node.propValues}
-          >
-            <Input
-              id={`${baseId}-button-collection`}
-              onChange={(e) =>
-                patchNodeProps({
-                  collectionSlug: e.target.value,
-                })
-              }
-              placeholder="pages"
-              type="text"
-              value={collectionSlug}
-            />
-          </SettingsFieldRow>
-          <SettingsFieldRow
-            definitionKey={node.definitionKey}
-            htmlFor={`${baseId}-button-entry`}
-            label="Entry slug (optional)"
-            onResetProp={resetNodePropKey}
-            propKey="entrySlug"
-            propValues={node.propValues}
-          >
-            <div className="flex items-center gap-2">
-              <Input
-                id={`${baseId}-button-entry`}
-                onChange={(e) =>
-                  patchNodeProps({
-                    entrySlug: e.target.value,
-                  })
-                }
-                placeholder="about"
-                type="text"
-                value={entrySlug}
-              />
-              <Sheet onOpenChange={setEntryPickerOpen} open={entryPickerOpen}>
-                <SheetTrigger asChild>
-                  <Button
-                    disabled={!collectionSlug.trim()}
-                    size="sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    Browse
-                  </Button>
-                </SheetTrigger>
-                <SheetContent>
-                  <SheetHeader>
-                    <SheetTitle>
-                      Select {collectionSlug || "collection"} entry
-                    </SheetTitle>
-                    <SheetDescription>
-                      Pick an entry and we will set its slug.
-                    </SheetDescription>
-                  </SheetHeader>
-                  <ScrollArea className="min-h-0 flex-1">
-                    <div className="space-y-2 py-1 pr-2">
-                      {entryLoading ? (
-                        <p className="text-sm text-muted-foreground">
-                          Loading…
-                        </p>
-                      ) : entryLoadError ? (
-                        <p className="text-sm text-red-500">{entryLoadError}</p>
-                      ) : entries.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                          No entries found.
-                        </p>
-                      ) : (
-                        entries.map((entry) => (
-                          <button
-                            className="w-full rounded-md border border-border/60 p-2 text-left hover:bg-accent/50"
-                            key={`${entry.id}-${entry.slug}`}
-                            onClick={() => {
-                              patchNodeProps({
-                                collectionSlug: collectionSlug.trim(),
-                                entrySlug: entry.slug,
-                              });
-                              setEntryPickerOpen(false);
-                            }}
-                            type="button"
-                          >
-                            <div className="text-sm font-medium">
-                              {entry.label}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {entry.slug}
-                            </div>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
-                  <div className="pt-3">
-                    <SheetClose asChild>
-                      <Button size="sm" type="button" variant="ghost">
-                        Close
-                      </Button>
-                    </SheetClose>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-          </SettingsFieldRow>
-        </>
+        <ButtonPrimitivePayloadCollectionFields
+          baseId={baseId}
+          collectionSlug={collectionSlug}
+          definitionKey={node.definitionKey}
+          entries={entries}
+          entryLoadError={entryLoadError}
+          entryLoading={entryLoading}
+          entryPickerOpen={entryPickerOpen}
+          entrySlug={entrySlug}
+          nodePropValues={node.propValues}
+          patchNodeProps={patchNodeProps}
+          resetNodePropKey={resetNodePropKey}
+          setEntryPickerOpen={setEntryPickerOpen}
+        />
       )}
       <SettingsFieldRow
         definitionKey={node.definitionKey}
@@ -3172,316 +3382,289 @@ function ButtonPrimitiveInspector({
   );
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
-function ImagePrimitiveInspector({
+function ImagePrimitiveInspectorUrlFields({
+  baseId,
   node,
-  fieldBound,
-  exposeToEditors,
   patchNodeProps,
   resetNodePropKey,
-  setNodeEditorFieldBinding,
+  src,
 }: {
+  baseId: string;
   node: CompositionNode;
-  fieldBound: EditorFieldSpec | undefined;
-  exposeToEditors: boolean;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   resetNodePropKey: (propKey: string) => void;
-  setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
+  src: string;
 }) {
-  const baseId = useId();
-  const imageSource = node.propValues?.imageSource === "url" ? "url" : "media";
-  const src =
-    typeof node.propValues?.src === "string" ? node.propValues.src : "";
-  const alt =
-    typeof node.propValues?.alt === "string" ? node.propValues.alt : "";
-  const mediaId =
-    typeof node.propValues?.mediaId === "number"
-      ? node.propValues.mediaId
-      : typeof node.propValues?.mediaId === "string" &&
-          /^\d+$/.test(node.propValues.mediaId)
-        ? Number.parseInt(node.propValues.mediaId, 10)
-        : "";
-  const uploadInputRef = useRef<HTMLInputElement | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
-  const [mediaLoading, setMediaLoading] = useState(false);
-  const [mediaLoadError, setMediaLoadError] = useState<string | null>(null);
-  const [mediaDocs, setMediaDocs] = useState<MediaListItem[]>([]);
-  const [nameDraft, setNameDraft] = useState(() => fieldBound?.name ?? "");
-  const [labelDraft, setLabelDraft] = useState(() => fieldBound?.label ?? "");
-
-  useEffect(() => {
-    if (!exposeToEditors) {
-      setNameDraft("");
-      setLabelDraft("");
-      return;
-    }
-    if (!fieldBound) {
-      return;
-    }
-    setNameDraft(fieldBound.name);
-    setLabelDraft(fieldBound.label);
-  }, [exposeToEditors, fieldBound]);
-
-  useEffect(() => {
-    if (!mediaPickerOpen) {
-      return;
-    }
-    setMediaLoading(true);
-    setMediaLoadError(null);
-    void fetchMediaRecords()
-      .then((docs) => {
-        setMediaDocs(docs);
-      })
-      .catch((err) => {
-        setMediaLoadError(
-          err instanceof Error ? err.message : "Failed to load media entries",
-        );
-      })
-      .finally(() => {
-        setMediaLoading(false);
-      });
-  }, [mediaPickerOpen]);
-
-  function applyEditorField(next: EditorFieldSpec) {
-    const parsed = EditorFieldSpecSchema.safeParse(next);
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Invalid editor field");
-      return;
-    }
-    setError(null);
-    setNodeEditorFieldBinding(parsed.data);
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 border-t border-border/60 pt-5">
       <SettingsFieldRow
         definitionKey={node.definitionKey}
-        htmlFor={`${baseId}-image-source`}
-        label="Source"
+        htmlFor={`${baseId}-image-url`}
+        label="Image URL"
         onResetProp={resetNodePropKey}
-        propKey="imageSource"
+        propKey="src"
         propValues={node.propValues}
       >
-        <Select
-          onValueChange={(value) =>
+        <Input
+          id={`${baseId}-image-url`}
+          onChange={(e) =>
             patchNodeProps({
-              imageSource: value,
+              src: e.target.value,
+              imageSource: "url",
             })
           }
-          value={imageSource}
-        >
-          <SelectTrigger id={`${baseId}-image-source`}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="url">URL</SelectItem>
-            <SelectItem value="media">Payload Media</SelectItem>
-          </SelectContent>
-        </Select>
+          placeholder="https://"
+          type="url"
+          value={src}
+        />
       </SettingsFieldRow>
-      {imageSource === "url" ? (
-        <div className="space-y-3 border-t border-border/60 pt-5">
-          <SettingsFieldRow
-            definitionKey={node.definitionKey}
-            htmlFor={`${baseId}-image-url`}
-            label="Image URL"
-            onResetProp={resetNodePropKey}
-            propKey="src"
-            propValues={node.propValues}
-          >
-            <Input
-              id={`${baseId}-image-url`}
-              onChange={(e) =>
-                patchNodeProps({
-                  src: e.target.value,
-                  imageSource: "url",
-                })
-              }
-              placeholder="https://"
-              type="url"
-              value={src}
-            />
-          </SettingsFieldRow>
-        </div>
-      ) : (
-        <div className="space-y-5 border-t border-border/60 pt-5">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <Label>Selected image</Label>
-              <Sheet onOpenChange={setMediaPickerOpen} open={mediaPickerOpen}>
-                <SheetTrigger asChild>
-                  <Button
-                    className="border border-border/70"
-                    size="sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    <IconSearch aria-hidden className="mr-1.5 size-4" />
-                    Browse
-                  </Button>
-                </SheetTrigger>
-                <SheetContent>
-                  <SheetHeader>
-                    <SheetTitle>Select media</SheetTitle>
-                    <SheetDescription>
-                      Pick an existing Payload media record.
-                    </SheetDescription>
-                  </SheetHeader>
-                  <ScrollArea className="min-h-0 flex-1">
-                    <div className="space-y-2 py-1 pr-2">
-                      {mediaLoading ? (
-                        <p className="text-sm text-muted-foreground">
-                          Loading…
-                        </p>
-                      ) : mediaLoadError ? (
-                        <p className="text-sm text-red-500">{mediaLoadError}</p>
-                      ) : mediaDocs.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                          No media entries found.
-                        </p>
-                      ) : (
-                        mediaDocs.map((media) => (
-                          <button
-                            className="w-full rounded-md border border-border/60 p-2 text-left hover:bg-accent/50"
-                            key={media.id}
-                            onClick={() => {
-                              patchNodeProps({
-                                imageSource: "media",
-                                mediaId: media.id,
-                                src: media.url,
-                                mediaUrl: media.url,
-                                alt: media.alt || alt,
-                              });
-                              setMediaPickerOpen(false);
-                            }}
-                            type="button"
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="size-12 shrink-0 overflow-hidden rounded-sm border border-border/60 bg-muted/30">
-                                <img
-                                  alt={
-                                    media.alt ||
-                                    media.filename ||
-                                    `Media ${media.id}`
-                                  }
-                                  className="h-full w-full object-cover"
-                                  loading="lazy"
-                                  src={media.url}
-                                />
-                              </div>
-                              <div className="min-w-0">
-                                <div className="truncate text-sm font-medium">
-                                  {media.alt || media.filename || media.url}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {media.filename || "Payload media"}
-                                </div>
-                              </div>
+    </div>
+  );
+}
+
+function ImagePrimitiveInspectorMediaFields({
+  alt,
+  baseId,
+  busy,
+  mediaDocs,
+  mediaLoadError,
+  mediaLoading,
+  mediaPickerOpen,
+  mediaId,
+  patchNodeProps,
+  setBusy,
+  setError,
+  setMediaPickerOpen,
+  src,
+  uploadInputRef,
+}: {
+  alt: string;
+  baseId: string;
+  busy: boolean;
+  mediaDocs: MediaListItem[];
+  mediaLoadError: string | null;
+  mediaLoading: boolean;
+  mediaPickerOpen: boolean;
+  mediaId: number | "";
+  patchNodeProps: (patch: Record<string, unknown>) => void;
+  setBusy: (next: boolean) => void;
+  setError: (message: string | null) => void;
+  setMediaPickerOpen: (open: boolean) => void;
+  src: string;
+  uploadInputRef: RefObject<HTMLInputElement | null>;
+}) {
+  return (
+    <div className="space-y-5 border-t border-border/60 pt-5">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <Label>Selected image</Label>
+          <Sheet onOpenChange={setMediaPickerOpen} open={mediaPickerOpen}>
+            <SheetTrigger asChild>
+              <Button
+                className="border border-border/70"
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                <IconSearch aria-hidden className="mr-1.5 size-4" />
+                Browse
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>Select media</SheetTitle>
+                <SheetDescription>
+                  Pick an existing Payload media record.
+                </SheetDescription>
+              </SheetHeader>
+              <ScrollArea className="min-h-0 flex-1">
+                <div className="space-y-2 py-1 pr-2">
+                  {mediaLoading ? (
+                    <p className="text-sm text-muted-foreground">Loading…</p>
+                  ) : mediaLoadError ? (
+                    <p className="text-sm text-red-500">{mediaLoadError}</p>
+                  ) : mediaDocs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No media entries found.
+                    </p>
+                  ) : (
+                    mediaDocs.map((media) => (
+                      <button
+                        className="w-full rounded-md border border-border/60 p-2 text-left hover:bg-accent/50"
+                        key={media.id}
+                        onClick={() => {
+                          patchNodeProps({
+                            imageSource: "media",
+                            mediaId: media.id,
+                            src: media.url,
+                            mediaUrl: media.url,
+                            alt: media.alt || alt,
+                          });
+                          setMediaPickerOpen(false);
+                        }}
+                        type="button"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="size-12 shrink-0 overflow-hidden rounded-sm border border-border/60 bg-muted/30">
+                            <img
+                              alt={
+                                media.alt ||
+                                media.filename ||
+                                `Media ${media.id}`
+                              }
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                              src={media.url}
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium">
+                              {media.alt || media.filename || media.url}
                             </div>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
-                  <div className="pt-3">
-                    <SheetClose asChild>
-                      <Button size="sm" type="button" variant="ghost">
-                        Close
-                      </Button>
-                    </SheetClose>
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-            <div className="overflow-hidden rounded-md border border-border/70 bg-muted/20">
-              {src ? (
-                <div className="space-y-2 p-2">
-                  <div className="aspect-4/3 overflow-hidden rounded-sm border border-border/70 bg-background">
-                    <img
-                      alt={alt || "Selected image"}
-                      className="h-full w-full object-cover"
-                      src={src}
-                    />
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <IconPhoto aria-hidden className="size-3.5" />
-                    <span className="truncate">
-                      {alt || `Media ${mediaId || "selected"}`}
-                    </span>
-                  </div>
+                            <div className="text-xs text-muted-foreground">
+                              {media.filename || "Payload media"}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
                 </div>
-              ) : (
-                <div className="flex aspect-4/3 flex-col items-center justify-center gap-2 p-4 text-center text-muted-foreground">
-                  <IconPhotoOff aria-hidden className="size-8" />
-                  <p className="text-sm font-medium">No image selected</p>
-                  <p className="text-xs">Browse media or upload a new image</p>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="space-y-3">
-            <Label htmlFor={`${baseId}-media-upload`}>Upload new image</Label>
-            <Input
-              accept="image/*"
-              className="sr-only"
-              disabled={busy}
-              id={`${baseId}-media-upload`}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) {
-                  return;
-                }
-                setBusy(true);
-                setError(null);
-                void uploadMediaFile(file, alt)
-                  .then((media) => {
-                    patchNodeProps({
-                      imageSource: "media",
-                      mediaId: media.id,
-                      src: media.url,
-                      mediaUrl: media.url,
-                      alt: media.alt || alt || file.name,
-                    });
-                  })
-                  .catch((uploadErr) => {
-                    setError(
-                      uploadErr instanceof Error
-                        ? uploadErr.message
-                        : "Upload failed",
-                    );
-                  })
-                  .finally(() => {
-                    setBusy(false);
-                    e.target.value = "";
-                  });
-              }}
-              ref={uploadInputRef}
-              type="file"
-            />
-            <div className="rounded-md border border-dashed border-border/70 bg-muted/10 p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
-                  <IconUpload aria-hidden className="size-4 shrink-0" />
-                  <span className="truncate">
-                    {busy ? "Uploading image..." : "PNG, JPG, WEBP or GIF"}
-                  </span>
-                </div>
-                <Button
-                  disabled={busy}
-                  onClick={() => uploadInputRef.current?.click()}
-                  size="sm"
-                  type="button"
-                  variant="default"
-                >
-                  {busy ? "Uploading..." : "Choose file"}
-                </Button>
+              </ScrollArea>
+              <div className="pt-3">
+                <SheetClose asChild>
+                  <Button size="sm" type="button" variant="ghost">
+                    Close
+                  </Button>
+                </SheetClose>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+        <div className="overflow-hidden rounded-md border border-border/70 bg-muted/20">
+          {src ? (
+            <div className="space-y-2 p-2">
+              <div className="aspect-4/3 overflow-hidden rounded-sm border border-border/70 bg-background">
+                <img
+                  alt={alt || "Selected image"}
+                  className="h-full w-full object-cover"
+                  src={src}
+                />
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <IconPhoto aria-hidden className="size-3.5" />
+                <span className="truncate">
+                  {alt || `Media ${mediaId || "selected"}`}
+                </span>
               </div>
             </div>
+          ) : (
+            <div className="flex aspect-4/3 flex-col items-center justify-center gap-2 p-4 text-center text-muted-foreground">
+              <IconPhotoOff aria-hidden className="size-8" />
+              <p className="text-sm font-medium">No image selected</p>
+              <p className="text-xs">Browse media or upload a new image</p>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="space-y-3">
+        <Label htmlFor={`${baseId}-media-upload`}>Upload new image</Label>
+        <Input
+          accept="image/*"
+          className="sr-only"
+          disabled={busy}
+          id={`${baseId}-media-upload`}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) {
+              return;
+            }
+            setBusy(true);
+            setError(null);
+            void uploadMediaFile(file, alt)
+              .then((media) => {
+                patchNodeProps({
+                  imageSource: "media",
+                  mediaId: media.id,
+                  src: media.url,
+                  mediaUrl: media.url,
+                  alt: media.alt || alt || file.name,
+                });
+              })
+              .catch((uploadErr) => {
+                setError(
+                  uploadErr instanceof Error
+                    ? uploadErr.message
+                    : "Upload failed",
+                );
+              })
+              .finally(() => {
+                setBusy(false);
+                e.target.value = "";
+              });
+          }}
+          ref={uploadInputRef}
+          type="file"
+        />
+        <div className="rounded-md border border-dashed border-border/70 bg-muted/10 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+              <IconUpload aria-hidden className="size-4 shrink-0" />
+              <span className="truncate">
+                {busy ? "Uploading image..." : "PNG, JPG, WEBP or GIF"}
+              </span>
+            </div>
+            <Button
+              disabled={busy}
+              onClick={() => uploadInputRef.current?.click()}
+              size="sm"
+              type="button"
+              variant="default"
+            >
+              {busy ? "Uploading..." : "Choose file"}
+            </Button>
           </div>
         </div>
-      )}
+      </div>
+    </div>
+  );
+}
+
+function ImagePrimitiveInspectorAltAndBindingFields({
+  applyEditorField,
+  baseId,
+  error,
+  exposeToEditors,
+  fieldBound,
+  labelDraft,
+  mediaId,
+  nameDraft,
+  node,
+  patchNodeProps,
+  resetNodePropKey,
+  setLabelDraft,
+  setNameDraft,
+  setNodeEditorFieldBinding,
+  alt,
+}: {
+  alt: string;
+  applyEditorField: (next: EditorFieldSpec) => void;
+  baseId: string;
+  error: string | null;
+  exposeToEditors: boolean;
+  fieldBound: EditorFieldSpec | undefined;
+  labelDraft: string;
+  mediaId: number | "";
+  nameDraft: string;
+  node: CompositionNode;
+  patchNodeProps: (patch: Record<string, unknown>) => void;
+  resetNodePropKey: (propKey: string) => void;
+  setLabelDraft: (value: string) => void;
+  setNameDraft: (value: string) => void;
+  setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
+}) {
+  return (
+    <>
       <div className="border-t border-border/60 pt-5">
         <SettingsFieldRow
           definitionKey={node.definitionKey}
@@ -3588,49 +3771,707 @@ function ImagePrimitiveInspector({
           {error}
         </p>
       ) : null}
+    </>
+  );
+}
+
+function ImagePrimitiveInspector({
+  node,
+  fieldBound,
+  exposeToEditors,
+  patchNodeProps,
+  resetNodePropKey,
+  setNodeEditorFieldBinding,
+}: {
+  node: CompositionNode;
+  fieldBound: EditorFieldSpec | undefined;
+  exposeToEditors: boolean;
+  patchNodeProps: (patch: Record<string, unknown>) => void;
+  resetNodePropKey: (propKey: string) => void;
+  setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
+}) {
+  const baseId = useId();
+  const imageSource = node.propValues?.imageSource === "url" ? "url" : "media";
+  const src =
+    typeof node.propValues?.src === "string" ? node.propValues.src : "";
+  const alt =
+    typeof node.propValues?.alt === "string" ? node.propValues.alt : "";
+  const mediaId =
+    typeof node.propValues?.mediaId === "number"
+      ? node.propValues.mediaId
+      : typeof node.propValues?.mediaId === "string" &&
+          /^\d+$/.test(node.propValues.mediaId)
+        ? Number.parseInt(node.propValues.mediaId, 10)
+        : "";
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaLoadError, setMediaLoadError] = useState<string | null>(null);
+  const [mediaDocs, setMediaDocs] = useState<MediaListItem[]>([]);
+  const [nameDraft, setNameDraft] = useState(() => fieldBound?.name ?? "");
+  const [labelDraft, setLabelDraft] = useState(() => fieldBound?.label ?? "");
+  const committedName = fieldBound?.name;
+  const committedLabel = fieldBound?.label;
+
+  useEffect(() => {
+    if (!exposeToEditors) {
+      setNameDraft("");
+      setLabelDraft("");
+      return;
+    }
+    if (committedName === undefined || committedLabel === undefined) {
+      return;
+    }
+    setNameDraft(committedName);
+    setLabelDraft(committedLabel);
+  }, [committedLabel, committedName, exposeToEditors]);
+
+  useEffect(() => {
+    if (!mediaPickerOpen) {
+      return;
+    }
+    setMediaLoading(true);
+    setMediaLoadError(null);
+    void fetchMediaRecords()
+      .then((docs) => {
+        setMediaDocs(docs);
+      })
+      .catch((err) => {
+        setMediaLoadError(
+          err instanceof Error ? err.message : "Failed to load media entries",
+        );
+      })
+      .finally(() => {
+        setMediaLoading(false);
+      });
+  }, [mediaPickerOpen]);
+
+  function applyEditorField(next: EditorFieldSpec) {
+    const parsed = EditorFieldSpecSchema.safeParse(next);
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Invalid editor field");
+      return;
+    }
+    setError(null);
+    setNodeEditorFieldBinding(parsed.data);
+  }
+
+  return (
+    <div className="space-y-6">
+      <SettingsFieldRow
+        definitionKey={node.definitionKey}
+        htmlFor={`${baseId}-image-source`}
+        label="Source"
+        onResetProp={resetNodePropKey}
+        propKey="imageSource"
+        propValues={node.propValues}
+      >
+        <Select
+          onValueChange={(value) =>
+            patchNodeProps({
+              imageSource: value,
+            })
+          }
+          value={imageSource}
+        >
+          <SelectTrigger id={`${baseId}-image-source`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="url">URL</SelectItem>
+            <SelectItem value="media">Payload Media</SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingsFieldRow>
+      {imageSource === "url" ? (
+        <ImagePrimitiveInspectorUrlFields
+          baseId={baseId}
+          node={node}
+          patchNodeProps={patchNodeProps}
+          resetNodePropKey={resetNodePropKey}
+          src={src}
+        />
+      ) : (
+        <ImagePrimitiveInspectorMediaFields
+          alt={alt}
+          baseId={baseId}
+          busy={busy}
+          mediaDocs={mediaDocs}
+          mediaId={mediaId}
+          mediaLoadError={mediaLoadError}
+          mediaLoading={mediaLoading}
+          mediaPickerOpen={mediaPickerOpen}
+          patchNodeProps={patchNodeProps}
+          setBusy={setBusy}
+          setError={setError}
+          setMediaPickerOpen={setMediaPickerOpen}
+          src={src}
+          uploadInputRef={uploadInputRef}
+        />
+      )}
+      <ImagePrimitiveInspectorAltAndBindingFields
+        alt={alt}
+        applyEditorField={applyEditorField}
+        baseId={baseId}
+        error={error}
+        exposeToEditors={exposeToEditors}
+        fieldBound={fieldBound}
+        labelDraft={labelDraft}
+        mediaId={mediaId}
+        nameDraft={nameDraft}
+        node={node}
+        patchNodeProps={patchNodeProps}
+        resetNodePropKey={resetNodePropKey}
+        setLabelDraft={setLabelDraft}
+        setNameDraft={setNameDraft}
+        setNodeEditorFieldBinding={setNodeEditorFieldBinding}
+      />
     </div>
   );
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
-export function PropertyInspector({
+function InspectorStyleValueGrid({
   composition,
   node,
-  tokenMetadata,
-  onTextChange,
   onNodeStyleEntry,
-  patchNodeProps,
-  resetNodePropKey,
-  clearNodeStyles,
-  setNodeEditorFieldBinding,
+  properties,
+  tokenMetadata,
 }: {
-  composition: PageComposition | null;
-  node: CompositionNode | null;
-  tokenMetadata: TokenMeta[];
-  onTextChange: (content: string) => void;
+  composition: PageComposition;
+  node: CompositionNode;
   onNodeStyleEntry: (
     property: StyleProperty,
     entry: StylePropertyEntry | null,
   ) => void;
-  patchNodeProps: (patch: Record<string, unknown>) => void;
-  resetNodePropKey: (propKey: string) => void;
-  clearNodeStyles: () => void;
-  setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
+  properties: readonly StyleProperty[];
+  tokenMetadata: TokenMeta[];
 }) {
-  const [styleSectionOpenState, setStyleSectionOpenState] = useState<
-    Partial<Record<StyleSectionId, boolean>>
-  >({});
-  const [inspectorTab, setInspectorTab] = useState<"styles" | "settings">(
-    "styles",
+  return (
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+      {properties.map((property) => {
+        const styleEntry = readStyleProperty(composition, node, property);
+        return (
+          <StyleValueSelect
+            key={property}
+            onNodeStyleEntry={onNodeStyleEntry}
+            property={property}
+            tokenMetadata={tokenMetadata}
+            valueEntry={styleEntry}
+          />
+        );
+      })}
+    </div>
   );
-  if (!node || !composition) {
+}
+
+function InspectorStyleMoreOptionsBlock({
+  composition,
+  groupedSecondaryProperties,
+  moreOptionsLabel,
+  node,
+  onNodeStyleEntry,
+  sectionId,
+  tokenMetadata,
+}: {
+  composition: PageComposition;
+  groupedSecondaryProperties: StyleProperty[];
+  moreOptionsLabel: string;
+  node: CompositionNode;
+  onNodeStyleEntry: (
+    property: StyleProperty,
+    entry: StylePropertyEntry | null,
+  ) => void;
+  sectionId: StyleSectionId;
+  tokenMetadata: TokenMeta[];
+}) {
+  return (
+    <Collapsible>
+      <CollapsibleTrigger asChild>
+        <Button
+          className="h-8 w-full justify-between px-2 text-xs"
+          type="button"
+          variant="ghost"
+        >
+          <span>{moreOptionsLabel}</span>
+          <span className="rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            {groupedSecondaryProperties.length}
+          </span>
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-3">
+        <div className={moreOptionsGridClassName(sectionId)}>
+          {groupedSecondaryProperties.map((property) => {
+            const styleEntry = readStyleProperty(composition, node, property);
+            return (
+              <StyleValueSelect
+                key={property}
+                onNodeStyleEntry={onNodeStyleEntry}
+                property={property}
+                tokenMetadata={tokenMetadata}
+                valueEntry={styleEntry}
+              />
+            );
+          })}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function InspectorSpacingStyleSection({
+  composition,
+  isStyleSectionOpen,
+  model,
+  node,
+  onNodeStyleEntry,
+  section,
+  sectionIndex,
+  setStyleSectionOpen,
+  tokenMetadata,
+}: {
+  composition: PageComposition;
+  isStyleSectionOpen: (sectionId: StyleSectionId) => boolean;
+  model: NonNullable<ReturnType<typeof inspectorStyleSectionModelFromSection>>;
+  node: CompositionNode;
+  onNodeStyleEntry: (
+    property: StyleProperty,
+    entry: StylePropertyEntry | null,
+  ) => void;
+  section: InspectorOrderedStyleSection;
+  sectionIndex: number;
+  setStyleSectionOpen: (sectionId: StyleSectionId, open: boolean) => void;
+  tokenMetadata: TokenMeta[];
+}) {
+  const showMoreOptions =
+    model.secondaryProperties.length > 0 && model.primaryProperties.length > 0;
+  return (
+    <div className={`${inspectorStyleSectionTopClass(sectionIndex)}space-y-4`}>
+      <Collapsible
+        onOpenChange={(open) => setStyleSectionOpen(section.id, open)}
+        open={isStyleSectionOpen(section.id)}
+      >
+        <CollapsibleTrigger asChild>
+          <Button
+            className="group w-full justify-between px-1"
+            size="panel"
+            type="button"
+            variant="panel"
+          >
+            <span className="flex items-center gap-1.5">
+              <section.Icon
+                aria-hidden
+                className="size-3.5 text-muted-foreground/90"
+                stroke={1.7}
+              />
+              <span>Margin & Padding</span>
+            </span>
+            <IconChevronDown
+              aria-hidden
+              className="size-3.5 transition-transform group-data-[state=open]:rotate-180"
+              stroke={1.8}
+            />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4 pt-3">
+          <SpacingBoxControl
+            availableProperties={new Set(model.sectionProperties)}
+            composition={composition}
+            node={node}
+            onNodeStyleEntry={onNodeStyleEntry}
+          />
+          {model.visibleProperties.length > 0 ? (
+            <InspectorStyleValueGrid
+              composition={composition}
+              node={node}
+              onNodeStyleEntry={onNodeStyleEntry}
+              properties={model.visibleProperties}
+              tokenMetadata={tokenMetadata}
+            />
+          ) : null}
+          {showMoreOptions ? (
+            <InspectorStyleMoreOptionsBlock
+              composition={composition}
+              groupedSecondaryProperties={model.groupedSecondaryProperties}
+              moreOptionsLabel="More spacing options"
+              node={node}
+              onNodeStyleEntry={onNodeStyleEntry}
+              sectionId={section.id}
+              tokenMetadata={tokenMetadata}
+            />
+          ) : null}
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
+  );
+}
+
+function InspectorBorderStyleSection({
+  composition,
+  isStyleSectionOpen,
+  model,
+  node,
+  onNodeStyleEntry,
+  section,
+  sectionIndex,
+  setStyleSectionOpen,
+  tokenMetadata,
+}: {
+  composition: PageComposition;
+  isStyleSectionOpen: (sectionId: StyleSectionId) => boolean;
+  model: NonNullable<ReturnType<typeof inspectorStyleSectionModelFromSection>>;
+  node: CompositionNode;
+  onNodeStyleEntry: (
+    property: StyleProperty,
+    entry: StylePropertyEntry | null,
+  ) => void;
+  section: InspectorOrderedStyleSection;
+  sectionIndex: number;
+  setStyleSectionOpen: (sectionId: StyleSectionId, open: boolean) => void;
+  tokenMetadata: TokenMeta[];
+}) {
+  return (
+    <div className={`${inspectorStyleSectionTopClass(sectionIndex)}space-y-4`}>
+      <Collapsible
+        onOpenChange={(open) => setStyleSectionOpen(section.id, open)}
+        open={isStyleSectionOpen(section.id)}
+      >
+        <CollapsibleTrigger asChild>
+          <Button
+            className="group w-full justify-between px-1"
+            size="panel"
+            type="button"
+            variant="panel"
+          >
+            <span className="flex items-center gap-1.5">
+              <section.Icon
+                aria-hidden
+                className="size-3.5 text-muted-foreground/90"
+                stroke={1.7}
+              />
+              <span>{section.label}</span>
+            </span>
+            <IconChevronDown
+              aria-hidden
+              className="size-3.5 transition-transform group-data-[state=open]:rotate-180"
+              stroke={1.8}
+            />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4 pt-3">
+          <BorderControl
+            availableProperties={new Set(model.filteredSectionProperties)}
+            composition={composition}
+            node={node}
+            onNodeStyleEntry={onNodeStyleEntry}
+            tokenMetadata={tokenMetadata}
+          />
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
+  );
+}
+
+function InspectorDefaultStyleSection({
+  composition,
+  isStyleSectionOpen,
+  model,
+  node,
+  onNodeStyleEntry,
+  section,
+  sectionIndex,
+  setStyleSectionOpen,
+  tokenMetadata,
+}: {
+  composition: PageComposition;
+  isStyleSectionOpen: (sectionId: StyleSectionId) => boolean;
+  model: NonNullable<ReturnType<typeof inspectorStyleSectionModelFromSection>>;
+  node: CompositionNode;
+  onNodeStyleEntry: (
+    property: StyleProperty,
+    entry: StylePropertyEntry | null,
+  ) => void;
+  section: InspectorOrderedStyleSection;
+  sectionIndex: number;
+  setStyleSectionOpen: (sectionId: StyleSectionId, open: boolean) => void;
+  tokenMetadata: TokenMeta[];
+}) {
+  const showMoreOptions =
+    model.secondaryProperties.length > 0 && model.primaryProperties.length > 0;
+  return (
+    <div className={`${inspectorStyleSectionTopClass(sectionIndex)}space-y-4`}>
+      <Collapsible
+        onOpenChange={(open) => setStyleSectionOpen(section.id, open)}
+        open={isStyleSectionOpen(section.id)}
+      >
+        <CollapsibleTrigger asChild>
+          <Button
+            className="group w-full justify-between px-1"
+            size="panel"
+            type="button"
+            variant="panel"
+          >
+            <span className="flex items-center gap-1.5">
+              <section.Icon
+                aria-hidden
+                className="size-3.5 text-muted-foreground/90"
+                stroke={1.7}
+              />
+              <span>{section.label}</span>
+            </span>
+            <IconChevronDown
+              aria-hidden
+              className="size-3.5 transition-transform group-data-[state=open]:rotate-180"
+              stroke={1.8}
+            />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4 pt-3">
+          <InspectorStyleValueGrid
+            composition={composition}
+            node={node}
+            onNodeStyleEntry={onNodeStyleEntry}
+            properties={model.visibleProperties}
+            tokenMetadata={tokenMetadata}
+          />
+          {showMoreOptions ? (
+            <InspectorStyleMoreOptionsBlock
+              composition={composition}
+              groupedSecondaryProperties={model.groupedSecondaryProperties}
+              moreOptionsLabel={`More ${section.label.toLowerCase()} options`}
+              node={node}
+              onNodeStyleEntry={onNodeStyleEntry}
+              sectionId={section.id}
+              tokenMetadata={tokenMetadata}
+            />
+          ) : null}
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
+  );
+}
+
+function InspectorOrderedStyleSectionItem({
+  composition,
+  gapPropertyAvailable,
+  isStyleSectionOpen,
+  node,
+  onNodeStyleEntry,
+  section,
+  sectionIndex,
+  setStyleSectionOpen,
+  tokenMetadata,
+}: {
+  composition: PageComposition;
+  gapPropertyAvailable: boolean;
+  isStyleSectionOpen: (sectionId: StyleSectionId) => boolean;
+  node: CompositionNode;
+  onNodeStyleEntry: (
+    property: StyleProperty,
+    entry: StylePropertyEntry | null,
+  ) => void;
+  section: InspectorOrderedStyleSection;
+  sectionIndex: number;
+  setStyleSectionOpen: (sectionId: StyleSectionId, open: boolean) => void;
+  tokenMetadata: TokenMeta[];
+}) {
+  const model = inspectorStyleSectionModelFromSection(
+    section,
+    gapPropertyAvailable,
+  );
+  if (!model) {
+    return null;
+  }
+  if (section.id === "spacing") {
     return (
-      <div className="text-sm text-muted-foreground">
-        Select an element on the canvas or in layers.
-      </div>
+      <InspectorSpacingStyleSection
+        composition={composition}
+        isStyleSectionOpen={isStyleSectionOpen}
+        model={model}
+        node={node}
+        onNodeStyleEntry={onNodeStyleEntry}
+        section={section}
+        sectionIndex={sectionIndex}
+        setStyleSectionOpen={setStyleSectionOpen}
+        tokenMetadata={tokenMetadata}
+      />
     );
   }
+  if (section.id === "border") {
+    return (
+      <InspectorBorderStyleSection
+        composition={composition}
+        isStyleSectionOpen={isStyleSectionOpen}
+        model={model}
+        node={node}
+        onNodeStyleEntry={onNodeStyleEntry}
+        section={section}
+        sectionIndex={sectionIndex}
+        setStyleSectionOpen={setStyleSectionOpen}
+        tokenMetadata={tokenMetadata}
+      />
+    );
+  }
+  return (
+    <InspectorDefaultStyleSection
+      composition={composition}
+      isStyleSectionOpen={isStyleSectionOpen}
+      model={model}
+      node={node}
+      onNodeStyleEntry={onNodeStyleEntry}
+      section={section}
+      sectionIndex={sectionIndex}
+      setStyleSectionOpen={setStyleSectionOpen}
+      tokenMetadata={tokenMetadata}
+    />
+  );
+}
 
+function PropertyInspectorSettingsTab({
+  content,
+  exposeToEditors,
+  fieldBound,
+  isButton,
+  isHeading,
+  isImage,
+  isLibraryComponent,
+  isSlot,
+  isText,
+  node,
+  onTextChange,
+  patchNodeProps,
+  resetNodePropKey,
+  setNodeEditorFieldBinding,
+}: {
+  content: string;
+  exposeToEditors: boolean;
+  fieldBound: EditorFieldSpec | undefined;
+  isButton: boolean;
+  isHeading: boolean;
+  isImage: boolean;
+  isLibraryComponent: boolean;
+  isSlot: boolean;
+  isText: boolean;
+  node: CompositionNode;
+  onTextChange: (content: string) => void;
+  patchNodeProps: (patch: Record<string, unknown>) => void;
+  resetNodePropKey: (propKey: string) => void;
+  setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
+}) {
+  return (
+    <>
+      {isText ? (
+        <TextPrimitiveInspector
+          content={content}
+          exposeToEditors={exposeToEditors}
+          fieldBound={fieldBound}
+          node={node}
+          onTextChange={onTextChange}
+          resetNodePropKey={resetNodePropKey}
+          setNodeEditorFieldBinding={setNodeEditorFieldBinding}
+        />
+      ) : null}
+      {isHeading ? (
+        <HeadingPrimitiveInspector
+          exposeToEditors={exposeToEditors}
+          fieldBound={fieldBound}
+          node={node}
+          patchNodeProps={patchNodeProps}
+          resetNodePropKey={resetNodePropKey}
+          setNodeEditorFieldBinding={setNodeEditorFieldBinding}
+        />
+      ) : null}
+      {isButton ? (
+        <ButtonPrimitiveInspector
+          node={node}
+          patchNodeProps={patchNodeProps}
+          resetNodePropKey={resetNodePropKey}
+        />
+      ) : null}
+      {isImage ? (
+        <ImagePrimitiveInspector
+          exposeToEditors={exposeToEditors}
+          fieldBound={fieldBound}
+          node={node}
+          patchNodeProps={patchNodeProps}
+          resetNodePropKey={resetNodePropKey}
+          setNodeEditorFieldBinding={setNodeEditorFieldBinding}
+        />
+      ) : null}
+      {isSlot ? (
+        <div className="border-t border-border/60 pt-4">
+          <SettingsFieldRow
+            definitionKey={node.definitionKey}
+            htmlFor="inspector-slot-id"
+            label="Slot id"
+            onResetProp={resetNodePropKey}
+            propKey="slotId"
+            propValues={node.propValues}
+          >
+            <Input
+              data-testid="inspector-slot-id"
+              id="inspector-slot-id"
+              onChange={(e) => patchNodeProps({ slotId: e.target.value })}
+              placeholder="main"
+              type="text"
+              value={
+                typeof node.propValues?.slotId === "string"
+                  ? node.propValues.slotId
+                  : ""
+              }
+            />
+          </SettingsFieldRow>
+        </div>
+      ) : null}
+      {isLibraryComponent ? (
+        <div className="space-y-3 border-t border-border/60 pt-4">
+          <div className="text-xs font-medium text-foreground">Component</div>
+          <div className="rounded-md border border-border bg-muted/30 px-2 py-1.5 font-mono text-xs text-foreground">
+            {typeof node.propValues?.componentKey === "string"
+              ? node.propValues.componentKey
+              : "—"}
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function PropertyInspectorActive({
+  clearNodeStyles,
+  composition,
+  inspectorTab,
+  node,
+  onInspectorTabChange,
+  onNodeStyleEntry,
+  onTextChange,
+  patchNodeProps,
+  resetNodePropKey,
+  setNodeEditorFieldBinding,
+  setStyleSectionOpenState,
+  styleSectionOpenState,
+  tokenMetadata,
+}: {
+  clearNodeStyles: () => void;
+  composition: PageComposition;
+  inspectorTab: StudioInspectorTab;
+  node: CompositionNode;
+  onInspectorTabChange: (tab: StudioInspectorTab) => void;
+  onNodeStyleEntry: (
+    property: StyleProperty,
+    entry: StylePropertyEntry | null,
+  ) => void;
+  onTextChange: (content: string) => void;
+  patchNodeProps: (patch: Record<string, unknown>) => void;
+  resetNodePropKey: (propKey: string) => void;
+  setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
+  setStyleSectionOpenState: Dispatch<
+    SetStateAction<Partial<Record<StyleSectionId, boolean>>>
+  >;
+  styleSectionOpenState: Partial<Record<StyleSectionId, boolean>>;
+  tokenMetadata: TokenMeta[];
+}) {
   const isText = node.definitionKey === "primitive.text";
   const isHeading = node.definitionKey === "primitive.heading";
   const isButton = node.definitionKey === "primitive.button";
@@ -3671,25 +4512,10 @@ export function PropertyInspector({
       return { ...prev, [sectionId]: open };
     });
   };
-  const styleSectionIdsWithControls: StyleSectionId[] = [];
-  for (const section of orderedStyleSections) {
-    let sectionProperties = section.properties;
-    if (section.id === "spacing") {
-      sectionProperties = sectionProperties.filter(
-        (property) => property !== "gap",
-      );
-    }
-    if (
-      section.id === "layout" &&
-      gapPropertyAvailable &&
-      !sectionProperties.includes("gap")
-    ) {
-      sectionProperties = [...sectionProperties, "gap"];
-    }
-    if (sectionProperties.length > 0) {
-      styleSectionIdsWithControls.push(section.id);
-    }
-  }
+  const styleSectionIdsWithControls = collectStyleSectionIdsWithControls(
+    orderedStyleSections,
+    gapPropertyAvailable,
+  );
   const allStyleSectionsCollapsed =
     styleSectionIdsWithControls.length > 0 &&
     styleSectionIdsWithControls.every(
@@ -3707,7 +4533,7 @@ export function PropertyInspector({
           className="w-full"
           onValueChange={(value) => {
             if (value === "styles" || value === "settings") {
-              setInspectorTab(value);
+              onInspectorTabChange(value);
             }
           }}
           value={inspectorTab}
@@ -3717,8 +4543,20 @@ export function PropertyInspector({
           </div>
           <div className="mt-3 space-y-2">
             <TabsList className="grid w-fit shrink-0 grid-cols-2">
-              <TabsTrigger value="styles">Styles</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsTrigger
+                aria-keyshortcuts="4"
+                title="Styles (4)"
+                value="styles"
+              >
+                Styles
+              </TabsTrigger>
+              <TabsTrigger
+                aria-keyshortcuts="5"
+                title="Settings (5)"
+                value="settings"
+              >
+                Settings
+              </TabsTrigger>
             </TabsList>
             {showStyleToolbarActions ? (
               <div className="flex items-center gap-2">
@@ -3755,316 +4593,20 @@ export function PropertyInspector({
           <TabsContent className="mt-4" value="styles">
             {hasStyleControls ? (
               <div className="space-y-4">
-                {/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog. */}
-                {orderedStyleSections.map((section, sectionIndex) => {
-                  let sectionProperties = section.properties;
-                  if (section.id === "spacing") {
-                    sectionProperties = sectionProperties.filter(
-                      (property) => property !== "gap",
-                    );
-                  }
-                  if (
-                    section.id === "layout" &&
-                    gapPropertyAvailable &&
-                    !sectionProperties.includes("gap")
-                  ) {
-                    sectionProperties = [...sectionProperties, "gap"];
-                  }
-                  if (sectionProperties.length === 0) {
-                    return null;
-                  }
-                  const filteredSectionProperties =
-                    section.id === "spacing"
-                      ? sectionProperties.filter(
-                          (property) => !SPACING_RING_PROPERTIES.has(property),
-                        )
-                      : sectionProperties;
-                  let primaryProperties = filteredSectionProperties.filter(
-                    (property) => PRIMARY_STYLE_PROPERTIES.has(property),
-                  );
-                  if (
-                    section.id === "layout" &&
-                    primaryProperties.includes("gap")
-                  ) {
-                    primaryProperties = [
-                      ...primaryProperties.filter(
-                        (property) => property !== "gap",
-                      ),
-                      "gap",
-                    ];
-                  }
-                  const secondaryProperties = filteredSectionProperties.filter(
-                    (property) => !PRIMARY_STYLE_PROPERTIES.has(property),
-                  );
-                  const groupedSecondaryProperties =
-                    groupedMoreOptionsProperties(
-                      section.id,
-                      secondaryProperties,
-                    );
-                  const visibleProperties =
-                    primaryProperties.length > 0
-                      ? primaryProperties
-                      : filteredSectionProperties;
-                  if (section.id === "spacing") {
-                    return (
-                      <div
-                        className={`${sectionIndex === 0 ? "" : "border-t border-border/60 pt-4 "}space-y-4`}
-                        key={section.id}
-                      >
-                        <Collapsible
-                          onOpenChange={(open) =>
-                            setStyleSectionOpen(section.id, open)
-                          }
-                          open={isStyleSectionOpen(section.id)}
-                        >
-                          <CollapsibleTrigger asChild>
-                            <Button
-                              className="group w-full justify-between px-1"
-                              size="panel"
-                              type="button"
-                              variant="panel"
-                            >
-                              <span className="flex items-center gap-1.5">
-                                <section.Icon
-                                  aria-hidden
-                                  className="size-3.5 text-muted-foreground/90"
-                                  stroke={1.7}
-                                />
-                                <span>Margin & Padding</span>
-                              </span>
-                              <IconChevronDown
-                                aria-hidden
-                                className="size-3.5 transition-transform group-data-[state=open]:rotate-180"
-                                stroke={1.8}
-                              />
-                            </Button>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent className="space-y-4 pt-3">
-                            <SpacingBoxControl
-                              availableProperties={new Set(sectionProperties)}
-                              composition={composition}
-                              node={node}
-                              onNodeStyleEntry={onNodeStyleEntry}
-                            />
-                            {visibleProperties.length > 0 ? (
-                              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
-                                {visibleProperties.map((property) => {
-                                  const styleEntry = readStyleProperty(
-                                    composition,
-                                    node,
-                                    property,
-                                  );
-                                  return (
-                                    <StyleValueSelect
-                                      key={property}
-                                      onNodeStyleEntry={onNodeStyleEntry}
-                                      property={property}
-                                      tokenMetadata={tokenMetadata}
-                                      valueEntry={styleEntry}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            ) : null}
-                            {secondaryProperties.length > 0 &&
-                            primaryProperties.length > 0 ? (
-                              <Collapsible>
-                                <CollapsibleTrigger asChild>
-                                  <Button
-                                    className="h-8 w-full justify-between px-2 text-xs"
-                                    type="button"
-                                    variant="ghost"
-                                  >
-                                    <span>More spacing options</span>
-                                    <span className="rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                      {secondaryProperties.length}
-                                    </span>
-                                  </Button>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent className="pt-3">
-                                  <div
-                                    className={moreOptionsGridClassName(
-                                      section.id,
-                                    )}
-                                  >
-                                    {groupedSecondaryProperties.map(
-                                      (property) => {
-                                        const styleEntry = readStyleProperty(
-                                          composition,
-                                          node,
-                                          property,
-                                        );
-                                        return (
-                                          <StyleValueSelect
-                                            key={property}
-                                            onNodeStyleEntry={onNodeStyleEntry}
-                                            property={property}
-                                            tokenMetadata={tokenMetadata}
-                                            valueEntry={styleEntry}
-                                          />
-                                        );
-                                      },
-                                    )}
-                                  </div>
-                                </CollapsibleContent>
-                              </Collapsible>
-                            ) : null}
-                          </CollapsibleContent>
-                        </Collapsible>
-                      </div>
-                    );
-                  }
-                  if (section.id === "border") {
-                    return (
-                      <div
-                        className={`${sectionIndex === 0 ? "" : "border-t border-border/60 pt-4 "}space-y-4`}
-                        key={section.id}
-                      >
-                        <Collapsible
-                          onOpenChange={(open) =>
-                            setStyleSectionOpen(section.id, open)
-                          }
-                          open={isStyleSectionOpen(section.id)}
-                        >
-                          <CollapsibleTrigger asChild>
-                            <Button
-                              className="group w-full justify-between px-1"
-                              size="panel"
-                              type="button"
-                              variant="panel"
-                            >
-                              <span className="flex items-center gap-1.5">
-                                <section.Icon
-                                  aria-hidden
-                                  className="size-3.5 text-muted-foreground/90"
-                                  stroke={1.7}
-                                />
-                                <span>{section.label}</span>
-                              </span>
-                              <IconChevronDown
-                                aria-hidden
-                                className="size-3.5 transition-transform group-data-[state=open]:rotate-180"
-                                stroke={1.8}
-                              />
-                            </Button>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent className="space-y-4 pt-3">
-                            <BorderControl
-                              availableProperties={
-                                new Set(filteredSectionProperties)
-                              }
-                              composition={composition}
-                              node={node}
-                              onNodeStyleEntry={onNodeStyleEntry}
-                              tokenMetadata={tokenMetadata}
-                            />
-                          </CollapsibleContent>
-                        </Collapsible>
-                      </div>
-                    );
-                  }
-                  return (
-                    <div
-                      className={`${sectionIndex === 0 ? "" : "border-t border-border/60 pt-4 "}space-y-4`}
-                      key={section.id}
-                    >
-                      <Collapsible
-                        onOpenChange={(open) =>
-                          setStyleSectionOpen(section.id, open)
-                        }
-                        open={isStyleSectionOpen(section.id)}
-                      >
-                        <CollapsibleTrigger asChild>
-                          <Button
-                            className="group w-full justify-between px-1"
-                            size="panel"
-                            type="button"
-                            variant="panel"
-                          >
-                            <span className="flex items-center gap-1.5">
-                              <section.Icon
-                                aria-hidden
-                                className="size-3.5 text-muted-foreground/90"
-                                stroke={1.7}
-                              />
-                              <span>{section.label}</span>
-                            </span>
-                            <IconChevronDown
-                              aria-hidden
-                              className="size-3.5 transition-transform group-data-[state=open]:rotate-180"
-                              stroke={1.8}
-                            />
-                          </Button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-4 pt-3">
-                          <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
-                            {visibleProperties.map((property) => {
-                              const styleEntry = readStyleProperty(
-                                composition,
-                                node,
-                                property,
-                              );
-                              return (
-                                <StyleValueSelect
-                                  key={property}
-                                  onNodeStyleEntry={onNodeStyleEntry}
-                                  property={property}
-                                  tokenMetadata={tokenMetadata}
-                                  valueEntry={styleEntry}
-                                />
-                              );
-                            })}
-                          </div>
-                          {secondaryProperties.length > 0 &&
-                          primaryProperties.length > 0 ? (
-                            <Collapsible>
-                              <CollapsibleTrigger asChild>
-                                <Button
-                                  className="h-8 w-full justify-between px-2 text-xs"
-                                  type="button"
-                                  variant="ghost"
-                                >
-                                  <span>
-                                    More {section.label.toLowerCase()} options
-                                  </span>
-                                  <span className="rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                    {secondaryProperties.length}
-                                  </span>
-                                </Button>
-                              </CollapsibleTrigger>
-                              <CollapsibleContent className="pt-3">
-                                <div
-                                  className={moreOptionsGridClassName(
-                                    section.id,
-                                  )}
-                                >
-                                  {groupedSecondaryProperties.map(
-                                    (property) => {
-                                      const styleEntry = readStyleProperty(
-                                        composition,
-                                        node,
-                                        property,
-                                      );
-                                      return (
-                                        <StyleValueSelect
-                                          key={property}
-                                          onNodeStyleEntry={onNodeStyleEntry}
-                                          property={property}
-                                          tokenMetadata={tokenMetadata}
-                                          valueEntry={styleEntry}
-                                        />
-                                      );
-                                    },
-                                  )}
-                                </div>
-                              </CollapsibleContent>
-                            </Collapsible>
-                          ) : null}
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </div>
-                  );
-                })}
+                {orderedStyleSections.map((section, sectionIndex) => (
+                  <InspectorOrderedStyleSectionItem
+                    key={section.id}
+                    composition={composition}
+                    gapPropertyAvailable={gapPropertyAvailable}
+                    isStyleSectionOpen={isStyleSectionOpen}
+                    node={node}
+                    onNodeStyleEntry={onNodeStyleEntry}
+                    section={section}
+                    sectionIndex={sectionIndex}
+                    setStyleSectionOpen={setStyleSectionOpen}
+                    tokenMetadata={tokenMetadata}
+                  />
+                ))}
               </div>
             ) : (
               <div className="rounded-md border border-border/70 bg-muted/20 p-2.5 text-xs leading-snug text-muted-foreground">
@@ -4073,84 +4615,84 @@ export function PropertyInspector({
             )}
           </TabsContent>
           <TabsContent className="mt-4 space-y-4" value="settings">
-            {isText ? (
-              <TextPrimitiveInspector
-                content={content}
-                exposeToEditors={exposeToEditors}
-                fieldBound={fieldBound}
-                node={node}
-                onTextChange={onTextChange}
-                resetNodePropKey={resetNodePropKey}
-                setNodeEditorFieldBinding={setNodeEditorFieldBinding}
-              />
-            ) : null}
-            {isHeading ? (
-              <HeadingPrimitiveInspector
-                exposeToEditors={exposeToEditors}
-                fieldBound={fieldBound}
-                node={node}
-                patchNodeProps={patchNodeProps}
-                resetNodePropKey={resetNodePropKey}
-                setNodeEditorFieldBinding={setNodeEditorFieldBinding}
-              />
-            ) : null}
-            {isButton ? (
-              <ButtonPrimitiveInspector
-                node={node}
-                patchNodeProps={patchNodeProps}
-                resetNodePropKey={resetNodePropKey}
-              />
-            ) : null}
-            {isImage ? (
-              <ImagePrimitiveInspector
-                exposeToEditors={exposeToEditors}
-                fieldBound={fieldBound}
-                node={node}
-                patchNodeProps={patchNodeProps}
-                resetNodePropKey={resetNodePropKey}
-                setNodeEditorFieldBinding={setNodeEditorFieldBinding}
-              />
-            ) : null}
-            {isSlot ? (
-              <div className="border-t border-border/60 pt-4">
-                <SettingsFieldRow
-                  definitionKey={node.definitionKey}
-                  htmlFor="inspector-slot-id"
-                  label="Slot id"
-                  onResetProp={resetNodePropKey}
-                  propKey="slotId"
-                  propValues={node.propValues}
-                >
-                  <Input
-                    data-testid="inspector-slot-id"
-                    id="inspector-slot-id"
-                    onChange={(e) => patchNodeProps({ slotId: e.target.value })}
-                    placeholder="main"
-                    type="text"
-                    value={
-                      typeof node.propValues?.slotId === "string"
-                        ? node.propValues.slotId
-                        : ""
-                    }
-                  />
-                </SettingsFieldRow>
-              </div>
-            ) : null}
-            {isLibraryComponent ? (
-              <div className="space-y-3 border-t border-border/60 pt-4">
-                <div className="text-xs font-medium text-foreground">
-                  Component
-                </div>
-                <div className="rounded-md border border-border bg-muted/30 px-2 py-1.5 font-mono text-xs text-foreground">
-                  {typeof node.propValues?.componentKey === "string"
-                    ? node.propValues.componentKey
-                    : "—"}
-                </div>
-              </div>
-            ) : null}
+            <PropertyInspectorSettingsTab
+              content={content}
+              exposeToEditors={exposeToEditors}
+              fieldBound={fieldBound}
+              isButton={isButton}
+              isHeading={isHeading}
+              isImage={isImage}
+              isLibraryComponent={isLibraryComponent}
+              isSlot={isSlot}
+              isText={isText}
+              node={node}
+              onTextChange={onTextChange}
+              patchNodeProps={patchNodeProps}
+              resetNodePropKey={resetNodePropKey}
+              setNodeEditorFieldBinding={setNodeEditorFieldBinding}
+            />
           </TabsContent>
         </Tabs>
       </div>
     </TooltipProvider>
+  );
+}
+
+export function PropertyInspector({
+  clearNodeStyles,
+  composition,
+  inspectorTab,
+  node,
+  onInspectorTabChange,
+  onNodeStyleEntry,
+  onTextChange,
+  patchNodeProps,
+  resetNodePropKey,
+  setNodeEditorFieldBinding,
+  tokenMetadata,
+}: {
+  clearNodeStyles: () => void;
+  composition: PageComposition | null;
+  inspectorTab: StudioInspectorTab;
+  node: CompositionNode | null;
+  onInspectorTabChange: (tab: StudioInspectorTab) => void;
+  onNodeStyleEntry: (
+    property: StyleProperty,
+    entry: StylePropertyEntry | null,
+  ) => void;
+  onTextChange: (content: string) => void;
+  patchNodeProps: (patch: Record<string, unknown>) => void;
+  resetNodePropKey: (propKey: string) => void;
+  setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
+  tokenMetadata: TokenMeta[];
+}) {
+  const [styleSectionOpenState, setStyleSectionOpenState] = useState<
+    Partial<Record<StyleSectionId, boolean>>
+  >({});
+
+  if (!node || !composition) {
+    return (
+      <div className="text-sm text-muted-foreground">
+        Select an element on the canvas or in layers.
+      </div>
+    );
+  }
+
+  return (
+    <PropertyInspectorActive
+      clearNodeStyles={clearNodeStyles}
+      composition={composition}
+      inspectorTab={inspectorTab}
+      node={node}
+      onInspectorTabChange={onInspectorTabChange}
+      onNodeStyleEntry={onNodeStyleEntry}
+      onTextChange={onTextChange}
+      patchNodeProps={patchNodeProps}
+      resetNodePropKey={resetNodePropKey}
+      setNodeEditorFieldBinding={setNodeEditorFieldBinding}
+      setStyleSectionOpenState={setStyleSectionOpenState}
+      styleSectionOpenState={styleSectionOpenState}
+      tokenMetadata={tokenMetadata}
+    />
   );
 }

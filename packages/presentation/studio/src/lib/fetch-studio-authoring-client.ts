@@ -82,7 +82,9 @@ export function createFetchStudioAuthoringClient(
     async patchCompositionName(
       compositionId: string,
       name: string,
+      options?: { intent?: "draft" | "publish" },
     ): Promise<StudioRenameResult> {
+      const intent = options?.intent ?? "draft";
       const res = await fetch(
         joinBase(
           compositionBase,
@@ -92,7 +94,7 @@ export function createFetchStudioAuthoringClient(
           method: "PATCH",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name }),
+          body: JSON.stringify({ name, intent }),
         },
       );
       if (!res.ok) {
@@ -224,6 +226,7 @@ async function postPersist(
   return {
     id: json.data.id ?? compositionId,
     updatedAt: json.data.updatedAt,
+    ...(json.data._status !== undefined ? { _status: json.data._status } : {}),
   };
 }
 

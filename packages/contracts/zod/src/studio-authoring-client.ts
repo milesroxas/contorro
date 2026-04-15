@@ -11,6 +11,8 @@ export type StudioAuthoringCompositionPayload = {
   name: string;
   composition: PageComposition;
   updatedAt: string;
+  /** Payload drafts: whether the loaded revision is draft or published in CMS. */
+  _status?: "draft" | "published" | null;
   tokenMetadata: StudioTokenMeta[];
   cssVariables: string;
 };
@@ -21,9 +23,17 @@ export type StudioPersistCompositionBody = {
   name?: string;
 };
 
-export type StudioSaveResult = { id: string; updatedAt: string };
+export type StudioSaveResult = {
+  id: string;
+  updatedAt: string;
+  _status?: "draft" | "published" | null;
+};
 
-export type StudioRenameResult = { name: string; updatedAt: string };
+export type StudioRenameResult = {
+  name: string;
+  updatedAt: string;
+  _status?: "draft" | "published" | null;
+};
 
 /** Design token entry in a set (Studio editor; persisted shape is CMS-specific but mapped here). */
 export type StudioDesignTokenEntry = {
@@ -70,6 +80,7 @@ export interface StudioAuthoringClient {
   patchCompositionName(
     compositionId: string,
     name: string,
+    options?: { intent?: "draft" | "publish" },
   ): Promise<StudioRenameResult>;
 
   listDesignTokenSets(signal?: AbortSignal): Promise<StudioDesignTokenSetDoc[]>;

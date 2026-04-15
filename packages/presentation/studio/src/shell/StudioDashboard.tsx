@@ -18,8 +18,13 @@ import {
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ComponentProps, ComponentType } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import type {
+  ComponentProps,
+  ComponentType,
+  MutableRefObject,
+  ReactNode,
+} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ScrollArea } from "../components/scroll-area.js";
 import { Button } from "../components/ui/button.js";
@@ -33,6 +38,7 @@ import {
 import { Input } from "../components/ui/input.js";
 import { Separator } from "../components/ui/separator.js";
 import { cn } from "../lib/cn.js";
+import { DashboardResourceName } from "./DashboardResourceName.js";
 import { COMPONENTS_SLUG, PAGE_COMPOSITIONS_SLUG } from "./hub/constants.js";
 import { formatUpdatedAt } from "./hub/formatters.js";
 import { useStudioDocumentTheme } from "./hub/use-studio-document-theme.js";
@@ -71,6 +77,7 @@ type ResourceListRow = {
   updatedAtValue: number;
   updatedAtLabel: string;
   resourceType: "Template" | "Component";
+  _status?: string | null;
 };
 
 type QuickAction = {
@@ -117,6 +124,51 @@ function filterRows(
   const query = search.trim().toLowerCase();
   if (!query) return rows;
   return rows.filter((row) => row.searchText.includes(query));
+}
+
+function isStaleDashboardFetch(
+  generation: number,
+  fetchGenerationRef: MutableRefObject<number>,
+): boolean {
+  return generation !== fetchGenerationRef.current;
+}
+
+async function loadStudioDashboardDocs(signal?: AbortSignal): Promise<{
+  componentDocs: ComponentRow[];
+  templateDocs: PageTemplateRow[];
+}> {
+  const [templatesRes, componentsRes] = await Promise.all([
+    fetch(`/api/${PAGE_COMPOSITIONS_SLUG}?limit=200&depth=0&sort=-updatedAt`, {
+      cache: "no-store",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+      signal,
+    }),
+    fetch(`/api/${COMPONENTS_SLUG}?limit=200&depth=0&sort=-updatedAt`, {
+      cache: "no-store",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+      signal,
+    }),
+  ]);
+
+  if (!templatesRes.ok || !componentsRes.ok) {
+    throw new Error("Studio dashboard collection request failed");
+  }
+
+  const templatesJson = (await templatesRes.json()) as {
+    docs?: PageTemplateRow[];
+  };
+  const componentsJson = (await componentsRes.json()) as {
+    docs?: ComponentRow[];
+  };
+
+  return {
+    componentDocs: Array.isArray(componentsJson.docs)
+      ? componentsJson.docs
+      : [],
+    templateDocs: Array.isArray(templatesJson.docs) ? templatesJson.docs : [],
+  };
 }
 
 type QuickActionCardProps = {
@@ -199,10 +251,12 @@ type ResourceListCardProps = {
   searchValue: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder: string;
-  loadState: DashboardLoadState;
+  /** When true, show the blocking placeholder instead of rows (initial load or no data yet). */
+  showBlockingLoading: boolean;
   emptyMessage: string;
   emptyHref: string;
   emptyCtaLabel: string;
+  renderItemTitle?: (row: ResourceListRow) => ReactNode;
 };
 
 function ResourceListCard({
@@ -212,13 +266,12 @@ function ResourceListCard({
   searchValue,
   onSearchChange,
   searchPlaceholder,
-  loadState,
+  showBlockingLoading,
   emptyMessage,
   emptyHref,
   emptyCtaLabel,
+  renderItemTitle,
 }: ResourceListCardProps) {
-  const isLoading = loadState === "loading";
-
   return (
     <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-card ring-0">
       <CardHeader className="gap-3">
@@ -248,7 +301,7 @@ function ResourceListCard({
       <CardContent className="min-h-0 flex-1">
         <ScrollArea className="h-full">
           <div className="w-full space-y-2 pr-3">
-            {isLoading ? (
+            {showBlockingLoading ? (
               <p className="text-sm text-muted-foreground">
                 Loading {title.toLowerCase()}...
               </p>
@@ -269,9 +322,13 @@ function ResourceListCard({
                     key={`${row.resourceType}-${row.id}`}
                   >
                     <div className="space-y-1">
-                      <p className="truncate text-sm font-semibold text-foreground md:text-base">
-                        {row.title}
-                      </p>
+                      {renderItemTitle ? (
+                        renderItemTitle(row)
+                      ) : (
+                        <p className="truncate text-sm font-semibold text-foreground md:text-base">
+                          {row.title}
+                        </p>
+                      )}
                       <p className="truncate text-xs text-muted-foreground">
                         {row.meta}
                       </p>
@@ -319,6 +376,68 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
   const [templateSearch, setTemplateSearch] = useState("");
   const [componentSearch, setComponentSearch] = useState("");
 
+  const fetchGenerationRef = useRef(0);
+
+  const applyTemplateRename = useCallback(
+    (
+      id: string,
+      result: {
+        name: string;
+        updatedAt?: string;
+        _status?: string | null;
+      },
+    ) => {
+      setTemplateDocs(
+        (prev) =>
+          prev?.map((doc) =>
+            String(doc.id) === id
+              ? {
+                  ...doc,
+                  title: result.name,
+                  ...(result.updatedAt !== undefined
+                    ? { updatedAt: result.updatedAt }
+                    : {}),
+                  ...(result._status !== undefined
+                    ? { _status: result._status }
+                    : {}),
+                }
+              : doc,
+          ) ?? null,
+      );
+    },
+    [],
+  );
+
+  const applyComponentRename = useCallback(
+    (
+      id: string,
+      result: {
+        name: string;
+        updatedAt?: string;
+        _status?: string | null;
+      },
+    ) => {
+      setComponentDocs(
+        (prev) =>
+          prev?.map((doc) =>
+            String(doc.id) === id
+              ? {
+                  ...doc,
+                  displayName: result.name,
+                  ...(result.updatedAt !== undefined
+                    ? { updatedAt: result.updatedAt }
+                    : {}),
+                  ...(result._status !== undefined
+                    ? { _status: result._status }
+                    : {}),
+                }
+              : doc,
+          ) ?? null,
+      );
+    },
+    [],
+  );
+
   const openNewStudioSession = useCallback(
     (kind: "template" | "component") => {
       const tempId = studioNewCompositionSessionId(kind);
@@ -337,48 +456,27 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
   }, [openNewStudioSession]);
 
   const fetchDashboardData = useCallback(async (signal?: AbortSignal) => {
+    const generation = ++fetchGenerationRef.current;
     setLoadState("loading");
 
     try {
-      const [templatesRes, componentsRes] = await Promise.all([
-        fetch(
-          `/api/${PAGE_COMPOSITIONS_SLUG}?limit=200&depth=0&sort=-updatedAt`,
-          {
-            cache: "no-store",
-            credentials: "include",
-            headers: { Accept: "application/json" },
-            signal,
-          },
-        ),
-        fetch(`/api/${COMPONENTS_SLUG}?limit=200&depth=0&sort=-updatedAt`, {
-          cache: "no-store",
-          credentials: "include",
-          headers: { Accept: "application/json" },
-          signal,
-        }),
-      ]);
-
-      if (!templatesRes.ok || !componentsRes.ok) {
-        setLoadState("error");
+      const docs = await loadStudioDashboardDocs(signal);
+      if (isStaleDashboardFetch(generation, fetchGenerationRef)) {
         return;
       }
-
-      const templatesJson = (await templatesRes.json()) as {
-        docs?: PageTemplateRow[];
-      };
-      const componentsJson = (await componentsRes.json()) as {
-        docs?: ComponentRow[];
-      };
-
-      setTemplateDocs(
-        Array.isArray(templatesJson.docs) ? templatesJson.docs : [],
-      );
-      setComponentDocs(
-        Array.isArray(componentsJson.docs) ? componentsJson.docs : [],
-      );
+      setTemplateDocs(docs.templateDocs);
+      setComponentDocs(docs.componentDocs);
       setLoadState("idle");
     } catch {
-      if (signal?.aborted) return;
+      if (signal?.aborted) {
+        if (!isStaleDashboardFetch(generation, fetchGenerationRef)) {
+          setLoadState("idle");
+        }
+        return;
+      }
+      if (isStaleDashboardFetch(generation, fetchGenerationRef)) {
+        return;
+      }
       setLoadState("error");
     }
   }, []);
@@ -390,8 +488,25 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
   useEffect(() => {
     const ac = new AbortController();
     void fetchDashboardData(ac.signal);
-    return () => ac.abort();
+    return () => {
+      fetchGenerationRef.current += 1;
+      ac.abort();
+    };
   }, [fetchDashboardData]);
+
+  useEffect(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) {
+        return;
+      }
+      router.refresh();
+      void fetchDashboardData();
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, [fetchDashboardData, router]);
 
   useEffect(() => {
     const onFocus = () => {
@@ -431,6 +546,7 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
         .filter(Boolean)
         .join(" · ");
       return {
+        _status: doc._status,
         studioHref: `/studio?composition=${encodeURIComponent(id)}`,
         editHref: adminDocumentHref(adminRoute, PAGE_COMPOSITIONS_SLUG, id),
         id,
@@ -457,6 +573,7 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
         .filter(Boolean)
         .join(" · ");
       return {
+        _status: doc._status,
         studioHref: `/studio?composition=${encodeURIComponent(studioRowIdForComponent(id))}`,
         editHref: adminDocumentHref(adminRoute, COMPONENTS_SLUG, id),
         id,
@@ -566,6 +683,12 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
   ];
 
   const isError = loadState === "error";
+  const dashboardBlockingLoading =
+    (loadState === "loading" ||
+      (loadState === "idle" &&
+        templateDocs === null &&
+        componentDocs === null)) &&
+    !isError;
 
   return (
     <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto px-4 py-4 md:px-6 md:py-5 xl:px-8 lg:overflow-hidden">
@@ -645,11 +768,23 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
                   : "No templates match your search."
               }
               icon={IconLayout}
-              loadState={loadState}
               onSearchChange={setTemplateSearch}
+              renderItemTitle={(row) => (
+                <DashboardResourceName
+                  collectionSlug={PAGE_COMPOSITIONS_SLUG}
+                  documentId={row.id}
+                  name={row.title}
+                  nameField="title"
+                  onApplied={(r) => {
+                    applyTemplateRename(row.id, r);
+                  }}
+                  resourceLabel="Page template"
+                />
+              )}
               rows={filteredTemplateRows}
               searchPlaceholder="Search templates..."
               searchValue={templateSearch}
+              showBlockingLoading={dashboardBlockingLoading}
               title="Templates"
             />
             <Separator className="bg-border/70 md:h-auto md:w-px md:self-stretch" />
@@ -663,11 +798,23 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
                   : "No components match your search."
               }
               icon={IconPuzzle}
-              loadState={loadState}
               onSearchChange={setComponentSearch}
+              renderItemTitle={(row) => (
+                <DashboardResourceName
+                  collectionSlug={COMPONENTS_SLUG}
+                  documentId={row.id}
+                  name={row.title}
+                  nameField="displayName"
+                  onApplied={(r) => {
+                    applyComponentRename(row.id, r);
+                  }}
+                  resourceLabel="Component"
+                />
+              )}
               rows={filteredComponentRows}
               searchPlaceholder="Search components..."
               searchValue={componentSearch}
+              showBlockingLoading={dashboardBlockingLoading}
               title="Components"
             />
           </section>
@@ -737,7 +884,7 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
             <CardContent className="min-h-0 flex-1">
               <ScrollArea className="h-full">
                 <div className="pr-3">
-                  {loadState === "loading" ? (
+                  {dashboardBlockingLoading ? (
                     <p className="text-sm text-muted-foreground">
                       Loading recent work...
                     </p>
@@ -753,9 +900,31 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
                           key={`recent-${row.resourceType}-${row.id}`}
                         >
                           <div className="space-y-1">
-                            <p className="truncate text-sm font-medium text-foreground">
-                              {row.title}
-                            </p>
+                            {row.resourceType === "Template" ? (
+                              <DashboardResourceName
+                                collectionSlug={PAGE_COMPOSITIONS_SLUG}
+                                documentId={row.id}
+                                name={row.title}
+                                nameField="title"
+                                onApplied={(r) => {
+                                  applyTemplateRename(row.id, r);
+                                }}
+                                readOnlyNameClassName="truncate text-sm font-medium text-foreground"
+                                resourceLabel="Page template"
+                              />
+                            ) : (
+                              <DashboardResourceName
+                                collectionSlug={COMPONENTS_SLUG}
+                                documentId={row.id}
+                                name={row.title}
+                                nameField="displayName"
+                                onApplied={(r) => {
+                                  applyComponentRename(row.id, r);
+                                }}
+                                readOnlyNameClassName="truncate text-sm font-medium text-foreground"
+                                resourceLabel="Component"
+                              />
+                            )}
                             <p className="truncate text-xs text-muted-foreground">
                               {row.resourceType} · {row.meta}
                             </p>

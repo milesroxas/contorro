@@ -64,9 +64,10 @@ test.describe("Phase 3 — Studio MVP", () => {
       .getByTestId("inspector-style-token-background")
       .selectOption("color.surface.primary");
 
+    await page.getByTestId("studio-save-menu-trigger").click();
     await page.getByTestId("save-draft").click();
 
-    await expect(page.getByText(/^Saved$/)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/^Draft$/)).toBeVisible({ timeout: 15_000 });
 
     await page.reload();
 

@@ -60,6 +60,12 @@ Contorro is multi-surface authoring:
 - Root dev: `pnpm dev` (CMS app + `@repo/presentation-studio` watch + gateway).
 - DB local: `pnpm db:up`.
 
+### Lint discipline (Biome)
+
+- Cognitive complexity is capped at **15** via `lint/complexity/noExcessiveCognitiveComplexity` in the repo root `biome.json`. Reduce complexity by extracting helpers or smaller components instead of raising the limit.
+- Do **not** add `biome-ignore`, `eslint-disable`, `@ts-ignore`, or other suppressions to silence lint or type errors. Address the root cause (refactor, typings, or control flow).
+- Large warning counts are not a reason to use ignores: fix violations incrementally until clean.
+
 ## Testing
 
 - Integration tests: `pnpm test` (CMS app int suite, `@repo/cms`).

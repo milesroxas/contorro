@@ -74,6 +74,42 @@ function blockSlotId(block: DesignerBlock): string {
   return "main";
 }
 
+function targetSlotIdForBlock(
+  blockSid: string,
+  templateSlotIds: Set<string>,
+): string | null {
+  if (templateSlotIds.has(blockSid)) {
+    return blockSid;
+  }
+  if (templateSlotIds.has("main")) {
+    return "main";
+  }
+  return null;
+}
+
+function appendRenderedBlockToSlotBuckets(
+  section: ReactNode,
+  templateSlotIds: Set<string> | null,
+  block: DesignerBlock,
+  slotLists: Record<string, ReactNode[]>,
+  orphanSections: ReactNode[],
+): void {
+  if (templateSlotIds === null || templateSlotIds.size === 0) {
+    orphanSections.push(section);
+    return;
+  }
+  const sid = blockSlotId(block);
+  const target = targetSlotIdForBlock(sid, templateSlotIds);
+  if (target === null) {
+    orphanSections.push(section);
+    return;
+  }
+  if (!slotLists[target]) {
+    slotLists[target] = [];
+  }
+  slotLists[target].push(section);
+}
+
 async function renderOneBlock(
   payload: Payload,
   block: DesignerBlock,
@@ -142,7 +178,6 @@ export type RenderedDesignerBlocksBySlot = {
 };
 
 /** Renders page `content` blocks, grouped for layout slot injection and orphan fallback. */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export async function renderDesignerContentBlocksBySlot(
   payload: Payload,
   contentSlots: unknown,
@@ -169,27 +204,13 @@ export async function renderDesignerContentBlocksBySlot(
     if (section === null) {
       continue;
     }
-
-    if (templateSlotIds === null || templateSlotIds.size === 0) {
-      orphanSections.push(section);
-      continue;
-    }
-
-    const sid = blockSlotId(block);
-    const target = templateSlotIds.has(sid)
-      ? sid
-      : templateSlotIds.has("main")
-        ? "main"
-        : null;
-
-    if (target === null) {
-      orphanSections.push(section);
-    } else {
-      if (!slotLists[target]) {
-        slotLists[target] = [];
-      }
-      slotLists[target].push(section);
-    }
+    appendRenderedBlockToSlotBuckets(
+      section,
+      templateSlotIds,
+      block,
+      slotLists,
+      orphanSections,
+    );
   }
 
   const slotContent: Record<string, ReactNode> = {};

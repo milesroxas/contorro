@@ -22,7 +22,10 @@ export async function saveCompositionCommand(
     intent: "draft" | "publish";
     actor: CompositionActor;
   },
-): AsyncResult<{ updatedAt: string }, SaveCompositionError> {
+): AsyncResult<
+  { updatedAt: string; _status: "draft" | "published" | null },
+  SaveCompositionError
+> {
   const parsed = PageCompositionSchema.safeParse(args.composition);
   if (!parsed.success) {
     return err("VALIDATION_ERROR");

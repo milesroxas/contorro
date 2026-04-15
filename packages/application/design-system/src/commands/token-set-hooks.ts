@@ -17,8 +17,35 @@ import {
   toDesignTokenSetAggregate,
 } from "../lib/token-set-doc.js";
 
+function validateAndNormalizeTokenRows(
+  tokens: NonNullable<DesignTokenSetPayloadDoc["tokens"]>,
+): void {
+  for (const row of tokens) {
+    const parsed = DesignTokenSchema.safeParse({
+      key: row.key,
+      mode: row.mode,
+      category: row.category,
+      resolvedValue: row.resolvedValue,
+    });
+    if (!parsed.success) {
+      throw new APIError("Invalid design token row", 400);
+    }
+    row.mode = parsed.data.mode;
+  }
+  const domainCheck = validateTokensForSave(
+    tokens.map((t) => ({
+      key: String(t.key),
+      mode: t.mode === "dark" ? "dark" : "light",
+      category: String(t.category),
+      resolvedValue: String(t.resolvedValue),
+    })),
+  );
+  if (!domainCheck.ok) {
+    throw new APIError("Design token validation failed", 400);
+  }
+}
+
 export function createDesignTokenSetBeforeValidateHandler(): CollectionBeforeValidateHook {
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
   return (args) => {
     const { data, operation } = args;
     if (!data) {
@@ -33,58 +60,41 @@ export function createDesignTokenSetBeforeValidateHandler(): CollectionBeforeVal
     }
 
     if (tokens && tokens.length > 0) {
-      for (const row of tokens) {
-        const parsed = DesignTokenSchema.safeParse({
-          key: row.key,
-          mode: row.mode,
-          category: row.category,
-          resolvedValue: row.resolvedValue,
-        });
-        if (!parsed.success) {
-          throw new APIError("Invalid design token row", 400);
-        }
-        row.mode = parsed.data.mode;
-      }
-      const domainCheck = validateTokensForSave(
-        tokens.map((t) => ({
-          key: String(t.key),
-          mode: t.mode === "dark" ? "dark" : "light",
-          category: String(t.category),
-          resolvedValue: String(t.resolvedValue),
-        })),
-      );
-      if (!domainCheck.ok) {
-        throw new APIError("Design token validation failed", 400);
-      }
+      validateAndNormalizeTokenRows(tokens);
     }
 
     return data;
   };
 }
 
+function mergeIncomingTokenSetDoc(
+  incoming: DesignTokenSetPayloadDoc,
+  prior: DesignTokenSetPayloadDoc | undefined,
+): DesignTokenSetPayloadDoc {
+  return {
+    ...(prior ?? {}),
+    ...incoming,
+    id: incoming.id ?? prior?.id,
+    title: incoming.title !== undefined ? incoming.title : prior?.title,
+    scopeKey:
+      incoming.scopeKey !== undefined ? incoming.scopeKey : prior?.scopeKey,
+    _status: incoming._status !== undefined ? incoming._status : prior?._status,
+    tokens: incoming.tokens !== undefined ? incoming.tokens : prior?.tokens,
+  };
+}
+
 export function createDesignTokenSetBeforeChangeHandler(): CollectionBeforeChangeHook {
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
   return (args) => {
     const { data, originalDoc } = args;
     const incoming = data as DesignTokenSetPayloadDoc;
     const prior = originalDoc as DesignTokenSetPayloadDoc | undefined;
 
-    const merged: DesignTokenSetPayloadDoc = {
-      ...(prior ?? {}),
-      ...incoming,
-      id: incoming.id ?? prior?.id,
-      title: incoming.title !== undefined ? incoming.title : prior?.title,
-      scopeKey:
-        incoming.scopeKey !== undefined ? incoming.scopeKey : prior?.scopeKey,
-      _status:
-        incoming._status !== undefined ? incoming._status : prior?._status,
-      tokens: incoming.tokens !== undefined ? incoming.tokens : prior?.tokens,
-    };
+    const merged = mergeIncomingTokenSetDoc(incoming, prior);
 
     const next = toDesignTokenSetAggregate(merged);
-    const prev = prior ? toDesignTokenSetAggregate(prior) : null;
+    const prevAgg = prior ? toDesignTokenSetAggregate(prior) : null;
 
-    const stable = assertTokenKeyStability(prev, next);
+    const stable = assertTokenKeyStability(prevAgg, next);
     if (!stable.ok) {
       throw new APIError(
         "Token keys are immutable after the set has been published",

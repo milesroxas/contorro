@@ -12,11 +12,28 @@ function trimSlotId(raw: unknown): string {
   return raw.trim();
 }
 
+function normalizedBlocksFromRow(
+  blocksRaw: unknown,
+): Record<string, unknown>[] {
+  if (!Array.isArray(blocksRaw)) {
+    return [];
+  }
+  const chunk: Record<string, unknown>[] = [];
+  for (const b of blocksRaw) {
+    if (!b || typeof b !== "object" || Array.isArray(b)) {
+      continue;
+    }
+    const o = b as Record<string, unknown>;
+    const { layoutSlotId: _ls, ...rest } = o;
+    chunk.push(rest);
+  }
+  return chunk;
+}
+
 /**
  * Aligns page `contentSlots` rows to the template’s slot order. Merges blocks by `slotId`
  * (and strips legacy per-block `layoutSlotId`). Used by Payload `beforeValidate` and admin sync UI.
  */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export function mergePageContentSlotsToSlotOrder(
   slotOrder: string[],
   rawSlots: unknown,
@@ -29,18 +46,7 @@ export function mergePageContentSlotsToSlotOrder(
         continue;
       }
       const sid = trimSlotId(row.slotId);
-      const blocksRaw = row.blocks;
-      const chunk: Record<string, unknown>[] = [];
-      if (Array.isArray(blocksRaw)) {
-        for (const b of blocksRaw) {
-          if (!b || typeof b !== "object" || Array.isArray(b)) {
-            continue;
-          }
-          const o = b as Record<string, unknown>;
-          const { layoutSlotId: _ls, ...rest } = o;
-          chunk.push(rest);
-        }
-      }
+      const chunk = normalizedBlocksFromRow(row.blocks);
       const prev = mergedBlocks.get(sid) ?? [];
       mergedBlocks.set(sid, [...prev, ...chunk]);
     }

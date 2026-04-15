@@ -15,8 +15,12 @@ export async function renameTemplateCommand(
     compositionId: string;
     name: string;
     actor: CompositionActor;
+    intent: "draft" | "publish";
   },
-): AsyncResult<{ name: string; updatedAt: string }, RenameTemplateError> {
+): AsyncResult<
+  { name: string; updatedAt: string; _status?: "draft" | "published" | null },
+  RenameTemplateError
+> {
   const name = args.name.trim();
   if (name === "") {
     return err("VALIDATION_ERROR");
@@ -25,5 +29,5 @@ export async function renameTemplateCommand(
   if (!existing) {
     return err("COMPOSITION_NOT_FOUND");
   }
-  return repo.renameTemplate(args.compositionId, name, args.actor);
+  return repo.renameTemplate(args.compositionId, name, args.actor, args.intent);
 }

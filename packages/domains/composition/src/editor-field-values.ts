@@ -1,4 +1,5 @@
 import type {
+  EditorFieldSpec,
   EditorFieldsContract,
   PageComposition,
 } from "@repo/contracts-zod";
@@ -28,11 +29,52 @@ export function validateEditorFieldValues(
   return ok(undefined);
 }
 
+function stringFromUnknownEffective(effective: unknown): string {
+  if (typeof effective === "string") {
+    return effective;
+  }
+  if (effective !== undefined && effective !== null) {
+    return String(effective);
+  }
+  return "";
+}
+
+function propValuesPatchForEditorField(
+  field: EditorFieldSpec,
+  effective: unknown,
+  prev: Record<string, unknown>,
+): Record<string, unknown> {
+  const base = { ...prev };
+  switch (field.type) {
+    case "text":
+    case "richText":
+      return { ...base, content: stringFromUnknownEffective(effective) };
+    case "image":
+      return {
+        ...base,
+        src: typeof effective === "string" ? effective : "",
+        alt: typeof prev.alt === "string" ? prev.alt : "",
+      };
+    case "number": {
+      const n = Number(effective);
+      return {
+        ...base,
+        value: Number.isFinite(n) ? n : 0,
+      };
+    }
+    case "boolean":
+      return { ...base, checked: Boolean(effective) };
+    case "link":
+      return { ...base, href: stringFromUnknownEffective(effective) };
+    default:
+      return base;
+  }
+}
+
 /**
  * Applies resolved editor field values onto a template composition (mutates propValues on bound nodes).
  * Image fields expect `resolvedValues[name]` to be a URL string (resolved in the app layer).
  */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export function mergeEditorFieldValuesIntoComposition(
   composition: PageComposition,
   resolvedValues: Record<string, unknown>,
@@ -49,45 +91,12 @@ export function mergeEditorFieldValuesIntoComposition(
     const fallback = cb.editorField.defaultValue;
     const effective = raw !== undefined && raw !== null ? raw : fallback;
 
-    const t = cb.editorField.type;
     const prev = node.propValues ?? {};
-    let patch: Record<string, unknown> = { ...prev };
-
-    if (t === "text" || t === "richText") {
-      patch = {
-        ...patch,
-        content:
-          typeof effective === "string"
-            ? effective
-            : effective !== undefined && effective !== null
-              ? String(effective)
-              : "",
-      };
-    } else if (t === "image") {
-      patch = {
-        ...patch,
-        src: typeof effective === "string" ? effective : "",
-        alt: typeof prev.alt === "string" ? prev.alt : "",
-      };
-    } else if (t === "number") {
-      const n = Number(effective);
-      patch = {
-        ...patch,
-        value: Number.isFinite(n) ? n : 0,
-      };
-    } else if (t === "boolean") {
-      patch = { ...patch, checked: Boolean(effective) };
-    } else if (t === "link") {
-      patch = {
-        ...patch,
-        href:
-          typeof effective === "string"
-            ? effective
-            : effective !== undefined && effective !== null
-              ? String(effective)
-              : "",
-      };
-    }
+    const patch = propValuesPatchForEditorField(
+      cb.editorField,
+      effective,
+      prev,
+    );
 
     nextNodes[id] = {
       ...node,

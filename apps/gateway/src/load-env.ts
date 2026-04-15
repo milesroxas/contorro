@@ -4,8 +4,7 @@ import { config } from "dotenv";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const gatewayRoot = path.resolve(dirname, "..");
-const studioEnv = path.resolve(gatewayRoot, "../studio/.env");
-const gatewayEnv = path.resolve(gatewayRoot, ".env");
+/** Same file as the CMS app (`apps/cms/.env`); keeps DB + Payload secrets in one place. */
+const cmsEnv = path.resolve(gatewayRoot, "../cms/.env");
 
-config({ path: studioEnv });
-config({ path: gatewayEnv });
+config({ path: cmsEnv });

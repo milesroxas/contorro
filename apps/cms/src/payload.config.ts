@@ -10,6 +10,7 @@ import {
   createPostgresAdapter,
 } from "@repo/infrastructure-payload-config";
 import { buildConfig } from "payload";
+import type { Config } from "payload";
 import sharp from "sharp";
 
 const filename = fileURLToPath(import.meta.url);
@@ -102,6 +103,6 @@ export default buildConfig({
   typescript: {
     outputFile: path.resolve(dirname, "payload-types.ts"),
   },
-  sharp,
+  sharp: sharp as unknown as NonNullable<Config["sharp"]>,
   plugins: [],
 });

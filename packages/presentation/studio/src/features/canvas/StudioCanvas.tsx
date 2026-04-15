@@ -9,7 +9,9 @@ import { IconMoonStars, IconSunHigh } from "@tabler/icons-react";
 import type {
   CSSProperties,
   ComponentPropsWithoutRef,
+  ElementType,
   ReactElement,
+  ReactNode,
 } from "react";
 import { Fragment, forwardRef, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -59,6 +61,142 @@ function isLockedTemplateShellSection(
     return false;
   }
   return isTemplateShellSectionTag(node.propValues?.tag);
+}
+
+function canvasDragContainerOutlineState(args: {
+  isContainer: boolean;
+  hasActiveDrag: boolean;
+  activeDropParentId: string | null;
+  nodeId: string;
+}): "none" | "idle" | "active" {
+  const { isContainer, hasActiveDrag, activeDropParentId, nodeId } = args;
+  if (!isContainer || !hasActiveDrag) {
+    return "none";
+  }
+  return activeDropParentId === nodeId ? "active" : "idle";
+}
+
+function canvasSlotPrimitive(
+  Cmp: ElementType<{
+    className?: string;
+    node: CompositionNode;
+    style?: CSSProperties;
+    children?: ReactNode;
+  }>,
+  node: CompositionNode,
+  className: string,
+  style: CSSProperties | undefined,
+): ReactNode {
+  const slotId =
+    typeof node.propValues?.slotId === "string" &&
+    node.propValues.slotId.trim() !== ""
+      ? node.propValues.slotId.trim()
+      : "main";
+  return (
+    <Cmp className={className} node={node} style={style}>
+      <div className="relative min-h-[4.5rem] w-full flex-1 shrink-0 p-3">
+        <div
+          className={cn(
+            "flex h-full min-h-[4.5rem] w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-accent/35 bg-accent/10 px-4 py-5 text-center text-sm tracking-tight shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] dark:border-accent/28 dark:bg-accent/8 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]",
+            "!text-muted-foreground",
+          )}
+        >
+          <span className="!font-semibold !text-foreground">Layout slot</span>
+          <span className="mt-1 font-mono text-xs">{slotId}</span>
+          <span className="mt-2 text-xs leading-snug">
+            Page blocks fill this region on the live site.
+          </span>
+        </div>
+      </div>
+    </Cmp>
+  );
+}
+
+function canvasTextPrimitive(
+  node: CompositionNode,
+  className: string,
+  style: CSSProperties | undefined,
+): ReactNode {
+  const raw =
+    typeof node.propValues?.content === "string" ? node.propValues.content : "";
+  const cb = node.contentBinding;
+  let fromBinding = "";
+  if (cb?.source === "editor" && cb.editorField) {
+    fromBinding =
+      typeof cb.editorField.defaultValue === "string"
+        ? cb.editorField.defaultValue
+        : `[${cb.key}]`;
+  } else if (cb) {
+    fromBinding = `[${cb.key}]`;
+  }
+  const display = raw || fromBinding;
+  const showPlaceholder = display.trim() === "";
+  return (
+    <span
+      className={cn(className, showPlaceholder && "min-h-[1.25em]")}
+      data-definition={node.definitionKey}
+      style={style}
+    >
+      {showPlaceholder ? (
+        <span className="text-muted-foreground select-none italic">
+          Placeholder text
+        </span>
+      ) : (
+        display
+      )}
+    </span>
+  );
+}
+
+function canvasDefaultPrimitive(
+  Cmp: ElementType<{
+    className?: string;
+    node: CompositionNode;
+    style?: CSSProperties;
+    children?: ReactNode;
+  }>,
+  node: CompositionNode,
+  className: string,
+  style: CSSProperties | undefined,
+  childList: ReactNode,
+): ReactNode {
+  return (
+    <Cmp className={className} node={node} style={style}>
+      {childList}
+    </Cmp>
+  );
+}
+
+function canvasNodePrimitiveMarkup(args: {
+  node: CompositionNode;
+  Cmp: ElementType<{
+    className?: string;
+    node: CompositionNode;
+    style?: CSSProperties;
+    children?: ReactNode;
+  }>;
+  className: string;
+  style: CSSProperties | undefined;
+  childList: ReactNode;
+}): ReactNode {
+  const { node, Cmp, className, style, childList } = args;
+  if (node.definitionKey === "primitive.slot") {
+    return canvasSlotPrimitive(Cmp, node, className, style);
+  }
+  if (node.definitionKey === "primitive.text") {
+    return canvasTextPrimitive(node, className, style);
+  }
+  return canvasDefaultPrimitive(Cmp, node, className, style, childList);
+}
+
+function canvasImagePropSource(node: CompositionNode): string {
+  if (typeof node.propValues?.src === "string") {
+    return node.propValues.src;
+  }
+  if (typeof node.propValues?.mediaUrl === "string") {
+    return node.propValues.mediaUrl;
+  }
+  return "";
 }
 
 /** `contextmenu` targets may be a Text node (no `Element#closest`). */
@@ -301,7 +439,6 @@ function CanvasNodeFrame({
   );
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 function CanvasNode({
   composition,
   nodeId,
@@ -341,12 +478,12 @@ function CanvasNode({
     active?.data.current?.kind === "node";
   const activeDropParentId =
     over?.data.current?.kind === "insert" ? over.data.current.parentId : null;
-  const dragContainerOutline: "none" | "idle" | "active" =
-    isContainer && hasActiveDrag
-      ? activeDropParentId === node.id
-        ? "active"
-        : "idle"
-      : "none";
+  const dragContainerOutline = canvasDragContainerOutlineState({
+    activeDropParentId,
+    hasActiveDrag,
+    isContainer,
+    nodeId: node.id,
+  });
 
   const childList = isContainer ? (
     <ContainerChildList
@@ -361,74 +498,13 @@ function CanvasNode({
     />
   ) : null;
 
-  let primitive: React.ReactNode;
-
-  if (node.definitionKey === "primitive.slot") {
-    const slotId =
-      typeof node.propValues?.slotId === "string" &&
-      node.propValues.slotId.trim() !== ""
-        ? node.propValues.slotId.trim()
-        : "main";
-    primitive = (
-      <Cmp className={className} node={node} style={style}>
-        <div className="relative min-h-[4.5rem] w-full flex-1 shrink-0 p-3">
-          <div
-            className={cn(
-              "flex h-full min-h-[4.5rem] w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-accent/35 bg-accent/10 px-4 py-5 text-center text-sm tracking-tight shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] dark:border-accent/28 dark:bg-accent/8 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]",
-              // Slot root can carry author `color` from style bindings; reset so placeholder always uses canvas theme tokens.
-              "!text-muted-foreground",
-            )}
-          >
-            <span className="!font-semibold !text-foreground">Layout slot</span>
-            <span className="mt-1 font-mono text-xs">{slotId}</span>
-            <span className="mt-2 text-xs leading-snug">
-              Page blocks fill this region on the live site.
-            </span>
-          </div>
-        </div>
-      </Cmp>
-    );
-  } else if (node.definitionKey === "primitive.text") {
-    const raw =
-      typeof node.propValues?.content === "string"
-        ? node.propValues.content
-        : "";
-    const cb = node.contentBinding;
-    let fromBinding = "";
-    if (cb?.source === "editor" && cb.editorField) {
-      fromBinding =
-        typeof cb.editorField.defaultValue === "string"
-          ? cb.editorField.defaultValue
-          : `[${cb.key}]`;
-    } else if (cb) {
-      fromBinding = `[${cb.key}]`;
-    }
-    const display = raw || fromBinding;
-    const showPlaceholder = display.trim() === "";
-    primitive = (
-      <span
-        className={cn(className, showPlaceholder && "min-h-[1.25em]")}
-        data-definition={node.definitionKey}
-        style={style}
-      >
-        {showPlaceholder ? (
-          <span className="text-muted-foreground select-none italic">
-            Placeholder text
-          </span>
-        ) : (
-          display
-        )}
-      </span>
-    );
-  } else {
-    const inner = childList;
-
-    primitive = (
-      <Cmp className={className} node={node} style={style}>
-        {inner}
-      </Cmp>
-    );
-  }
+  const primitive = canvasNodePrimitiveMarkup({
+    Cmp,
+    childList,
+    className: className ?? "",
+    node,
+    style,
+  });
 
   if (node.definitionKey === "primitive.text") {
     return (
@@ -446,13 +522,7 @@ function CanvasNode({
   }
 
   if (node.definitionKey === "primitive.image") {
-    const imageSrc =
-      typeof node.propValues?.src === "string"
-        ? node.propValues.src
-        : typeof node.propValues?.mediaUrl === "string"
-          ? node.propValues.mediaUrl
-          : "";
-    const hasImageSource = imageSrc.trim().length > 0;
+    const hasImageSource = canvasImagePropSource(node).trim().length > 0;
 
     return (
       <CanvasNodeFrame

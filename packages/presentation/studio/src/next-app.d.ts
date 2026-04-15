@@ -16,6 +16,7 @@ declare module "next/link" {
 declare module "next/navigation" {
   export function useRouter(): {
     push(href: string): void;
+    refresh(): void;
     replace(href: string): void;
   };
 

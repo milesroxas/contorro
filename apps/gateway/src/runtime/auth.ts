@@ -65,10 +65,43 @@ function getJwtStringFromRequest(request: Request): string | null {
   return getCookieHeader(request.headers.get("cookie"), tokenCookieName());
 }
 
+type JwtClaims = { sub: string; email: string; role: string };
+
+function claimsFromJwtPayload(
+  payload: Record<string, unknown>,
+): JwtClaims | null {
+  const sub =
+    typeof payload.sub === "string"
+      ? payload.sub
+      : typeof payload.id === "number"
+        ? String(payload.id)
+        : typeof payload.id === "string"
+          ? payload.id
+          : "";
+  if (!sub) {
+    return null;
+  }
+  const email = typeof payload.email === "string" ? payload.email : "";
+  const roleRaw = payload.role;
+  const role = typeof roleRaw === "string" ? roleRaw : "";
+  return { sub, email, role };
+}
+
+async function verifyJwtClaims(token: string): Promise<JwtClaims | null> {
+  try {
+    const key = payloadJwtSigningKey(env.PAYLOAD_SECRET);
+    const { payload } = await jwtVerify(token, key, {
+      algorithms: ["HS256"],
+    });
+    return claimsFromJwtPayload(payload as Record<string, unknown>);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Verifies Payload JWT (cookie or Authorization) and loads role from `users` when missing in JWT.
  */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
 export async function getActorFromRequest(
   pool: Pool,
   request: Request,
@@ -77,35 +110,13 @@ export async function getActorFromRequest(
   if (!token) {
     return null;
   }
-  let sub: string;
-  let email = "";
-  let role = "";
-  try {
-    const key = payloadJwtSigningKey(env.PAYLOAD_SECRET);
-    const { payload } = await jwtVerify(token, key, {
-      algorithms: ["HS256"],
-    });
-    sub =
-      typeof payload.sub === "string"
-        ? payload.sub
-        : typeof payload.id === "number"
-          ? String(payload.id)
-          : typeof payload.id === "string"
-            ? payload.id
-            : "";
-    if (!sub) {
-      return null;
-    }
-    email = typeof payload.email === "string" ? payload.email : "";
-    role =
-      typeof payload.role === "string"
-        ? payload.role
-        : typeof (payload as { role?: unknown }).role === "string"
-          ? String((payload as { role: string }).role)
-          : "";
-  } catch {
+  const claims = await verifyJwtClaims(token);
+  if (!claims) {
     return null;
   }
+  const { sub, email: jwtEmail, role: jwtRole } = claims;
+  let email = jwtEmail;
+  let role = jwtRole;
 
   let id = Number.parseInt(sub, 10);
   if (!Number.isFinite(id)) {

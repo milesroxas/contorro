@@ -27,6 +27,29 @@ import { EditorFieldsInputs } from "./EditorFieldsInputs";
 
 type FormFieldsTuple = [FormState, (action: never) => void];
 
+async function fetchComponentDefinitionDoc(
+  defId: number,
+): Promise<
+  { ok: true; doc: ComponentDefinitionDoc } | { ok: false; message: string }
+> {
+  try {
+    const res = await fetch(`/api/components/${defId}?depth=0`, {
+      credentials: "include",
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const json = (await res.json()) as { doc?: ComponentDefinitionDoc };
+    const doc = json.doc ?? (json as ComponentDefinitionDoc);
+    return { ok: true, doc };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Failed to load definition",
+    };
+  }
+}
+
 type ComponentDefinitionDoc = {
   id?: number;
   composition?: unknown;
@@ -167,27 +190,17 @@ function DesignerEditorFieldsField(props: JSONFieldClientProps) {
     let cancelled = false;
     setLoadError(null);
 
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complexity cleanup backlog.
     void (async () => {
-      try {
-        const res = await fetch(`/api/components/${defId}?depth=0`, {
-          credentials: "include",
-        });
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-        const json = (await res.json()) as { doc?: ComponentDefinitionDoc };
-        const doc = json.doc ?? (json as ComponentDefinitionDoc);
-        if (!cancelled) {
-          setContractDoc(doc);
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setContractDoc(null);
-          setLoadError(
-            e instanceof Error ? e.message : "Failed to load definition",
-          );
-        }
+      const result = await fetchComponentDefinitionDoc(defId);
+      if (cancelled) {
+        return;
+      }
+      if (result.ok) {
+        setContractDoc(result.doc);
+        setLoadError(null);
+      } else {
+        setContractDoc(null);
+        setLoadError(result.message);
       }
     })();
 
