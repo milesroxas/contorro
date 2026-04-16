@@ -57,7 +57,7 @@ Contorro is multi-surface authoring:
 
 - Lint/format: Biome only (`pnpm lint`, `pnpm format`).
 - Typecheck: `pnpm typecheck`.
-- Root dev: `pnpm dev` (CMS app + `@repo/presentation-studio` watch + gateway).
+- Root dev: `pnpm dev` (CMS app + `@repo/presentation-studio` watch + `@repo/presentation-admin-extensions` watch + `@repo/infrastructure-payload-config` watch + gateway).
 - DB local: `pnpm db:up`.
 
 ### Lint discipline (Biome)

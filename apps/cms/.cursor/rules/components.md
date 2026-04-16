@@ -10,10 +10,10 @@ Payload admin component wiring is declared in `apps/cms/src/payload.config.ts`:
 ## Rules
 
 - Keep component path references compatible with Payload import map generation.
-- Run `payload generate:importmap` after adding or changing admin component entries.
+- Run `pnpm --filter @repo/cms run generate:importmap` after adding or changing admin component entries.
 
 ## Custom UI vs Payload’s stylesheet
 
 Studio at **`/studio`** uses `app/(studio)/layout.tsx` and does **not** load Payload admin CSS.
 
-For **custom field / admin components** still rendered inside Payload (`(payload)/layout.tsx`), `@payloadcms/next/css` can override Tailwind/CVA on links and buttons. Prefer `data-slot="button"` and `data-variant` from `src/components/ui/button.tsx`. If you add shadcn-heavy UI in admin and hit specificity issues, scope fixes in `(payload)/custom.scss` under a dedicated wrapper attribute.
+For **custom field / admin components** still rendered inside Payload (`(payload)/layout.tsx`), `@payloadcms/next/css` can override Tailwind/CVA on links and buttons. Prefer `data-slot="button"` and `data-variant` from `src/components/ui/button.tsx`. If you add shadcn-heavy UI in admin and hit specificity issues, scope fixes in `(payload)/custom.css` under a dedicated wrapper attribute.

@@ -30,7 +30,7 @@ Current collections include `pages`, `users`, `media`, `design-token-sets`, `com
 ## Studio (presentation) vs CMS (host)
 
 - **`@repo/presentation-studio`** implements the **visual Studio** (e.g. `StudioApp`, design-system editor). It does **not** import Payload or other CMS SDKs. It talks to the host only via **`StudioAuthoringClient`** (`packages/contracts/zod`) — default implementation: `packages/presentation/studio/src/lib/fetch-studio-authoring-client.ts` (fetch to same-origin routes).
-- **`@repo/cms`** wires Payload and Next routes; route handlers implement the HTTP contract expected by `StudioAuthoringClient` (application commands + Payload repository adapters — not the interface type itself, which is browser-side).
+- **`@repo/cms`** wires Payload and Next routes; composition endpoints are explicit route handlers (application commands + Payload repository adapter), while design-system resources are served by Payload REST endpoints consumed by the same `StudioAuthoringClient`.
 
 ## Composition API and mutations
 

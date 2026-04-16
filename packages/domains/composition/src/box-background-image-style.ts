@@ -213,42 +213,79 @@ export function normalizedBackgroundImageClip(
   return isClipToken(raw) ? raw : DEFAULT_BACKGROUND_IMAGE_CLIP;
 }
 
-function backgroundPositionCss(token: BackgroundImagePositionToken): string {
-  switch (token) {
-    case "center":
-      return "center";
-    case "top":
-      return "top";
-    case "bottom":
-      return "bottom";
-    case "left":
-      return "left";
-    case "right":
-      return "right";
-    case "top-left":
-      return "left top";
-    case "top-right":
-      return "right top";
-    case "bottom-left":
-      return "left bottom";
-    case "bottom-right":
-      return "right bottom";
-    default: {
-      const _exhaustive: never = token;
-      return _exhaustive;
-    }
-  }
-}
+const BACKGROUND_IMAGE_OPTION_ROWS_FOR_SAFESET = [
+  ...BACKGROUND_IMAGE_SIZE_OPTIONS,
+  ...BACKGROUND_IMAGE_POSITION_OPTIONS,
+  ...BACKGROUND_IMAGE_REPEAT_OPTIONS,
+  ...BACKGROUND_IMAGE_ATTACHMENT_OPTIONS,
+  ...BACKGROUND_IMAGE_ORIGIN_OPTIONS,
+  ...BACKGROUND_IMAGE_CLIP_OPTIONS,
+] as const;
 
 /**
- * Inline styles for a box background image from primitive props (studio + runtime).
- * Option tokens and CSS output are defined only here and in {@link defaultPrimitivePropValues} defaults.
+ * Sorted unique Tailwind classes emitted at runtime for box background images.
+ * Keep `apps/cms/src/app/_tailwind-safelist.css` in sync; guarded by `studio-canvas-styling` int spec.
  */
-export function resolvedBoxBackgroundImageInlineStyle(
+export const BOX_BACKGROUND_IMAGE_TAILWIND_SAFESET: readonly string[] =
+  Array.from(
+    new Set(
+      BACKGROUND_IMAGE_OPTION_ROWS_FOR_SAFESET.map((row) => row.tailwind),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
+
+function tailwindClassForOptionValue<T extends string>(
+  options: ReadonlyArray<{ value: T; tailwind: string }>,
+  value: T,
+): string {
+  return options.find((row) => row.value === value)?.tailwind ?? "";
+}
+
+function backgroundImageUtilityClassNameParts(
+  propValues: Record<string, unknown>,
+): string[] {
+  const size = normalizedBackgroundImageSize(propValues.backgroundImageSize);
+  const position = normalizedBackgroundImagePosition(
+    propValues.backgroundImagePosition,
+  );
+  const repeat = normalizedBackgroundImageRepeat(
+    propValues.backgroundImageRepeat,
+  );
+  const attachment = normalizedBackgroundImageAttachment(
+    propValues.backgroundImageAttachment,
+  );
+  const origin = normalizedBackgroundImageOrigin(
+    propValues.backgroundImageOrigin,
+  );
+  const clip = normalizedBackgroundImageClip(propValues.backgroundImageClip);
+  return [
+    tailwindClassForOptionValue(BACKGROUND_IMAGE_SIZE_OPTIONS, size),
+    tailwindClassForOptionValue(BACKGROUND_IMAGE_POSITION_OPTIONS, position),
+    tailwindClassForOptionValue(BACKGROUND_IMAGE_REPEAT_OPTIONS, repeat),
+    tailwindClassForOptionValue(
+      BACKGROUND_IMAGE_ATTACHMENT_OPTIONS,
+      attachment,
+    ),
+    tailwindClassForOptionValue(BACKGROUND_IMAGE_ORIGIN_OPTIONS, origin),
+    tailwindClassForOptionValue(BACKGROUND_IMAGE_CLIP_OPTIONS, clip),
+  ].filter((c) => c.length > 0);
+}
+
+export type ResolvedBoxBackgroundImagePresentation = {
+  /** Tailwind utilities from {@link BACKGROUND_IMAGE_*_OPTIONS} (dynamic URL is not expressible as static utilities). */
+  className: string;
+  /** Inline style: only `backgroundImage` with the resolved `url(...)`. */
+  style: Record<string, string>;
+};
+
+/**
+ * Resolves box background image for runtime: dynamic image URL as inline `backgroundImage`,
+ * all other facets as Tailwind classes from the same option tables used in Studio.
+ */
+export function resolvedBoxBackgroundImagePresentation(
   propValues: Record<string, unknown> | null | undefined,
-): Record<string, string> {
+): ResolvedBoxBackgroundImagePresentation {
   if (!propValues || propValues.backgroundImageEnabled !== true) {
-    return {};
+    return { className: "", style: {} };
   }
   const url = resolvedPrefixedMediaSrc(
     propValues,
@@ -256,27 +293,11 @@ export function resolvedBoxBackgroundImageInlineStyle(
     "backgroundImageMediaUrl",
   );
   if (url.length === 0) {
-    return {};
+    return { className: "", style: {} };
   }
+  const className = backgroundImageUtilityClassNameParts(propValues).join(" ");
   return {
-    backgroundAttachment: normalizedBackgroundImageAttachment(
-      propValues.backgroundImageAttachment,
-    ),
-    backgroundClip: normalizedBackgroundImageClip(
-      propValues.backgroundImageClip,
-    ),
-    backgroundImage: cssUrlDeclaration(url),
-    backgroundOrigin: normalizedBackgroundImageOrigin(
-      propValues.backgroundImageOrigin,
-    ),
-    backgroundPosition: backgroundPositionCss(
-      normalizedBackgroundImagePosition(propValues.backgroundImagePosition),
-    ),
-    backgroundRepeat: normalizedBackgroundImageRepeat(
-      propValues.backgroundImageRepeat,
-    ),
-    backgroundSize: normalizedBackgroundImageSize(
-      propValues.backgroundImageSize,
-    ),
+    className,
+    style: { backgroundImage: cssUrlDeclaration(url) },
   };
 }

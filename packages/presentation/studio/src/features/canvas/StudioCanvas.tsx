@@ -224,6 +224,7 @@ function ContainerChildList({
   tokenMeta,
   onSelectNode,
   onRemoveNode,
+  onWrapNode,
 }: {
   composition: PageComposition;
   childIds: string[];
@@ -235,6 +236,7 @@ function ContainerChildList({
   tokenMeta: TokenMeta[];
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
+  onWrapNode: (id: string) => void;
 }) {
   const isTemplateShellRootParent =
     parentNode.id === composition.rootId && isTemplateShellRoot(composition);
@@ -278,6 +280,7 @@ function ContainerChildList({
               nodeId={cid}
               onRemoveNode={onRemoveNode}
               onSelectNode={onSelectNode}
+              onWrapNode={onWrapNode}
               registry={registry}
               selectedNodeId={selectedNodeId}
               studioResource={studioResource}
@@ -311,6 +314,7 @@ function ContainerChildList({
             nodeId={cid}
             onRemoveNode={onRemoveNode}
             onSelectNode={onSelectNode}
+            onWrapNode={onWrapNode}
             registry={registry}
             selectedNodeId={selectedNodeId}
             studioResource={studioResource}
@@ -367,6 +371,7 @@ function CanvasNodeFrame({
   node,
   onSelectNode,
   onRemoveNode,
+  onWrapNode,
   selected,
   dragContainerOutline,
   editComponentHref,
@@ -377,6 +382,7 @@ function CanvasNodeFrame({
   selected: boolean;
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
+  onWrapNode: (id: string) => void;
   dragContainerOutline: "none" | "idle" | "active";
   editComponentHref?: string | null;
   children: React.ReactNode;
@@ -395,9 +401,11 @@ function CanvasNodeFrame({
     isTemplateShellSectionTag(node.propValues.tag)
       ? `${node.propValues.tag.charAt(0).toUpperCase()}${node.propValues.tag.slice(1)}`
       : null;
-  const kindLabel =
-    semanticTag ?? getPrimitiveDisplay(node.definitionKey).label;
-  const layerLabel = `${kindLabel} · ${node.id.slice(0, 6)}`;
+  const { Icon: layerIcon, label: primitiveLabel } = getPrimitiveDisplay(
+    node.definitionKey,
+  );
+  const kindLabel = semanticTag ?? primitiveLabel;
+  const layerLabel = kindLabel;
 
   return (
     <div
@@ -423,10 +431,12 @@ function CanvasNodeFrame({
       ) : (
         <PrimitiveNodeContextMenu
           editComponentHref={editComponentHref}
+          layerIcon={layerIcon}
           layerLabel={layerLabel}
           nodeId={node.id}
           onRemoveNode={onRemoveNode}
           onSelectNode={onSelectNode}
+          onWrapNode={onWrapNode}
           rootId={composition.rootId}
         >
           <NodeChrome
@@ -461,6 +471,7 @@ function CanvasImageOrVideoNodeFrame({
   node,
   onRemoveNode,
   onSelectNode,
+  onWrapNode,
   primitive,
   selected,
 }: {
@@ -471,6 +482,7 @@ function CanvasImageOrVideoNodeFrame({
   node: CompositionNode;
   onRemoveNode: (id: string) => void;
   onSelectNode: (id: string) => void;
+  onWrapNode: (id: string) => void;
   primitive: ReactNode;
   selected: boolean;
 }): ReactElement {
@@ -487,6 +499,7 @@ function CanvasImageOrVideoNodeFrame({
       node={node}
       onRemoveNode={onRemoveNode}
       onSelectNode={onSelectNode}
+      onWrapNode={onWrapNode}
       selected={selected}
     >
       {hasMediaSource ? primitive : <div className="py-4">{primitive}</div>}
@@ -503,6 +516,7 @@ function CanvasPrimitiveCollectionBranch({
   node,
   onRemoveNode,
   onSelectNode,
+  onWrapNode,
   selected,
   style,
 }: {
@@ -514,6 +528,7 @@ function CanvasPrimitiveCollectionBranch({
   node: CompositionNode;
   onRemoveNode: (id: string) => void;
   onSelectNode: (id: string) => void;
+  onWrapNode: (id: string) => void;
   selected: boolean;
   style: CSSProperties | undefined;
 }): ReactElement {
@@ -525,6 +540,7 @@ function CanvasPrimitiveCollectionBranch({
       node={node}
       onRemoveNode={onRemoveNode}
       onSelectNode={onSelectNode}
+      onWrapNode={onWrapNode}
       selected={selected}
     >
       <div className="relative w-full min-w-0">
@@ -555,6 +571,7 @@ function CanvasNode({
   studioResource,
   onSelectNode,
   onRemoveNode,
+  onWrapNode,
 }: {
   composition: PageComposition;
   nodeId: string;
@@ -565,6 +582,7 @@ function CanvasNode({
   studioResource: "pageTemplate" | "component" | null;
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
+  onWrapNode: (id: string) => void;
 }): ReactElement | null {
   const node = composition.nodes[nodeId];
   if (!node) {
@@ -611,6 +629,7 @@ function CanvasNode({
         node={node}
         onRemoveNode={onRemoveNode}
         onSelectNode={onSelectNode}
+        onWrapNode={onWrapNode}
         selected={selected}
       >
         <LibraryCompositionCanvasPreview
@@ -630,6 +649,7 @@ function CanvasNode({
       editStudioHrefByKey={editStudioHrefByKey}
       onRemoveNode={onRemoveNode}
       onSelectNode={onSelectNode}
+      onWrapNode={onWrapNode}
       parentNode={node}
       registry={registry}
       selectedNodeId={selectedNodeId}
@@ -649,6 +669,7 @@ function CanvasNode({
         node={node}
         onRemoveNode={onRemoveNode}
         onSelectNode={onSelectNode}
+        onWrapNode={onWrapNode}
         selected={selected}
         style={style}
       />
@@ -672,6 +693,7 @@ function CanvasNode({
         node={node}
         onRemoveNode={onRemoveNode}
         onSelectNode={onSelectNode}
+        onWrapNode={onWrapNode}
         selected={selected}
       >
         {primitive}
@@ -692,6 +714,7 @@ function CanvasNode({
         node={node}
         onRemoveNode={onRemoveNode}
         onSelectNode={onSelectNode}
+        onWrapNode={onWrapNode}
         primitive={primitive}
         selected={selected}
       />
@@ -706,6 +729,7 @@ function CanvasNode({
       node={node}
       onRemoveNode={onRemoveNode}
       onSelectNode={onSelectNode}
+      onWrapNode={onWrapNode}
       selected={selected}
     >
       {primitive}
@@ -811,6 +835,7 @@ export function StudioCanvas({
   selectedNodeId,
   onSelectNode,
   onRemoveNode,
+  onWrapNode,
   onCanvasBackground,
   theme,
   onToggleTheme,
@@ -821,6 +846,7 @@ export function StudioCanvas({
   selectedNodeId: string | null;
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
+  onWrapNode: (id: string) => void;
   onCanvasBackground?: () => void;
   theme: "light" | "dark";
   onToggleTheme: () => void;
@@ -837,6 +863,7 @@ export function StudioCanvas({
       nodeId={composition.rootId}
       onRemoveNode={onRemoveNode}
       onSelectNode={onSelectNode}
+      onWrapNode={onWrapNode}
       registry={registry}
       selectedNodeId={selectedNodeId}
       studioResource={studioResource}

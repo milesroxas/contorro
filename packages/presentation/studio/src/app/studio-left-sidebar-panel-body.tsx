@@ -20,6 +20,7 @@ export function StudioLeftSidebarPanelBody({
   composition,
   onRemoveNode,
   onSelect,
+  onWrapNode,
   selectedNodeId,
   studioResource,
 }: {
@@ -28,6 +29,7 @@ export function StudioLeftSidebarPanelBody({
   composition: PageComposition;
   onRemoveNode: (id: string) => void;
   onSelect: (id: string | null) => void;
+  onWrapNode: (id: string) => void;
   selectedNodeId: string | null;
   studioResource: "pageTemplate" | "component" | null;
 }) {
@@ -60,6 +62,7 @@ export function StudioLeftSidebarPanelBody({
             composition={composition}
             onRemoveNode={onRemoveNode}
             onSelect={onSelect}
+            onWrapNode={onWrapNode}
             selectedNodeId={selectedNodeId}
             studioResource={studioResource}
           />

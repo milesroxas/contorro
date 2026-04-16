@@ -1,8 +1,3 @@
-import { default as default_8683fc19a16e81a9395ab68a07418a81 } from '../../../components/admin/PageTemplateEditorFieldsField'
-import { default as default_bd43b6c8b1798074899186c70b71d9e8 } from '../../../components/admin/DesignerEditorFieldsField'
-import { default as default_d1c38645dcd6afd2d3df31c0c12c9000 } from '../../../components/admin/BlocksRowLabel'
-import { default as default_cf5c3e07a58c668f71cb1235cab5e62e } from '../../../components/admin/PageContentSlotsField'
-import { default as default_da5ad4465f5a327c452a40b094bf926f } from '../../../components/admin/ContentSlotRowLabel'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -26,6 +21,11 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { default as default_8683fc19a16e81a9395ab68a07418a81 } from '../../../components/admin/PageTemplateEditorFieldsField'
+import { default as default_bd43b6c8b1798074899186c70b71d9e8 } from '../../../components/admin/DesignerEditorFieldsField'
+import { default as default_d1c38645dcd6afd2d3df31c0c12c9000 } from '../../../components/admin/BlocksRowLabel'
+import { default as default_cf5c3e07a58c668f71cb1235cab5e62e } from '../../../components/admin/PageContentSlotsField'
+import { default as default_da5ad4465f5a327c452a40b094bf926f } from '../../../components/admin/ContentSlotRowLabel'
 import { FolderTableCell as FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { FolderField as FolderField_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 import { default as default_87e35c11448661d9633f1f1a1f2c5521 } from '../../../components/admin/ComponentOpenStudio'
@@ -38,11 +38,6 @@ import { default as default_fddf24e2605d3ae099922bff952ee3f2 } from '../../../co
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 export const importMap = {
-  "/components/admin/PageTemplateEditorFieldsField#default": default_8683fc19a16e81a9395ab68a07418a81,
-  "/components/admin/DesignerEditorFieldsField#default": default_bd43b6c8b1798074899186c70b71d9e8,
-  "/components/admin/BlocksRowLabel#default": default_d1c38645dcd6afd2d3df31c0c12c9000,
-  "/components/admin/PageContentSlotsField#default": default_cf5c3e07a58c668f71cb1235cab5e62e,
-  "/components/admin/ContentSlotRowLabel#default": default_da5ad4465f5a327c452a40b094bf926f,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#LexicalDiffComponent": LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -66,6 +61,11 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "/components/admin/PageTemplateEditorFieldsField#default": default_8683fc19a16e81a9395ab68a07418a81,
+  "/components/admin/DesignerEditorFieldsField#default": default_bd43b6c8b1798074899186c70b71d9e8,
+  "/components/admin/BlocksRowLabel#default": default_d1c38645dcd6afd2d3df31c0c12c9000,
+  "/components/admin/PageContentSlotsField#default": default_cf5c3e07a58c668f71cb1235cab5e62e,
+  "/components/admin/ContentSlotRowLabel#default": default_da5ad4465f5a327c452a40b094bf926f,
   "@payloadcms/next/rsc#FolderTableCell": FolderTableCell_f9c02e79a4aed9a3924487c0cd4cafb1,
   "@payloadcms/next/rsc#FolderField": FolderField_f9c02e79a4aed9a3924487c0cd4cafb1,
   "/components/admin/ComponentOpenStudio#default": default_87e35c11448661d9633f1f1a1f2c5521,

@@ -7,5 +7,5 @@
 When changing field shape in collections:
 
 1. Update collection config in infrastructure payload-config.
-2. Regenerate Payload types: `pnpm --filter @repo/cms exec payload generate:types` (and `generate:importmap` if admin components changed).
+2. Regenerate Payload types: `pnpm --filter @repo/cms run generate:types` (and `pnpm --filter @repo/cms run generate:importmap` if admin components changed).
 3. Update zod contracts if external API payload shape changes.

@@ -9,6 +9,7 @@ import type {
 import {
   addChildNode,
   clearNodeStyleBinding,
+  duplicateNode as duplicateNodeInComposition,
   isStudioComponentRowId,
   isStudioNewCompositionSessionId,
   moveNode as moveNodeInComposition,
@@ -62,6 +63,98 @@ function clearCanvasPreviewDomUiState(): void {
   }
 }
 
+function firstAddedNodeId(
+  beforeNodes: PageComposition["nodes"],
+  afterNodes: PageComposition["nodes"],
+): string | null {
+  for (const nodeId of Object.keys(afterNodes)) {
+    if (!beforeNodes[nodeId]) {
+      return nodeId;
+    }
+  }
+  return null;
+}
+
+type PasteInsertPosition = {
+  parentId: string;
+  index: number;
+};
+
+function rootAppendInsertPosition(
+  composition: PageComposition,
+): PasteInsertPosition {
+  const root = composition.nodes[composition.rootId];
+  return {
+    parentId: composition.rootId,
+    index: root ? root.childIds.length : 0,
+  };
+}
+
+function resolvePasteInsertPosition(
+  composition: PageComposition,
+  targetNodeId: string | null,
+): PasteInsertPosition {
+  if (!targetNodeId) {
+    return rootAppendInsertPosition(composition);
+  }
+  const targetNode = composition.nodes[targetNodeId];
+  if (
+    !targetNode ||
+    targetNodeId === composition.rootId ||
+    !targetNode.parentId
+  ) {
+    return rootAppendInsertPosition(composition);
+  }
+  const parent = composition.nodes[targetNode.parentId];
+  if (!parent || parent.definitionKey === "primitive.slot") {
+    return rootAppendInsertPosition(composition);
+  }
+  const targetIndex = parent.childIds.indexOf(targetNodeId);
+  if (targetIndex < 0) {
+    return rootAppendInsertPosition(composition);
+  }
+  return { parentId: parent.id, index: targetIndex + 1 };
+}
+
+function wrapNodeWithBoxComposition(
+  composition: PageComposition,
+  nodeId: string,
+): { composition: PageComposition; wrapperId: string } | null {
+  if (nodeId === composition.rootId) {
+    return null;
+  }
+  const node = composition.nodes[nodeId];
+  if (!node || !node.parentId) {
+    return null;
+  }
+  const parent = composition.nodes[node.parentId];
+  if (!parent) {
+    return null;
+  }
+  const insertIndex = parent.childIds.indexOf(nodeId);
+  if (insertIndex < 0) {
+    return null;
+  }
+  const wrapped = addChildNode(
+    composition,
+    parent.id,
+    "primitive.box",
+    insertIndex,
+  );
+  if (!wrapped.ok) {
+    return null;
+  }
+  const wrapperId = wrapped.value.nodes[parent.id]?.childIds[insertIndex];
+  if (!wrapperId || wrapperId === nodeId) {
+    return null;
+  }
+  const moved = moveNodeInComposition(wrapped.value, nodeId, wrapperId, 0);
+  if (!moved.ok) {
+    return null;
+  }
+  return { composition: moved.value, wrapperId };
+}
+
 export type StudioStoreState = {
   compositionId: string;
   composition: PageComposition | null;
@@ -75,6 +168,7 @@ export type StudioStoreState = {
   /** Payload CMS publication state for the loaded composition revision. */
   cmsPublicationStatus: "draft" | "published" | null;
   selectedNodeId: string | null;
+  copiedNodeId: string | null;
   dirty: boolean;
   saving: boolean;
   renaming: boolean;
@@ -96,6 +190,10 @@ export type StudioStoreState = {
   ) => void;
   moveNode: (nodeId: string, targetParentId: string, index: number) => void;
   removeNode: (nodeId: string) => void;
+  copyNode: (nodeId: string) => void;
+  pasteNode: (targetNodeId: string | null) => void;
+  duplicateNode: (nodeId: string) => void;
+  wrapNodeInBox: (nodeId: string) => void;
   setTextContent: (nodeId: string, content: string) => void;
   patchNodeProps: (nodeId: string, patch: Record<string, unknown>) => void;
   setNodeStyleEntry: (
@@ -247,6 +345,7 @@ export function createStudioStore(
     updatedAt: null,
     cmsPublicationStatus: null,
     selectedNodeId: null,
+    copiedNodeId: null,
     dirty: false,
     saving: false,
     renaming: false,
@@ -320,6 +419,7 @@ export function createStudioStore(
           canUndo: false,
           canRedo: false,
           selectedNodeId: data.composition.rootId,
+          copiedNodeId: null,
         });
       } catch (e) {
         set({
@@ -416,6 +516,100 @@ export function createStudioStore(
         canUndo: true,
         canRedo: false,
         selectedNodeId: nextSelected,
+      });
+    },
+
+    copyNode: (nodeId) => {
+      const { composition } = get();
+      if (
+        !composition ||
+        nodeId === composition.rootId ||
+        !composition.nodes[nodeId]
+      ) {
+        return;
+      }
+      set({ copiedNodeId: nodeId });
+    },
+
+    pasteNode: (targetNodeId) => {
+      const { composition, copiedNodeId } = get();
+      if (!composition || !copiedNodeId || !composition.nodes[copiedNodeId]) {
+        return;
+      }
+      const duplicated = duplicateNodeInComposition(composition, copiedNodeId);
+      if (!duplicated.ok) {
+        return;
+      }
+      const duplicatedNodeId = firstAddedNodeId(
+        composition.nodes,
+        duplicated.value.nodes,
+      );
+      if (!duplicatedNodeId) {
+        return;
+      }
+      const insertPosition = resolvePasteInsertPosition(
+        duplicated.value,
+        targetNodeId,
+      );
+      const moved = moveNodeInComposition(
+        duplicated.value,
+        duplicatedNodeId,
+        insertPosition.parentId,
+        insertPosition.index,
+      );
+      const nextComposition = moved.ok ? moved.value : duplicated.value;
+      set({
+        composition: nextComposition,
+        historyPast: [...get().historyPast, composition],
+        historyFuture: [],
+        dirty: true,
+        canUndo: true,
+        canRedo: false,
+        selectedNodeId: duplicatedNodeId,
+      });
+    },
+
+    duplicateNode: (nodeId) => {
+      const { composition } = get();
+      if (!composition) {
+        return;
+      }
+      const next = duplicateNodeInComposition(composition, nodeId);
+      if (!next.ok) {
+        return;
+      }
+      const duplicatedNodeId = firstAddedNodeId(
+        composition.nodes,
+        next.value.nodes,
+      );
+      set({
+        composition: next.value,
+        historyPast: [...get().historyPast, composition],
+        historyFuture: [],
+        dirty: true,
+        canUndo: true,
+        canRedo: false,
+        selectedNodeId: duplicatedNodeId ?? get().selectedNodeId,
+      });
+    },
+
+    wrapNodeInBox: (nodeId) => {
+      const { composition } = get();
+      if (!composition) {
+        return;
+      }
+      const wrapped = wrapNodeWithBoxComposition(composition, nodeId);
+      if (!wrapped) {
+        return;
+      }
+      set({
+        composition: wrapped.composition,
+        historyPast: [...get().historyPast, composition],
+        historyFuture: [],
+        dirty: true,
+        canUndo: true,
+        canRedo: false,
+        selectedNodeId: wrapped.wrapperId,
       });
     },
 

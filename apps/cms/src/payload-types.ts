@@ -144,7 +144,7 @@ export interface UserAuthOperations {
   };
 }
 /**
- * Site page: add a page template from the builder and/or place library blocks. The rich text fields below are for SEO and social metadata only—not page body content.
+ * Site page: add a page template from the builder and/or place library blocks. Metadata fields in Page setup are for SEO and social metadata only—not page body content.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pages".
@@ -153,6 +153,42 @@ export interface Page {
   id: number;
   title: string;
   slug: string;
+  /**
+   * Metadata only — not composition body text.
+   */
+  seoDescription?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Metadata only — not composition body text.
+   */
+  socialShareText?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
   /**
    * Full-page layout from the builder. Layout slots (where components go) and props are authored there; CMS fields exposed on the template appear below.
    */
@@ -199,42 +235,6 @@ export interface Page {
         id?: string | null;
       }[]
     | null;
-  /**
-   * Metadata only — not composition body text.
-   */
-  seoDescription?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  /**
-   * Metadata only — not composition body text.
-   */
-  socialShareText?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -609,6 +609,8 @@ export interface PayloadMigration {
 export interface PagesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
+  seoDescription?: T;
+  socialShareText?: T;
   pageComposition?: T;
   templateEditorFields?: T;
   contentSlots?:
@@ -624,8 +626,6 @@ export interface PagesSelect<T extends boolean = true> {
             };
         id?: T;
       };
-  seoDescription?: T;
-  socialShareText?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;

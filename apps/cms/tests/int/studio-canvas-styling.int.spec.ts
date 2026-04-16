@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 import type { PageComposition } from "@repo/contracts-zod";
 import { utilityValuesForStyleProperty } from "@repo/contracts-zod";
+import { BOX_BACKGROUND_IMAGE_TAILWIND_SAFESET } from "@repo/domains-composition";
 import { defaultPrimitiveRegistry } from "@repo/runtime-primitives";
 import { renderComposition } from "@repo/runtime-renderer";
 import { render, screen } from "@testing-library/react";
@@ -87,6 +88,25 @@ describe("Builder canvas styling safeguards", () => {
     }
   });
 
+  it("keeps globals safelist aligned with box background image Tailwind classes", () => {
+    const css = readFileSync(
+      resolve(process.cwd(), "src/app/_tailwind-safelist.css"),
+      "utf8",
+    );
+    const safelistedClasses = new Set<string>();
+    for (const match of css.matchAll(/@source inline\("([^"]+)"\);/g)) {
+      for (const token of match[1].split(/\s+/)) {
+        const trimmed = token.trim();
+        if (trimmed.length > 0) {
+          safelistedClasses.add(trimmed);
+        }
+      }
+    }
+    for (const tw of BOX_BACKGROUND_IMAGE_TAILWIND_SAFESET) {
+      expect(safelistedClasses.has(tw)).toBe(true);
+    }
+  });
+
   it("renders publish output image with utility aspect classes", () => {
     const composition = imageComposition();
     render(renderComposition(composition, defaultPrimitiveRegistry, []));
@@ -111,6 +131,7 @@ describe("Builder canvas styling safeguards", () => {
           selectedNodeId: null,
           onSelectNode: () => {},
           onRemoveNode: () => {},
+          onWrapNode: () => {},
           onCanvasBackground: () => {},
           studioResource: null,
           theme: "light",

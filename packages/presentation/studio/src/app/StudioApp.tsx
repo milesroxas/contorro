@@ -125,6 +125,14 @@ type StudioPlainGlobalKeyActions = {
   setKeyboardShortcutsOpen: (open: boolean) => void;
 };
 
+type StudioModifierNodeActions = {
+  selectedNodeId: string | null;
+  copyNode: (id: string) => void;
+  pasteNode: (targetNodeId: string | null) => void;
+  duplicateNode: (id: string) => void;
+  wrapNodeInBox: (id: string) => void;
+};
+
 function studioHandlePlainGlobalKeys(
   event: KeyboardEvent,
   actions: StudioPlainGlobalKeyActions,
@@ -157,15 +165,62 @@ function studioHandlePlainGlobalKeys(
   }
 }
 
+function studioHandleModifierNodeKeys(
+  event: KeyboardEvent,
+  actions: StudioModifierNodeActions,
+): void {
+  if (!(event.metaKey || event.ctrlKey) || event.altKey) {
+    return;
+  }
+  const key = event.key.toLowerCase();
+  if (key === "c") {
+    if (!actions.selectedNodeId) {
+      return;
+    }
+    event.preventDefault();
+    actions.copyNode(actions.selectedNodeId);
+    return;
+  }
+  if (key === "v") {
+    event.preventDefault();
+    actions.pasteNode(actions.selectedNodeId);
+    return;
+  }
+  if (key === "d") {
+    if (!actions.selectedNodeId) {
+      return;
+    }
+    event.preventDefault();
+    actions.duplicateNode(actions.selectedNodeId);
+    return;
+  }
+  if (key === "w") {
+    if (!event.metaKey) {
+      return;
+    }
+    if (!actions.selectedNodeId) {
+      return;
+    }
+    event.preventDefault();
+    actions.wrapNodeInBox(actions.selectedNodeId);
+  }
+}
+
 function handleStudioGlobalKeyDown(
   event: KeyboardEvent,
-  actions: StudioPlainGlobalKeyActions & { undo: () => void; redo: () => void },
+  actions: StudioPlainGlobalKeyActions &
+    StudioModifierNodeActions & { undo: () => void; redo: () => void },
 ): void {
   if (isStudioGlobalKeyTargetIgnored(event.target)) {
     return;
   }
   studioHandlePlainGlobalKeys(event, actions);
-  studioHandleModifierUndoRedo(event, actions);
+  if (!event.defaultPrevented) {
+    studioHandleModifierUndoRedo(event, actions);
+  }
+  if (!event.defaultPrevented) {
+    studioHandleModifierNodeKeys(event, actions);
+  }
 }
 
 function applyStudioDragEndMutation(
@@ -315,6 +370,10 @@ export function StudioApp({
   const undo = useStudioStore((s) => s.undo);
   const redo = useStudioStore((s) => s.redo);
   const removeNode = useStudioStore((s) => s.removeNode);
+  const copyNode = useStudioStore((s) => s.copyNode);
+  const pasteNode = useStudioStore((s) => s.pasteNode);
+  const duplicateNode = useStudioStore((s) => s.duplicateNode);
+  const wrapNodeInBox = useStudioStore((s) => s.wrapNodeInBox);
 
   const trySaveDraft = useCallback(async () => {
     await saveDraft();
@@ -345,6 +404,9 @@ export function StudioApp({
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       handleStudioGlobalKeyDown(event, {
+        copyNode,
+        duplicateNode,
+        pasteNode,
         redo,
         removeNode,
         selectedNodeId,
@@ -352,13 +414,23 @@ export function StudioApp({
         setActiveLeftSidebarPanel,
         setKeyboardShortcutsOpen,
         undo,
+        wrapNodeInBox,
       });
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [redo, removeNode, selectedNodeId, undo]);
+  }, [
+    copyNode,
+    duplicateNode,
+    pasteNode,
+    redo,
+    removeNode,
+    selectedNodeId,
+    undo,
+    wrapNodeInBox,
+  ]);
 
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
@@ -589,6 +661,7 @@ export function StudioApp({
                 composition={composition}
                 onRemoveNode={removeNode}
                 onSelect={selectNode}
+                onWrapNode={wrapNodeInBox}
                 selectedNodeId={selectedNodeId}
                 studioResource={studioResource}
               />
@@ -614,6 +687,7 @@ export function StudioApp({
                 showLayersSidebar();
                 selectNode(nodeId);
               }}
+              onWrapNode={wrapNodeInBox}
               onToggleTheme={() => {
                 setTheme((prevTheme) => {
                   const nextTheme = prevTheme === "dark" ? "light" : "dark";

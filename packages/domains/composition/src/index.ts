@@ -23,6 +23,7 @@ export { expandLibraryComponentNodes } from "./graph/expand-library-component-no
 export {
   addChildNode,
   clearNodeStyleBinding,
+  duplicateNode,
   moveNode,
   removeSubtree,
   resetNodePropKeyToPrimitiveDefault,
@@ -63,6 +64,7 @@ export {
   BACKGROUND_IMAGE_POSITION_OPTIONS,
   BACKGROUND_IMAGE_REPEAT_OPTIONS,
   BACKGROUND_IMAGE_SIZE_OPTIONS,
+  BOX_BACKGROUND_IMAGE_TAILWIND_SAFESET,
   type BoxBackgroundImageStylePropKey,
   normalizedBackgroundImageAttachment,
   normalizedBackgroundImageClip,
@@ -70,7 +72,8 @@ export {
   normalizedBackgroundImagePosition,
   normalizedBackgroundImageRepeat,
   normalizedBackgroundImageSize,
-  resolvedBoxBackgroundImageInlineStyle,
+  type ResolvedBoxBackgroundImagePresentation,
+  resolvedBoxBackgroundImagePresentation,
 } from "./box-background-image-style.js";
 export { findNearestCollectionAncestorNodeId } from "./collection-ancestor.js";
 export {

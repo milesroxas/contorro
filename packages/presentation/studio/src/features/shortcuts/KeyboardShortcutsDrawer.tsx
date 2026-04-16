@@ -3,6 +3,7 @@
 import { IconKeyboard, IconX } from "@tabler/icons-react";
 import { Fragment, type ReactNode } from "react";
 
+import { ScrollArea } from "../../components/scroll-area.js";
 import { Button } from "../../components/ui/button.js";
 import {
   Drawer,
@@ -84,6 +85,11 @@ const SHORTCUT_SECTIONS: readonly ShortcutSection[] = [
         action: "Delete selected node",
         detail: "Removes the currently selected node.",
         combos: [["Delete"], ["Backspace"]],
+      },
+      {
+        action: "Wrap selected primitive",
+        detail: "Wraps the selected node with a Box primitive.",
+        combos: [["Cmd", "W"]],
       },
       {
         action: "Undo",
@@ -226,37 +232,39 @@ export function KeyboardShortcutsDrawer({
               </DrawerClose>
             </div>
           </DrawerHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto p-4">
-            <div className="grid gap-6 lg:grid-cols-2">
-              {SHORTCUT_SECTIONS.map((section) => (
-                <section className="space-y-2.5" key={section.title}>
-                  <div>
-                    <h3 className="text-xs font-semibold tracking-wide text-foreground uppercase">
-                      {section.title}
-                    </h3>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {section.description}
-                    </p>
-                  </div>
-                  <Separator />
-                  <div>
-                    {section.shortcuts.map((shortcut, shortcutIndex) => (
-                      <Fragment key={shortcut.action}>
-                        <ShortcutRow
-                          action={shortcut.action}
-                          combos={shortcut.combos}
-                          detail={shortcut.detail}
-                        />
-                        {shortcutIndex < section.shortcuts.length - 1 ? (
-                          <Separator />
-                        ) : null}
-                      </Fragment>
-                    ))}
-                  </div>
-                </section>
-              ))}
+          <ScrollArea className="min-h-0 flex-1">
+            <div className="p-4">
+              <div className="grid gap-6 lg:grid-cols-2">
+                {SHORTCUT_SECTIONS.map((section) => (
+                  <section className="space-y-2.5" key={section.title}>
+                    <div>
+                      <h3 className="text-xs font-semibold tracking-wide text-foreground uppercase">
+                        {section.title}
+                      </h3>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {section.description}
+                      </p>
+                    </div>
+                    <Separator />
+                    <div>
+                      {section.shortcuts.map((shortcut, shortcutIndex) => (
+                        <Fragment key={shortcut.action}>
+                          <ShortcutRow
+                            action={shortcut.action}
+                            combos={shortcut.combos}
+                            detail={shortcut.detail}
+                          />
+                          {shortcutIndex < section.shortcuts.length - 1 ? (
+                            <Separator />
+                          ) : null}
+                        </Fragment>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
             </div>
-          </div>
+          </ScrollArea>
           <DrawerFooter className="border-t border-border/70">
             <p className="text-xs text-muted-foreground">
               Tip: keep one node selected in Layers for the fastest keyboard

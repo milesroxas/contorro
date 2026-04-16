@@ -15,8 +15,6 @@ import { editorFieldSpecsFromComposition } from "@repo/domains-composition";
 import type { FormState, JSONFieldClientProps } from "payload";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { Label } from "@/components/ui/label";
-
 import { EditorFieldsInputs } from "./EditorFieldsInputs";
 import { extractPageCompositionId } from "./page-composition-form-state";
 
@@ -402,16 +400,18 @@ function PageTemplateEditorFieldsField(props: JSONFieldClientProps) {
   }
 
   return (
-    <div className="space-y-3">
-      {field?.label ? (
-        <Label className="text-sm font-medium">{String(field.label)}</Label>
-      ) : null}
-      <EditorFieldsInputs
-        current={current}
-        disabled={disabled}
-        fields={editorFields}
-        patchField={patchField}
-      />
+    <div className="contorro-admin-custom-group">
+      <p className="contorro-admin-custom-group__title">
+        {field?.label ? String(field.label) : "Custom CMS fields"}
+      </p>
+      <div className="contorro-admin-custom-group__body">
+        <EditorFieldsInputs
+          current={current}
+          disabled={disabled}
+          fields={editorFields}
+          patchField={patchField}
+        />
+      </div>
     </div>
   );
 }

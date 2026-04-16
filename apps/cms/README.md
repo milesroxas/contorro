@@ -1,6 +1,6 @@
 # CMS app (`@repo/cms`)
 
-This app is the **Next.js + Payload** host: admin UI, auth, content API, and **HTTP routes** that match the **`StudioAuthoringClient`** contract consumed by `@repo/presentation-studio` (composition CRUD, design-token sets, design-system globals — implemented with `@repo/application-studio` + Payload adapters in route handlers).
+This app is the **Next.js + Payload** host: admin UI, auth, content API, and the **HTTP surface** consumed by `@repo/presentation-studio` via `StudioAuthoringClient`. Composition mutations are orchestrated with `@repo/application-studio` + Payload adapters in route handlers; design-token sets and design-system globals are served through Payload REST endpoints.
 
 The workspace folder is `apps/cms`; the npm package name is **`@repo/cms`**.
 
@@ -31,14 +31,14 @@ From repo root:
 2. `pnpm db:up`
 3. `pnpm dev`
 
-Root `pnpm dev` runs the CMS app, presentation-studio TypeScript watch, and gateway.
+Root `pnpm dev` runs the CMS app, `@repo/presentation-studio` watch, `@repo/presentation-admin-extensions` watch, `@repo/infrastructure-payload-config` watch, and gateway.
 
 ## Useful scripts
 
 - `pnpm --filter @repo/cms dev`
 - `pnpm --filter @repo/cms build`
-- `pnpm --filter @repo/cms exec payload generate:types`
-- `pnpm --filter @repo/cms exec payload generate:importmap`
+- `pnpm --filter @repo/cms run generate:types`
+- `pnpm --filter @repo/cms run generate:importmap`
 - `pnpm --filter @repo/cms run test:int`
 - `pnpm --filter @repo/cms run test:e2e`
 

@@ -102,6 +102,7 @@ function DraggableNodeTreeRow({
   selected,
   onSelect,
   onRemoveNode,
+  onWrapNode,
   collapseToggleButton,
   Icon,
   kindTitle,
@@ -114,6 +115,7 @@ function DraggableNodeTreeRow({
   selected: boolean;
   onSelect: (id: string) => void;
   onRemoveNode: (id: string) => void;
+  onWrapNode: (id: string) => void;
   collapseToggleButton: ReactNode;
   Icon: Icon;
   kindTitle: string;
@@ -141,10 +143,12 @@ function DraggableNodeTreeRow({
     >
       <PrimitiveNodeContextMenu
         editComponentHref={editComponentHref}
+        layerIcon={Icon}
         layerLabel={layerLabel}
         nodeId={nodeId}
         onRemoveNode={onRemoveNode}
         onSelectNode={onSelect}
+        onWrapNode={onWrapNode}
         rootId={rootId}
       >
         <div
@@ -501,6 +505,7 @@ function LayerSubtreeNestedList({
   nodeId,
   onRemoveNode,
   onSelect,
+  onWrapNode,
   onSetNodeCollapseState,
   onToggleNodeCollapse,
   pageTemplateStudio,
@@ -516,6 +521,7 @@ function LayerSubtreeNestedList({
   nodeId: string;
   onRemoveNode: (id: string) => void;
   onSelect: (id: string) => void;
+  onWrapNode: (id: string) => void;
   onSetNodeCollapseState: (ids: string[], collapsed: boolean) => void;
   onToggleNodeCollapse: (id: string) => void;
   pageTemplateStudio: boolean;
@@ -557,6 +563,7 @@ function LayerSubtreeNestedList({
             onToggleNodeCollapse={onToggleNodeCollapse}
             onRemoveNode={onRemoveNode}
             onSelect={onSelect}
+            onWrapNode={onWrapNode}
             pageTemplateStudio={pageTemplateStudio}
             selectedNodeId={selectedNodeId}
           />
@@ -656,6 +663,7 @@ function LayerSubtreeLayerRow({
   nodeId,
   onRemoveNode,
   onSelect,
+  onWrapNode,
   rootId,
   sectionToggleButton,
   selected,
@@ -672,6 +680,7 @@ function LayerSubtreeLayerRow({
   nodeId: string;
   onRemoveNode: (id: string) => void;
   onSelect: (id: string) => void;
+  onWrapNode: (id: string) => void;
   rootId: string;
   sectionToggleButton: ReactNode;
   selected: boolean;
@@ -701,6 +710,7 @@ function LayerSubtreeLayerRow({
       nodeId={nodeId}
       onRemoveNode={onRemoveNode}
       onSelect={onSelect}
+      onWrapNode={onWrapNode}
       rootId={rootId}
       selected={selected}
     />
@@ -712,6 +722,7 @@ function LayerSubtree({
   nodeId,
   onRemoveNode,
   onSelect,
+  onWrapNode,
   selectedNodeId,
   collapsedNodeIds,
   onToggleNodeCollapse,
@@ -726,6 +737,7 @@ function LayerSubtree({
   nodeId: string;
   onSelect: (id: string) => void;
   onRemoveNode: (id: string) => void;
+  onWrapNode: (id: string) => void;
   selectedNodeId: string | null;
   collapsedNodeIds: Set<string>;
   onToggleNodeCollapse: (id: string) => void;
@@ -817,6 +829,7 @@ function LayerSubtree({
       nodeId={nodeId}
       onRemoveNode={onRemoveNode}
       onSelect={onSelect}
+      onWrapNode={onWrapNode}
       rootId={composition.rootId}
       sectionToggleButton={sectionToggleButton}
       selected={selected}
@@ -844,6 +857,7 @@ function LayerSubtree({
               nodeId={nodeId}
               onRemoveNode={onRemoveNode}
               onSelect={onSelect}
+              onWrapNode={onWrapNode}
               onSetNodeCollapseState={onSetNodeCollapseState}
               onToggleNodeCollapse={onToggleNodeCollapse}
               pageTemplateStudio={pageTemplateStudio}
@@ -861,12 +875,14 @@ export function NodeTree({
   selectedNodeId,
   studioResource,
   onRemoveNode,
+  onWrapNode,
   onSelect,
 }: {
   composition: PageComposition;
   selectedNodeId: string | null;
   studioResource: "pageTemplate" | "component" | null;
   onRemoveNode: (id: string) => void;
+  onWrapNode: (id: string) => void;
   onSelect: (id: string) => void;
 }) {
   const { editStudioHrefByKey, labels: libraryLabels } =
@@ -1003,6 +1019,7 @@ export function NodeTree({
           onToggleNodeCollapse={toggleNodeCollapse}
           onRemoveNode={onRemoveNode}
           onSelect={onSelect}
+          onWrapNode={onWrapNode}
           pageTemplateStudio={pageTemplateStudio}
           selectedNodeId={selectedNodeId}
           topLevelSectionIndex={index}

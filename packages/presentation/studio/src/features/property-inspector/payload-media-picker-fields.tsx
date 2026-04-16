@@ -14,7 +14,6 @@ import { Input } from "../../components/ui/input.js";
 import { Label } from "../../components/ui/label.js";
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -122,30 +121,31 @@ function MediaDocPickerList({
     );
   }
   return (
-    <>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {mediaDocs.map((media) => (
         <button
-          className="w-full rounded-md border border-border/60 p-2 text-left hover:bg-accent/50"
+          className="group w-full overflow-hidden rounded-lg border border-border/70 bg-background text-left transition-colors hover:border-border hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           key={media.id}
           onClick={() => onPick(media)}
           type="button"
         >
-          <div className="flex items-center gap-2">
-            <div className="size-12 shrink-0 overflow-hidden rounded-sm border border-border/60 bg-muted/30">
-              {mediaPickerThumb(variant, media.url)}
+          <div className="aspect-4/3 overflow-hidden border-b border-border/60 bg-muted/20">
+            {mediaPickerThumb(variant, media.url)}
+          </div>
+          <div className="space-y-1.5 p-3">
+            <div className="line-clamp-2 text-sm font-medium leading-snug">
+              {media.alt || media.filename || media.url}
             </div>
-            <div className="min-w-0">
-              <div className="truncate text-sm font-medium">
-                {media.alt || media.filename || media.url}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {media.filename || "Payload media"}
-              </div>
+            <div className="truncate text-xs text-muted-foreground">
+              {media.filename || "Payload media"}
+            </div>
+            <div className="text-[11px] text-muted-foreground/90">
+              ID {media.id}
             </div>
           </div>
         </button>
       ))}
-    </>
+    </div>
   );
 }
 
@@ -257,7 +257,7 @@ export function PayloadMediaPickerFields({
                 <SheetDescription>{copy.browseDescription}</SheetDescription>
               </SheetHeader>
               <ScrollArea className="min-h-0 flex-1">
-                <div className="space-y-2 py-1 pr-2">
+                <div className="py-1 pr-2">
                   <MediaDocPickerList
                     mediaDocs={mediaDocs}
                     mediaLoadError={mediaLoadError}
@@ -270,13 +270,6 @@ export function PayloadMediaPickerFields({
                   />
                 </div>
               </ScrollArea>
-              <div className="pt-3">
-                <SheetClose asChild>
-                  <Button size="sm" type="button" variant="ghost">
-                    Close
-                  </Button>
-                </SheetClose>
-              </div>
             </SheetContent>
           </Sheet>
         </div>
@@ -293,7 +286,9 @@ export function PayloadMediaPickerFields({
         </div>
       </div>
       <div className="space-y-3">
-        <Label htmlFor={`${baseId}-media-upload`}>{copy.uploadLabel}</Label>
+        <Label className="text-xs" htmlFor={`${baseId}-media-upload`}>
+          {copy.uploadLabel}
+        </Label>
         <Input
           accept={accept}
           className="sr-only"
@@ -326,17 +321,18 @@ export function PayloadMediaPickerFields({
           type="file"
         />
         <div className="rounded-md border border-dashed border-border/70 bg-muted/10 p-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
-              <IconUpload aria-hidden className="size-4 shrink-0" />
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 text-xs text-muted-foreground">
+              <IconUpload aria-hidden className="size-3.5 shrink-0" />
               <span className="truncate">
                 {busy ? "Uploading…" : copy.uploadHint}
               </span>
             </div>
             <Button
+              className="text-xs"
               disabled={busy}
               onClick={() => uploadInputRef.current?.click()}
-              size="sm"
+              size="xs"
               type="button"
               variant="default"
             >

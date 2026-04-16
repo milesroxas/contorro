@@ -31,3 +31,70 @@
     @apply border-border outline-ring/50;
   }
 }
+
+@layer components {
+  /*
+   * Isolate custom admin controls (CLI shadcn components) from Payload's generic form selectors.
+   * Scope is applied on the field root and on the portaled Sheet content.
+   */
+  .contorro-admin-scope {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  /*
+   * Custom field groups should read as one coherent subsystem inside Payload forms.
+   * We keep a single local type scale and explicit top/bottom boundaries so editors can
+   * immediately tell where custom controls begin/end relative to native Payload fields.
+   */
+  .contorro-admin-custom-group {
+    @apply my-2 border-y border-border/70 py-3;
+  }
+
+  .contorro-admin-custom-group__title {
+    @apply text-2xl font-medium leading-snug text-foreground;
+  }
+
+  .contorro-admin-custom-group__body {
+    @apply mt-6;
+  }
+
+  .contorro-admin-custom-fields {
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+  }
+
+  .contorro-admin-scope :where(*, *::before, *::after) {
+    box-sizing: border-box;
+  }
+
+  .contorro-admin-scope :where([data-slot]) {
+    color: inherit;
+    font-family: inherit;
+    letter-spacing: inherit;
+  }
+
+  .contorro-admin-scope
+    :where(
+      [data-slot="input"],
+      [data-slot="textarea"],
+      [data-slot="button"],
+      [data-slot="label"],
+      [data-slot="checkbox"]
+    ) {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .contorro-admin-custom-fields
+    :is(
+      [data-slot="input"],
+      [data-slot="textarea"],
+      [data-slot="button"],
+      [data-slot="label"],
+      [data-slot="checkbox"]
+    ) {
+    font-size: inherit;
+    line-height: inherit;
+  }
+}
