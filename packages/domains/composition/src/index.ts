@@ -55,6 +55,23 @@ export {
 } from "./layout-slot.js";
 export { mergePageContentSlotsToSlotOrder } from "./page-content-slots.js";
 export { resolvedPrimitiveMediaSrc } from "./resolved-primitive-media-src.js";
+export { resolvedPrefixedMediaSrc } from "./resolved-prefixed-media-src.js";
+export {
+  BACKGROUND_IMAGE_ATTACHMENT_OPTIONS,
+  BACKGROUND_IMAGE_CLIP_OPTIONS,
+  BACKGROUND_IMAGE_ORIGIN_OPTIONS,
+  BACKGROUND_IMAGE_POSITION_OPTIONS,
+  BACKGROUND_IMAGE_REPEAT_OPTIONS,
+  BACKGROUND_IMAGE_SIZE_OPTIONS,
+  type BoxBackgroundImageStylePropKey,
+  normalizedBackgroundImageAttachment,
+  normalizedBackgroundImageClip,
+  normalizedBackgroundImageOrigin,
+  normalizedBackgroundImagePosition,
+  normalizedBackgroundImageRepeat,
+  normalizedBackgroundImageSize,
+  resolvedBoxBackgroundImageInlineStyle,
+} from "./box-background-image-style.js";
 export { findNearestCollectionAncestorNodeId } from "./collection-ancestor.js";
 export {
   type CollectionFieldBindingKind,

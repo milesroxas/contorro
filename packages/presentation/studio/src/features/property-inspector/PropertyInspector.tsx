@@ -109,8 +109,14 @@ import {
   libraryDisplayNameForKey,
   useLibraryComponentLabels,
 } from "../../lib/use-library-component-labels.js";
+import { BoxPrimitiveBackgroundImageSection } from "./box-primitive-background-image-section.js";
 import { CollectionFieldBindingSection } from "./collection-field-binding-controls.js";
 import { CollectionPrimitiveInspector } from "./collection-primitive-inspector.js";
+import {
+  IMAGE_PRIMITIVE_MEDIA_KEYS,
+  ImageSourcePayloadInspectorFields,
+  parseMediaIdFromPropValues,
+} from "./image-source-payload-inspector.js";
 import { PayloadMediaPickerFields } from "./payload-media-picker-fields.js";
 import {
   BorderPropertyRowLabel,
@@ -3372,46 +3378,6 @@ function ButtonPrimitiveInspector({
   );
 }
 
-function ImagePrimitiveInspectorUrlFields({
-  baseId,
-  node,
-  patchNodeProps,
-  resetNodePropKey,
-  src,
-}: {
-  baseId: string;
-  node: CompositionNode;
-  patchNodeProps: (patch: Record<string, unknown>) => void;
-  resetNodePropKey: (propKey: string) => void;
-  src: string;
-}) {
-  return (
-    <div className="space-y-3 border-t border-border/60 pt-5">
-      <SettingsFieldRow
-        definitionKey={node.definitionKey}
-        htmlFor={`${baseId}-image-url`}
-        label="Image URL"
-        onResetProp={resetNodePropKey}
-        propKey="src"
-        propValues={node.propValues}
-      >
-        <Input
-          id={`${baseId}-image-url`}
-          onChange={(e) =>
-            patchNodeProps({
-              src: e.target.value,
-              imageSource: "url",
-            })
-          }
-          placeholder="https://"
-          type="url"
-          value={src}
-        />
-      </SettingsFieldRow>
-    </div>
-  );
-}
-
 function ImagePrimitiveInspectorAltAndBindingFields({
   applyEditorField,
   baseId,
@@ -3578,25 +3544,10 @@ function ImagePrimitiveInspector({
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
   const baseId = useId();
-  const imageSource = node.propValues?.imageSource === "url" ? "url" : "media";
-  const src =
-    typeof node.propValues?.src === "string" ? node.propValues.src : "";
   const alt =
     typeof node.propValues?.alt === "string" ? node.propValues.alt : "";
-  const mediaId =
-    typeof node.propValues?.mediaId === "number"
-      ? node.propValues.mediaId
-      : typeof node.propValues?.mediaId === "string" &&
-          /^\d+$/.test(node.propValues.mediaId)
-        ? Number.parseInt(node.propValues.mediaId, 10)
-        : "";
-  const uploadInputRef = useRef<HTMLInputElement | null>(null);
-  const [busy, setBusy] = useState(false);
+  const mediaId = parseMediaIdFromPropValues(node.propValues, "mediaId");
   const [error, setError] = useState<string | null>(null);
-  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
-  const [mediaLoading, setMediaLoading] = useState(false);
-  const [mediaLoadError, setMediaLoadError] = useState<string | null>(null);
-  const [mediaDocs, setMediaDocs] = useState<MediaListItem[]>([]);
   const [nameDraft, setNameDraft] = useState(() => fieldBound?.name ?? "");
   const [labelDraft, setLabelDraft] = useState(() => fieldBound?.label ?? "");
   const committedName = fieldBound?.name;
@@ -3614,26 +3565,6 @@ function ImagePrimitiveInspector({
     setNameDraft(committedName);
     setLabelDraft(committedLabel);
   }, [committedLabel, committedName, exposeToEditors]);
-
-  useEffect(() => {
-    if (!mediaPickerOpen) {
-      return;
-    }
-    setMediaLoading(true);
-    setMediaLoadError(null);
-    void fetchMediaRecords()
-      .then((docs) => {
-        setMediaDocs(docs);
-      })
-      .catch((err) => {
-        setMediaLoadError(
-          err instanceof Error ? err.message : "Failed to load media entries",
-        );
-      })
-      .finally(() => {
-        setMediaLoading(false);
-      });
-  }, [mediaPickerOpen]);
 
   function applyEditorField(next: EditorFieldSpec) {
     const parsed = EditorFieldSpecSchema.safeParse(next);
@@ -3657,75 +3588,18 @@ function ImagePrimitiveInspector({
       />
       {collectionMapped ? null : (
         <>
-          <SettingsFieldRow
+          <ImageSourcePayloadInspectorFields
+            altForUpload={alt}
+            altValueKey="alt"
+            baseId={baseId}
             definitionKey={node.definitionKey}
-            htmlFor={`${baseId}-image-source`}
-            label="Source"
-            onResetProp={resetNodePropKey}
-            propKey="imageSource"
-            propValues={node.propValues}
-          >
-            <Select
-              onValueChange={(value) =>
-                patchNodeProps({
-                  imageSource: value,
-                })
-              }
-              value={imageSource}
-            >
-              <SelectTrigger id={`${baseId}-image-source`}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="url">URL</SelectItem>
-                <SelectItem value="media">Payload Media</SelectItem>
-              </SelectContent>
-            </Select>
-          </SettingsFieldRow>
-          {imageSource === "url" ? (
-            <ImagePrimitiveInspectorUrlFields
-              baseId={baseId}
-              node={node}
-              patchNodeProps={patchNodeProps}
-              resetNodePropKey={resetNodePropKey}
-              src={src}
-            />
-          ) : (
-            <PayloadMediaPickerFields
-              altForUpload={alt}
-              baseId={baseId}
-              busy={busy}
-              mediaDocs={mediaDocs}
-              mediaId={mediaId}
-              mediaLoadError={mediaLoadError}
-              mediaLoading={mediaLoading}
-              mediaPickerOpen={mediaPickerOpen}
-              onSelectMediaDoc={(media) =>
-                patchNodeProps({
-                  imageSource: "media",
-                  mediaId: media.id,
-                  src: media.url,
-                  mediaUrl: media.url,
-                  alt: media.alt || alt,
-                })
-              }
-              onUploadComplete={(media, file) =>
-                patchNodeProps({
-                  imageSource: "media",
-                  mediaId: media.id,
-                  src: media.url,
-                  mediaUrl: media.url,
-                  alt: media.alt || alt || file.name,
-                })
-              }
-              setBusy={setBusy}
-              setError={setError}
-              setMediaPickerOpen={setMediaPickerOpen}
-              src={src}
-              uploadInputRef={uploadInputRef}
-              variant="image"
-            />
-          )}
+            keys={IMAGE_PRIMITIVE_MEDIA_KEYS}
+            node={node}
+            patchNodeProps={patchNodeProps}
+            resetNodePropKey={resetNodePropKey}
+            setError={setError}
+            urlFieldLabel="Image URL"
+          />
           <ImagePrimitiveInspectorAltAndBindingFields
             alt={alt}
             applyEditorField={applyEditorField}
@@ -4330,6 +4204,8 @@ function InspectorDefaultStyleSection({
   model,
   node,
   onNodeStyleEntry,
+  patchNodeProps,
+  resetNodePropKey,
   section,
   sectionIndex,
   setStyleSectionOpen,
@@ -4343,6 +4219,8 @@ function InspectorDefaultStyleSection({
     property: StyleProperty,
     entry: StylePropertyEntry | null,
   ) => void;
+  patchNodeProps?: (patch: Record<string, unknown>) => void;
+  resetNodePropKey?: (propKey: string) => void;
   section: InspectorOrderedStyleSection;
   sectionIndex: number;
   setStyleSectionOpen: (sectionId: StyleSectionId, open: boolean) => void;
@@ -4397,6 +4275,16 @@ function InspectorDefaultStyleSection({
               tokenMetadata={tokenMetadata}
             />
           ) : null}
+          {section.id === "color" &&
+          node.definitionKey === "primitive.box" &&
+          patchNodeProps &&
+          resetNodePropKey ? (
+            <BoxPrimitiveBackgroundImageSection
+              node={node}
+              patchNodeProps={patchNodeProps}
+              resetNodePropKey={resetNodePropKey}
+            />
+          ) : null}
         </CollapsibleContent>
       </Collapsible>
     </div>
@@ -4409,6 +4297,8 @@ function InspectorOrderedStyleSectionItem({
   isStyleSectionOpen,
   node,
   onNodeStyleEntry,
+  patchNodeProps,
+  resetNodePropKey,
   section,
   sectionIndex,
   setStyleSectionOpen,
@@ -4422,6 +4312,8 @@ function InspectorOrderedStyleSectionItem({
     property: StyleProperty,
     entry: StylePropertyEntry | null,
   ) => void;
+  patchNodeProps?: (patch: Record<string, unknown>) => void;
+  resetNodePropKey?: (propKey: string) => void;
   section: InspectorOrderedStyleSection;
   sectionIndex: number;
   setStyleSectionOpen: (sectionId: StyleSectionId, open: boolean) => void;
@@ -4471,6 +4363,8 @@ function InspectorOrderedStyleSectionItem({
       model={model}
       node={node}
       onNodeStyleEntry={onNodeStyleEntry}
+      patchNodeProps={patchNodeProps}
+      resetNodePropKey={resetNodePropKey}
       section={section}
       sectionIndex={sectionIndex}
       setStyleSectionOpen={setStyleSectionOpen}
@@ -4844,6 +4738,8 @@ function PropertyInspectorActive({
                     isStyleSectionOpen={isStyleSectionOpen}
                     node={node}
                     onNodeStyleEntry={onNodeStyleEntry}
+                    patchNodeProps={patchNodeProps}
+                    resetNodePropKey={resetNodePropKey}
                     section={section}
                     sectionIndex={sectionIndex}
                     setStyleSectionOpen={setStyleSectionOpen}

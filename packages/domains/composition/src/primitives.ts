@@ -1,5 +1,14 @@
 import type { CompositionNode } from "@repo/contracts-zod";
 
+import {
+  DEFAULT_BACKGROUND_IMAGE_ATTACHMENT,
+  DEFAULT_BACKGROUND_IMAGE_CLIP,
+  DEFAULT_BACKGROUND_IMAGE_ORIGIN,
+  DEFAULT_BACKGROUND_IMAGE_POSITION,
+  DEFAULT_BACKGROUND_IMAGE_REPEAT,
+  DEFAULT_BACKGROUND_IMAGE_SIZE,
+} from "./box-background-image-style.js";
+
 type PrimitiveSpec = {
   definitionKey: string;
   allowsChildren: boolean;
@@ -14,7 +23,20 @@ const PRIMITIVE_SPECS = [
     allowsChildren: true,
     availableInPalette: true,
     creatableInStudio: true,
-    defaultPropValues: { tag: "div" },
+    defaultPropValues: {
+      tag: "div",
+      backgroundImageAlt: "",
+      backgroundImageAttachment: DEFAULT_BACKGROUND_IMAGE_ATTACHMENT,
+      backgroundImageClip: DEFAULT_BACKGROUND_IMAGE_CLIP,
+      backgroundImageEnabled: false,
+      backgroundImageMediaUrl: "",
+      backgroundImageOrigin: DEFAULT_BACKGROUND_IMAGE_ORIGIN,
+      backgroundImagePosition: DEFAULT_BACKGROUND_IMAGE_POSITION,
+      backgroundImageRepeat: DEFAULT_BACKGROUND_IMAGE_REPEAT,
+      backgroundImageSize: DEFAULT_BACKGROUND_IMAGE_SIZE,
+      backgroundImageSource: "media",
+      backgroundImageSrc: "",
+    },
   },
   {
     definitionKey: "primitive.section",
