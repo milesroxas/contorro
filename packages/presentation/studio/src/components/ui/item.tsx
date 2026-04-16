@@ -21,14 +21,15 @@ function ItemGroup({ className, ...props }: React.ComponentProps<"div">) {
 
 function ItemSeparator({
   className,
-  orientation,
+  orientation: _orientation,
   ...props
-}: React.ComponentProps<typeof Separator>) {
+}: React.ComponentProps<typeof Separator> & {
+  orientation?: "horizontal" | "vertical";
+}) {
   return (
     <Separator
       data-slot="item-separator"
       className={cn("my-2", className)}
-      orientation={orientation}
       {...props}
     />
   );

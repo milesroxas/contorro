@@ -25,13 +25,20 @@ import {
   useRef,
   useState,
 } from "react";
-import { StudioPanel } from "../components/studio-panel.js";
+import {
+  StudioPanel,
+  studioLeftRailGridAdjacentEndClass,
+} from "../components/studio-panel.js";
 import { StudioRoot } from "../components/studio-root.js";
 import { Card, CardContent } from "../components/ui/card.js";
 import { Separator } from "../components/ui/separator.js";
 import { StudioCanvas } from "../features/canvas/StudioCanvas.js";
 import type { InsertDropData } from "../features/dnd/InsertionDropZone.js";
 import { DraftSaveBar } from "../features/draft-save/DraftSaveBar.js";
+import {
+  type PageTemplateListFilter,
+  PageTemplateListFilterSelect,
+} from "../features/page-templates/page-template-list-filter.js";
 import { PropertyInspector } from "../features/property-inspector/PropertyInspector.js";
 import { KeyboardShortcutsDrawer } from "../features/shortcuts/KeyboardShortcutsDrawer.js";
 import { StudioUnsavedChangesGuard } from "../features/unsaved-changes/StudioUnsavedChangesGuard.js";
@@ -43,6 +50,9 @@ import {
 } from "../lib/inspector-tab-shortcuts.js";
 import {
   LEFT_SIDEBAR_PANELS,
+  LEFT_SIDEBAR_PRIMARY_PANELS,
+  LEFT_SIDEBAR_SECONDARY_PANELS,
+  type LeftSidebarPanelDef,
   type LeftSidebarPanelId,
   resolveLeftSidebarPanelShortcut,
 } from "../lib/left-sidebar-panels.js";
@@ -292,6 +302,40 @@ function StudioDragPreview({
   );
 }
 
+function LeftRailPanelButtons({
+  activeLeftSidebarPanel,
+  onSelect,
+  panels,
+}: {
+  activeLeftSidebarPanel: LeftSidebarPanelId;
+  onSelect: (id: LeftSidebarPanelId) => void;
+  panels: readonly LeftSidebarPanelDef[];
+}) {
+  return panels.map(({ id, label, Icon, shortcutDigit }) => {
+    const isActive = activeLeftSidebarPanel === id;
+    return (
+      <button
+        aria-keyshortcuts={shortcutDigit}
+        aria-label={label}
+        aria-pressed={isActive}
+        className={cn(
+          "flex size-10 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors",
+          "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          isActive && "border-border bg-background text-foreground",
+        )}
+        key={id}
+        onClick={() => {
+          onSelect(id);
+        }}
+        title={`${label} (${shortcutDigit})`}
+        type="button"
+      >
+        <Icon aria-hidden className="size-5.5" stroke={1.7} />
+      </button>
+    );
+  });
+}
+
 export function StudioApp({
   compositionId,
   adminHref,
@@ -324,6 +368,8 @@ export function StudioApp({
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [activeLeftSidebarPanel, setActiveLeftSidebarPanel] =
     useState<LeftSidebarPanelId>("primitives");
+  const [pageTemplateListFilter, setPageTemplateListFilter] =
+    useState<PageTemplateListFilter>("all");
   const [activeInspectorTab, setActiveInspectorTab] =
     useState<StudioInspectorTab>("styles");
   const [leftPanelWidth, setLeftPanelWidth] = useState(300);
@@ -607,30 +653,19 @@ export function StudioApp({
               className="flex shrink-0 flex-col items-center gap-1 border-r border-border/70 bg-muted/20 p-1.5 dark:bg-muted/10"
             >
               <div className="flex w-full flex-col items-center gap-1">
-                {LEFT_SIDEBAR_PANELS.map(
-                  ({ id, label, Icon, shortcutDigit }) => {
-                    const isActive = activeLeftSidebarPanel === id;
-                    return (
-                      <button
-                        aria-keyshortcuts={shortcutDigit}
-                        aria-label={label}
-                        aria-pressed={isActive}
-                        className={cn(
-                          "flex size-10 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors",
-                          "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                          isActive &&
-                            "border-border bg-background text-foreground",
-                        )}
-                        key={id}
-                        onClick={() => setActiveLeftSidebarPanel(id)}
-                        title={`${label} (${shortcutDigit})`}
-                        type="button"
-                      >
-                        <Icon aria-hidden className="size-5.5" stroke={1.7} />
-                      </button>
-                    );
-                  },
-                )}
+                <LeftRailPanelButtons
+                  activeLeftSidebarPanel={activeLeftSidebarPanel}
+                  onSelect={setActiveLeftSidebarPanel}
+                  panels={LEFT_SIDEBAR_PRIMARY_PANELS}
+                />
+              </div>
+              <Separator className="my-1 w-8 shrink-0 bg-border/70" />
+              <div className="flex w-full flex-col items-center gap-1">
+                <LeftRailPanelButtons
+                  activeLeftSidebarPanel={activeLeftSidebarPanel}
+                  onSelect={setActiveLeftSidebarPanel}
+                  panels={LEFT_SIDEBAR_SECONDARY_PANELS}
+                />
               </div>
               <div className="mt-auto flex w-full flex-col items-center gap-2 pt-2">
                 <Separator className="w-8 bg-border/70" />
@@ -641,18 +676,30 @@ export function StudioApp({
               </div>
             </nav>
             <StudioPanel
+              bodyClassName={studioLeftRailGridAdjacentEndClass}
               className="h-full min-h-0 min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none"
               collapsible={false}
               contentClassName="min-h-0 flex-1"
+              headerClassName={studioLeftRailGridAdjacentEndClass}
               title={activeLeftSidebarDef.label}
+              toolbar={
+                activeLeftSidebarPanel === "pageTemplates" ? (
+                  <PageTemplateListFilterSelect
+                    onValueChange={setPageTemplateListFilter}
+                    value={pageTemplateListFilter}
+                  />
+                ) : undefined
+              }
             >
               <StudioLeftSidebarPanelBody
+                activeCompositionId={compositionId}
                 activeLeftSidebarPanel={activeLeftSidebarPanel}
                 activePaletteKey={activePaletteKey}
                 composition={composition}
                 onRemoveNode={removeNode}
                 onSelect={selectNode}
                 onWrapNode={wrapNodeInBox}
+                pageTemplateListFilter={pageTemplateListFilter}
                 selectedNodeId={selectedNodeId}
                 studioResource={studioResource}
               />

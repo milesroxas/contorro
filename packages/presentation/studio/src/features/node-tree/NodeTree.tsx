@@ -79,7 +79,7 @@ const layerTreeRootListClass = "list-none space-y-0 !p-0";
 const layerTreeItemClass = "list-none m-0! p-0! pl-0!";
 
 const treeCollapseIconButtonClass =
-  "h-6 w-6 shrink-0 cursor-pointer rounded-sm border border-transparent px-0 text-muted-foreground hover:border-border/70 hover:bg-muted/45 hover:text-foreground";
+  "h-6 w-6 shrink-0 rounded-sm border border-transparent px-0 text-muted-foreground hover:border-border/70 hover:bg-muted/45 hover:text-foreground";
 
 const layerRowBaseClass =
   "flex min-w-0 items-stretch gap-0 rounded-sm border px-0 py-px transition-colors";

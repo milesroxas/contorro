@@ -72,9 +72,9 @@ const SHORTCUT_SECTIONS: readonly ShortcutSection[] = [
         combos: [["`"]],
       },
       {
-        action: "Open Primitives / Layers / Components",
+        action: "Open Page templates / Layers / Primitives / Components",
         detail: "Switches left sidebar tabs.",
-        combos: [["1"], ["2"], ["3"]],
+        combos: [["1"], ["2"], ["3"], ["4"]],
       },
       {
         action: "Open Styles / Settings",

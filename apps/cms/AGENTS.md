@@ -26,6 +26,10 @@ Use this file for changes inside **`apps/cms`** (package **`@repo/cms`**). Root 
 2. In hooks, pass `req` to nested Local API calls to preserve transaction scope.
 3. Prevent hook loops with explicit context flags.
 
+## UI (shadcn)
+
+- Custom admin / Next app UI follows root **`AGENTS.md`** shadcn rules: **no ad-hoc `className` visual overrides** on primitives at call sites; extend **variants** in `components/ui` instead. See `.cursor/rules/shadcn-ui-no-call-site-drift.md`.
+
 ## Layering rules in CMS app code
 
 - Next route handlers should orchestrate only.

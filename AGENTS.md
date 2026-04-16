@@ -50,8 +50,18 @@ Contorro is multi-surface authoring:
 ## shadcn/ui (CLI source of truth)
 
 - **Add components only via the shadcn CLI** (e.g. `pnpm dlx shadcn@latest add …`) run from the package directory that owns the relevant `components.json` (Studio UI: `packages/presentation/studio`; CMS app UI: `apps/cms` when applicable). Do **not** paste or hand-rebuild shadcn component source from docs or other projects — that creates a second source of truth and makes upgrades drift.
-- **Customize in layers:** prefer extending **CVA variants**, **wrapping** with composition, or **`className` / `cn()`** merges. Only edit generated files when necessary; keep diffs small and aligned with upstream patterns so future `add` / registry updates stay workable.
-- **Avoid wholesale rewrites** of shadcn primitives unless there is a strong reason; replacing whole components bypasses the shared baseline and invites inconsistency across the codebase.
+- **Customize in one place:** prefer extending **CVA variants** (or a small wrapper component) in the owning `components/ui/*` file. Keep diffs small and aligned with upstream patterns so future `add` / registry updates stay workable. **Avoid wholesale rewrites** of shadcn primitives unless there is a strong reason; replacing whole components bypasses the shared baseline and invites inconsistency across the codebase.
+
+### No ad-hoc visual overrides at call sites (design drift)
+
+Call-site `className` on shadcn primitives (`Button`, `Item`, `Card`, inputs, etc.) to change **radius, borders, background, shadow, or spacing** causes **inconsistent screens** and is **hard to maintain**. Treat this as **disallowed by default**.
+
+- **Allowed without asking:** use the component **as documented** — built-in **`variant` / `size`** (and any other props the primitive exposes). Prefer matching sibling screens by using the **same variant**, not a copy-pasted `className`.
+- **Overrides only when necessary:** add `className` (or one-off tweaks) **only** when there is a **clear, unavoidable** reason *or* the **user explicitly requested** that override for that change. If a new look is product-intended, do **not** leave it as a feature-local override.
+- **When the design needs a new look:** add or extend **CVA variants** on the primitive (or a shared wrapper) so the style has a **name** and **one definition**. Do **not** satisfy “slightly different dashboard rows” by sprinkling `className="rounded-lg bg-card/80 …"` across `features/*`.
+- **`cn()` / merges** belong **inside** the primitive or wrapper when defining variants — not scattered across call sites for visual differentiation.
+
+This applies across **Studio** (`packages/presentation/studio`) and **CMS app UI** (`apps/cms`) wherever shadcn components are used.
 
 ## Monorepo layout
 

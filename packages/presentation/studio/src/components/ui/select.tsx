@@ -21,7 +21,7 @@ function SelectTrigger({
       className={cn(
         "flex h-10 w-full min-w-0 items-center justify-between rounded-md border border-input bg-background px-2 py-1 text-sm shadow-sm outline-none",
         "focus-visible:ring-1 focus-visible:ring-ring/50",
-        "disabled:cursor-not-allowed disabled:opacity-50",
+        "disabled:opacity-50",
         "[&>span]:flex [&>span]:min-w-0 [&>span]:items-center [&>span]:truncate",
         className,
       )}

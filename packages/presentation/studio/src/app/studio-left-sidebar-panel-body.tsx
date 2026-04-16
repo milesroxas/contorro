@@ -3,6 +3,8 @@
 import type { PageComposition } from "@repo/contracts-zod";
 
 import { NodeTree } from "../features/node-tree/NodeTree.js";
+import { PageTemplatesPanel } from "../features/page-templates/PageTemplatesPanel.js";
+import type { PageTemplateListFilter } from "../features/page-templates/page-template-list-filter.js";
 import { LibraryComponentCatalog } from "../features/primitive-catalog/LibraryComponentCatalog.js";
 import { PrimitiveCatalog } from "../features/primitive-catalog/PrimitiveCatalog.js";
 import { cn } from "../lib/cn.js";
@@ -15,21 +17,25 @@ import type { LeftSidebarPanelId } from "../lib/left-sidebar-panels.js";
  * without permanently mounting every tab.
  */
 export function StudioLeftSidebarPanelBody({
+  activeCompositionId,
   activeLeftSidebarPanel,
   activePaletteKey,
   composition,
   onRemoveNode,
   onSelect,
   onWrapNode,
+  pageTemplateListFilter,
   selectedNodeId,
   studioResource,
 }: {
+  activeCompositionId: string;
   activeLeftSidebarPanel: LeftSidebarPanelId;
   activePaletteKey: string | null;
   composition: PageComposition;
   onRemoveNode: (id: string) => void;
   onSelect: (id: string | null) => void;
   onWrapNode: (id: string) => void;
+  pageTemplateListFilter: PageTemplateListFilter;
   selectedNodeId: string | null;
   studioResource: "pageTemplate" | "component" | null;
 }) {
@@ -43,6 +49,14 @@ export function StudioLeftSidebarPanelBody({
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
+      {activeLeftSidebarPanel === "pageTemplates" ? (
+        <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+          <PageTemplatesPanel
+            activeCompositionId={activeCompositionId}
+            statusFilter={pageTemplateListFilter}
+          />
+        </div>
+      ) : null}
       {keepPrimitiveCatalogMounted ? (
         <div
           aria-hidden={activeLeftSidebarPanel !== "primitives"}

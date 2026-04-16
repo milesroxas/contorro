@@ -22,7 +22,7 @@ function ScrollArea({
       data-slot="scroll-area"
       {...props}
     >
-      <ScrollAreaViewport className="size-full rounded-[inherit] pr-3">
+      <ScrollAreaViewport className="size-full rounded-[inherit]">
         {children}
       </ScrollAreaViewport>
       <ScrollBar />

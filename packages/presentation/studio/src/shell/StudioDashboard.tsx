@@ -45,6 +45,7 @@ import {
 } from "../components/ui/item.js";
 import { Separator } from "../components/ui/separator.js";
 import { cn } from "../lib/cn.js";
+import { fetchPageCompositionSummaries } from "../lib/fetch-page-composition-summaries.js";
 import { DashboardResourceName } from "./DashboardResourceName.js";
 import { COMPONENTS_SLUG, PAGE_COMPOSITIONS_SLUG } from "./hub/constants.js";
 import { formatUpdatedAt } from "./hub/formatters.js";
@@ -55,6 +56,7 @@ type PageTemplateRow = {
   id: string | number;
   title: string;
   updatedAt?: string;
+  publishedAt?: string | null;
   _status?: string | null;
 };
 
@@ -131,13 +133,8 @@ async function loadStudioDashboardDocs(signal?: AbortSignal): Promise<{
   componentDocs: ComponentRow[];
   templateDocs: PageTemplateRow[];
 }> {
-  const [templatesRes, componentsRes] = await Promise.all([
-    fetch(`/api/${PAGE_COMPOSITIONS_SLUG}?limit=200&depth=0&sort=-updatedAt`, {
-      cache: "no-store",
-      credentials: "include",
-      headers: { Accept: "application/json" },
-      signal,
-    }),
+  const [templateDocs, componentsRes] = await Promise.all([
+    fetchPageCompositionSummaries(signal),
     fetch(`/api/${COMPONENTS_SLUG}?limit=200&depth=0&sort=-updatedAt`, {
       cache: "no-store",
       credentials: "include",
@@ -146,13 +143,10 @@ async function loadStudioDashboardDocs(signal?: AbortSignal): Promise<{
     }),
   ]);
 
-  if (!templatesRes.ok || !componentsRes.ok) {
+  if (!componentsRes.ok) {
     throw new Error("Studio dashboard collection request failed");
   }
 
-  const templatesJson = (await templatesRes.json()) as {
-    docs?: PageTemplateRow[];
-  };
   const componentsJson = (await componentsRes.json()) as {
     docs?: ComponentRow[];
   };
@@ -161,7 +155,7 @@ async function loadStudioDashboardDocs(signal?: AbortSignal): Promise<{
     componentDocs: Array.isArray(componentsJson.docs)
       ? componentsJson.docs
       : [],
-    templateDocs: Array.isArray(templatesJson.docs) ? templatesJson.docs : [],
+    templateDocs,
   };
 }
 
@@ -317,11 +311,7 @@ function ResourceListCard({
               <ul className="flex w-full flex-col gap-2.5">
                 {rows.map((row) => (
                   <li key={`${row.resourceType}-${row.id}`}>
-                    <Item
-                      className="rounded-lg bg-card/80 hover:bg-accent/40"
-                      size="sm"
-                      variant="outline"
-                    >
+                    <Item size="sm" variant="outline">
                       <ItemContent>
                         <ItemTitle className="text-sm font-semibold text-foreground md:text-base">
                           {renderItemTitle ? renderItemTitle(row) : row.title}
