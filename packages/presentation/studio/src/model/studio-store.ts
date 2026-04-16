@@ -70,6 +70,7 @@ export type StudioStoreState = {
   historyFuture: PageComposition[];
   tokenMetadata: TokenMeta[];
   cssVariables: string;
+  tokenUtilityCss: string;
   updatedAt: string | null;
   /** Payload CMS publication state for the loaded composition revision. */
   cmsPublicationStatus: "draft" | "published" | null;
@@ -242,6 +243,7 @@ export function createStudioStore(
     historyFuture: [],
     tokenMetadata: [],
     cssVariables: "",
+    tokenUtilityCss: "",
     updatedAt: null,
     cmsPublicationStatus: null,
     selectedNodeId: null,
@@ -310,6 +312,7 @@ export function createStudioStore(
           historyFuture: [],
           tokenMetadata: data.tokenMetadata as TokenMeta[],
           cssVariables: data.cssVariables,
+          tokenUtilityCss: data.tokenUtilityCss ?? "",
           updatedAt: data.updatedAt,
           cmsPublicationStatus: data._status ?? null,
           // New sessions are not persisted yet; keep save actions enabled.

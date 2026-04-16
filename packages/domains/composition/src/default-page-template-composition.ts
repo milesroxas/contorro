@@ -15,7 +15,7 @@ export function defaultPageTemplateComposition(): PageComposition {
         definitionKey: "primitive.box",
         parentId: null,
         childIds: ["page-header", "page-main", "page-footer"],
-        propValues: { tag: "div" },
+        propValues: { tag: "fragment" },
       },
       "page-header": {
         id: "page-header",

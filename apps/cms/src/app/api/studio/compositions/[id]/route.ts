@@ -28,11 +28,12 @@ import config from "@/payload.config";
 async function designTokensForStudio(payload: Payload): Promise<{
   tokenMetadata: TokenMeta[];
   cssVariables: string;
+  tokenUtilityCss: string;
 }> {
   const runtime = await loadDesignSystemRuntimeForPreview(payload);
   const doc = runtime.tokenSet;
   if (!doc?.tokens?.length) {
-    return { tokenMetadata: [], cssVariables: "" };
+    return { tokenMetadata: [], cssVariables: "", tokenUtilityCss: "" };
   }
   const tokens = doc.tokens.map((t) => {
     const mode: "light" | "dark" = t.mode === "dark" ? "dark" : "light";
@@ -47,6 +48,7 @@ async function designTokensForStudio(payload: Payload): Promise<{
   return {
     tokenMetadata: compiled.tokenMetadata,
     cssVariables: compiled.cssVariables,
+    tokenUtilityCss: compiled.tokenUtilityCss,
   };
 }
 
@@ -111,6 +113,7 @@ async function getNewSessionComposition(
       _status: null,
       tokenMetadata: designTokens.tokenMetadata,
       cssVariables: designTokens.cssVariables,
+      tokenUtilityCss: designTokens.tokenUtilityCss,
     },
   });
 }
@@ -183,6 +186,7 @@ async function getComponentComposition(
       _status: publicationStatusFromDoc(doc),
       tokenMetadata: designTokens.tokenMetadata,
       cssVariables: designTokens.cssVariables,
+      tokenUtilityCss: designTokens.tokenUtilityCss,
     },
   });
 }
@@ -246,6 +250,7 @@ async function getPageTemplateComposition(
       _status: publicationStatusFromDoc(doc),
       tokenMetadata: designTokens.tokenMetadata,
       cssVariables: designTokens.cssVariables,
+      tokenUtilityCss: designTokens.tokenUtilityCss,
     },
   });
 }

@@ -1,4 +1,4 @@
-import { compileTokenSet } from "@repo/config-tailwind";
+import { loadFrontendDesignSystemBundle } from "@/lib/load-frontend-design-system-bundle";
 import {
   type PageComposition,
   PageCompositionSchema,
@@ -18,7 +18,6 @@ import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import type { ReactNode } from "react";
 
-import { loadDesignSystemRuntimeForPreview } from "@/lib/load-published-token-set";
 import { renderDesignerContentBlocksBySlot } from "@/lib/render-designer-content";
 import { resolveImageEditorFieldValuesForRender } from "@/lib/resolve-editor-field-image-values";
 import config from "@/payload.config";
@@ -40,26 +39,6 @@ function contentSlotsHasRenderableBlocks(contentSlots: unknown): boolean {
         (row as { blocks: unknown[] }).blocks.length > 0,
     )
   );
-}
-
-async function compilePageTokenBundle(
-  payload: Awaited<ReturnType<typeof getPayload>>,
-) {
-  const runtime = await loadDesignSystemRuntimeForPreview(payload);
-  const tokenDoc = runtime.tokenSet;
-  const tokens = tokenDoc
-    ? tokenDoc.tokens.map((t) => {
-        const mode: "light" | "dark" = t.mode === "dark" ? "dark" : "light";
-        return {
-          key: t.key,
-          mode,
-          category: t.category,
-          resolvedValue: t.resolvedValue,
-        };
-      })
-    : [];
-  const compiled = compileTokenSet({ tokens });
-  return { runtime, compiled };
 }
 
 async function slotContentAndDesignerSections(
@@ -217,7 +196,7 @@ export default async function SitePage({ params }: Props) {
     notFound();
   }
 
-  const { runtime, compiled } = await compilePageTokenBundle(payload);
+  const { compiled } = await loadFrontendDesignSystemBundle();
 
   const templateTree = templateTreeFromPageComposition(
     hasPageComposition,
@@ -246,17 +225,12 @@ export default async function SitePage({ params }: Props) {
     );
   }
 
-  return (
-    <div className={runtime.activeColorMode === "dark" ? "dark" : undefined}>
-      <style>{compiled.cssVariables}</style>
-      {hasBlocks ? (
-        <>
-          {designerSections}
-          {compositionTree}
-        </>
-      ) : (
-        compositionTree
-      )}
-    </div>
+  return hasBlocks ? (
+    <>
+      {designerSections}
+      {compositionTree}
+    </>
+  ) : (
+    compositionTree
   );
 }

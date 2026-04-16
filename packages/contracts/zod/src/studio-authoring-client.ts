@@ -16,7 +16,10 @@ export type StudioAuthoringCompositionPayload = {
   /** Payload drafts: whether the loaded revision is draft or published in CMS. */
   _status?: "draft" | "published" | null;
   tokenMetadata: StudioTokenMeta[];
+  /** Theme + `:root` / `.dark` variable layers from the published token set (see `mergeCompiledDesignSystemCss`). */
   cssVariables: string;
+  /** Token→utility class rules (`.bg-*` …). Split so hosts can load like static CSS; pair with `cssVariables`. */
+  tokenUtilityCss: string;
 };
 
 export type StudioPersistCompositionBody = {

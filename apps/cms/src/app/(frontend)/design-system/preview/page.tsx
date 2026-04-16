@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { getPayload } from "payload";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -9,9 +8,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { loadDesignSystemRuntimeForPreview } from "@/lib/load-published-token-set";
+import { loadFrontendDesignSystemBundle } from "@/lib/load-frontend-design-system-bundle";
 import config from "@/payload.config";
-import { compileTokenSet } from "@repo/config-tailwind";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +21,7 @@ export const metadata = {
 
 export default async function DesignSystemPreviewPage() {
   const payloadConfig = await config;
-  const payload = await getPayload({ config: payloadConfig });
-  const runtime = await loadDesignSystemRuntimeForPreview(payload);
+  const { runtime, compiled } = await loadFrontendDesignSystemBundle();
   const doc = runtime.tokenSet;
 
   if (!doc) {
@@ -54,18 +51,9 @@ export default async function DesignSystemPreviewPage() {
     );
   }
 
-  const tokens = doc.tokens.map((t) => {
-    const mode: "light" | "dark" = t.mode === "dark" ? "dark" : "light";
-    return {
-      key: t.key,
-      mode,
-      category: t.category,
-      resolvedValue: t.resolvedValue,
-    };
-  });
-
-  const compiled = compileTokenSet({ tokens });
-  const primarySurface = tokens.find((t) => t.key === "color.surface.primary");
+  const primarySurface = doc.tokens.find(
+    (t) => t.key === "color.surface.primary",
+  );
 
   return (
     <div
@@ -95,8 +83,6 @@ export default async function DesignSystemPreviewPage() {
           </Button>
         </div>
       </div>
-
-      <style>{compiled.cssVariables}</style>
 
       <Card>
         <CardHeader>
@@ -134,11 +120,24 @@ export default async function DesignSystemPreviewPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Compiled @theme block</CardTitle>
+          <CardTitle>
+            Compiled variable layers (`@theme` / `:root` / `.dark`)
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <pre className="overflow-auto rounded-none bg-foreground p-4 text-xs text-background ring-1 ring-border">
             {compiled.cssVariables}
+          </pre>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Compiled token utilities (class rules)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <pre className="overflow-auto rounded-none bg-foreground p-4 text-xs text-background ring-1 ring-border">
+            {compiled.tokenUtilityCss || "—"}
           </pre>
         </CardContent>
       </Card>

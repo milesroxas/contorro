@@ -1,5 +1,6 @@
 export {
   compileTokenSet,
+  mergeCompiledDesignSystemCss,
   styleTokenClassName,
   tokenKeyToCssVar,
   type StudioStyleProperty,

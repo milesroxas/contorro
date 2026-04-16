@@ -31,6 +31,9 @@ describe("Phase 1 test gate — token compiler", () => {
     expect(compiled.cssVariables).toContain("--color-surface-primary--light");
     expect(compiled.cssVariables).toContain("--color-surface-primary--dark");
     expect(compiled.cssVariables).toContain(".dark");
+    expect(compiled.tokenUtilityCss).toContain(
+      ".bg-color-surface-primary { background-color: var(--color-surface-primary); }",
+    );
     expect(compiled.tokenMetadata[0]?.key).toBe("color.surface.primary");
   });
 });

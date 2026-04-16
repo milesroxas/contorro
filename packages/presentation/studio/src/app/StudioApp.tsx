@@ -50,25 +50,7 @@ import {
 import { getPrimitiveDisplay } from "../lib/primitive-display.js";
 import { createStudioStore } from "../model/studio-store.js";
 import { StudioLeftSidebarPanelBody } from "./studio-left-sidebar-panel-body.js";
-
-function runtimeCssVariables(cssVariables: string): string {
-  const trimmed = cssVariables.trim();
-  if (trimmed.length === 0) {
-    return "";
-  }
-  // Studio runtime cannot consume Tailwind's @theme directive directly.
-  // Convert each @theme block to :root.
-  const withRuntimeTheme = cssVariables.replace(
-    /@theme\s*\{([\s\S]*?)\}/g,
-    (_match, body) => `:root {${body}\n}`,
-  );
-  // Scope dark-mode token override to Studio-only state so parent admin `.dark`
-  // does not force canvas tokens into dark mode.
-  return withRuntimeTheme.replace(
-    /(^|\n)\s*\.dark\s*\{/g,
-    '$1[data-studio-theme="dark"] {',
-  );
-}
+import { useStudioDesignSystemStyleSheet } from "./use-studio-design-system-style-sheet.js";
 
 const pointerFirstCollisionDetection: CollisionDetection = (args) => {
   const pointerCollisions = pointerWithin(args);
@@ -301,10 +283,8 @@ export function StudioApp({
   const composition = useStudioStore((s) => s.composition);
   const tokenMetadata = useStudioStore((s) => s.tokenMetadata);
   const cssVariables = useStudioStore((s) => s.cssVariables);
-  const runtimeTokenCss = useMemo(
-    () => runtimeCssVariables(cssVariables),
-    [cssVariables],
-  );
+  const tokenUtilityCss = useStudioStore((s) => s.tokenUtilityCss);
+  useStudioDesignSystemStyleSheet(cssVariables, tokenUtilityCss);
   const studioResource = useStudioStore((s) => s.studioResource);
   const name = useStudioStore((s) => s.name);
   const selectedNodeId = useStudioStore((s) => s.selectedNodeId);
@@ -626,7 +606,6 @@ export function StudioApp({
             <div className="h-full w-px bg-border/75 transition-colors group-hover:bg-primary/60" />
           </button>
           <div className="flex min-h-0 min-w-0 flex-col">
-            {runtimeTokenCss ? <style>{runtimeTokenCss}</style> : null}
             <StudioCanvas
               composition={composition}
               onCanvasBackground={() => selectNode(null)}

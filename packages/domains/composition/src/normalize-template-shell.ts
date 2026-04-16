@@ -2,7 +2,7 @@ import type { PageComposition } from "@repo/contracts-zod";
 
 function withTag(
   node: PageComposition["nodes"][string],
-  tag: "div" | "header" | "main" | "footer",
+  tag: "fragment" | "div" | "header" | "main" | "footer",
 ): PageComposition["nodes"][string] {
   return {
     ...node,
@@ -63,7 +63,7 @@ export function normalizeTemplateShell(
     shellMain &&
     shellFooter
   ) {
-    nodes[rootNode.id] = withTag(rootNode, "div");
+    nodes[rootNode.id] = withTag(rootNode, "fragment");
     nodes[shellHeader.id] = withTag(shellHeader, "header");
     nodes[shellMain.id] = withTag(shellMain, "main");
     nodes[shellFooter.id] = withTag(shellFooter, "footer");
@@ -92,7 +92,7 @@ export function normalizeTemplateShell(
       definitionKey: "primitive.box",
       childIds: [headerId, mainId, footerId],
     },
-    "div",
+    "fragment",
   );
 
   nodes[headerId] = {

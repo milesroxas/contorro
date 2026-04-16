@@ -8,8 +8,17 @@ export type TokenMeta = {
 };
 
 export type CompiledTokenOutput = {
-  /** Tailwind v4 `@theme` block with CSS variables. */
+  /**
+   * Theme + root variable layers only (`@theme`, `:root`, `.dark`) — same conceptual
+   * role as `_contorro-theme.css` / `globals.css` token wiring.
+   */
   cssVariables: string;
+  /**
+   * Explicit `.bg-*` / `.text-*` / … rules mapping utilities to `var(--token)`.
+   * Tailwind’s JIT cannot see classes that only appear in CMS-backed composition data,
+   * so these rules are emitted explicitly (not “inline styles” on nodes).
+   */
+  tokenUtilityCss: string;
   tokenMetadata: TokenMeta[];
 };
 
@@ -142,12 +151,12 @@ export function compileTokenSet(
     appendTokenLines(token, themeLines, lightLines, darkLines, meta, seenKeys);
   }
 
-  const blocks = [`@theme {\n${themeLines.join("\n")}\n}`];
+  const variableBlocks: string[] = [`@theme {\n${themeLines.join("\n")}\n}`];
   if (lightLines.length > 0) {
-    blocks.push(`:root {\n${lightLines.join("\n")}\n}`);
+    variableBlocks.push(`:root {\n${lightLines.join("\n")}\n}`);
   }
   if (darkLines.length > 0) {
-    blocks.push(`.dark {\n${darkLines.join("\n")}\n}`);
+    variableBlocks.push(`.dark {\n${darkLines.join("\n")}\n}`);
   }
 
   const studioTokenClassLines: string[] = [];
@@ -160,14 +169,26 @@ export function compileTokenSet(
       );
     }
   }
-  if (studioTokenClassLines.length > 0) {
-    blocks.push(studioTokenClassLines.join("\n"));
-  }
+
+  const cssVariables = variableBlocks.join("\n\n");
+  const tokenUtilityCss =
+    studioTokenClassLines.length > 0 ? studioTokenClassLines.join("\n") : "";
 
   return {
-    cssVariables: blocks.join("\n\n"),
+    cssVariables,
+    tokenUtilityCss,
     tokenMetadata: meta,
   };
+}
+
+/** Full stylesheet for pages that inject both layers in a single `<style>` tag. */
+export function mergeCompiledDesignSystemCss(
+  compiled: Pick<CompiledTokenOutput, "cssVariables" | "tokenUtilityCss">,
+): string {
+  return [compiled.cssVariables, compiled.tokenUtilityCss]
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 function appendTokenLines(

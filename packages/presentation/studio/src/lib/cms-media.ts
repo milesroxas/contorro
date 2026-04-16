@@ -43,7 +43,7 @@ export async function uploadMediaFile(
 ): Promise<MediaRecord> {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("alt", alt.trim() || file.name);
+  formData.append("_payload", JSON.stringify({ alt: alt.trim() || file.name }));
   const res = await fetch("/api/media", {
     method: "POST",
     body: formData,

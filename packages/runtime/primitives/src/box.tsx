@@ -9,6 +9,11 @@ export function Box({
   style,
 }: RuntimePrimitiveProps) {
   const rawTag = node.propValues?.tag;
+
+  if (rawTag === "fragment") {
+    return <>{children}</>;
+  }
+
   const tag =
     rawTag === "header" ||
     rawTag === "main" ||
