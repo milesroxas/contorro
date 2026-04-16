@@ -13,6 +13,7 @@ import { Label } from "../../components/ui/label.js";
 import { ScrollArea } from "../../components/ui/scroll-area.js";
 import {
   Sheet,
+  SheetBody,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -255,8 +256,8 @@ export function PayloadMediaPickerFields({
                 <SheetTitle>{copy.browseTitle}</SheetTitle>
                 <SheetDescription>{copy.browseDescription}</SheetDescription>
               </SheetHeader>
-              <ScrollArea className="min-h-0 flex-1">
-                <div className="py-1 pr-2">
+              <SheetBody>
+                <ScrollArea className="min-h-0 flex-1">
                   <MediaDocPickerList
                     mediaDocs={mediaDocs}
                     mediaLoadError={mediaLoadError}
@@ -267,8 +268,8 @@ export function PayloadMediaPickerFields({
                     }}
                     variant={variant}
                   />
-                </div>
-              </ScrollArea>
+                </ScrollArea>
+              </SheetBody>
             </SheetContent>
           </Sheet>
         </div>

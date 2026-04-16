@@ -6,7 +6,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "./_tailwind-safelist.css";
-@import "./_contorro-theme.css";
+@import "./_shadcn-theme.css";
 
 @source "../app/(frontend)";
 @source "../components/ui";
@@ -18,6 +18,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    letter-spacing: var(--tracking-normal);
   }
   html {
     @apply font-sans;

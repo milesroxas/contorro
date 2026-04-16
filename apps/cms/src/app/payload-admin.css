@@ -7,7 +7,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "./_tailwind-safelist.css";
-@import "./_contorro-theme.css";
+@import "./_shadcn-theme.css";
 
 @source "../../../../packages/presentation/admin-extensions/src";
 @source "../components/ui";

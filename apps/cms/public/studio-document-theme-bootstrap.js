@@ -8,6 +8,7 @@
       document.documentElement.setAttribute("data-theme", fromStorage);
       document.documentElement.style.colorScheme =
         fromStorage === "dark" ? "dark" : "light";
+      document.documentElement.classList.toggle("dark", fromStorage === "dark");
       return;
     }
     const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -16,6 +17,7 @@
       dark ? "dark" : "light",
     );
     document.documentElement.style.colorScheme = dark ? "dark" : "light";
+    document.documentElement.classList.toggle("dark", dark);
   } catch {
     /* localStorage unavailable */
   }

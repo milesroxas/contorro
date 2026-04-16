@@ -22,6 +22,7 @@ import {
 } from "../../components/ui/select.js";
 import {
   Sheet,
+  SheetBody,
   SheetClose,
   SheetContent,
   SheetDescription,
@@ -691,46 +692,50 @@ function ButtonPrimitivePayloadCollectionFields({
                   Pick an entry and we will set its slug.
                 </SheetDescription>
               </SheetHeader>
-              <ScrollArea className="min-h-0 flex-1">
-                <div className="space-y-2 py-1 pr-2">
-                  {entryLoading ? (
-                    <p className="text-sm text-muted-foreground">Loading…</p>
-                  ) : entryLoadError ? (
-                    <p className="text-sm text-red-500">{entryLoadError}</p>
-                  ) : entries.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No entries found.
-                    </p>
-                  ) : (
-                    entries.map((entry) => (
-                      <button
-                        className="w-full rounded-md border border-border/60 p-2 text-left hover:bg-accent/50"
-                        key={`${entry.id}-${entry.slug}`}
-                        onClick={() => {
-                          patchNodeProps({
-                            collectionSlug: collectionSlug.trim(),
-                            entrySlug: entry.slug,
-                          });
-                          setEntryPickerOpen(false);
-                        }}
-                        type="button"
-                      >
-                        <div className="text-sm font-medium">{entry.label}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {entry.slug}
-                        </div>
-                      </button>
-                    ))
-                  )}
+              <SheetBody>
+                <ScrollArea className="min-h-0 flex-1">
+                  <div className="space-y-2">
+                    {entryLoading ? (
+                      <p className="text-sm text-muted-foreground">Loading…</p>
+                    ) : entryLoadError ? (
+                      <p className="text-sm text-red-500">{entryLoadError}</p>
+                    ) : entries.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No entries found.
+                      </p>
+                    ) : (
+                      entries.map((entry) => (
+                        <button
+                          className="w-full rounded-md border border-border/60 p-2 text-left hover:bg-accent/50"
+                          key={`${entry.id}-${entry.slug}`}
+                          onClick={() => {
+                            patchNodeProps({
+                              collectionSlug: collectionSlug.trim(),
+                              entrySlug: entry.slug,
+                            });
+                            setEntryPickerOpen(false);
+                          }}
+                          type="button"
+                        >
+                          <div className="text-sm font-medium">
+                            {entry.label}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {entry.slug}
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+                <div className="flex shrink-0 justify-end border-t border-border pt-3">
+                  <SheetClose asChild>
+                    <Button size="sm" type="button" variant="ghost">
+                      Close
+                    </Button>
+                  </SheetClose>
                 </div>
-              </ScrollArea>
-              <div className="pt-3">
-                <SheetClose asChild>
-                  <Button size="sm" type="button" variant="ghost">
-                    Close
-                  </Button>
-                </SheetClose>
-              </div>
+              </SheetBody>
             </SheetContent>
           </Sheet>
         </div>

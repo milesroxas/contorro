@@ -37,6 +37,7 @@ export function applyStudioChromeThemeToDocument(
   document.documentElement.setAttribute("data-theme", theme);
   document.documentElement.style.colorScheme =
     theme === "dark" ? "dark" : "light";
+  document.documentElement.classList.toggle("dark", theme === "dark");
 }
 
 export function persistStudioChromeTheme(theme: StudioChromeTheme): void {

@@ -6,7 +6,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "./_tailwind-safelist.css";
-@import "./_contorro-theme.css";
+@import "./_shadcn-theme.css";
 
 /*
  * Preflight does not set `cursor` on interactive controls; UA defaults are often non-pointer.
@@ -41,6 +41,9 @@
       select:disabled
     ) {
     cursor: not-allowed;
+  }
+  body {
+    letter-spacing: var(--tracking-normal);
   }
 }
 
