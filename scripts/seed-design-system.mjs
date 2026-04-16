@@ -47,11 +47,10 @@ function runWithEnvFile(relPath) {
     "build",
   ];
   execFileSync("pnpm", dotenvArgs, { stdio: "inherit", cwd: root });
-  execFileSync(
-    "pnpm",
-    ["exec", "dotenv", "-e", abs, "--", ...seedCmd],
-    { stdio: "inherit", cwd: root },
-  );
+  execFileSync("pnpm", ["exec", "dotenv", "-e", abs, "--", ...seedCmd], {
+    stdio: "inherit",
+    cwd: root,
+  });
 }
 
 const target = process.argv[2];

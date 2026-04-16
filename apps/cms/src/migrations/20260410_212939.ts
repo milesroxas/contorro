@@ -4,7 +4,11 @@ import {
   sql,
 } from "@payloadcms/db-postgres";
 
-export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
+export async function up({
+  db,
+  payload: _payload,
+  req: _req,
+}: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
    CREATE TYPE "public"."enum_design_token_sets_tokens_category" AS ENUM('color', 'space', 'size', 'radius', 'typography', 'shadow', 'border', 'zIndex', 'opacity', 'transition', 'breakpoint', 'container');
   CREATE TYPE "public"."enum_design_token_sets_status" AS ENUM('draft', 'published');
@@ -106,8 +110,8 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
 
 export async function down({
   db,
-  payload,
-  req,
+  payload: _payload,
+  req: _req,
 }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "design_token_sets_tokens" DISABLE ROW LEVEL SECURITY;

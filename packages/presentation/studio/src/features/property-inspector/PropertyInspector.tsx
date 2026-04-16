@@ -24,13 +24,12 @@ import {
   IconArrowDown,
   IconArrowLeft,
   IconArrowRight,
-  IconArrowUp,
   IconArrowsHorizontal,
   IconArrowsSplit2,
   IconArrowsVertical,
+  IconArrowUp,
   IconBorderStyle2,
   IconChevronDown,
-  IconChevronRight,
   IconLayout2,
   IconLayoutAlignBottom,
   IconLayoutAlignCenter,
@@ -97,11 +96,11 @@ import {
   TabsTrigger,
 } from "../../components/ui/tabs.js";
 import { TooltipProvider } from "../../components/ui/tooltip.js";
-import { type MediaListItem, fetchMediaRecords } from "../../lib/cms-media.js";
+import { fetchMediaRecords, type MediaListItem } from "../../lib/cms-media.js";
 import { cn } from "../../lib/cn.js";
 import {
-  type PayloadCollectionDocRef,
   fetchPayloadCollectionDocs,
+  type PayloadCollectionDocRef,
 } from "../../lib/fetch-payload-collection-docs.js";
 import type { StudioInspectorTab } from "../../lib/inspector-tab-shortcuts.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
@@ -229,6 +228,38 @@ const NONE_SELECT_VALUE = "__none__";
 function utilityValueLabel(property: StyleProperty, value: string): string {
   if (property === "display" && value === "hidden") {
     return "hidden (display: none)";
+  }
+  if (property === "width" || property === "height") {
+    return widthHeightUtilityValueLabel(property, value);
+  }
+  return value;
+}
+
+/** Tailwind `w-*` / `h-*` utility value — same entries as contracts `utilityValuesForStyleProperty`. */
+function widthHeightUtilityValueLabel(
+  property: "width" | "height",
+  value: string,
+): string {
+  if (value === "full") {
+    return "Fill container";
+  }
+  if (value === "container") {
+    return "Container";
+  }
+  if (value === "auto") {
+    return property === "width" ? "Hug contents" : "Hug height";
+  }
+  if (value === "screen") {
+    return "Screen";
+  }
+  if (value === "min") {
+    return "Min content";
+  }
+  if (value === "max") {
+    return "Max content";
+  }
+  if (value === "fit") {
+    return "Fit content";
   }
   return value;
 }
@@ -448,7 +479,7 @@ const SPACING_SIDE_LABEL: Record<SpacingSideKey, string> = {
   left: "Left",
 };
 
-const SPACING_SIDE_SHORT_LABEL: Record<SpacingSideKey, string> = {
+const _SPACING_SIDE_SHORT_LABEL: Record<SpacingSideKey, string> = {
   top: "T",
   right: "R",
   bottom: "B",
@@ -1008,13 +1039,7 @@ function BorderSideSelector({
   selected: BorderSideKey;
   onSelect: (side: BorderSideKey) => void;
 }) {
-  const Btn = ({
-    side,
-    label,
-  }: {
-    side: BorderSideKey;
-    label: string;
-  }) => {
+  const Btn = ({ side, label }: { side: BorderSideKey; label: string }) => {
     const isOn = selected === side;
     return (
       <button
@@ -1688,228 +1713,6 @@ function FlexIconStyleValueControl({
   );
 }
 
-function isDimensionProperty(
-  property: StyleProperty,
-): property is "width" | "height" {
-  return property === "width" || property === "height";
-}
-
-function dimensionValueLabel(
-  property: "width" | "height",
-  value: string,
-): string {
-  if (value === "full") {
-    return "Fill container";
-  }
-  if (value === "auto") {
-    return property === "width" ? "Hug contents" : "Hug height";
-  }
-  if (value === "screen") {
-    return "Screen";
-  }
-  if (value === "min") {
-    return "Min content";
-  }
-  if (value === "max") {
-    return "Max content";
-  }
-  if (value === "fit") {
-    return "Fit content";
-  }
-  return value;
-}
-
-function dimensionUtilityGroups(values: readonly string[]) {
-  const commonValues = new Set(["auto", "full", "screen", "fit", "min", "max"]);
-  const containerValues = new Set([
-    "3xs",
-    "2xs",
-    "xs",
-    "sm",
-    "md",
-    "lg",
-    "xl",
-    "2xl",
-    "3xl",
-    "4xl",
-    "5xl",
-    "6xl",
-    "7xl",
-    "container",
-    "prose",
-  ]);
-
-  const common = values.filter((value) => commonValues.has(value));
-  const fractions = values.filter((value) => value.includes("/"));
-  const containers = values.filter(
-    (value) => containerValues.has(value) || value.startsWith("screen-"),
-  );
-  const scale = values.filter(
-    (value) =>
-      !commonValues.has(value) &&
-      !value.includes("/") &&
-      !containerValues.has(value) &&
-      !value.startsWith("screen-"),
-  );
-
-  return [
-    { id: "common", label: "Common", values: common },
-    { id: "scale", label: "Scale", values: scale },
-    { id: "fractions", label: "Fractions", values: fractions },
-    { id: "containers", label: "Containers", values: containers },
-  ].filter((group) => group.values.length > 0);
-}
-
-function DimensionStyleValueControl({
-  property,
-  valueEntry,
-  utilityValues,
-  visibleTokens,
-  onNodeStyleEntry,
-}: {
-  property: "width" | "height";
-  valueEntry: StylePropertyEntry | undefined;
-  utilityValues: readonly string[];
-  visibleTokens: TokenMeta[];
-  onNodeStyleEntry: (
-    property: StyleProperty,
-    entry: StylePropertyEntry | null,
-  ) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const selectedUtility =
-    valueEntry?.type === "utility" ? valueEntry.value : null;
-  const selectedToken = valueEntry?.type === "token" ? valueEntry.token : null;
-  const triggerText = valueEntry
-    ? valueEntry.type === "utility"
-      ? dimensionValueLabel(property, valueEntry.value)
-      : tokenSemanticLabel(valueEntry.token)
-    : stylePropertyDefaultValueLabel(property);
-  const groups = dimensionUtilityGroups(utilityValues);
-
-  return (
-    <Popover onOpenChange={setOpen} open={open}>
-      <PopoverTrigger asChild>
-        <Button
-          className="h-10 w-full justify-between rounded-md border border-input bg-background px-2 text-left text-sm font-normal hover:bg-accent/30"
-          type="button"
-          variant="ghost"
-        >
-          <span className="truncate">{triggerText}</span>
-          <IconChevronDown aria-hidden className="size-3.5 opacity-70" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-80 p-2">
-        <ScrollArea className="h-[min(20rem,calc(100vh-12rem))]">
-          <div className="space-y-2 pr-2">
-            <button
-              className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent/60"
-              onClick={() => {
-                onNodeStyleEntry(property, null);
-                setOpen(false);
-              }}
-              type="button"
-            >
-              <span>{stylePropertyDefaultOptionLabel(property)}</span>
-              {!valueEntry ? (
-                <IconChevronRight aria-hidden className="size-3.5" />
-              ) : null}
-            </button>
-            {groups.map((group) => (
-              <Collapsible
-                defaultOpen={
-                  group.id === "common" ||
-                  group.values.includes(selectedUtility ?? "")
-                }
-                key={group.id}
-              >
-                <CollapsibleTrigger asChild>
-                  <button
-                    className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-xs font-semibold text-muted-foreground hover:bg-accent/40"
-                    type="button"
-                  >
-                    <span>{group.label}</span>
-                    <IconChevronDown className="size-3.5 transition-transform data-[state=open]:rotate-180" />
-                  </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-1">
-                  <div className="grid grid-cols-2 gap-1">
-                    {group.values.map((value) => {
-                      const selected = selectedUtility === value;
-                      return (
-                        <button
-                          className={`rounded-sm border px-2 py-1 text-left text-xs ${
-                            selected
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-border/70 hover:bg-accent/40"
-                          }`}
-                          key={value}
-                          onClick={() => {
-                            onNodeStyleEntry(property, {
-                              type: "utility",
-                              property,
-                              value,
-                            });
-                            setOpen(false);
-                          }}
-                          type="button"
-                        >
-                          {dimensionValueLabel(property, value)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            ))}
-            {visibleTokens.length > 0 ? (
-              <Collapsible defaultOpen={Boolean(selectedToken)}>
-                <CollapsibleTrigger asChild>
-                  <button
-                    className="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-xs font-semibold text-muted-foreground hover:bg-accent/40"
-                    type="button"
-                  >
-                    <span>Tokens</span>
-                    <IconChevronDown className="size-3.5 transition-transform data-[state=open]:rotate-180" />
-                  </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-1">
-                  <div className="space-y-1">
-                    {visibleTokens.map((token) => {
-                      const selected = selectedToken === token.key;
-                      return (
-                        <button
-                          className={`w-full rounded-sm border px-2 py-1 text-left text-xs ${
-                            selected
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-border/70 hover:bg-accent/40"
-                          }`}
-                          key={token.key}
-                          onClick={() => {
-                            onNodeStyleEntry(property, {
-                              type: "token",
-                              property,
-                              token: token.key,
-                            });
-                            setOpen(false);
-                          }}
-                          type="button"
-                        >
-                          {tokenSemanticLabel(token.key)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            ) : null}
-          </div>
-        </ScrollArea>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 const DISPLAY_QUICK_OPTIONS: readonly {
   id: "block" | "flex" | "grid" | "none";
   value: "block" | "flex" | "grid" | "hidden";
@@ -2127,6 +1930,9 @@ const MORE_OPTIONS_PROPERTY_ORDER: Partial<
     "flexWrap",
     "alignSelf",
     "order",
+    "overflow",
+    "overflowX",
+    "overflowY",
   ],
   text: [
     "fontFamily",
@@ -2259,7 +2065,7 @@ function inspectorStyleSectionModelFromSection(
 }
 
 const COLOR_CATEGORIES = new Set(["color"]);
-const TYPOGRAPHY_CATEGORIES = new Set([
+const _TYPOGRAPHY_CATEGORIES = new Set([
   "typography",
   "type",
   "font",
@@ -2287,6 +2093,13 @@ function tokenMatchesProperty(
     return COLOR_CATEGORIES.has(category) || token.key.startsWith("color.");
   }
   if (property === "borderStyle") {
+    return false;
+  }
+  if (
+    property === "overflow" ||
+    property === "overflowX" ||
+    property === "overflowY"
+  ) {
     return false;
   }
   if (section === "color") {
@@ -2447,17 +2260,6 @@ function stylePropertyValueEditor(args: {
       <DisplayStyleValueControl
         onNodeStyleEntry={onNodeStyleEntry}
         valueEntry={valueEntry}
-      />
-    );
-  }
-  if (isDimensionProperty(property)) {
-    return (
-      <DimensionStyleValueControl
-        onNodeStyleEntry={onNodeStyleEntry}
-        property={property}
-        utilityValues={utilityValues}
-        valueEntry={valueEntry}
-        visibleTokens={visibleTokens}
       />
     );
   }
@@ -3521,6 +3323,48 @@ function ImagePrimitiveInspectorAltAndBindingFields({
         </p>
       ) : null}
     </>
+  );
+}
+
+function ImagePrimitiveTailwindUtilitiesField({
+  node,
+  patchNodeProps,
+  resetNodePropKey,
+}: {
+  node: CompositionNode;
+  patchNodeProps: (patch: Record<string, unknown>) => void;
+  resetNodePropKey: (propKey: string) => void;
+}) {
+  const baseId = useId();
+  const value =
+    typeof node.propValues?.imageUtilities === "string"
+      ? node.propValues.imageUtilities
+      : "";
+  return (
+    <div className="border-t border-border/60 pt-4">
+      <SettingsFieldRow
+        definitionKey={node.definitionKey}
+        htmlFor={`${baseId}-image-utilities`}
+        label="Image utilities"
+        onResetProp={resetNodePropKey}
+        propKey="imageUtilities"
+        propValues={node.propValues}
+      >
+        <textarea
+          className={cn(
+            "flex min-h-[4.5rem] w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-[color,box-shadow] outline-none",
+            "placeholder:text-muted-foreground",
+            "focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50",
+            "disabled:cursor-not-allowed disabled:opacity-50",
+          )}
+          id={`${baseId}-image-utilities`}
+          onChange={(e) => patchNodeProps({ imageUtilities: e.target.value })}
+          placeholder="object-cover rounded-md …"
+          spellCheck={false}
+          value={value}
+        />
+      </SettingsFieldRow>
+    </div>
   );
 }
 
@@ -4746,6 +4590,13 @@ function PropertyInspectorActive({
                     tokenMetadata={tokenMetadata}
                   />
                 ))}
+                {isImage ? (
+                  <ImagePrimitiveTailwindUtilitiesField
+                    node={node}
+                    patchNodeProps={patchNodeProps}
+                    resetNodePropKey={resetNodePropKey}
+                  />
+                ) : null}
               </div>
             ) : (
               <div className="rounded-md border border-border/70 bg-muted/20 p-2.5 text-xs leading-snug text-muted-foreground">

@@ -1,9 +1,8 @@
 import type { CollectionConfig } from "payload";
-import { createComponentsBeforeValidateHandler } from "../collection-hooks/page-and-component-validation.js";
-import { enrichComponentsEditorFieldsAfterRead } from "../hooks/enrich-components-editor-fields.js";
-
 import { componentAuthoringAccess } from "../access/composition-access.js";
 import { authenticatedAccess } from "../access/design-system-access.js";
+import { createComponentsBeforeValidateHandler } from "../collection-hooks/page-and-component-validation.js";
+import { enrichComponentsEditorFieldsAfterRead } from "../hooks/enrich-components-editor-fields.js";
 
 const beforeValidate = createComponentsBeforeValidateHandler();
 

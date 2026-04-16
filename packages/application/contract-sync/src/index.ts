@@ -1,8 +1,8 @@
 export {
-  propContractToJsonSchema2020,
   editorFieldsContractToJsonSchema2020,
+  propContractToJsonSchema2020,
 } from "@repo/contracts-json-schema";
 export {
-  parsePropEditorFieldsImport,
   type ParseContractImportError,
+  parsePropEditorFieldsImport,
 } from "./parse-import.js";

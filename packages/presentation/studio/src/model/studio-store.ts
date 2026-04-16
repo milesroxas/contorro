@@ -124,7 +124,7 @@ function wrapNodeWithBoxComposition(
     return null;
   }
   const node = composition.nodes[nodeId];
-  if (!node || !node.parentId) {
+  if (!node?.parentId) {
     return null;
   }
   const parent = composition.nodes[node.parentId];

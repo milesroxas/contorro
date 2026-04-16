@@ -4,7 +4,7 @@ import {
   PropContractSchema,
   parseEditorFieldsContract,
 } from "@repo/contracts-zod";
-import { type Result, err, ok } from "@repo/kernel";
+import { err, ok, type Result } from "@repo/kernel";
 
 export type ParseContractImportError = "VALIDATION_ERROR";
 

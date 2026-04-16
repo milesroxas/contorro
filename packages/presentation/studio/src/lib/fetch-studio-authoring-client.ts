@@ -1,5 +1,5 @@
-import type { PageComposition } from "@repo/contracts-zod";
 import type {
+  PageComposition,
   StudioAuthoringClient,
   StudioAuthoringCompositionPayload,
   StudioDesignSystemSettingsDoc,

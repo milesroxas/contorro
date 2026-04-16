@@ -17,7 +17,8 @@
   "dependencies": {
     "@repo/domains-composition": "workspace:*",
     "@repo/domains-runtime-catalog": "workspace:*",
-    "@repo/kernel": "workspace:*"
+    "@repo/kernel": "workspace:*",
+    "tailwind-merge": "^3.5.0"
   },
   "peerDependencies": {
     "react": "^19.0.0"

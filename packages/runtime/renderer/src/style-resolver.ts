@@ -1,4 +1,4 @@
-import { type TokenMeta, styleTokenClassName } from "@repo/config-tailwind";
+import { styleTokenClassName, type TokenMeta } from "@repo/config-tailwind";
 import {
   type CompositionNode,
   type PageComposition,
@@ -80,6 +80,12 @@ function utilityClassNameForPropertyValue(
         : `basis-${value}`;
     case "order":
       return `order-${value}`;
+    case "overflow":
+      return `overflow-${value}`;
+    case "overflowX":
+      return `overflow-x-${value}`;
+    case "overflowY":
+      return `overflow-y-${value}`;
     case "padding":
       return `p-${value}`;
     case "paddingTop":

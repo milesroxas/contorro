@@ -418,7 +418,7 @@ async function seed(): Promise<void> {
       overrideAccess: true,
     });
 
-    const page = await payload.create({
+    const _page = await payload.create({
       collection: "pages",
       data: {
         title: "Seed starter page",
@@ -434,7 +434,7 @@ async function seed(): Promise<void> {
       overrideAccess: true,
     });
 
-    const designerPage = await payload.create({
+    const _designerPage = await payload.create({
       collection: "pages",
       data: {
         title: "Seed designer page",

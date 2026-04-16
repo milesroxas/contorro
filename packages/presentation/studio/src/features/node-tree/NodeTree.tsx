@@ -468,11 +468,17 @@ function RootLayerHeading({
 }) {
   return (
     <div className="mb-0.5">
-      <div className="flex w-full min-w-0 items-center gap-1">
+      <div
+        className={cn(
+          layerRowBaseClass,
+          selected ? layerRowSelectedClass : layerRowIdleClass,
+          "flex min-w-0 items-stretch gap-0",
+        )}
+      >
         <button
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-2 rounded-sm px-0.5 py-1.5 text-left outline-none transition-colors",
-            "hover:bg-muted/35 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            "flex min-h-6 min-w-0 flex-1 items-center gap-2 rounded-sm px-0 py-px text-left outline-none transition-colors",
+            "hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             selected ? "text-foreground" : "text-muted-foreground",
           )}
           data-testid={`node-tree-${nodeId}`}
@@ -500,7 +506,6 @@ function LayerSubtreeNestedList({
   composition,
   editStudioHrefByKey,
   globalCollapseToggleButton,
-  isRoot,
   libraryLabels,
   nodeId,
   onRemoveNode,
@@ -516,7 +521,6 @@ function LayerSubtreeNestedList({
   composition: PageComposition;
   editStudioHrefByKey: Record<string, string>;
   globalCollapseToggleButton?: ReactNode;
-  isRoot: boolean;
   libraryLabels: Record<string, string>;
   nodeId: string;
   onRemoveNode: (id: string) => void;
@@ -852,7 +856,6 @@ function LayerSubtree({
               composition={composition}
               editStudioHrefByKey={editStudioHrefByKey}
               globalCollapseToggleButton={globalCollapseToggleButton}
-              isRoot={isRoot}
               libraryLabels={libraryLabels}
               nodeId={nodeId}
               onRemoveNode={onRemoveNode}

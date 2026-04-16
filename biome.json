@@ -1,21 +1,27 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.12/schema.json",
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
   "files": {
-    "ignore": [
-      "**/node_modules/**",
-      "**/dist/**",
-      "**/.next/**",
-      "**/pnpm-lock.yaml",
-      "**/.git/**",
-      "**/coverage/**",
-      "**/playwright-report/**",
-      "**/test-results/**",
-      "apps/cms/src/payload-types.ts",
-      "apps/cms/src/payload-generated-schema.ts",
-      "apps/cms/src/app/(payload)/admin/importMap.js"
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/.next",
+      "!**/pnpm-lock.yaml",
+      "!**/.git",
+      "!**/coverage",
+      "!**/playwright-report",
+      "!**/test-results",
+      "!**/apps/cms/src/payload-types.ts",
+      "!**/apps/cms/src/payload-generated-schema.ts",
+      "!**/apps/cms/src/app/(payload)/admin/importMap.js"
     ]
   },
-  "organizeImports": { "enabled": true },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
@@ -25,6 +31,12 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "a11y": {
+        "noStaticElementInteractions": "off",
+        "useAriaPropsSupportedByRole": "off",
+        "useKeyWithClickEvents": "off",
+        "useSemanticElements": "off"
+      },
       "complexity": {
         "noExcessiveCognitiveComplexity": {
           "level": "warn",
@@ -32,6 +44,12 @@
             "maxAllowedComplexity": 15
           }
         }
+      },
+      "correctness": {
+        "useHookAtTopLevel": "off"
+      },
+      "performance": {
+        "noImgElement": "off"
       }
     }
   }

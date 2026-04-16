@@ -1,9 +1,8 @@
+import { StudioShell } from "@repo/presentation-studio";
 import { headers as getHeaders } from "next/headers.js";
 import { redirect } from "next/navigation";
-
-import config from "@/payload.config";
-import { StudioShell } from "@repo/presentation-studio";
 import { getPayload } from "payload";
+import config from "@/payload.config";
 
 type Args = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;

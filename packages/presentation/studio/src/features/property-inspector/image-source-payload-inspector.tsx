@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select.js";
-import { type MediaListItem, fetchMediaRecords } from "../../lib/cms-media.js";
+import { fetchMediaRecords, type MediaListItem } from "../../lib/cms-media.js";
 import { PayloadMediaPickerFields } from "./payload-media-picker-fields.js";
 import { SettingsFieldRow } from "./property-control-label.js";
 

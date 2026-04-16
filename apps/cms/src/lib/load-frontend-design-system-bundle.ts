@@ -1,10 +1,10 @@
-import config from "@/payload.config";
 import {
   type CompiledTokenOutput,
   compileTokenSet,
 } from "@repo/config-tailwind";
 import { getPayload } from "payload";
 import { cache } from "react";
+import config from "@/payload.config";
 
 import type { DesignSystemRuntime } from "./load-published-token-set";
 import { loadDesignSystemRuntimeForPreview } from "./load-published-token-set";

@@ -1,5 +1,5 @@
 import type { CompositionNode } from "@repo/contracts-zod";
-import type { CSSProperties, ComponentType, ReactNode } from "react";
+import type { ComponentType, CSSProperties, ReactNode } from "react";
 
 /** §5.7 — binding strategy for engineer-registered components (Phase 2 skeleton). */
 export type BindingStrategy = "static" | "lazy" | "remote";

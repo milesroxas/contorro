@@ -8,8 +8,8 @@ import {
 } from "@payloadcms/ui/forms/Form";
 import {
   type EditorFieldSpec,
-  PageCompositionSchema,
   normalizeEditorFieldsContract,
+  PageCompositionSchema,
 } from "@repo/contracts-zod";
 import { editorFieldSpecsFromComposition } from "@repo/domains-composition";
 import type { FormState, JSONFieldClientProps } from "payload";

@@ -326,6 +326,14 @@ export const ORDER_UTILITY_VALUES = [
   "12",
 ] as const;
 
+export const OVERFLOW_UTILITY_VALUES = [
+  "auto",
+  "hidden",
+  "clip",
+  "visible",
+  "scroll",
+] as const;
+
 const SPACING_UTILITY_PROPERTIES = new Set([
   "padding",
   "paddingTop",
@@ -370,6 +378,9 @@ const UTILITY_VALUES_BY_PROPERTY = {
   flexShrink: FLEX_SHRINK_UTILITY_VALUES,
   flexBasis: FLEX_BASIS_UTILITY_VALUES,
   order: ORDER_UTILITY_VALUES,
+  overflow: OVERFLOW_UTILITY_VALUES,
+  overflowX: OVERFLOW_UTILITY_VALUES,
+  overflowY: OVERFLOW_UTILITY_VALUES,
 } as const;
 
 export function utilityValuesForStyleProperty(

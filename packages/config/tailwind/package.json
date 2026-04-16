@@ -17,6 +17,6 @@
   "dependencies": {
     "@repo/contracts-zod": "workspace:*",
     "@repo/domains-design-system": "workspace:*",
-    "tailwindcss": "^4.0.0"
+    "tailwindcss": "^4.2.2"
   }
 }

@@ -45,6 +45,9 @@ const BOX_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "flexShrink",
   "flexBasis",
   "order",
+  "overflow",
+  "overflowX",
+  "overflowY",
   "padding",
   "paddingTop",
   "paddingRight",
@@ -86,6 +89,9 @@ const TYPOGRAPHY_BOX_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "minHeight",
   "maxWidth",
   "maxHeight",
+  "overflow",
+  "overflowX",
+  "overflowY",
 ];
 
 const TEXT_STYLE_PROPERTIES = TYPOGRAPHY_BOX_STYLE_PROPERTIES;
@@ -123,9 +129,26 @@ const BUTTON_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "minHeight",
   "maxWidth",
   "maxHeight",
+  "overflow",
+  "overflowX",
+  "overflowY",
 ];
 
-const IMAGE_STYLE_PROPERTIES: readonly StyleProperty[] = [
+/** Size-only styles for `primitive.image` (token/utility bindings). */
+const IMAGE_PRIMITIVE_STYLE_PROPERTIES: readonly StyleProperty[] = [
+  "width",
+  "height",
+  "aspectRatio",
+  "minWidth",
+  "minHeight",
+  "maxWidth",
+  "maxHeight",
+  "overflow",
+  "overflowX",
+  "overflowY",
+];
+
+const VIDEO_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "borderColor",
   "borderRadius",
   "borderStyle",
@@ -142,6 +165,9 @@ const IMAGE_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "minHeight",
   "maxWidth",
   "maxHeight",
+  "overflow",
+  "overflowX",
+  "overflowY",
 ];
 
 const COLLECTION_STYLE_PROPERTIES: readonly StyleProperty[] =
@@ -169,6 +195,9 @@ const SLOT_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "minHeight",
   "maxWidth",
   "maxHeight",
+  "overflow",
+  "overflowX",
+  "overflowY",
 ];
 
 const LIBRARY_COMPONENT_STYLE_PROPERTIES: readonly StyleProperty[] = [
@@ -187,6 +216,9 @@ const LIBRARY_COMPONENT_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "minHeight",
   "maxWidth",
   "maxHeight",
+  "overflow",
+  "overflowX",
+  "overflowY",
 ];
 
 const STYLE_PROPERTY_LABELS: Record<StyleProperty, string> = {
@@ -216,6 +248,9 @@ const STYLE_PROPERTY_LABELS: Record<StyleProperty, string> = {
   flexShrink: "Flex shrink",
   flexBasis: "Flex basis",
   order: "Order",
+  overflow: "Overflow",
+  overflowX: "Overflow X",
+  overflowY: "Overflow Y",
   padding: "Padding",
   paddingTop: "Padding top",
   paddingRight: "Padding right",
@@ -263,6 +298,9 @@ const STYLE_PROPERTY_DEFAULT_VALUE_LABELS: Record<StyleProperty, string> = {
   flexShrink: "1",
   flexBasis: "auto",
   order: "0",
+  overflow: "visible",
+  overflowX: "visible",
+  overflowY: "visible",
   padding: "0",
   paddingTop: "0",
   paddingRight: "0",
@@ -310,6 +348,9 @@ const STYLE_PROPERTY_SECTIONS: Record<StyleProperty, StyleSectionId> = {
   flexShrink: "layout",
   flexBasis: "layout",
   order: "layout",
+  overflow: "layout",
+  overflowX: "layout",
+  overflowY: "layout",
   padding: "spacing",
   paddingTop: "spacing",
   paddingRight: "spacing",
@@ -336,8 +377,8 @@ const PRIMITIVE_STYLE_PROPERTIES: Record<string, readonly StyleProperty[]> = {
   "primitive.text": TEXT_STYLE_PROPERTIES,
   "primitive.heading": HEADING_STYLE_PROPERTIES,
   "primitive.button": BUTTON_STYLE_PROPERTIES,
-  "primitive.image": IMAGE_STYLE_PROPERTIES,
-  "primitive.video": IMAGE_STYLE_PROPERTIES,
+  "primitive.image": IMAGE_PRIMITIVE_STYLE_PROPERTIES,
+  "primitive.video": VIDEO_STYLE_PROPERTIES,
   "primitive.collection": COLLECTION_STYLE_PROPERTIES,
   "primitive.slot": SLOT_STYLE_PROPERTIES,
   "primitive.libraryComponent": LIBRARY_COMPONENT_STYLE_PROPERTIES,

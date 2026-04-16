@@ -16,8 +16,8 @@ import {
 import { resolveNodeStyle } from "@repo/runtime-renderer";
 import { IconMoonStars, IconSunHigh } from "@tabler/icons-react";
 import type {
-  CSSProperties,
   ComponentPropsWithoutRef,
+  CSSProperties,
   ElementType,
   ReactElement,
   ReactNode,

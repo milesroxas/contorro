@@ -3,7 +3,7 @@ import {
   renameTemplateCommand,
   saveCompositionCommand,
 } from "@repo/application-studio";
-import { type TokenMeta, compileTokenSet } from "@repo/config-tailwind";
+import { compileTokenSet, type TokenMeta } from "@repo/config-tailwind";
 import type { PageComposition } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
 import {

@@ -1,15 +1,12 @@
-import {
-  defaultEmptyPageComposition,
-  defaultPageTemplateComposition,
-} from "@repo/domains-composition";
+import type { StudioMutationRepository } from "@repo/application-studio";
 import {
   componentIdFromStudioRowId,
+  defaultEmptyPageComposition,
+  defaultPageTemplateComposition,
   studioRowIdForComponent,
 } from "@repo/domains-composition";
 import { type AsyncResult, err, ok } from "@repo/kernel";
 import type { Payload } from "payload";
-
-import type { StudioMutationRepository } from "@repo/application-studio";
 
 function normalizeUpdatedAt(value: unknown): string {
   if (typeof value === "string") {

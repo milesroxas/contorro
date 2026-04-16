@@ -1,7 +1,15 @@
 "use client";
 
 import type { EditorFieldSpec } from "@repo/contracts-zod";
-
+import {
+  IconPhoto,
+  IconPhotoOff,
+  IconSearch,
+  IconUpload,
+  IconX,
+} from "@tabler/icons-react";
+import type { ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -18,15 +26,6 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import {
-  IconPhoto,
-  IconPhotoOff,
-  IconSearch,
-  IconUpload,
-  IconX,
-} from "@tabler/icons-react";
-import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
 
 type Props = {
   fields: EditorFieldSpec[];

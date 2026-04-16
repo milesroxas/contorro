@@ -1,9 +1,10 @@
 import type { CollectionConfig } from "payload";
-import { createPageCompositionBeforeValidateHandler } from "../collection-hooks/page-and-component-validation.js";
-
 import { composerAuthoringAccess } from "../access/composition-access.js";
-import { authenticatedAccess } from "../access/design-system-access.js";
-import { designerOrAdminAccess } from "../access/design-system-access.js";
+import {
+  authenticatedAccess,
+  designerOrAdminAccess,
+} from "../access/design-system-access.js";
+import { createPageCompositionBeforeValidateHandler } from "../collection-hooks/page-and-component-validation.js";
 
 const beforeValidate = createPageCompositionBeforeValidateHandler();
 

@@ -81,8 +81,8 @@ const PRIMITIVE_SPECS = [
     defaultPropValues: {
       src: "",
       alt: "",
-      objectFit: "cover",
       imageSource: "media",
+      imageUtilities: "object-cover",
     },
   },
   {

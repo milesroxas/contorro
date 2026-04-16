@@ -22,10 +22,10 @@
     "typecheck": "tsc -b && pnpm --filter @repo/cms exec tsc --noEmit"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
+    "@biomejs/biome": "^2.4.12",
     "dotenv-cli": "^11.0.0",
     "typescript": "^6.0.2",
-    "vercel": "^50.43.0"
+    "vercel": "^51.5.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -35,6 +35,11 @@
       "bufferutil",
       "utf-8-validate",
       "protobufjs"
-    ]
+    ],
+    "overrides": {
+      "payload": "3.83.0",
+      "react": "19.2.5",
+      "react-dom": "19.2.5"
+    }
   }
 }

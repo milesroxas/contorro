@@ -1,4 +1,4 @@
-import { type Payload, getPayload } from "payload";
+import { getPayload, type Payload } from "payload";
 import config from "../../src/payload.config.js";
 
 let cached: Payload | null = null;

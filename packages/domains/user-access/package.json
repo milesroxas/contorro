@@ -16,6 +16,6 @@
   },
   "dependencies": {
     "@repo/kernel": "workspace:*",
-    "zod": "^4.0.0"
+    "zod": "^4.3.6"
   }
 }

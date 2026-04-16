@@ -4,8 +4,8 @@ import type { TokenMeta } from "@repo/config-tailwind";
 import type { CompositionNode, PageComposition } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
 import {
-  LibraryComponent,
   defaultPrimitiveRegistry,
+  LibraryComponent,
 } from "@repo/runtime-primitives";
 import { renderComposition } from "@repo/runtime-renderer";
 import type { CSSProperties, ReactElement } from "react";

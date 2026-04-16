@@ -1,13 +1,13 @@
-import config from "@/payload.config";
 import {
   TOKEN_PUBLISHED,
   type TokenPublishedPayload,
 } from "@repo/application-design-system";
 import { compileTokenSet } from "@repo/config-tailwind";
 import { defaultInProcessEventBus } from "@repo/infrastructure-event-bus";
-import { APIError, getPayload } from "payload";
 import type { Payload } from "payload";
+import { APIError, getPayload } from "payload";
 import { beforeAll, describe, expect, it } from "vitest";
+import config from "@/payload.config";
 
 describe("Phase 1 test gate — token compiler", () => {
   it("emits an @theme CSS block and token metadata for the resolver", () => {

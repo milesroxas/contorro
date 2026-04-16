@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 export {
+  type GatewayEnv,
   gatewayEnvSchema,
   parseGatewayEnv,
-  type GatewayEnv,
 } from "./gateway.js";
-export { parseStudioEnv, studioEnvSchema, type StudioEnv } from "./studio.js";
+export { parseStudioEnv, type StudioEnv, studioEnvSchema } from "./studio.js";
 
 export const rootEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).optional(),

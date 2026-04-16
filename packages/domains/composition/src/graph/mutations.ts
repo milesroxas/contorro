@@ -6,8 +6,7 @@ import type {
   StylePropertyEntry,
 } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
-import { makeId } from "@repo/kernel";
-import { type Result, err, ok } from "@repo/kernel";
+import { err, makeId, ok, type Result } from "@repo/kernel";
 import {
   defaultPrimitivePropValues,
   isStudioCreatablePrimitiveKey,
@@ -611,7 +610,7 @@ export function resetNodePropKeyToPrimitiveDefault(
   const defaults = defaultPrimitivePropValues(node.definitionKey);
   const prev = node.propValues ?? {};
   const next: Record<string, unknown> = { ...prev };
-  if (Object.prototype.hasOwnProperty.call(defaults, propKey)) {
+  if (Object.hasOwn(defaults, propKey)) {
     next[propKey] = defaults[propKey as keyof typeof defaults];
   } else {
     delete next[propKey];

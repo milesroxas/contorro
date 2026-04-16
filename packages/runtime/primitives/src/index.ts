@@ -15,6 +15,14 @@ import { Text } from "./text.js";
 import { Video } from "./video.js";
 
 export {
+  CollectionItemDocProvider,
+  useOptionalCollectionItemDoc,
+} from "./collection-item-context.js";
+export type {
+  PrimitiveEmptyStateProps,
+  PrimitiveEmptyStateVariant,
+} from "./primitive-empty-state.js";
+export {
   Box,
   Button,
   Collection,
@@ -29,14 +37,6 @@ export {
   Text,
   Video,
 };
-export {
-  CollectionItemDocProvider,
-  useOptionalCollectionItemDoc,
-} from "./collection-item-context.js";
-export type {
-  PrimitiveEmptyStateProps,
-  PrimitiveEmptyStateVariant,
-} from "./primitive-empty-state.js";
 
 /** Default `definitionKey` → primitive mapping (Phase 2). */
 export const defaultPrimitiveRegistry: RuntimeRegistry = {

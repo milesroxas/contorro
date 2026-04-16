@@ -17,8 +17,8 @@ import {
   SelectValue,
 } from "../../components/ui/select.js";
 import {
-  type StudioPayloadCollectionFieldMeta,
   fetchStudioPayloadCollectionFields,
+  type StudioPayloadCollectionFieldMeta,
 } from "../../lib/studio-payload-collection-meta.js";
 
 export function CollectionFieldBindingSection({

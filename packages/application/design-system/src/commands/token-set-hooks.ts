@@ -1,8 +1,8 @@
 import { DesignTokenSchema } from "@repo/contracts-zod";
 import {
+  assertTokenKeyStability,
   TOKEN_PUBLISHED,
   type TokenPublishedPayload,
-  assertTokenKeyStability,
   validateTokensForSave,
 } from "@repo/domains-design-system";
 import type { DomainEvent, EventBus } from "@repo/kernel";

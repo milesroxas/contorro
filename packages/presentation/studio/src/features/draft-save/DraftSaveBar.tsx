@@ -185,7 +185,7 @@ export function DraftSaveBar({
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Separator aria-hidden className="h-5 w-px bg-border" />
+      <Separator aria-hidden className="h-5 bg-border" orientation="vertical" />
       {editingName && canEditName ? (
         <>
           <input
@@ -278,7 +278,7 @@ export function DraftSaveBar({
       >
         <IconArrowForwardUp className="size-4" />
       </Button>
-      <Separator aria-hidden className="h-5 w-px bg-border" />
+      <Separator aria-hidden className="h-5 bg-border" orientation="vertical" />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button

@@ -18,10 +18,10 @@ import {
 import { Switch } from "../../components/ui/switch.js";
 import { fetchPayloadCollectionDocs } from "../../lib/fetch-payload-collection-docs.js";
 import {
-  type StudioPayloadCollectionFieldMeta,
-  type StudioPayloadCollectionMeta,
   fetchStudioPayloadCollectionFields,
   fetchStudioPayloadCollections,
+  type StudioPayloadCollectionFieldMeta,
+  type StudioPayloadCollectionMeta,
 } from "../../lib/studio-payload-collection-meta.js";
 import { SettingsFieldRow } from "./property-control-label.js";
 

@@ -6,10 +6,10 @@ import { Suspense, useMemo } from "react";
 import { StudioApp } from "../app/StudioApp.js";
 import { DesignSystemEditor } from "../features/design-system/DesignSystemEditor.js";
 import { createFetchStudioAuthoringClient } from "../lib/fetch-studio-authoring-client.js";
-import StudioDashboard from "./StudioDashboard.js";
-import { StudioChromeThemeHtmlSync } from "./hub/StudioChromeThemeHtmlSync.js";
 import { COMPONENTS_SLUG } from "./hub/constants.js";
+import { StudioChromeThemeHtmlSync } from "./hub/StudioChromeThemeHtmlSync.js";
 import { adminCollectionsIndexHref } from "./lib/admin-hrefs.js";
+import StudioDashboard from "./StudioDashboard.js";
 
 export type StudioShellProps = {
   adminRoute: string;

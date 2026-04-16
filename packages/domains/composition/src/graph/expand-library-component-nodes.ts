@@ -1,6 +1,6 @@
 import type { PageComposition } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
-import { type Result, err, ok } from "@repo/kernel";
+import { err, ok, type Result } from "@repo/kernel";
 
 import { validatePageCompositionInvariants } from "../validation/page-composition.js";
 import { clonePageCompositionWithNewIds } from "./clone-composition.js";

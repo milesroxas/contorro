@@ -4,7 +4,7 @@ import type {
   PageComposition,
 } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
-import { type Result, err, ok } from "@repo/kernel";
+import { err, ok, type Result } from "@repo/kernel";
 
 /**
  * Validates CMS-supplied values against required editor fields.

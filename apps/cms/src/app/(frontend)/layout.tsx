@@ -11,9 +11,7 @@ export const metadata = {
   title: "Payload Blank Template",
 };
 
-export default async function RootLayout(props: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props;
   const { runtime } = await loadFrontendDesignSystemBundle();
 

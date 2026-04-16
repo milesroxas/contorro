@@ -36,16 +36,20 @@ import {
   CardTitle,
 } from "../components/ui/card.js";
 import { Input } from "../components/ui/input.js";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from "../components/ui/item.js";
 import { Separator } from "../components/ui/separator.js";
 import { cn } from "../lib/cn.js";
 import { DashboardResourceName } from "./DashboardResourceName.js";
 import { COMPONENTS_SLUG, PAGE_COMPOSITIONS_SLUG } from "./hub/constants.js";
 import { formatUpdatedAt } from "./hub/formatters.js";
 import { useStudioDocumentTheme } from "./hub/use-studio-document-theme.js";
-import {
-  adminCollectionsIndexHref,
-  adminDocumentHref,
-} from "./lib/admin-hrefs.js";
+import { adminCollectionsIndexHref } from "./lib/admin-hrefs.js";
 
 type PageTemplateRow = {
   id: string | number;
@@ -71,7 +75,6 @@ type ResourceListRow = {
   id: string;
   title: string;
   meta: string;
-  editHref: string;
   studioHref: string;
   searchText: string;
   updatedAtValue: number;
@@ -311,38 +314,32 @@ function ResourceListCard({
                 </Button>
               </div>
             ) : (
-              <ul className="w-full space-y-2.5">
+              <ul className="flex w-full flex-col gap-2.5">
                 {rows.map((row) => (
-                  <li
-                    className="w-full space-y-2.5 rounded-lg border border-border/70 bg-card/80 p-3 transition-colors hover:bg-accent/40"
-                    key={`${row.resourceType}-${row.id}`}
-                  >
-                    <div className="space-y-1">
-                      {renderItemTitle ? (
-                        renderItemTitle(row)
-                      ) : (
-                        <p className="truncate text-sm font-semibold text-foreground md:text-base">
-                          {row.title}
-                        </p>
-                      )}
-                      <p className="truncate text-xs text-muted-foreground">
-                        {row.meta}
-                      </p>
-                    </div>
-                    <Separator className="bg-border/70" />
-                    <div className="flex flex-wrap gap-2">
-                      <Button asChild size="xs" variant="outline">
-                        <Link href={row.editHref} prefetch={false}>
-                          Edit
-                        </Link>
-                      </Button>
-                      <Button asChild size="xs">
-                        <Link href={row.studioHref} prefetch={false}>
-                          Studio
-                          <IconExternalLink className="size-3.5" aria-hidden />
-                        </Link>
-                      </Button>
-                    </div>
+                  <li key={`${row.resourceType}-${row.id}`}>
+                    <Item
+                      className="rounded-lg bg-card/80 hover:bg-accent/40"
+                      size="sm"
+                      variant="outline"
+                    >
+                      <ItemContent>
+                        <ItemTitle className="text-sm font-semibold text-foreground md:text-base">
+                          {renderItemTitle ? renderItemTitle(row) : row.title}
+                        </ItemTitle>
+                        <ItemDescription>{row.meta}</ItemDescription>
+                      </ItemContent>
+                      <ItemActions>
+                        <Button asChild size="xs">
+                          <Link href={row.studioHref} prefetch={false}>
+                            Studio
+                            <IconExternalLink
+                              className="size-3.5"
+                              aria-hidden
+                            />
+                          </Link>
+                        </Button>
+                      </ItemActions>
+                    </Item>
                   </li>
                 ))}
               </ul>
@@ -543,7 +540,6 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
       return {
         _status: doc._status,
         studioHref: `/studio?composition=${encodeURIComponent(id)}`,
-        editHref: adminDocumentHref(adminRoute, PAGE_COMPOSITIONS_SLUG, id),
         id,
         meta,
         resourceType: "Template",
@@ -553,7 +549,7 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
         updatedAtValue: toUpdatedAtValue(doc.updatedAt),
       };
     });
-  }, [adminRoute, templateDocs]);
+  }, [templateDocs]);
 
   const componentRows = useMemo<ResourceListRow[]>(() => {
     const docs = componentDocs ?? [];
@@ -570,7 +566,6 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
       return {
         _status: doc._status,
         studioHref: `/studio?composition=${encodeURIComponent(studioRowIdForComponent(id))}`,
-        editHref: adminDocumentHref(adminRoute, COMPONENTS_SLUG, id),
         id,
         meta,
         resourceType: "Component",
@@ -580,7 +575,7 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
         updatedAtValue: toUpdatedAtValue(doc.updatedAt),
       };
     });
-  }, [adminRoute, componentDocs]);
+  }, [componentDocs]);
 
   const filteredTemplateRows = useMemo(
     () => filterRows(templateRows, templateSearch),
@@ -782,7 +777,11 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
               showBlockingLoading={dashboardBlockingLoading}
               title="Templates"
             />
-            <Separator className="bg-border/70 md:h-auto md:w-px md:self-stretch" />
+            <Separator className="bg-border/70 md:hidden" />
+            <Separator
+              className="hidden bg-border/70 md:block md:h-auto md:self-stretch"
+              orientation="vertical"
+            />
 
             <ResourceListCard
               emptyCtaLabel="View components"

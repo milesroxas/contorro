@@ -1,4 +1,4 @@
-import { type Page, expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { closeTestPayload } from "../helpers/getTestPayload";
 import { login } from "../helpers/login";
 import { cleanupTestUser, seedTestUser, testUser } from "../helpers/seedUser";

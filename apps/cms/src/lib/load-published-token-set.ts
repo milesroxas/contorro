@@ -1,5 +1,5 @@
-import type { DesignTokenSet as PayloadDesignTokenSet } from "@/payload-types";
 import type { Payload } from "payload";
+import type { DesignTokenSet as PayloadDesignTokenSet } from "@/payload-types";
 
 type DesignSystemColorMode = "light" | "dark";
 
@@ -57,7 +57,7 @@ export async function loadDesignSystemRuntimeForPreview(
   });
 
   const doc = found.docs[0];
-  if (!doc || !doc.tokens?.length) {
+  if (!doc?.tokens?.length) {
     return {
       tokenSet: null,
       activeColorMode,

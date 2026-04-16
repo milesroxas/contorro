@@ -4,13 +4,12 @@ import { resolve } from "node:path";
 import type { PageComposition } from "@repo/contracts-zod";
 import { utilityValuesForStyleProperty } from "@repo/contracts-zod";
 import { BOX_BACKGROUND_IMAGE_TAILWIND_SAFESET } from "@repo/domains-composition";
+import { StudioCanvas, StudioRoot } from "@repo/presentation-studio";
 import { defaultPrimitiveRegistry } from "@repo/runtime-primitives";
 import { renderComposition } from "@repo/runtime-renderer";
 import { render, screen } from "@testing-library/react";
 import { createElement } from "react";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-
-import { StudioCanvas, StudioRoot } from "@repo/presentation-studio";
 
 function imageComposition(): PageComposition {
   return {
@@ -34,7 +33,7 @@ function imageComposition(): PageComposition {
         propValues: {
           src: "https://example.com/preview.png",
           alt: "Preview image",
-          objectFit: "cover",
+          imageUtilities: "object-cover",
         },
       },
     },
@@ -85,6 +84,31 @@ describe("Builder canvas styling safeguards", () => {
     const aspectValues = utilityValuesForStyleProperty("aspectRatio");
     for (const value of aspectValues) {
       expect(safelistedClasses.has(`aspect-${value}`)).toBe(true);
+    }
+  });
+
+  it("keeps globals safelist aligned with overflow utility values", () => {
+    const css = readFileSync(
+      resolve(process.cwd(), "src/app/_tailwind-safelist.css"),
+      "utf8",
+    );
+    const safelistedClasses = new Set<string>();
+    for (const match of css.matchAll(/@source inline\("([^"]+)"\);/g)) {
+      for (const token of match[1].split(/\s+/)) {
+        const trimmed = token.trim();
+        if (trimmed.length > 0) {
+          safelistedClasses.add(trimmed);
+        }
+      }
+    }
+    for (const value of utilityValuesForStyleProperty("overflow")) {
+      expect(safelistedClasses.has(`overflow-${value}`)).toBe(true);
+    }
+    for (const value of utilityValuesForStyleProperty("overflowX")) {
+      expect(safelistedClasses.has(`overflow-x-${value}`)).toBe(true);
+    }
+    for (const value of utilityValuesForStyleProperty("overflowY")) {
+      expect(safelistedClasses.has(`overflow-y-${value}`)).toBe(true);
     }
   });
 

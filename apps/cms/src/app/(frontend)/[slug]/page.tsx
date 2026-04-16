@@ -1,4 +1,3 @@
-import { loadFrontendDesignSystemBundle } from "@/lib/load-frontend-design-system-bundle";
 import {
   type PageComposition,
   PageCompositionSchema,
@@ -17,6 +16,7 @@ import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import type { ReactNode } from "react";
+import { loadFrontendDesignSystemBundle } from "@/lib/load-frontend-design-system-bundle";
 
 import { renderDesignerContentBlocksBySlot } from "@/lib/render-designer-content";
 import { resolveImageEditorFieldValuesForRender } from "@/lib/resolve-editor-field-image-values";

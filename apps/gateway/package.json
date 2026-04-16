@@ -21,19 +21,19 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@hono/node-server": "^1.13.0",
+    "@hono/node-server": "^1.19.14",
     "@repo/application-contract-sync": "workspace:*",
     "@repo/config-env": "workspace:*",
     "@repo/domains-composition": "workspace:*",
     "@repo/kernel": "workspace:*",
-    "dotenv": "16.4.7",
-    "hono": "^4.6.0",
-    "jose": "^6.0.0",
-    "pg": "^8.13.0"
+    "dotenv": "17.4.2",
+    "hono": "^4.12.14",
+    "jose": "^6.2.2",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
-    "@types/pg": "^8.11.0",
+    "@types/node": "^25.6.0",
+    "@types/pg": "^8.20.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
   }

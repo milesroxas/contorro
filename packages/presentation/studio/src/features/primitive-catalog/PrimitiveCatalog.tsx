@@ -3,8 +3,8 @@
 import { useDraggable } from "@dnd-kit/core";
 
 import {
-  PRIMITIVE_KEYS,
   getPrimitiveDisplay,
+  PRIMITIVE_KEYS,
 } from "../../lib/primitive-display.js";
 import { StudioPaletteTile } from "./studio-palette-tile.js";
 

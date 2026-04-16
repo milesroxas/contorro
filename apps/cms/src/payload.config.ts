@@ -5,12 +5,12 @@ import { resendAdapter } from "@payloadcms/email-resend";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { parseStudioEnv } from "@repo/config-env/studio";
 import {
-  Users,
   buildStudioConfig,
   createPostgresAdapter,
+  Users,
 } from "@repo/infrastructure-payload-config";
-import { buildConfig } from "payload";
 import type { Config } from "payload";
+import { buildConfig } from "payload";
 import sharp from "sharp";
 
 const filename = fileURLToPath(import.meta.url);

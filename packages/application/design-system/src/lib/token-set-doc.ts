@@ -1,6 +1,6 @@
 import {
-  type DesignTokenSet,
   createDesignTokenSet,
+  type DesignTokenSet,
 } from "@repo/domains-design-system";
 
 export type DesignTokenSetPayloadDoc = {

@@ -35,7 +35,7 @@ export function isPrimitivePropValueModified(
   }
   const value = propValues[propKey];
   const defaults = defaultPrimitivePropValues(definitionKey);
-  if (Object.prototype.hasOwnProperty.call(defaults, propKey)) {
+  if (Object.hasOwn(defaults, propKey)) {
     return !jsonEquals(value, defaults[propKey]);
   }
   return true;

@@ -1,7 +1,6 @@
-import config from "@/payload.config";
-import { type Payload, getPayload } from "payload";
-
+import { getPayload, type Payload } from "payload";
 import { beforeAll, describe, expect, it } from "vitest";
+import config from "@/payload.config";
 
 let payload: Payload;
 

@@ -20,8 +20,8 @@
     "dev": "tsc -b --watch --preserveWatchOutput"
   },
   "dependencies": {
-    "@payloadcms/db-postgres": "3.82.1",
-    "@payloadcms/richtext-lexical": "3.82.1",
+    "@payloadcms/db-postgres": "3.83.0",
+    "@payloadcms/richtext-lexical": "3.83.0",
     "@repo/application-design-system": "workspace:*",
     "@repo/contracts-zod": "workspace:*",
     "@repo/domains-composition": "workspace:*",
@@ -31,12 +31,12 @@
     "@repo/domains-user-access": "workspace:*",
     "@repo/infrastructure-event-bus": "workspace:*",
     "@repo/kernel": "workspace:*",
-    "pg": "^8.13.0"
+    "pg": "^8.20.0"
   },
   "peerDependencies": {
     "payload": "^3.0.0"
   },
   "devDependencies": {
-    "@types/pg": "^8.11.0"
+    "@types/pg": "^8.20.0"
   }
 }

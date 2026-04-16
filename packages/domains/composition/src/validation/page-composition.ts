@@ -1,5 +1,5 @@
 import type { CompositionNode, PageComposition } from "@repo/contracts-zod";
-import { type Result, err, ok } from "@repo/kernel";
+import { err, ok, type Result } from "@repo/kernel";
 
 import { normalizedLayoutSlotId } from "../layout-slot.js";
 

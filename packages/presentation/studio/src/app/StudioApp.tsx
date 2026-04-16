@@ -2,17 +2,21 @@
 
 import {
   type CollisionDetection,
+  closestCenter,
   DndContext,
   type DragEndEvent,
   DragOverlay,
   type DragStartEvent,
   PointerSensor,
-  closestCenter,
   pointerWithin,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
+import type {
+  PageComposition,
+  StudioAuthoringClient,
+} from "@repo/contracts-zod";
 import {
   type CSSProperties,
   useCallback,
@@ -21,11 +25,6 @@ import {
   useRef,
   useState,
 } from "react";
-
-import type {
-  PageComposition,
-  StudioAuthoringClient,
-} from "@repo/contracts-zod";
 import { StudioPanel } from "../components/studio-panel.js";
 import { StudioRoot } from "../components/studio-root.js";
 import { Card, CardContent } from "../components/ui/card.js";
@@ -39,8 +38,8 @@ import { StudioUnsavedChangesGuard } from "../features/unsaved-changes/StudioUns
 import { cn } from "../lib/cn.js";
 import { computeInsertIndex } from "../lib/compute-insert-index.js";
 import {
-  type StudioInspectorTab,
   resolveInspectorTabShortcut,
+  type StudioInspectorTab,
 } from "../lib/inspector-tab-shortcuts.js";
 import {
   LEFT_SIDEBAR_PANELS,
