@@ -8,12 +8,11 @@ import {
   type PageComposition,
 } from "@repo/contracts-zod";
 import { useEffect, useId, useRef, useState } from "react";
-
-import { ScrollArea } from "../../components/scroll-area.js";
 import { Button } from "../../components/ui/button.js";
 import { Checkbox } from "../../components/ui/checkbox.js";
 import { Input } from "../../components/ui/input.js";
 import { Label } from "../../components/ui/label.js";
+import { ScrollArea } from "../../components/ui/scroll-area.js";
 import {
   Select,
   SelectContent,
@@ -151,8 +150,8 @@ export function TextPrimitiveInspector({
             checked={exposeToEditors}
             disabled={node.contentBinding?.source === "collection"}
             id={exposeId}
-            onChange={(e) => {
-              if (e.target.checked) {
+            onCheckedChange={(v) => {
+              if (v === true) {
                 applyEditorField({
                   name: "content",
                   type: "text",
@@ -270,13 +269,13 @@ export function TextPrimitiveInspector({
             <Checkbox
               checked={fieldBound.required}
               id={`${baseId}-req`}
-              onChange={(e) => {
+              onCheckedChange={(v) => {
                 if (!fieldBound) {
                   return;
                 }
                 applyEditorField({
                   ...fieldBound,
-                  required: e.target.checked,
+                  required: v === true,
                 });
               }}
             />
@@ -439,8 +438,8 @@ export function HeadingPrimitiveInspector({
             checked={exposeToEditors}
             disabled={node.contentBinding?.source === "collection"}
             id={`${baseId}-heading-expose`}
-            onChange={(e) => {
-              if (e.target.checked) {
+            onCheckedChange={(v) => {
+              if (v === true) {
                 applyEditorField({
                   name: "heading",
                   type: "text",
@@ -554,10 +553,10 @@ export function HeadingPrimitiveInspector({
             <Checkbox
               checked={fieldBound.required}
               id={`${baseId}-heading-req`}
-              onChange={(e) => {
+              onCheckedChange={(v) => {
                 applyEditorField({
                   ...fieldBound,
-                  required: e.target.checked,
+                  required: v === true,
                 });
               }}
             />
@@ -954,8 +953,8 @@ function ImagePrimitiveInspectorAltAndBindingFields({
           checked={exposeToEditors}
           disabled={node.contentBinding?.source === "collection"}
           id={`${baseId}-image-expose`}
-          onChange={(e) => {
-            if (e.target.checked) {
+          onCheckedChange={(v) => {
+            if (v === true) {
               applyEditorField({
                 name: "image",
                 type: "image",
@@ -1017,11 +1016,11 @@ function ImagePrimitiveInspectorAltAndBindingFields({
             <Checkbox
               checked={fieldBound.required}
               id={`${baseId}-image-required`}
-              onChange={(e) => {
+              onCheckedChange={(v) => {
                 applyEditorField({
                   ...fieldBound,
                   type: "image",
-                  required: e.target.checked,
+                  required: v === true,
                 });
               }}
             />

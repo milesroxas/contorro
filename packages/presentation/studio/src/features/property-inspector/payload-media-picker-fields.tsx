@@ -7,11 +7,10 @@ import {
   IconVideo,
 } from "@tabler/icons-react";
 import type { RefObject } from "react";
-
-import { ScrollArea } from "../../components/scroll-area.js";
 import { Button } from "../../components/ui/button.js";
 import { Input } from "../../components/ui/input.js";
 import { Label } from "../../components/ui/label.js";
+import { ScrollArea } from "../../components/ui/scroll-area.js";
 import {
   Sheet,
   SheetContent,

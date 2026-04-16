@@ -9,14 +9,13 @@ import type {
 import { utilityValuesForStyleProperty } from "@repo/contracts-zod";
 import { IconRestore } from "@tabler/icons-react";
 import { useState } from "react";
-
-import { ScrollArea } from "../../components/scroll-area.js";
 import { Button } from "../../components/ui/button.js";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "../../components/ui/popover.js";
+import { ScrollArea } from "../../components/ui/scroll-area.js";
 import {
   Select,
   SelectContent,
@@ -215,7 +214,7 @@ function SpacingGroupPopover({
         </button>
       </PopoverTrigger>
       <PopoverContent align="center" className="w-40 p-1.5">
-        <ScrollArea className="h-64 pr-1">
+        <ScrollArea className="h-64">
           <div className="space-y-1">
             <button
               className="w-full rounded-sm px-2 py-1 text-left text-xs hover:bg-accent/50"
@@ -309,7 +308,7 @@ function SpacingSidePopover({
         </button>
       </PopoverTrigger>
       <PopoverContent align="center" className="w-40 p-1.5">
-        <ScrollArea className="h-64 pr-1">
+        <ScrollArea className="h-64">
           <div className="space-y-1">
             <button
               className="w-full rounded-sm px-2 py-1 text-left text-xs hover:bg-accent/50"

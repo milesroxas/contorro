@@ -50,7 +50,7 @@ export function StudioLeftSidebarPanelBody({
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       {activeLeftSidebarPanel === "pageTemplates" ? (
-        <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+        <div className="flex min-h-0 flex-1 flex-col">
           <PageTemplatesPanel
             activeCompositionId={activeCompositionId}
             statusFilter={pageTemplateListFilter}
@@ -63,7 +63,7 @@ export function StudioLeftSidebarPanelBody({
           className={cn(
             "flex flex-col",
             activeLeftSidebarPanel === "primitives"
-              ? "min-h-0 flex-1 overflow-auto"
+              ? "min-h-0 flex-1"
               : "pointer-events-none fixed top-0 -left-[10000px] z-0 w-[min(24rem,100vw)] opacity-0 select-none",
           )}
         >
@@ -71,7 +71,7 @@ export function StudioLeftSidebarPanelBody({
         </div>
       ) : null}
       {activeLeftSidebarPanel === "layers" ? (
-        <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+        <div className="flex min-h-0 flex-1 flex-col">
           <NodeTree
             composition={composition}
             onRemoveNode={onRemoveNode}
@@ -88,7 +88,7 @@ export function StudioLeftSidebarPanelBody({
           className={cn(
             "flex flex-col",
             activeLeftSidebarPanel === "components"
-              ? "min-h-0 flex-1 overflow-auto"
+              ? "min-h-0 flex-1"
               : "pointer-events-none fixed top-0 -left-[10000px] z-0 w-[min(24rem,100vw)] opacity-0 select-none",
           )}
         >

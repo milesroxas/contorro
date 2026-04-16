@@ -2,12 +2,12 @@ import { cva } from "class-variance-authority";
 import type { ReactNode } from "react";
 
 import { cn } from "../lib/cn.js";
-import { ScrollArea } from "./scroll-area.js";
 import {
   studioPanelBodyClass,
   studioPanelHeaderClass,
   studioPanelSurfaceClass,
 } from "./studio-panel-chrome.js";
+import { ScrollArea } from "./ui/scroll-area.js";
 
 const studioLeftSidePanelHeaderVariants = cva(
   cn(studioPanelHeaderClass, "shrink-0"),

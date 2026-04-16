@@ -2,8 +2,6 @@
 
 import { IconKeyboard, IconX } from "@tabler/icons-react";
 import { Fragment, type ReactNode } from "react";
-
-import { ScrollArea } from "../../components/scroll-area.js";
 import { Button } from "../../components/ui/button.js";
 import {
   Drawer,
@@ -15,6 +13,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "../../components/ui/drawer.js";
+import { ScrollArea } from "../../components/ui/scroll-area.js";
 import { Separator } from "../../components/ui/separator.js";
 import { cn } from "../../lib/cn.js";
 

@@ -2,7 +2,6 @@ import { IconChevronDown } from "@tabler/icons-react";
 import { type ReactNode, useState } from "react";
 
 import { cn } from "../lib/cn.js";
-import { ScrollArea } from "./scroll-area.js";
 import { StudioLeftSidePanel } from "./studio-left-side-panel.js";
 import {
   studioPanelBodyClass,
@@ -15,6 +14,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "./ui/collapsible.js";
+import { ScrollArea } from "./ui/scroll-area.js";
 
 export {
   studioLeftRailGridAdjacentEndClass,

@@ -179,7 +179,7 @@ export function SettingsCheckboxFieldRow({
           checked={checked}
           disabled={disabled}
           id={checkboxId}
-          onChange={(e) => onCheckedChange(e.target.checked)}
+          onCheckedChange={(v) => onCheckedChange(v === true)}
         />
         <Label className="min-w-0 text-sm font-normal" htmlFor={checkboxId}>
           {checkboxLabel}

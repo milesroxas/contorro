@@ -25,8 +25,6 @@ import type {
   ReactNode,
 } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-import { ScrollArea } from "../components/scroll-area.js";
 import { Button } from "../components/ui/button.js";
 import {
   Card,
@@ -43,6 +41,7 @@ import {
   ItemDescription,
   ItemTitle,
 } from "../components/ui/item.js";
+import { ScrollArea } from "../components/ui/scroll-area.js";
 import { Separator } from "../components/ui/separator.js";
 import { cn } from "../lib/cn.js";
 import { fetchPageCompositionSummaries } from "../lib/fetch-page-composition-summaries.js";

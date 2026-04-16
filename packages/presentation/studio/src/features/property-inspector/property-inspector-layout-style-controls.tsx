@@ -7,13 +7,12 @@ import {
   stylePropertyLabel,
 } from "@repo/domains-composition";
 import { useState } from "react";
-
-import { ScrollArea } from "../../components/scroll-area.js";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "../../components/ui/popover.js";
+import { ScrollArea } from "../../components/ui/scroll-area.js";
 import type { FlexIconProperty } from "./property-inspector-style-labels.js";
 import {
   controlOptionButtonClass,
@@ -155,7 +154,7 @@ export function DisplayStyleValueControl({
             </button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-48 p-1.5">
-            <ScrollArea className="h-64 pr-1">
+            <ScrollArea className="h-64">
               <div className="space-y-1">
                 <button
                   className={`w-full rounded-sm px-2 py-1 text-left text-xs ${

@@ -2,12 +2,11 @@
 
 import type { CompositionNode } from "@repo/contracts-zod";
 import { useEffect, useId, useMemo, useState } from "react";
-
-import { ScrollArea } from "../../components/scroll-area.js";
 import { Button } from "../../components/ui/button.js";
 import { Checkbox } from "../../components/ui/checkbox.js";
 import { Input } from "../../components/ui/input.js";
 import { Label } from "../../components/ui/label.js";
+import { ScrollArea } from "../../components/ui/scroll-area.js";
 import {
   Select,
   SelectContent,
@@ -322,7 +321,7 @@ function CollectionInspectorManualEntriesSection({
                   <Checkbox
                     checked={checked}
                     id={checkboxId}
-                    onChange={(e) => toggleManualId(doc.id, e.target.checked)}
+                    onCheckedChange={(v) => toggleManualId(doc.id, v === true)}
                   />
                   <span className="text-sm leading-tight">
                     <span className="font-medium">{doc.label}</span>

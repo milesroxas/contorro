@@ -14,13 +14,12 @@ import {
 } from "@repo/domains-composition";
 import { IconChevronDown, IconX } from "@tabler/icons-react";
 import { useState } from "react";
-
-import { ScrollArea } from "../../components/scroll-area.js";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "../../components/ui/popover.js";
+import { ScrollArea } from "../../components/ui/scroll-area.js";
 import { BorderPropertyRowLabel } from "./property-control-label.js";
 import {
   ColorOptionLabel,
@@ -248,7 +247,7 @@ function BorderWidthUtilityPopover({
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-56 p-1.5">
-        <ScrollArea className="max-h-64 pr-1">
+        <ScrollArea className="max-h-64">
           <div className="space-y-1">
             <button
               className="w-full rounded-sm px-2 py-1 text-left text-xs hover:bg-accent/50"
@@ -395,7 +394,7 @@ function BorderColorField({
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-56 p-1.5">
-        <ScrollArea className="max-h-64 pr-1">
+        <ScrollArea className="max-h-64">
           <div className="space-y-1">
             <button
               className="w-full rounded-sm px-2 py-1 text-left text-xs hover:bg-accent/50"
@@ -537,7 +536,7 @@ function BorderRadiusUtilityAndTokenRow({
             </button>
           </PopoverTrigger>
           <PopoverContent align="start" className="w-56 p-1.5">
-            <ScrollArea className="max-h-64 pr-1">
+            <ScrollArea className="max-h-64">
               <div className="space-y-1">
                 <button
                   className="w-full rounded-sm px-2 py-1 text-left text-xs hover:bg-accent/50"

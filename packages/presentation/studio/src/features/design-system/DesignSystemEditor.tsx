@@ -18,8 +18,6 @@ import {
   useMemo,
   useState,
 } from "react";
-
-import { ScrollArea } from "../../components/scroll-area.js";
 import { StudioRoot } from "../../components/studio-root.js";
 import { Button } from "../../components/ui/button.js";
 import {
@@ -29,6 +27,7 @@ import {
   CardTitle,
 } from "../../components/ui/card.js";
 import { Input } from "../../components/ui/input.js";
+import { ScrollArea } from "../../components/ui/scroll-area.js";
 import { Separator } from "../../components/ui/separator.js";
 import { cn } from "../../lib/cn.js";
 import { getDefaultStudioAuthoringClient } from "../../lib/fetch-studio-authoring-client.js";

@@ -24,10 +24,8 @@ import type {
 } from "react";
 import { Fragment, forwardRef, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-
-import { ScrollArea } from "../../components/scroll-area.js";
-import { useStudioPortalRoot } from "../../components/studio-root.js";
 import { Button } from "../../components/ui/button.js";
+import { ScrollArea } from "../../components/ui/scroll-area.js";
 import { cn } from "../../lib/cn.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
 import { isChildContainerPrimitive } from "../../lib/style-controls.js";
@@ -748,7 +746,6 @@ function CanvasDropRoot({
   onBackgroundPointer?: () => void;
   onSelectNode: (id: string) => void;
 }) {
-  const studioPortalRoot = useStudioPortalRoot();
   const [canvasMenu, setCanvasMenu] = useState<{
     x: number;
     y: number;
@@ -798,7 +795,7 @@ function CanvasDropRoot({
           </button>
         </div>
       </>,
-      studioPortalRoot ?? document.body,
+      document.body,
     );
 
   return (

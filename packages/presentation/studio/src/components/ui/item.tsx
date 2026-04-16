@@ -1,5 +1,5 @@
-import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
+import { Slot } from "radix-ui";
 import type * as React from "react";
 
 import { cn } from "../../lib/cn.js";
@@ -21,14 +21,12 @@ function ItemGroup({ className, ...props }: React.ComponentProps<"div">) {
 
 function ItemSeparator({
   className,
-  orientation: _orientation,
   ...props
-}: React.ComponentProps<typeof Separator> & {
-  orientation?: "horizontal" | "vertical";
-}) {
+}: React.ComponentProps<typeof Separator>) {
   return (
     <Separator
       data-slot="item-separator"
+      orientation="horizontal"
       className={cn("my-2", className)}
       {...props}
     />
@@ -65,7 +63,7 @@ function Item({
   ...props
 }: React.ComponentProps<"div"> &
   VariantProps<typeof itemVariants> & { asChild?: boolean }) {
-  const Comp = asChild ? Slot : "div";
+  const Comp = asChild ? Slot.Root : "div";
   return (
     <Comp
       data-slot="item"
