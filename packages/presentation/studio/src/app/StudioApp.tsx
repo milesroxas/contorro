@@ -49,6 +49,10 @@ import {
 } from "../lib/left-sidebar-panels.js";
 import { getPrimitiveDisplay } from "../lib/primitive-display.js";
 import { createStudioStore } from "../model/studio-store.js";
+import {
+  persistStudioChromeTheme,
+  resolveStudioChromeTheme,
+} from "../shell/hub/resolve-studio-chrome-theme.js";
 import { StudioLeftSidebarPanelBody } from "./studio-left-sidebar-panel-body.js";
 import { useStudioDesignSystemStyleSheet } from "./use-studio-design-system-style-sheet.js";
 
@@ -386,19 +390,7 @@ export function StudioApp({
   }, [useStudioStore]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    const storedTheme =
-      window.localStorage.getItem("studio-theme") ??
-      window.localStorage.getItem("builder-theme");
-    if (storedTheme === "light" || storedTheme === "dark") {
-      setTheme(storedTheme);
-      return;
-    }
-    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      setTheme("dark");
-    }
+    setTheme(resolveStudioChromeTheme());
   }, []);
 
   useEffect(() => {
@@ -563,7 +555,7 @@ export function StudioApp({
     >
       <StudioRoot
         className={cn(
-          "flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-sm",
+          "flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground",
           theme === "dark" && "dark",
         )}
         data-studio-theme={theme}
@@ -628,7 +620,7 @@ export function StudioApp({
                           "flex size-10 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors",
                           "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                           isActive &&
-                            "border-border bg-background text-foreground shadow-sm",
+                            "border-border bg-background text-foreground",
                         )}
                         key={id}
                         onClick={() => setActiveLeftSidebarPanel(id)}
@@ -691,7 +683,7 @@ export function StudioApp({
               onToggleTheme={() => {
                 setTheme((prevTheme) => {
                   const nextTheme = prevTheme === "dark" ? "light" : "dark";
-                  window.localStorage.setItem("studio-theme", nextTheme);
+                  persistStudioChromeTheme(nextTheme);
                   return nextTheme;
                 });
               }}

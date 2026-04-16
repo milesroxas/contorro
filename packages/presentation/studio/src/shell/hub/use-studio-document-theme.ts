@@ -2,6 +2,8 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 
+import { persistStudioChromeTheme } from "./resolve-studio-chrome-theme.js";
+
 type ThemeValue = "light" | "dark";
 
 function subscribe(onStoreChange: () => void) {
@@ -29,7 +31,7 @@ function getServerSnapshot(): ThemeValue {
 export function useStudioDocumentTheme() {
   const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const setTheme = useCallback((value: ThemeValue) => {
-    document.documentElement.setAttribute("data-theme", value);
+    persistStudioChromeTheme(value);
   }, []);
   return { setTheme, theme };
 }

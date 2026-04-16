@@ -890,7 +890,7 @@ export function StudioCanvas({
           )}
         </Button>
       </div>
-      <ScrollArea className="min-h-0 flex-1 rounded-md border border-border bg-background shadow-sm dark:bg-card/30">
+      <ScrollArea className="min-h-0 flex-1 rounded-md border border-border bg-background dark:bg-card/30">
         <CanvasDropRoot
           composition={composition}
           onBackgroundPointer={() => {

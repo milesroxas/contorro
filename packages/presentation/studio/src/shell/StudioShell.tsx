@@ -7,6 +7,7 @@ import { StudioApp } from "../app/StudioApp.js";
 import { DesignSystemEditor } from "../features/design-system/DesignSystemEditor.js";
 import { createFetchStudioAuthoringClient } from "../lib/fetch-studio-authoring-client.js";
 import StudioDashboard from "./StudioDashboard.js";
+import { StudioChromeThemeHtmlSync } from "./hub/StudioChromeThemeHtmlSync.js";
 import { COMPONENTS_SLUG } from "./hub/constants.js";
 import { adminCollectionsIndexHref } from "./lib/admin-hrefs.js";
 
@@ -84,6 +85,7 @@ function StudioShellInner({ adminRoute, userRole }: StudioShellProps) {
 export function StudioShell({ adminRoute, userRole }: StudioShellProps) {
   return (
     <div className="flex min-h-dvh w-full min-w-0 flex-1 flex-col overflow-y-auto bg-background text-foreground lg:h-dvh lg:max-h-dvh lg:overflow-hidden">
+      <StudioChromeThemeHtmlSync />
       <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col lg:overflow-hidden">
         <Suspense
           fallback={

@@ -13,6 +13,7 @@
     "vercel:pull:prod": "vercel env pull apps/cms/.env.vercel.production.local --environment production --yes",
     "vercel:pull:preview": "vercel env pull apps/cms/.env.vercel.preview.local --environment preview --yes",
     "seed": "pnpm --filter @repo/cms exec payload run src/seeds/index.ts",
+    "seed:design-system": "node ./scripts/seed-design-system.mjs",
     "test": "pnpm --filter @repo/cms run test:int",
     "test:e2e": "pnpm --filter @repo/cms exec playwright test",
     "check": "pnpm lint && pnpm typecheck && pnpm build && pnpm --filter @repo/cms exec payload migrate && pnpm --filter @repo/cms exec payload migrate && pnpm test",

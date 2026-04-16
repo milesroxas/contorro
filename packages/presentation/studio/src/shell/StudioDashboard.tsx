@@ -98,15 +98,6 @@ type QuickAction = {
   };
 };
 
-const THEME_OPTIONS: ReadonlyArray<{
-  value: ThemeValue;
-  label: string;
-  icon: IconType;
-}> = [
-  { icon: IconSun, label: "Light", value: "light" },
-  { icon: IconMoon, label: "Dark", value: "dark" },
-];
-
 function toUpdatedAtValue(iso?: string): number {
   if (!iso) return 0;
   const value = Date.parse(iso);
@@ -190,57 +181,62 @@ function QuickActionCard({
   const hasSecondaryAction = Boolean(secondaryAction);
 
   return (
-    <div className="flex h-full flex-col justify-between gap-4 rounded-lg bg-card p-4 shadow-sm">
-      <div className="space-y-2">
+    <Card
+      className="h-full flex-1 flex-col justify-between gap-0 rounded-lg border border-border bg-card py-0 ring-0"
+      size="sm"
+    >
+      <CardHeader className="space-y-3 pb-0">
         <div className="inline-flex size-9 items-center justify-center rounded-md bg-muted/60">
           <Icon className="size-4" aria-hidden />
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-semibold text-foreground">{title}</p>
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <CardTitle className="font-semibold">{title}</CardTitle>
+          <CardDescription className="text-sm">{description}</CardDescription>
         </div>
-      </div>
-      <div
-        className={cn(
-          "grid w-full gap-2 pt-1 [&>[data-slot=button]]:w-full [&>[data-slot=button]]:justify-center",
-          hasSecondaryAction ? "grid-cols-2" : "grid-cols-1",
-        )}
-      >
-        {secondaryAction ? (
-          <Button asChild size="xs" variant="secondary">
-            <Link href={secondaryAction.href} prefetch={false}>
-              {secondaryAction.label}
-            </Link>
-          </Button>
-        ) : null}
-        {primaryAction.href ? (
-          <Button
-            asChild
-            size="xs"
-            variant={primaryAction.variant ?? "default"}
-          >
-            <Link href={primaryAction.href} prefetch={false}>
+      </CardHeader>
+      <CardContent className="pb-4 pt-3">
+        <div
+          className={cn(
+            "grid w-full gap-2 [&>[data-slot=button]]:w-full [&>[data-slot=button]]:justify-center",
+            hasSecondaryAction ? "grid-cols-2" : "grid-cols-1",
+          )}
+        >
+          {secondaryAction ? (
+            <Button asChild size="xs" variant="secondary">
+              <Link href={secondaryAction.href} prefetch={false}>
+                {secondaryAction.label}
+              </Link>
+            </Button>
+          ) : null}
+          {primaryAction.href ? (
+            <Button
+              asChild
+              size="xs"
+              variant={primaryAction.variant ?? "default"}
+            >
+              <Link href={primaryAction.href} prefetch={false}>
+                {PrimaryIcon ? (
+                  <PrimaryIcon className="size-3.5" aria-hidden />
+                ) : null}
+                {primaryAction.label}
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              onClick={primaryAction.onClick}
+              size="xs"
+              type="button"
+              variant={primaryAction.variant ?? "default"}
+            >
               {PrimaryIcon ? (
                 <PrimaryIcon className="size-3.5" aria-hidden />
               ) : null}
               {primaryAction.label}
-            </Link>
-          </Button>
-        ) : (
-          <Button
-            onClick={primaryAction.onClick}
-            size="xs"
-            type="button"
-            variant={primaryAction.variant ?? "default"}
-          >
-            {PrimaryIcon ? (
-              <PrimaryIcon className="size-3.5" aria-hidden />
-            ) : null}
-            {primaryAction.label}
-          </Button>
-        )}
-      </div>
-    </div>
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -290,7 +286,7 @@ function ResourceListCard({
             aria-hidden
           />
           <Input
-            className="h-9 border-input bg-background pl-9 shadow-sm"
+            className="h-9 border-input bg-background pl-9 shadow-none"
             placeholder={searchPlaceholder}
             type="search"
             value={searchValue}
@@ -318,7 +314,7 @@ function ResourceListCard({
               <ul className="w-full space-y-2.5">
                 {rows.map((row) => (
                   <li
-                    className="w-full space-y-2.5 rounded-lg border border-border/70 bg-card/80 p-3 shadow-sm transition-colors hover:bg-accent/40"
+                    className="w-full space-y-2.5 rounded-lg border border-border/70 bg-card/80 p-3 transition-colors hover:bg-accent/40"
                     key={`${row.resourceType}-${row.id}`}
                   >
                     <div className="space-y-1">
@@ -705,24 +701,24 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex items-center rounded-md bg-muted/40 p-1">
-            {THEME_OPTIONS.map((option) => {
-              const Icon = option.icon;
-              const isActive = currentTheme === option.value;
-              return (
-                <Button
-                  key={option.value}
-                  onClick={() => setTheme(option.value)}
-                  size="sm"
-                  type="button"
-                  variant={isActive ? "secondary" : "ghost"}
-                >
-                  <Icon className="size-3.5" aria-hidden />
-                  {option.label}
-                </Button>
-              );
-            })}
-          </div>
+          <Button
+            aria-label={
+              currentTheme === "dark"
+                ? "Switch to light mode"
+                : "Switch to dark mode"
+            }
+            className="size-9 shrink-0 p-0"
+            onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
+            size="sm"
+            type="button"
+            variant="secondary"
+          >
+            {currentTheme === "dark" ? (
+              <IconSun className="size-4" aria-hidden />
+            ) : (
+              <IconMoon className="size-4" aria-hidden />
+            )}
+          </Button>
           <Button onClick={refreshDashboard} type="button" variant="secondary">
             <IconRefresh className="size-4" aria-hidden />
             Refresh
@@ -736,7 +732,7 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
       ) : null}
       <div className="grid gap-4 pt-4 md:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] lg:min-h-0 lg:flex-1">
         <div className="flex flex-col gap-4 lg:min-h-0 lg:overflow-hidden">
-          <Card className="shrink-0 rounded-lg bg-card ring-0">
+          <Card className="shrink-0 rounded-lg border border-border bg-card ring-0">
             <CardHeader className="space-y-1">
               <CardTitle className="text-lg">Quick actions</CardTitle>
               <CardDescription>

@@ -33,7 +33,7 @@ export function StudioPaletteTile({
   return (
     <button
       className={cn(
-        "flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-3 text-center shadow-sm transition-colors",
+        "flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-3 text-center transition-colors",
         "hover:border-primary/30 hover:bg-accent/50",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
         isDragging && "cursor-grabbing opacity-50",

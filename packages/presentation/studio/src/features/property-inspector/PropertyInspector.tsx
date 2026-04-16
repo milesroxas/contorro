@@ -4633,10 +4633,10 @@ function PropertyInspectorActive({
     section.properties.includes("gap"),
   );
   const isStyleSectionOpen = (sectionId: StyleSectionId) =>
-    styleSectionOpenState[sectionId] ?? true;
+    styleSectionOpenState[sectionId] ?? false;
   const setStyleSectionOpen = (sectionId: StyleSectionId, open: boolean) => {
     setStyleSectionOpenState((prev) => {
-      if ((prev[sectionId] ?? true) === open) {
+      if ((prev[sectionId] ?? false) === open) {
         return prev;
       }
       return { ...prev, [sectionId]: open };

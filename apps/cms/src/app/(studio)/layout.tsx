@@ -14,7 +14,10 @@ export default function StudioGroupLayout(props: {
   const { children } = props;
 
   return (
-    <html className="h-full" lang="en">
+    <html className="h-full" lang="en" suppressHydrationWarning>
+      <head>
+        <script src="/studio-document-theme-bootstrap.js" />
+      </head>
       <body className="min-h-dvh antialiased lg:h-dvh lg:overflow-hidden">
         {children}
       </body>

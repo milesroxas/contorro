@@ -18,7 +18,7 @@ function Card({
       className={cn(
         "group/card flex flex-col gap-4 overflow-hidden rounded-none bg-card py-4 text-xs/relaxed text-card-foreground ring-1 ring-foreground/10 has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-2 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-none *:[img:last-child]:rounded-none",
         variant === "dragPreview" &&
-          "pointer-events-none w-fit max-w-[min(100vw-2rem,180px)] gap-0 rounded-md border border-border/70 bg-card/90 py-2 shadow-lg ring-0 backdrop-blur-[1px]",
+          "pointer-events-none w-fit max-w-[min(100vw-2rem,180px)] gap-0 rounded-md border border-border/70 bg-card/90 py-2 ring-0 backdrop-blur-[1px]",
         className,
       )}
       data-size={resolvedSize}
