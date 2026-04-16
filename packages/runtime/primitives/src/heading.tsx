@@ -1,15 +1,20 @@
+"use client";
+
+import { resolvePrimitiveTextContent } from "@repo/domains-composition";
 import type { RuntimePrimitiveProps } from "@repo/domains-runtime-catalog";
+
+import { useOptionalCollectionItemDoc } from "./collection-item-context.js";
 
 const VALID_HEADING_LEVELS = new Set(["h1", "h2", "h3", "h4", "h5", "h6"]);
 
 export function Heading({ node, className, style }: RuntimePrimitiveProps) {
+  const doc = useOptionalCollectionItemDoc();
   const levelRaw = node.propValues?.level;
   const level =
     typeof levelRaw === "string" && VALID_HEADING_LEVELS.has(levelRaw)
       ? levelRaw
       : "h2";
-  const content =
-    typeof node.propValues?.content === "string" ? node.propValues.content : "";
+  const content = resolvePrimitiveTextContent(node, doc);
 
   return (
     <>

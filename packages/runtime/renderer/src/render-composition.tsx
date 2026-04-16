@@ -53,6 +53,18 @@ function renderNode(
     .map((cid) => renderNode(cid, composition, registry, tokenMeta, options))
     .filter((x): x is ReactElement => x !== null);
 
+  if (node.definitionKey === "primitive.collection") {
+    return (
+      <Cmp
+        className={className}
+        collectionTemplate={childElements}
+        key={node.id}
+        node={node}
+        style={style}
+      />
+    );
+  }
+
   return (
     <Cmp className={className} key={node.id} node={node} style={style}>
       {childElements}

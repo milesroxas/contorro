@@ -20,7 +20,7 @@ function migrateContentBinding(raw: unknown): unknown {
 }
 
 const ContentBindingInnerSchema = z.object({
-  source: z.enum(["inline", "field", "global", "editor"]),
+  source: z.enum(["inline", "field", "global", "editor", "collection"]),
   key: z.string(),
   editorField: EditorFieldSpecSchema.optional(),
 });

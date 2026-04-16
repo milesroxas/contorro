@@ -54,6 +54,24 @@ export {
   orderedLayoutSlotIds,
 } from "./layout-slot.js";
 export { mergePageContentSlotsToSlotOrder } from "./page-content-slots.js";
+export { resolvedPrimitiveMediaSrc } from "./resolved-primitive-media-src.js";
+export { findNearestCollectionAncestorNodeId } from "./collection-ancestor.js";
+export {
+  type CollectionFieldBindingKind,
+  type CollectionFieldBindingSelectRow,
+  collectionFieldBindingSelectRows,
+  isCollectionFieldKindCompatibleWithPrimitive,
+  primitiveSupportsCollectionFieldBinding,
+} from "./collection-primitive-field-binding.js";
+export {
+  mediaUrlFromCollectionValue,
+  resolvePrimitiveButtonLabel,
+  resolvePrimitiveImageSrcAlt,
+  resolvePrimitiveTextContent,
+  resolvePrimitiveVideoSrc,
+  stringFromCollectionFieldValue,
+  valueAtJsonPath,
+} from "./collection-field-resolution.js";
 export {
   STUDIO_PALETTE_PRIMITIVE_KEYS,
   KNOWN_PRIMITIVE_KEYS,

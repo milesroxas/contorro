@@ -144,6 +144,9 @@ const IMAGE_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "maxHeight",
 ];
 
+const COLLECTION_STYLE_PROPERTIES: readonly StyleProperty[] =
+  BOX_STYLE_PROPERTIES;
+
 const SLOT_STYLE_PROPERTIES: readonly StyleProperty[] = [
   "background",
   "borderColor",
@@ -334,6 +337,8 @@ const PRIMITIVE_STYLE_PROPERTIES: Record<string, readonly StyleProperty[]> = {
   "primitive.heading": HEADING_STYLE_PROPERTIES,
   "primitive.button": BUTTON_STYLE_PROPERTIES,
   "primitive.image": IMAGE_STYLE_PROPERTIES,
+  "primitive.video": IMAGE_STYLE_PROPERTIES,
+  "primitive.collection": COLLECTION_STYLE_PROPERTIES,
   "primitive.slot": SLOT_STYLE_PROPERTIES,
   "primitive.libraryComponent": LIBRARY_COMPONENT_STYLE_PROPERTIES,
   // Legacy primitives.

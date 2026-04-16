@@ -9,8 +9,10 @@ import {
   IconLayoutList,
   IconLayoutRows,
   IconLetterT,
+  IconList,
   IconPhoto,
   IconRectangle,
+  IconVideo,
 } from "@tabler/icons-react";
 
 export const PRIMITIVE_KEYS = STUDIO_PALETTE_PRIMITIVE_KEYS;
@@ -24,6 +26,8 @@ const META: Record<string, { label: string; Icon: Icon }> = {
   "primitive.stack": { label: "Stack", Icon: IconLayoutList },
   "primitive.grid": { label: "Grid", Icon: IconLayoutGrid },
   "primitive.image": { label: "Image", Icon: IconPhoto },
+  "primitive.video": { label: "Video", Icon: IconVideo },
+  "primitive.collection": { label: "Collection", Icon: IconList },
   "primitive.slot": { label: "Slot", Icon: IconRectangle },
   "primitive.libraryComponent": {
     label: "Library block",

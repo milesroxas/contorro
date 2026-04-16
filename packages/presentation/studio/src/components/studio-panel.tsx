@@ -46,12 +46,18 @@ export function StudioPanel({
         <div className={studioPanelHeaderClass}>{title}</div>
         <div
           className={cn(
-            "flex min-h-0 flex-1 flex-col overflow-hidden",
+            "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
             contentClassName,
           )}
         >
-          <ScrollArea className="min-h-0 min-w-0 flex-1">
-            <div className={cn(studioPanelBodyClass, bodyClassName)}>
+          <ScrollArea className="min-h-0 min-w-0 flex-1 basis-0">
+            <div
+              className={cn(
+                "min-w-0 max-w-full",
+                studioPanelBodyClass,
+                bodyClassName,
+              )}
+            >
               {children}
             </div>
           </ScrollArea>
@@ -81,12 +87,18 @@ export function StudioPanel({
       </CollapsibleTrigger>
       <CollapsibleContent
         className={cn(
-          "flex min-h-0 flex-col overflow-hidden data-[state=closed]:hidden",
+          "flex min-h-0 min-w-0 flex-col overflow-hidden data-[state=closed]:hidden",
           contentClassName,
         )}
       >
-        <ScrollArea className="min-h-0 min-w-0 flex-1">
-          <div className={cn(studioPanelBodyClass, bodyClassName)}>
+        <ScrollArea className="min-h-0 min-w-0 flex-1 basis-0">
+          <div
+            className={cn(
+              "min-w-0 max-w-full",
+              studioPanelBodyClass,
+              bodyClassName,
+            )}
+          >
             {children}
           </div>
         </ScrollArea>

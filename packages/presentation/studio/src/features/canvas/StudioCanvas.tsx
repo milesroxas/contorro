@@ -3,7 +3,16 @@
 import { useDndContext, useDraggable } from "@dnd-kit/core";
 import type { TokenMeta } from "@repo/config-tailwind";
 import type { CompositionNode, PageComposition } from "@repo/contracts-zod";
-import { defaultPrimitiveRegistry } from "@repo/runtime-primitives";
+import {
+  resolvePrimitiveImageSrcAlt,
+  resolvePrimitiveTextContent,
+  resolvePrimitiveVideoSrc,
+} from "@repo/domains-composition";
+import {
+  Collection,
+  defaultPrimitiveRegistry,
+  useOptionalCollectionItemDoc,
+} from "@repo/runtime-primitives";
 import { resolveNodeStyle } from "@repo/runtime-renderer";
 import { IconMoonStars, IconSunHigh } from "@tabler/icons-react";
 import type {
@@ -117,24 +126,17 @@ function canvasSlotPrimitive(
   );
 }
 
-function canvasTextPrimitive(
-  node: CompositionNode,
-  className: string,
-  style: CSSProperties | undefined,
-): ReactNode {
-  const raw =
-    typeof node.propValues?.content === "string" ? node.propValues.content : "";
-  const cb = node.contentBinding;
-  let fromBinding = "";
-  if (cb?.source === "editor" && cb.editorField) {
-    fromBinding =
-      typeof cb.editorField.defaultValue === "string"
-        ? cb.editorField.defaultValue
-        : `[${cb.key}]`;
-  } else if (cb) {
-    fromBinding = `[${cb.key}]`;
-  }
-  const display = raw || fromBinding;
+function CanvasStudioTextPrimitive({
+  className,
+  node,
+  style,
+}: {
+  className: string;
+  node: CompositionNode;
+  style: CSSProperties | undefined;
+}): ReactNode {
+  const doc = useOptionalCollectionItemDoc();
+  const display = resolvePrimitiveTextContent(node, doc);
   const showPlaceholder = display.trim() === "";
   return (
     <span
@@ -189,19 +191,15 @@ function canvasNodePrimitiveMarkup(args: {
     return canvasSlotPrimitive(Cmp, node, className, style);
   }
   if (node.definitionKey === "primitive.text") {
-    return canvasTextPrimitive(node, className, style);
+    return (
+      <CanvasStudioTextPrimitive
+        className={className}
+        node={node}
+        style={style}
+      />
+    );
   }
   return canvasDefaultPrimitive(Cmp, node, className, style, childList);
-}
-
-function canvasImagePropSource(node: CompositionNode): string {
-  if (typeof node.propValues?.src === "string") {
-    return node.propValues.src;
-  }
-  if (typeof node.propValues?.mediaUrl === "string") {
-    return node.propValues.mediaUrl;
-  }
-  return "";
 }
 
 /** `contextmenu` targets may be a Text node (no `Element#closest`). */
@@ -455,6 +453,98 @@ function CanvasNodeFrame({
   );
 }
 
+function CanvasImageOrVideoNodeFrame({
+  composition,
+  dragContainerOutline,
+  editComponentHref,
+  isVideo,
+  node,
+  onRemoveNode,
+  onSelectNode,
+  primitive,
+  selected,
+}: {
+  composition: PageComposition;
+  dragContainerOutline: "none" | "idle" | "active";
+  editComponentHref: string | null | undefined;
+  isVideo: boolean;
+  node: CompositionNode;
+  onRemoveNode: (id: string) => void;
+  onSelectNode: (id: string) => void;
+  primitive: ReactNode;
+  selected: boolean;
+}): ReactElement {
+  const doc = useOptionalCollectionItemDoc();
+  const src = isVideo
+    ? resolvePrimitiveVideoSrc(node, doc)
+    : resolvePrimitiveImageSrcAlt(node, doc).src;
+  const hasMediaSource = src.trim().length > 0;
+  return (
+    <CanvasNodeFrame
+      composition={composition}
+      dragContainerOutline={dragContainerOutline}
+      editComponentHref={editComponentHref ?? undefined}
+      node={node}
+      onRemoveNode={onRemoveNode}
+      onSelectNode={onSelectNode}
+      selected={selected}
+    >
+      {hasMediaSource ? primitive : <div className="py-4">{primitive}</div>}
+    </CanvasNodeFrame>
+  );
+}
+
+function CanvasPrimitiveCollectionBranch({
+  childList,
+  className,
+  composition,
+  dragContainerOutline,
+  editComponentHref,
+  node,
+  onRemoveNode,
+  onSelectNode,
+  selected,
+  style,
+}: {
+  childList: ReactNode;
+  className: string | undefined;
+  composition: PageComposition;
+  dragContainerOutline: "none" | "idle" | "active";
+  editComponentHref: string | null | undefined;
+  node: CompositionNode;
+  onRemoveNode: (id: string) => void;
+  onSelectNode: (id: string) => void;
+  selected: boolean;
+  style: CSSProperties | undefined;
+}): ReactElement {
+  return (
+    <CanvasNodeFrame
+      composition={composition}
+      dragContainerOutline={dragContainerOutline}
+      editComponentHref={editComponentHref ?? undefined}
+      node={node}
+      onRemoveNode={onRemoveNode}
+      onSelectNode={onSelectNode}
+      selected={selected}
+    >
+      <div className="relative w-full min-w-0">
+        <Collection
+          className={cn(className, "w-full")}
+          collectionTemplate={childList}
+          node={node}
+          style={style}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-1 right-1 z-10 rounded border border-border/60 bg-background/90 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground shadow-sm"
+        >
+          Collection
+        </div>
+      </div>
+    </CanvasNodeFrame>
+  );
+}
+
 function CanvasNode({
   composition,
   nodeId,
@@ -548,6 +638,23 @@ function CanvasNode({
     />
   ) : null;
 
+  if (node.definitionKey === "primitive.collection") {
+    return (
+      <CanvasPrimitiveCollectionBranch
+        childList={childList}
+        className={className}
+        composition={composition}
+        dragContainerOutline={dragContainerOutline}
+        editComponentHref={editComponentHref}
+        node={node}
+        onRemoveNode={onRemoveNode}
+        onSelectNode={onSelectNode}
+        selected={selected}
+        style={style}
+      />
+    );
+  }
+
   const primitive = canvasNodePrimitiveMarkup({
     Cmp,
     childList,
@@ -572,21 +679,22 @@ function CanvasNode({
     );
   }
 
-  if (node.definitionKey === "primitive.image") {
-    const hasImageSource = canvasImagePropSource(node).trim().length > 0;
-
+  if (
+    node.definitionKey === "primitive.image" ||
+    node.definitionKey === "primitive.video"
+  ) {
     return (
-      <CanvasNodeFrame
+      <CanvasImageOrVideoNodeFrame
         composition={composition}
         dragContainerOutline={dragContainerOutline}
         editComponentHref={editComponentHref}
+        isVideo={node.definitionKey === "primitive.video"}
         node={node}
         onRemoveNode={onRemoveNode}
         onSelectNode={onSelectNode}
+        primitive={primitive}
         selected={selected}
-      >
-        {hasImageSource ? primitive : <div className="py-4">{primitive}</div>}
-      </CanvasNodeFrame>
+      />
     );
   }
 

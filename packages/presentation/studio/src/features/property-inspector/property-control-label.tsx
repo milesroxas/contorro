@@ -6,6 +6,7 @@ import { IconRestore } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 
 import { Button } from "../../components/ui/button.js";
+import { Checkbox } from "../../components/ui/checkbox.js";
 import { Label } from "../../components/ui/label.js";
 import {
   Tooltip,
@@ -129,14 +130,61 @@ export function SettingsFieldRow({
     propValues,
   );
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-3">
       <PropertyControlLabel
         htmlFor={htmlFor}
         label={label}
         onReset={showModified ? () => onResetProp(propKey) : undefined}
         showModified={showModified}
       />
-      {children}
+      <div className="min-w-0 max-w-full">{children}</div>
     </div>
+  );
+}
+
+export function SettingsCheckboxFieldRow({
+  checkboxId,
+  checkboxLabel = "Enabled",
+  checked,
+  definitionKey,
+  disabled,
+  label,
+  onCheckedChange,
+  onResetProp,
+  propKey,
+  propValues,
+}: {
+  checkboxId: string;
+  checkboxLabel?: string;
+  checked: boolean;
+  definitionKey: string;
+  disabled?: boolean;
+  label: string;
+  onCheckedChange: (next: boolean) => void;
+  onResetProp: (key: string) => void;
+  propKey: string;
+  propValues: CompositionNode["propValues"];
+}) {
+  return (
+    <SettingsFieldRow
+      definitionKey={definitionKey}
+      htmlFor={checkboxId}
+      label={label}
+      onResetProp={onResetProp}
+      propKey={propKey}
+      propValues={propValues}
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        <Checkbox
+          checked={checked}
+          disabled={disabled}
+          id={checkboxId}
+          onChange={(e) => onCheckedChange(e.target.checked)}
+        />
+        <Label className="min-w-0 text-sm font-normal" htmlFor={checkboxId}>
+          {checkboxLabel}
+        </Label>
+      </div>
+    </SettingsFieldRow>
   );
 }

@@ -108,6 +108,10 @@ export type StudioStoreState = {
     nodeId: string,
     field: EditorFieldSpec | null,
   ) => void;
+  setNodeCollectionFieldBinding: (
+    nodeId: string,
+    fieldPath: string | null,
+  ) => void;
   saveDraft: () => Promise<void>;
   publish: () => Promise<void>;
   rename: (name: string) => Promise<void>;
@@ -530,6 +534,30 @@ export function createStudioStore(
         field === null
           ? undefined
           : { source: "editor" as const, key: field.name, editorField: field };
+      const next = setNodeContentBinding(composition, nodeId, binding);
+      if (!next.ok) {
+        return;
+      }
+      set({
+        composition: next.value,
+        historyPast: [...get().historyPast, composition],
+        historyFuture: [],
+        dirty: true,
+        canUndo: true,
+        canRedo: false,
+      });
+    },
+
+    setNodeCollectionFieldBinding: (nodeId, fieldPath) => {
+      const { composition } = get();
+      if (!composition) {
+        return;
+      }
+      const trimmed = fieldPath?.trim() ?? "";
+      const binding =
+        trimmed === ""
+          ? undefined
+          : { source: "collection" as const, key: trimmed };
       const next = setNodeContentBinding(composition, nodeId, binding);
       if (!next.ok) {
         return;

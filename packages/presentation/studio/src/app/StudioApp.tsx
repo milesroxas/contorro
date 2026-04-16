@@ -15,7 +15,6 @@ import {
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import {
   type CSSProperties,
-  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -34,9 +33,6 @@ import { Separator } from "../components/ui/separator.js";
 import { StudioCanvas } from "../features/canvas/StudioCanvas.js";
 import type { InsertDropData } from "../features/dnd/InsertionDropZone.js";
 import { DraftSaveBar } from "../features/draft-save/DraftSaveBar.js";
-import { NodeTree } from "../features/node-tree/NodeTree.js";
-import { LibraryComponentCatalog } from "../features/primitive-catalog/LibraryComponentCatalog.js";
-import { PrimitiveCatalog } from "../features/primitive-catalog/PrimitiveCatalog.js";
 import { PropertyInspector } from "../features/property-inspector/PropertyInspector.js";
 import { KeyboardShortcutsDrawer } from "../features/shortcuts/KeyboardShortcutsDrawer.js";
 import { StudioUnsavedChangesGuard } from "../features/unsaved-changes/StudioUnsavedChangesGuard.js";
@@ -53,6 +49,7 @@ import {
 } from "../lib/left-sidebar-panels.js";
 import { getPrimitiveDisplay } from "../lib/primitive-display.js";
 import { createStudioStore } from "../model/studio-store.js";
+import { StudioLeftSidebarPanelBody } from "./studio-left-sidebar-panel-body.js";
 
 function runtimeCssVariables(cssVariables: string): string {
   const trimmed = cssVariables.trim();
@@ -329,6 +326,9 @@ export function StudioApp({
   const setNodeEditorFieldBinding = useStudioStore(
     (s) => s.setNodeEditorFieldBinding,
   );
+  const setNodeCollectionFieldBinding = useStudioStore(
+    (s) => s.setNodeCollectionFieldBinding,
+  );
   const saveDraft = useStudioStore((s) => s.saveDraft);
   const publish = useStudioStore((s) => s.publish);
   const rename = useStudioStore((s) => s.rename);
@@ -439,9 +439,14 @@ export function StudioApp({
     setIsResizingPanels(true);
   };
 
+  const showLayersSidebar = useCallback(() => {
+    setActiveLeftSidebarPanel((prev) => (prev !== "layers" ? "layers" : prev));
+  }, []);
+
   const onDragStart = (event: DragStartEvent) => {
     const d = event.active.data.current;
     if (d?.kind === "palette" && typeof d.definitionKey === "string") {
+      showLayersSidebar();
       setActivePaletteKey(d.definitionKey);
       setActiveNodeId(null);
       return;
@@ -456,49 +461,17 @@ export function StudioApp({
   };
 
   const onDragEnd = (event: DragEndEvent) => {
+    if (composition) {
+      applyStudioDragEndMutation(event, composition, addPrimitive, moveNode);
+    }
     setActivePaletteKey(null);
     setActiveNodeId(null);
-    if (!composition) {
-      return;
-    }
-    applyStudioDragEndMutation(event, composition, addPrimitive, moveNode);
   };
 
   const onDragCancel = () => {
     setActivePaletteKey(null);
     setActiveNodeId(null);
   };
-
-  const leftSidebarPanels = useMemo(() => {
-    if (!composition) {
-      return [];
-    }
-    return LEFT_SIDEBAR_PANELS.map((def) => ({
-      ...def,
-      content: ((): ReactNode => {
-        switch (def.id) {
-          case "primitives":
-            return <PrimitiveCatalog />;
-          case "layers":
-            return (
-              <NodeTree
-                composition={composition}
-                onRemoveNode={removeNode}
-                onSelect={selectNode}
-                selectedNodeId={selectedNodeId}
-                studioResource={studioResource}
-              />
-            );
-          case "components":
-            return <LibraryComponentCatalog />;
-          default: {
-            const _exhaustive: never = def.id;
-            return _exhaustive;
-          }
-        }
-      })(),
-    }));
-  }, [composition, removeNode, selectNode, selectedNodeId, studioResource]);
 
   if (!composition) {
     return (
@@ -522,9 +495,9 @@ export function StudioApp({
   const overlayDisplay = overlayDefinitionKey
     ? getPrimitiveDisplay(overlayDefinitionKey)
     : null;
-  const leftSidebarPanel =
-    leftSidebarPanels.find(({ id }) => id === activeLeftSidebarPanel) ??
-    leftSidebarPanels[0];
+  const activeLeftSidebarDef =
+    LEFT_SIDEBAR_PANELS.find(({ id }) => id === activeLeftSidebarPanel) ??
+    LEFT_SIDEBAR_PANELS[0];
   const resourceLabel =
     studioResource === "component" ? "Component" : "Page Template";
 
@@ -591,28 +564,30 @@ export function StudioApp({
               className="flex shrink-0 flex-col items-center gap-1 border-r border-border/70 bg-muted/20 p-1.5 dark:bg-muted/10"
             >
               <div className="flex w-full flex-col items-center gap-1">
-                {leftSidebarPanels.map(({ id, label, Icon, shortcutDigit }) => {
-                  const isActive = activeLeftSidebarPanel === id;
-                  return (
-                    <button
-                      aria-keyshortcuts={shortcutDigit}
-                      aria-label={label}
-                      aria-pressed={isActive}
-                      className={cn(
-                        "flex size-10 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors",
-                        "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                        isActive &&
-                          "border-border bg-background text-foreground shadow-sm",
-                      )}
-                      key={id}
-                      onClick={() => setActiveLeftSidebarPanel(id)}
-                      title={`${label} (${shortcutDigit})`}
-                      type="button"
-                    >
-                      <Icon aria-hidden className="size-5.5" stroke={1.7} />
-                    </button>
-                  );
-                })}
+                {LEFT_SIDEBAR_PANELS.map(
+                  ({ id, label, Icon, shortcutDigit }) => {
+                    const isActive = activeLeftSidebarPanel === id;
+                    return (
+                      <button
+                        aria-keyshortcuts={shortcutDigit}
+                        aria-label={label}
+                        aria-pressed={isActive}
+                        className={cn(
+                          "flex size-10 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors",
+                          "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                          isActive &&
+                            "border-border bg-background text-foreground shadow-sm",
+                        )}
+                        key={id}
+                        onClick={() => setActiveLeftSidebarPanel(id)}
+                        title={`${label} (${shortcutDigit})`}
+                        type="button"
+                      >
+                        <Icon aria-hidden className="size-5.5" stroke={1.7} />
+                      </button>
+                    );
+                  },
+                )}
               </div>
               <div className="mt-auto flex w-full flex-col items-center gap-2 pt-2">
                 <Separator className="w-8 bg-border/70" />
@@ -623,12 +598,20 @@ export function StudioApp({
               </div>
             </nav>
             <StudioPanel
-              className="min-h-0 min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none"
+              className="h-full min-h-0 min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none"
               collapsible={false}
-              contentClassName="flex-1"
-              title={leftSidebarPanel.label}
+              contentClassName="min-h-0 flex-1"
+              title={activeLeftSidebarDef.label}
             >
-              {leftSidebarPanel.content}
+              <StudioLeftSidebarPanelBody
+                activeLeftSidebarPanel={activeLeftSidebarPanel}
+                activePaletteKey={activePaletteKey}
+                composition={composition}
+                onRemoveNode={removeNode}
+                onSelect={selectNode}
+                selectedNodeId={selectedNodeId}
+                studioResource={studioResource}
+              />
             </StudioPanel>
           </div>
           <button
@@ -649,9 +632,7 @@ export function StudioApp({
               onCanvasBackground={() => selectNode(null)}
               onRemoveNode={removeNode}
               onSelectNode={(nodeId) => {
-                if (activeLeftSidebarPanel !== "layers") {
-                  setActiveLeftSidebarPanel("layers");
-                }
+                showLayersSidebar();
                 selectNode(nodeId);
               }}
               onToggleTheme={() => {
@@ -679,9 +660,9 @@ export function StudioApp({
             <div className="h-full w-px bg-border/75 transition-colors group-hover:bg-primary/60" />
           </button>
           <StudioPanel
-            className="min-h-0 min-w-0 rounded-none border-0 bg-transparent shadow-none [&>div:first-child]:hidden"
+            className="h-full min-h-0 min-w-0 rounded-none border-0 bg-transparent shadow-none [&>div:first-child]:hidden"
             collapsible={false}
-            contentClassName="flex-1"
+            contentClassName="min-h-0 flex-1"
             title=""
           >
             <PropertyInspector
@@ -719,6 +700,11 @@ export function StudioApp({
               setNodeEditorFieldBinding={(field) => {
                 if (selectedNodeId) {
                   setNodeEditorFieldBinding(selectedNodeId, field);
+                }
+              }}
+              setNodeCollectionFieldBinding={(fieldPath) => {
+                if (selectedNodeId) {
+                  setNodeCollectionFieldBinding(selectedNodeId, fieldPath);
                 }
               }}
               studioResource={studioResource}

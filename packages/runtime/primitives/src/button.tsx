@@ -1,4 +1,9 @@
+"use client";
+
+import { resolvePrimitiveButtonLabel } from "@repo/domains-composition";
 import type { RuntimePrimitiveProps } from "@repo/domains-runtime-catalog";
+
+import { useOptionalCollectionItemDoc } from "./collection-item-context.js";
 
 function resolveHref(node: RuntimePrimitiveProps["node"]): string {
   const linkType = node.propValues?.linkType;
@@ -20,10 +25,8 @@ function resolveHref(node: RuntimePrimitiveProps["node"]): string {
 }
 
 export function Button({ node, className, style }: RuntimePrimitiveProps) {
-  const label =
-    typeof node.propValues?.label === "string"
-      ? node.propValues.label
-      : "Button";
+  const doc = useOptionalCollectionItemDoc();
+  const label = resolvePrimitiveButtonLabel(node, doc);
   const href = resolveHref(node);
   const openInNewTab = Boolean(node.propValues?.openInNewTab);
 

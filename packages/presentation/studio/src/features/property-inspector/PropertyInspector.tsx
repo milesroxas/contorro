@@ -40,19 +40,14 @@ import {
   IconLayoutAlignTop,
   IconLayoutDistributeHorizontal,
   IconPalette,
-  IconPhoto,
-  IconPhotoOff,
   IconRestore,
   IconRulerMeasure,
-  IconSearch,
   IconSpacingHorizontal,
   IconTypography,
-  IconUpload,
   IconX,
 } from "@tabler/icons-react";
 import {
   type Dispatch,
-  type RefObject,
   type SetStateAction,
   useEffect,
   useId,
@@ -102,37 +97,27 @@ import {
   TabsTrigger,
 } from "../../components/ui/tabs.js";
 import { TooltipProvider } from "../../components/ui/tooltip.js";
+import { type MediaListItem, fetchMediaRecords } from "../../lib/cms-media.js";
 import { cn } from "../../lib/cn.js";
+import {
+  type PayloadCollectionDocRef,
+  fetchPayloadCollectionDocs,
+} from "../../lib/fetch-payload-collection-docs.js";
 import type { StudioInspectorTab } from "../../lib/inspector-tab-shortcuts.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
 import {
   libraryDisplayNameForKey,
   useLibraryComponentLabels,
 } from "../../lib/use-library-component-labels.js";
+import { CollectionFieldBindingSection } from "./collection-field-binding-controls.js";
+import { CollectionPrimitiveInspector } from "./collection-primitive-inspector.js";
+import { PayloadMediaPickerFields } from "./payload-media-picker-fields.js";
 import {
   BorderPropertyRowLabel,
   PropertyControlLabel,
+  SettingsCheckboxFieldRow,
   SettingsFieldRow,
 } from "./property-control-label.js";
-
-type MediaRecord = {
-  id: number;
-  url: string;
-  alt: string;
-};
-
-type MediaListItem = {
-  id: number;
-  url: string;
-  alt: string;
-  filename?: string;
-};
-
-type PayloadCollectionEntry = {
-  id: string;
-  slug: string;
-  label: string;
-};
 
 function semanticShellTagForNode(
   node: CompositionNode,
@@ -149,6 +134,14 @@ function boxSupportsDivSectionElementSetting(tag: unknown): boolean {
     return true;
   }
   return tag === "div" || tag === "section";
+}
+
+function isNodeCollectionFieldMapped(node: CompositionNode): boolean {
+  return (
+    node.contentBinding?.source === "collection" &&
+    typeof node.contentBinding.key === "string" &&
+    node.contentBinding.key.trim() !== ""
+  );
 }
 
 function BoxPrimitiveInspector({
@@ -2531,127 +2524,32 @@ function StyleValueSelect({
   );
 }
 
-async function fetchMediaRecords(): Promise<MediaListItem[]> {
-  const res = await fetch("/api/media?depth=0&limit=50&sort=-updatedAt", {
-    credentials: "include",
-  });
-  if (!res.ok) {
-    throw new Error(`Failed to load media (${res.status})`);
-  }
-  const json = (await res.json()) as {
-    docs?: Array<{
-      id?: unknown;
-      url?: unknown;
-      alt?: unknown;
-      filename?: unknown;
-    }>;
-  };
-  const docs = Array.isArray(json.docs) ? json.docs : [];
-  return docs
-    .map((doc) => ({
-      id: typeof doc.id === "number" ? doc.id : Number.NaN,
-      url: typeof doc.url === "string" ? doc.url : "",
-      alt: typeof doc.alt === "string" ? doc.alt : "",
-      filename: typeof doc.filename === "string" ? doc.filename : "",
-    }))
-    .filter((doc) => Number.isFinite(doc.id) && doc.url.length > 0);
-}
-
 async function fetchCollectionEntries(
   collectionSlug: string,
-): Promise<PayloadCollectionEntry[]> {
-  const cleanSlug = collectionSlug.trim().replace(/^\/+|\/+$/g, "");
-  if (!cleanSlug) {
-    return [];
-  }
-  const res = await fetch(
-    `/api/${encodeURIComponent(cleanSlug)}?depth=0&limit=50&sort=-updatedAt`,
-    { credentials: "include" },
-  );
-  if (!res.ok) {
-    throw new Error(`Failed to load ${cleanSlug} entries (${res.status})`);
-  }
-  const json = (await res.json()) as {
-    docs?: Array<{
-      id?: unknown;
-      slug?: unknown;
-      title?: unknown;
-      name?: unknown;
-      label?: unknown;
-    }>;
-  };
-  const docs = Array.isArray(json.docs) ? json.docs : [];
-  return docs
-    .map((doc) => {
-      const id =
-        typeof doc.id === "string" || typeof doc.id === "number"
-          ? String(doc.id)
-          : "";
-      const slug = typeof doc.slug === "string" ? doc.slug : "";
-      const labelCandidate =
-        typeof doc.title === "string"
-          ? doc.title
-          : typeof doc.name === "string"
-            ? doc.name
-            : typeof doc.label === "string"
-              ? doc.label
-              : slug || id;
-      return {
-        id,
-        slug,
-        label: labelCandidate,
-      };
-    })
-    .filter((doc) => doc.slug.length > 0);
-}
-
-async function uploadMediaFile(file: File, alt: string): Promise<MediaRecord> {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("alt", alt.trim() || file.name);
-  const res = await fetch("/api/media", {
-    method: "POST",
-    body: formData,
-    credentials: "include",
-  });
-  if (!res.ok) {
-    throw new Error(`Upload failed (${res.status})`);
-  }
-  const json = (await res.json()) as {
-    doc?: { id?: unknown; url?: unknown; alt?: unknown };
-    id?: unknown;
-    url?: unknown;
-    alt?: unknown;
-  };
-  const doc =
-    json.doc && typeof json.doc === "object" && !Array.isArray(json.doc)
-      ? json.doc
-      : json;
-  if (typeof doc.id !== "number" || typeof doc.url !== "string") {
-    throw new Error("Invalid upload response");
-  }
-  return {
-    id: doc.id,
-    url: doc.url,
-    alt: typeof doc.alt === "string" ? doc.alt : "",
-  };
+): Promise<PayloadCollectionDocRef[]> {
+  const docs = await fetchPayloadCollectionDocs(collectionSlug);
+  return docs.filter((doc) => doc.slug.length > 0);
 }
 
 function TextPrimitiveInspector({
+  composition,
   node,
   content,
   fieldBound,
   exposeToEditors,
   onTextChange,
   resetNodePropKey,
+  setNodeCollectionFieldBinding,
   setNodeEditorFieldBinding,
 }: {
+  composition: PageComposition;
   node: CompositionNode;
   content: string;
   fieldBound: EditorFieldSpec | undefined;
   exposeToEditors: boolean;
   onTextChange: (content: string) => void;
   resetNodePropKey: (propKey: string) => void;
+  setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
   const baseId = useId();
@@ -2694,48 +2592,61 @@ function TextPrimitiveInspector({
     setNodeEditorFieldBinding(parsed.data);
   }
 
+  const collectionMapped = isNodeCollectionFieldMapped(node);
+
   return (
     <>
-      <SettingsFieldRow
-        definitionKey={node.definitionKey}
-        htmlFor={contentId}
-        label="Content"
-        onResetProp={resetNodePropKey}
-        propKey="content"
-        propValues={node.propValues}
-      >
-        <Input
-          data-testid="inspector-text-content"
-          id={contentId}
-          onChange={(e) => onTextChange(e.target.value)}
-          type="text"
-          value={content}
-        />
-      </SettingsFieldRow>
-      <div className="flex items-center gap-2">
-        <Checkbox
-          checked={exposeToEditors}
-          id={exposeId}
-          onChange={(e) => {
-            if (e.target.checked) {
-              applyEditorField({
-                name: "content",
-                type: "text",
-                required: false,
-                label: "Content",
-                defaultValue: content,
-              });
-            } else {
-              setFieldError(null);
-              setNodeEditorFieldBinding(null);
-            }
-          }}
-        />
-        <Label className="text-sm font-normal" htmlFor={exposeId}>
-          Expose to CMS editors
-        </Label>
-      </div>
-      {exposeToEditors && fieldBound ? (
+      <CollectionFieldBindingSection
+        composition={composition}
+        editorFieldBindingActive={exposeToEditors}
+        node={node}
+        setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
+      />
+      {collectionMapped ? null : (
+        <SettingsFieldRow
+          definitionKey={node.definitionKey}
+          htmlFor={contentId}
+          label="Content"
+          onResetProp={resetNodePropKey}
+          propKey="content"
+          propValues={node.propValues}
+        >
+          <Input
+            data-testid="inspector-text-content"
+            id={contentId}
+            onChange={(e) => onTextChange(e.target.value)}
+            type="text"
+            value={content}
+          />
+        </SettingsFieldRow>
+      )}
+      {collectionMapped ? null : (
+        <div className="flex items-center gap-2">
+          <Checkbox
+            checked={exposeToEditors}
+            disabled={node.contentBinding?.source === "collection"}
+            id={exposeId}
+            onChange={(e) => {
+              if (e.target.checked) {
+                applyEditorField({
+                  name: "content",
+                  type: "text",
+                  required: false,
+                  label: "Content",
+                  defaultValue: content,
+                });
+              } else {
+                setFieldError(null);
+                setNodeEditorFieldBinding(null);
+              }
+            }}
+          />
+          <Label className="text-sm font-normal" htmlFor={exposeId}>
+            Expose to CMS editors
+          </Label>
+        </div>
+      )}
+      {collectionMapped ? null : exposeToEditors && fieldBound ? (
         <div className="space-y-4 rounded-md border border-border/60 p-4">
           <div className="space-y-3">
             <Label
@@ -2887,18 +2798,22 @@ function TextPrimitiveInspector({
 }
 
 function HeadingPrimitiveInspector({
+  composition,
   node,
   patchNodeProps,
   fieldBound,
   exposeToEditors,
   resetNodePropKey,
+  setNodeCollectionFieldBinding,
   setNodeEditorFieldBinding,
 }: {
+  composition: PageComposition;
   node: CompositionNode;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   fieldBound: EditorFieldSpec | undefined;
   exposeToEditors: boolean;
   resetNodePropKey: (propKey: string) => void;
+  setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
   const baseId = useId();
@@ -2941,23 +2856,33 @@ function HeadingPrimitiveInspector({
     setNodeEditorFieldBinding(parsed.data);
   }
 
+  const collectionMapped = isNodeCollectionFieldMapped(node);
+
   return (
     <div className="space-y-5">
-      <SettingsFieldRow
-        definitionKey={node.definitionKey}
-        htmlFor={`${baseId}-heading-content`}
-        label="Content"
-        onResetProp={resetNodePropKey}
-        propKey="content"
-        propValues={node.propValues}
-      >
-        <Input
-          id={`${baseId}-heading-content`}
-          onChange={(e) => patchNodeProps({ content: e.target.value })}
-          type="text"
-          value={content}
-        />
-      </SettingsFieldRow>
+      <CollectionFieldBindingSection
+        composition={composition}
+        editorFieldBindingActive={exposeToEditors}
+        node={node}
+        setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
+      />
+      {collectionMapped ? null : (
+        <SettingsFieldRow
+          definitionKey={node.definitionKey}
+          htmlFor={`${baseId}-heading-content`}
+          label="Content"
+          onResetProp={resetNodePropKey}
+          propKey="content"
+          propValues={node.propValues}
+        >
+          <Input
+            id={`${baseId}-heading-content`}
+            onChange={(e) => patchNodeProps({ content: e.target.value })}
+            type="text"
+            value={content}
+          />
+        </SettingsFieldRow>
+      )}
       <SettingsFieldRow
         definitionKey={node.definitionKey}
         htmlFor={`${baseId}-heading-level`}
@@ -2983,33 +2908,36 @@ function HeadingPrimitiveInspector({
           </SelectContent>
         </Select>
       </SettingsFieldRow>
-      <div className="flex items-center gap-2">
-        <Checkbox
-          checked={exposeToEditors}
-          id={`${baseId}-heading-expose`}
-          onChange={(e) => {
-            if (e.target.checked) {
-              applyEditorField({
-                name: "heading",
-                type: "text",
-                required: false,
-                label: "Heading",
-                defaultValue: content,
-              });
-              return;
-            }
-            setFieldError(null);
-            setNodeEditorFieldBinding(null);
-          }}
-        />
-        <Label
-          className="text-sm font-normal"
-          htmlFor={`${baseId}-heading-expose`}
-        >
-          Expose to CMS editors
-        </Label>
-      </div>
-      {exposeToEditors && fieldBound ? (
+      {collectionMapped ? null : (
+        <div className="flex items-center gap-2">
+          <Checkbox
+            checked={exposeToEditors}
+            disabled={node.contentBinding?.source === "collection"}
+            id={`${baseId}-heading-expose`}
+            onChange={(e) => {
+              if (e.target.checked) {
+                applyEditorField({
+                  name: "heading",
+                  type: "text",
+                  required: false,
+                  label: "Heading",
+                  defaultValue: content,
+                });
+                return;
+              }
+              setFieldError(null);
+              setNodeEditorFieldBinding(null);
+            }}
+          />
+          <Label
+            className="text-sm font-normal"
+            htmlFor={`${baseId}-heading-expose`}
+          >
+            Expose to CMS editors
+          </Label>
+        </div>
+      )}
+      {collectionMapped ? null : exposeToEditors && fieldBound ? (
         <div className="space-y-4 rounded-md border border-border/60 p-4">
           <div className="space-y-3">
             <Label
@@ -3167,7 +3095,7 @@ function ButtonPrimitivePayloadCollectionFields({
   baseId: string;
   collectionSlug: string;
   definitionKey: string;
-  entries: PayloadCollectionEntry[];
+  entries: PayloadCollectionDocRef[];
   entryLoadError: string | null;
   entryLoading: boolean;
   entryPickerOpen: boolean;
@@ -3288,13 +3216,17 @@ function ButtonPrimitivePayloadCollectionFields({
 }
 
 function ButtonPrimitiveInspector({
+  composition,
   node,
   patchNodeProps,
   resetNodePropKey,
+  setNodeCollectionFieldBinding,
 }: {
+  composition: PageComposition;
   node: CompositionNode;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   resetNodePropKey: (propKey: string) => void;
+  setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
 }) {
   const baseId = useId();
   const label =
@@ -3317,7 +3249,7 @@ function ButtonPrimitiveInspector({
   const [entryPickerOpen, setEntryPickerOpen] = useState(false);
   const [entryLoading, setEntryLoading] = useState(false);
   const [entryLoadError, setEntryLoadError] = useState<string | null>(null);
-  const [entries, setEntries] = useState<PayloadCollectionEntry[]>([]);
+  const [entries, setEntries] = useState<PayloadCollectionDocRef[]>([]);
 
   useEffect(() => {
     if (!entryPickerOpen || !collectionSlug.trim()) {
@@ -3339,23 +3271,33 @@ function ButtonPrimitiveInspector({
       });
   }, [collectionSlug, entryPickerOpen]);
 
+  const collectionMapped = isNodeCollectionFieldMapped(node);
+
   return (
     <div className="space-y-4">
-      <SettingsFieldRow
-        definitionKey={node.definitionKey}
-        htmlFor={`${baseId}-button-label`}
-        label="Label"
-        onResetProp={resetNodePropKey}
-        propKey="label"
-        propValues={node.propValues}
-      >
-        <Input
-          id={`${baseId}-button-label`}
-          onChange={(e) => patchNodeProps({ label: e.target.value })}
-          type="text"
-          value={label}
-        />
-      </SettingsFieldRow>
+      <CollectionFieldBindingSection
+        composition={composition}
+        editorFieldBindingActive={false}
+        node={node}
+        setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
+      />
+      {collectionMapped ? null : (
+        <SettingsFieldRow
+          definitionKey={node.definitionKey}
+          htmlFor={`${baseId}-button-label`}
+          label="Label"
+          onResetProp={resetNodePropKey}
+          propKey="label"
+          propValues={node.propValues}
+        >
+          <Input
+            id={`${baseId}-button-label`}
+            onChange={(e) => patchNodeProps({ label: e.target.value })}
+            type="text"
+            value={label}
+          />
+        </SettingsFieldRow>
+      )}
       <SettingsFieldRow
         definitionKey={node.definitionKey}
         htmlFor={`${baseId}-button-link-type`}
@@ -3416,28 +3358,16 @@ function ButtonPrimitiveInspector({
           setEntryPickerOpen={setEntryPickerOpen}
         />
       )}
-      <SettingsFieldRow
+      <SettingsCheckboxFieldRow
+        checkboxId={`${baseId}-button-new-tab`}
+        checked={openInNewTab}
         definitionKey={node.definitionKey}
-        htmlFor={`${baseId}-button-new-tab`}
         label="Open in new tab"
+        onCheckedChange={(next) => patchNodeProps({ openInNewTab: next })}
         onResetProp={resetNodePropKey}
         propKey="openInNewTab"
         propValues={node.propValues}
-      >
-        <div className="flex items-center gap-2">
-          <Checkbox
-            checked={openInNewTab}
-            id={`${baseId}-button-new-tab`}
-            onChange={(e) => patchNodeProps({ openInNewTab: e.target.checked })}
-          />
-          <Label
-            className="text-sm font-normal"
-            htmlFor={`${baseId}-button-new-tab`}
-          >
-            Enabled
-          </Label>
-        </div>
-      </SettingsFieldRow>
+      />
     </div>
   );
 }
@@ -3478,214 +3408,6 @@ function ImagePrimitiveInspectorUrlFields({
           value={src}
         />
       </SettingsFieldRow>
-    </div>
-  );
-}
-
-function ImagePrimitiveInspectorMediaFields({
-  alt,
-  baseId,
-  busy,
-  mediaDocs,
-  mediaLoadError,
-  mediaLoading,
-  mediaPickerOpen,
-  mediaId,
-  patchNodeProps,
-  setBusy,
-  setError,
-  setMediaPickerOpen,
-  src,
-  uploadInputRef,
-}: {
-  alt: string;
-  baseId: string;
-  busy: boolean;
-  mediaDocs: MediaListItem[];
-  mediaLoadError: string | null;
-  mediaLoading: boolean;
-  mediaPickerOpen: boolean;
-  mediaId: number | "";
-  patchNodeProps: (patch: Record<string, unknown>) => void;
-  setBusy: (next: boolean) => void;
-  setError: (message: string | null) => void;
-  setMediaPickerOpen: (open: boolean) => void;
-  src: string;
-  uploadInputRef: RefObject<HTMLInputElement | null>;
-}) {
-  return (
-    <div className="space-y-5 border-t border-border/60 pt-5">
-      <div className="space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <Label>Selected image</Label>
-          <Sheet onOpenChange={setMediaPickerOpen} open={mediaPickerOpen}>
-            <SheetTrigger asChild>
-              <Button
-                className="border border-border/70"
-                size="sm"
-                type="button"
-                variant="ghost"
-              >
-                <IconSearch aria-hidden className="mr-1.5 size-4" />
-                Browse
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>Select media</SheetTitle>
-                <SheetDescription>
-                  Pick an existing Payload media record.
-                </SheetDescription>
-              </SheetHeader>
-              <ScrollArea className="min-h-0 flex-1">
-                <div className="space-y-2 py-1 pr-2">
-                  {mediaLoading ? (
-                    <p className="text-sm text-muted-foreground">Loading…</p>
-                  ) : mediaLoadError ? (
-                    <p className="text-sm text-red-500">{mediaLoadError}</p>
-                  ) : mediaDocs.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No media entries found.
-                    </p>
-                  ) : (
-                    mediaDocs.map((media) => (
-                      <button
-                        className="w-full rounded-md border border-border/60 p-2 text-left hover:bg-accent/50"
-                        key={media.id}
-                        onClick={() => {
-                          patchNodeProps({
-                            imageSource: "media",
-                            mediaId: media.id,
-                            src: media.url,
-                            mediaUrl: media.url,
-                            alt: media.alt || alt,
-                          });
-                          setMediaPickerOpen(false);
-                        }}
-                        type="button"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="size-12 shrink-0 overflow-hidden rounded-sm border border-border/60 bg-muted/30">
-                            <img
-                              alt={
-                                media.alt ||
-                                media.filename ||
-                                `Media ${media.id}`
-                              }
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                              src={media.url}
-                            />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="truncate text-sm font-medium">
-                              {media.alt || media.filename || media.url}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {media.filename || "Payload media"}
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-              <div className="pt-3">
-                <SheetClose asChild>
-                  <Button size="sm" type="button" variant="ghost">
-                    Close
-                  </Button>
-                </SheetClose>
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-        <div className="overflow-hidden rounded-md border border-border/70 bg-muted/20">
-          {src ? (
-            <div className="space-y-2 p-2">
-              <div className="aspect-4/3 overflow-hidden rounded-sm border border-border/70 bg-background">
-                <img
-                  alt={alt || "Selected image"}
-                  className="h-full w-full object-cover"
-                  src={src}
-                />
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <IconPhoto aria-hidden className="size-3.5" />
-                <span className="truncate">
-                  {alt || `Media ${mediaId || "selected"}`}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="flex aspect-4/3 flex-col items-center justify-center gap-2 p-4 text-center text-muted-foreground">
-              <IconPhotoOff aria-hidden className="size-8" />
-              <p className="text-sm font-medium">No image selected</p>
-              <p className="text-xs">Browse media or upload a new image</p>
-            </div>
-          )}
-        </div>
-      </div>
-      <div className="space-y-3">
-        <Label htmlFor={`${baseId}-media-upload`}>Upload new image</Label>
-        <Input
-          accept="image/*"
-          className="sr-only"
-          disabled={busy}
-          id={`${baseId}-media-upload`}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (!file) {
-              return;
-            }
-            setBusy(true);
-            setError(null);
-            void uploadMediaFile(file, alt)
-              .then((media) => {
-                patchNodeProps({
-                  imageSource: "media",
-                  mediaId: media.id,
-                  src: media.url,
-                  mediaUrl: media.url,
-                  alt: media.alt || alt || file.name,
-                });
-              })
-              .catch((uploadErr) => {
-                setError(
-                  uploadErr instanceof Error
-                    ? uploadErr.message
-                    : "Upload failed",
-                );
-              })
-              .finally(() => {
-                setBusy(false);
-                e.target.value = "";
-              });
-          }}
-          ref={uploadInputRef}
-          type="file"
-        />
-        <div className="rounded-md border border-dashed border-border/70 bg-muted/10 p-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
-              <IconUpload aria-hidden className="size-4 shrink-0" />
-              <span className="truncate">
-                {busy ? "Uploading image..." : "PNG, JPG, WEBP or GIF"}
-              </span>
-            </div>
-            <Button
-              disabled={busy}
-              onClick={() => uploadInputRef.current?.click()}
-              size="sm"
-              type="button"
-              variant="default"
-            >
-              {busy ? "Uploading..." : "Choose file"}
-            </Button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -3745,6 +3467,7 @@ function ImagePrimitiveInspectorAltAndBindingFields({
       <div className="flex items-center gap-2.5 border-t border-border/60 pt-5">
         <Checkbox
           checked={exposeToEditors}
+          disabled={node.contentBinding?.source === "collection"}
           id={`${baseId}-image-expose`}
           onChange={(e) => {
             if (e.target.checked) {
@@ -3836,18 +3559,22 @@ function ImagePrimitiveInspectorAltAndBindingFields({
 }
 
 function ImagePrimitiveInspector({
+  composition,
   node,
   fieldBound,
   exposeToEditors,
   patchNodeProps,
   resetNodePropKey,
+  setNodeCollectionFieldBinding,
   setNodeEditorFieldBinding,
 }: {
+  composition: PageComposition;
   node: CompositionNode;
   fieldBound: EditorFieldSpec | undefined;
   exposeToEditors: boolean;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   resetNodePropKey: (propKey: string) => void;
+  setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
   const baseId = useId();
@@ -3918,76 +3645,440 @@ function ImagePrimitiveInspector({
     setNodeEditorFieldBinding(parsed.data);
   }
 
+  const collectionMapped = isNodeCollectionFieldMapped(node);
+
   return (
     <div className="space-y-6">
+      <CollectionFieldBindingSection
+        composition={composition}
+        editorFieldBindingActive={exposeToEditors}
+        node={node}
+        setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
+      />
+      {collectionMapped ? null : (
+        <>
+          <SettingsFieldRow
+            definitionKey={node.definitionKey}
+            htmlFor={`${baseId}-image-source`}
+            label="Source"
+            onResetProp={resetNodePropKey}
+            propKey="imageSource"
+            propValues={node.propValues}
+          >
+            <Select
+              onValueChange={(value) =>
+                patchNodeProps({
+                  imageSource: value,
+                })
+              }
+              value={imageSource}
+            >
+              <SelectTrigger id={`${baseId}-image-source`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="url">URL</SelectItem>
+                <SelectItem value="media">Payload Media</SelectItem>
+              </SelectContent>
+            </Select>
+          </SettingsFieldRow>
+          {imageSource === "url" ? (
+            <ImagePrimitiveInspectorUrlFields
+              baseId={baseId}
+              node={node}
+              patchNodeProps={patchNodeProps}
+              resetNodePropKey={resetNodePropKey}
+              src={src}
+            />
+          ) : (
+            <PayloadMediaPickerFields
+              altForUpload={alt}
+              baseId={baseId}
+              busy={busy}
+              mediaDocs={mediaDocs}
+              mediaId={mediaId}
+              mediaLoadError={mediaLoadError}
+              mediaLoading={mediaLoading}
+              mediaPickerOpen={mediaPickerOpen}
+              onSelectMediaDoc={(media) =>
+                patchNodeProps({
+                  imageSource: "media",
+                  mediaId: media.id,
+                  src: media.url,
+                  mediaUrl: media.url,
+                  alt: media.alt || alt,
+                })
+              }
+              onUploadComplete={(media, file) =>
+                patchNodeProps({
+                  imageSource: "media",
+                  mediaId: media.id,
+                  src: media.url,
+                  mediaUrl: media.url,
+                  alt: media.alt || alt || file.name,
+                })
+              }
+              setBusy={setBusy}
+              setError={setError}
+              setMediaPickerOpen={setMediaPickerOpen}
+              src={src}
+              uploadInputRef={uploadInputRef}
+              variant="image"
+            />
+          )}
+          <ImagePrimitiveInspectorAltAndBindingFields
+            alt={alt}
+            applyEditorField={applyEditorField}
+            baseId={baseId}
+            error={error}
+            exposeToEditors={exposeToEditors}
+            fieldBound={fieldBound}
+            labelDraft={labelDraft}
+            mediaId={mediaId}
+            nameDraft={nameDraft}
+            node={node}
+            patchNodeProps={patchNodeProps}
+            resetNodePropKey={resetNodePropKey}
+            setLabelDraft={setLabelDraft}
+            setNameDraft={setNameDraft}
+            setNodeEditorFieldBinding={setNodeEditorFieldBinding}
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+function VideoPrimitiveInspectorUrlFields({
+  baseId,
+  node,
+  patchNodeProps,
+  resetNodePropKey,
+  src,
+}: {
+  baseId: string;
+  node: CompositionNode;
+  patchNodeProps: (patch: Record<string, unknown>) => void;
+  resetNodePropKey: (propKey: string) => void;
+  src: string;
+}) {
+  return (
+    <div className="min-w-0 space-y-3 border-t border-border/60 pt-5">
       <SettingsFieldRow
         definitionKey={node.definitionKey}
-        htmlFor={`${baseId}-image-source`}
-        label="Source"
+        htmlFor={`${baseId}-video-url`}
+        label="Video URL"
         onResetProp={resetNodePropKey}
-        propKey="imageSource"
+        propKey="src"
+        propValues={node.propValues}
+      >
+        <Input
+          id={`${baseId}-video-url`}
+          onChange={(e) =>
+            patchNodeProps({
+              src: e.target.value,
+              videoSource: "url",
+            })
+          }
+          placeholder="https://"
+          type="url"
+          value={src}
+        />
+      </SettingsFieldRow>
+    </div>
+  );
+}
+
+function VideoPrimitivePlaybackFields({
+  baseId,
+  node,
+  patchNodeProps,
+  resetNodePropKey,
+}: {
+  baseId: string;
+  node: CompositionNode;
+  patchNodeProps: (patch: Record<string, unknown>) => void;
+  resetNodePropKey: (propKey: string) => void;
+}) {
+  const poster =
+    typeof node.propValues?.poster === "string" ? node.propValues.poster : "";
+  const objectFitRaw = node.propValues?.objectFit;
+  const objectFit =
+    typeof objectFitRaw === "string" && objectFitRaw.length > 0
+      ? objectFitRaw
+      : "cover";
+  const preloadRaw = node.propValues?.preload;
+  const preload =
+    typeof preloadRaw === "string" && preloadRaw.length > 0
+      ? preloadRaw
+      : "metadata";
+  const autoPlay = Boolean(node.propValues?.autoPlay);
+  const loop = Boolean(node.propValues?.loop);
+  const muted = Boolean(node.propValues?.muted);
+  const playsInline = node.propValues?.playsInline !== false;
+  const controls = node.propValues?.controls !== false;
+
+  return (
+    <div className="min-w-0 space-y-5 border-t border-border/60 pt-5">
+      <SettingsFieldRow
+        definitionKey={node.definitionKey}
+        htmlFor={`${baseId}-video-poster`}
+        label="Poster image URL"
+        onResetProp={resetNodePropKey}
+        propKey="poster"
+        propValues={node.propValues}
+      >
+        <Input
+          id={`${baseId}-video-poster`}
+          onChange={(e) => patchNodeProps({ poster: e.target.value })}
+          placeholder="https://"
+          type="url"
+          value={poster}
+        />
+      </SettingsFieldRow>
+      <SettingsFieldRow
+        definitionKey={node.definitionKey}
+        htmlFor={`${baseId}-video-object-fit`}
+        label="Object fit"
+        onResetProp={resetNodePropKey}
+        propKey="objectFit"
         propValues={node.propValues}
       >
         <Select
-          onValueChange={(value) =>
-            patchNodeProps({
-              imageSource: value,
-            })
-          }
-          value={imageSource}
+          onValueChange={(value) => patchNodeProps({ objectFit: value })}
+          value={objectFit}
         >
-          <SelectTrigger id={`${baseId}-image-source`}>
+          <SelectTrigger id={`${baseId}-video-object-fit`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="url">URL</SelectItem>
-            <SelectItem value="media">Payload Media</SelectItem>
+            <SelectItem value="cover">Cover</SelectItem>
+            <SelectItem value="contain">Contain</SelectItem>
+            <SelectItem value="fill">Fill</SelectItem>
+            <SelectItem value="none">None</SelectItem>
           </SelectContent>
         </Select>
       </SettingsFieldRow>
-      {imageSource === "url" ? (
-        <ImagePrimitiveInspectorUrlFields
-          baseId={baseId}
-          node={node}
-          patchNodeProps={patchNodeProps}
-          resetNodePropKey={resetNodePropKey}
-          src={src}
-        />
-      ) : (
-        <ImagePrimitiveInspectorMediaFields
-          alt={alt}
-          baseId={baseId}
-          busy={busy}
-          mediaDocs={mediaDocs}
-          mediaId={mediaId}
-          mediaLoadError={mediaLoadError}
-          mediaLoading={mediaLoading}
-          mediaPickerOpen={mediaPickerOpen}
-          patchNodeProps={patchNodeProps}
-          setBusy={setBusy}
-          setError={setError}
-          setMediaPickerOpen={setMediaPickerOpen}
-          src={src}
-          uploadInputRef={uploadInputRef}
-        />
+      <SettingsFieldRow
+        definitionKey={node.definitionKey}
+        htmlFor={`${baseId}-video-preload`}
+        label="Preload"
+        onResetProp={resetNodePropKey}
+        propKey="preload"
+        propValues={node.propValues}
+      >
+        <Select
+          onValueChange={(value) => patchNodeProps({ preload: value })}
+          value={preload}
+        >
+          <SelectTrigger id={`${baseId}-video-preload`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None</SelectItem>
+            <SelectItem value="metadata">Metadata</SelectItem>
+            <SelectItem value="auto">Auto</SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingsFieldRow>
+      <SettingsCheckboxFieldRow
+        checkboxId={`${baseId}-video-autoplay`}
+        checked={autoPlay}
+        definitionKey={node.definitionKey}
+        label="Autoplay"
+        onCheckedChange={(next) => patchNodeProps({ autoPlay: next })}
+        onResetProp={resetNodePropKey}
+        propKey="autoPlay"
+        propValues={node.propValues}
+      />
+      <SettingsCheckboxFieldRow
+        checkboxId={`${baseId}-video-loop`}
+        checked={loop}
+        definitionKey={node.definitionKey}
+        label="Loop"
+        onCheckedChange={(next) => patchNodeProps({ loop: next })}
+        onResetProp={resetNodePropKey}
+        propKey="loop"
+        propValues={node.propValues}
+      />
+      <SettingsCheckboxFieldRow
+        checkboxId={`${baseId}-video-muted`}
+        checked={muted}
+        definitionKey={node.definitionKey}
+        label="Muted"
+        onCheckedChange={(next) => patchNodeProps({ muted: next })}
+        onResetProp={resetNodePropKey}
+        propKey="muted"
+        propValues={node.propValues}
+      />
+      <SettingsCheckboxFieldRow
+        checkboxId={`${baseId}-video-playsinline`}
+        checked={playsInline}
+        definitionKey={node.definitionKey}
+        label="Plays inline"
+        onCheckedChange={(next) => patchNodeProps({ playsInline: next })}
+        onResetProp={resetNodePropKey}
+        propKey="playsInline"
+        propValues={node.propValues}
+      />
+      <SettingsCheckboxFieldRow
+        checkboxId={`${baseId}-video-controls`}
+        checked={controls}
+        definitionKey={node.definitionKey}
+        label="Show controls"
+        onCheckedChange={(next) => patchNodeProps({ controls: next })}
+        onResetProp={resetNodePropKey}
+        propKey="controls"
+        propValues={node.propValues}
+      />
+    </div>
+  );
+}
+
+function VideoPrimitiveInspector({
+  composition,
+  node,
+  patchNodeProps,
+  resetNodePropKey,
+  setNodeCollectionFieldBinding,
+}: {
+  composition: PageComposition;
+  node: CompositionNode;
+  patchNodeProps: (patch: Record<string, unknown>) => void;
+  resetNodePropKey: (propKey: string) => void;
+  setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
+}) {
+  const baseId = useId();
+  const videoSource = node.propValues?.videoSource === "url" ? "url" : "media";
+  const src =
+    typeof node.propValues?.src === "string" ? node.propValues.src : "";
+  const mediaId =
+    typeof node.propValues?.mediaId === "number"
+      ? node.propValues.mediaId
+      : typeof node.propValues?.mediaId === "string" &&
+          /^\d+$/.test(node.propValues.mediaId)
+        ? Number.parseInt(node.propValues.mediaId, 10)
+        : "";
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaLoadError, setMediaLoadError] = useState<string | null>(null);
+  const [mediaDocs, setMediaDocs] = useState<MediaListItem[]>([]);
+
+  useEffect(() => {
+    if (!mediaPickerOpen) {
+      return;
+    }
+    setMediaLoading(true);
+    setMediaLoadError(null);
+    void fetchMediaRecords()
+      .then((docs) => {
+        setMediaDocs(docs);
+      })
+      .catch((err) => {
+        setMediaLoadError(
+          err instanceof Error ? err.message : "Failed to load media entries",
+        );
+      })
+      .finally(() => {
+        setMediaLoading(false);
+      });
+  }, [mediaPickerOpen]);
+
+  const collectionMapped = isNodeCollectionFieldMapped(node);
+
+  return (
+    <div className="min-w-0 space-y-6">
+      <CollectionFieldBindingSection
+        composition={composition}
+        editorFieldBindingActive={false}
+        node={node}
+        setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
+      />
+      {collectionMapped ? null : (
+        <>
+          <SettingsFieldRow
+            definitionKey={node.definitionKey}
+            htmlFor={`${baseId}-video-source`}
+            label="Source"
+            onResetProp={resetNodePropKey}
+            propKey="videoSource"
+            propValues={node.propValues}
+          >
+            <Select
+              onValueChange={(value) =>
+                patchNodeProps({
+                  videoSource: value,
+                })
+              }
+              value={videoSource}
+            >
+              <SelectTrigger id={`${baseId}-video-source`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="url">URL</SelectItem>
+                <SelectItem value="media">Payload Media</SelectItem>
+              </SelectContent>
+            </Select>
+          </SettingsFieldRow>
+          {videoSource === "url" ? (
+            <VideoPrimitiveInspectorUrlFields
+              baseId={baseId}
+              node={node}
+              patchNodeProps={patchNodeProps}
+              resetNodePropKey={resetNodePropKey}
+              src={src}
+            />
+          ) : (
+            <PayloadMediaPickerFields
+              altForUpload=""
+              baseId={baseId}
+              busy={busy}
+              mediaDocs={mediaDocs}
+              mediaId={mediaId}
+              mediaLoadError={mediaLoadError}
+              mediaLoading={mediaLoading}
+              mediaPickerOpen={mediaPickerOpen}
+              onSelectMediaDoc={(media) =>
+                patchNodeProps({
+                  videoSource: "media",
+                  mediaId: media.id,
+                  src: media.url,
+                  mediaUrl: media.url,
+                })
+              }
+              onUploadComplete={(media) =>
+                patchNodeProps({
+                  videoSource: "media",
+                  mediaId: media.id,
+                  src: media.url,
+                  mediaUrl: media.url,
+                })
+              }
+              setBusy={setBusy}
+              setError={setError}
+              setMediaPickerOpen={setMediaPickerOpen}
+              src={src}
+              uploadInputRef={uploadInputRef}
+              variant="video"
+            />
+          )}
+        </>
       )}
-      <ImagePrimitiveInspectorAltAndBindingFields
-        alt={alt}
-        applyEditorField={applyEditorField}
+      <VideoPrimitivePlaybackFields
         baseId={baseId}
-        error={error}
-        exposeToEditors={exposeToEditors}
-        fieldBound={fieldBound}
-        labelDraft={labelDraft}
-        mediaId={mediaId}
-        nameDraft={nameDraft}
         node={node}
         patchNodeProps={patchNodeProps}
         resetNodePropKey={resetNodePropKey}
-        setLabelDraft={setLabelDraft}
-        setNameDraft={setNameDraft}
-        setNodeEditorFieldBinding={setNodeEditorFieldBinding}
       />
+      {error ? (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -4390,12 +4481,14 @@ function InspectorOrderedStyleSectionItem({
 
 function PropertyInspectorSettingsTab({
   componentsHref,
+  composition,
   content,
   exposeToEditors,
   fieldBound,
   isButton,
   isHeading,
   isImage,
+  isVideo,
   isLibraryComponent,
   isSlot,
   isText,
@@ -4404,15 +4497,18 @@ function PropertyInspectorSettingsTab({
   pageTemplateStudio,
   patchNodeProps,
   resetNodePropKey,
+  setNodeCollectionFieldBinding,
   setNodeEditorFieldBinding,
 }: {
   componentsHref: string;
+  composition: PageComposition;
   content: string;
   exposeToEditors: boolean;
   fieldBound: EditorFieldSpec | undefined;
   isButton: boolean;
   isHeading: boolean;
   isImage: boolean;
+  isVideo: boolean;
   isLibraryComponent: boolean;
   isSlot: boolean;
   isText: boolean;
@@ -4421,46 +4517,64 @@ function PropertyInspectorSettingsTab({
   pageTemplateStudio: boolean;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   resetNodePropKey: (propKey: string) => void;
+  setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
   return (
     <>
       {isText ? (
         <TextPrimitiveInspector
+          composition={composition}
           content={content}
           exposeToEditors={exposeToEditors}
           fieldBound={fieldBound}
           node={node}
           onTextChange={onTextChange}
           resetNodePropKey={resetNodePropKey}
+          setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
           setNodeEditorFieldBinding={setNodeEditorFieldBinding}
         />
       ) : null}
       {isHeading ? (
         <HeadingPrimitiveInspector
+          composition={composition}
           exposeToEditors={exposeToEditors}
           fieldBound={fieldBound}
           node={node}
           patchNodeProps={patchNodeProps}
           resetNodePropKey={resetNodePropKey}
+          setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
           setNodeEditorFieldBinding={setNodeEditorFieldBinding}
         />
       ) : null}
       {isButton ? (
         <ButtonPrimitiveInspector
+          composition={composition}
           node={node}
           patchNodeProps={patchNodeProps}
           resetNodePropKey={resetNodePropKey}
+          setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
         />
       ) : null}
       {isImage ? (
         <ImagePrimitiveInspector
+          composition={composition}
           exposeToEditors={exposeToEditors}
           fieldBound={fieldBound}
           node={node}
           patchNodeProps={patchNodeProps}
           resetNodePropKey={resetNodePropKey}
+          setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
           setNodeEditorFieldBinding={setNodeEditorFieldBinding}
+        />
+      ) : null}
+      {isVideo ? (
+        <VideoPrimitiveInspector
+          composition={composition}
+          node={node}
+          patchNodeProps={patchNodeProps}
+          resetNodePropKey={resetNodePropKey}
+          setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
         />
       ) : null}
       {isSlot ? (
@@ -4517,6 +4631,13 @@ function PropertyInspectorSettingsTab({
           resetNodePropKey={resetNodePropKey}
         />
       ) : null}
+      {node.definitionKey === "primitive.collection" ? (
+        <CollectionPrimitiveInspector
+          node={node}
+          patchNodeProps={patchNodeProps}
+          resetNodePropKey={resetNodePropKey}
+        />
+      ) : null}
     </>
   );
 }
@@ -4533,6 +4654,7 @@ function PropertyInspectorActive({
   pageTemplateStudio,
   patchNodeProps,
   resetNodePropKey,
+  setNodeCollectionFieldBinding,
   setNodeEditorFieldBinding,
   setStyleSectionOpenState,
   styleSectionOpenState,
@@ -4552,6 +4674,7 @@ function PropertyInspectorActive({
   pageTemplateStudio: boolean;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   resetNodePropKey: (propKey: string) => void;
+  setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
   setStyleSectionOpenState: Dispatch<
     SetStateAction<Partial<Record<StyleSectionId, boolean>>>
@@ -4563,6 +4686,7 @@ function PropertyInspectorActive({
   const isHeading = node.definitionKey === "primitive.heading";
   const isButton = node.definitionKey === "primitive.button";
   const isImage = node.definitionKey === "primitive.image";
+  const isVideo = node.definitionKey === "primitive.video";
   const isSlot = node.definitionKey === "primitive.slot";
   const isLibraryComponent =
     node.definitionKey === "primitive.libraryComponent";
@@ -4640,9 +4764,9 @@ function PropertyInspectorActive({
 
   return (
     <TooltipProvider>
-      <div className="space-y-4 text-sm">
+      <div className="min-w-0 space-y-4 text-sm">
         <Tabs
-          className="w-full"
+          className="min-h-0 w-full min-w-0"
           onValueChange={(value) => {
             if (value === "styles" || value === "settings") {
               onInspectorTabChange(value);
@@ -4709,7 +4833,7 @@ function PropertyInspectorActive({
               </div>
             ) : null}
           </div>
-          <TabsContent className="mt-4" value="styles">
+          <TabsContent className="mt-4 min-w-0" value="styles">
             {hasStyleControls ? (
               <div className="space-y-4">
                 {orderedStyleSections.map((section, sectionIndex) => (
@@ -4733,15 +4857,17 @@ function PropertyInspectorActive({
               </div>
             )}
           </TabsContent>
-          <TabsContent className="mt-4 space-y-4" value="settings">
+          <TabsContent className="mt-4 min-w-0 space-y-4" value="settings">
             <PropertyInspectorSettingsTab
               componentsHref={componentsHref}
+              composition={composition}
               content={content}
               exposeToEditors={exposeToEditors}
               fieldBound={fieldBound}
               isButton={isButton}
               isHeading={isHeading}
               isImage={isImage}
+              isVideo={isVideo}
               isLibraryComponent={isLibraryComponent}
               isSlot={isSlot}
               isText={isText}
@@ -4750,6 +4876,7 @@ function PropertyInspectorActive({
               pageTemplateStudio={pageTemplateStudio}
               patchNodeProps={patchNodeProps}
               resetNodePropKey={resetNodePropKey}
+              setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
               setNodeEditorFieldBinding={setNodeEditorFieldBinding}
             />
           </TabsContent>
@@ -4770,6 +4897,7 @@ export function PropertyInspector({
   onTextChange,
   patchNodeProps,
   resetNodePropKey,
+  setNodeCollectionFieldBinding,
   setNodeEditorFieldBinding,
   studioResource,
   tokenMetadata,
@@ -4787,6 +4915,7 @@ export function PropertyInspector({
   onTextChange: (content: string) => void;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   resetNodePropKey: (propKey: string) => void;
+  setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
   studioResource?: "pageTemplate" | "component" | null;
   tokenMetadata: TokenMeta[];
@@ -4818,6 +4947,7 @@ export function PropertyInspector({
       pageTemplateStudio={pageTemplateStudio}
       patchNodeProps={patchNodeProps}
       resetNodePropKey={resetNodePropKey}
+      setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
       setNodeEditorFieldBinding={setNodeEditorFieldBinding}
       setStyleSectionOpenState={setStyleSectionOpenState}
       styleSectionOpenState={styleSectionOpenState}

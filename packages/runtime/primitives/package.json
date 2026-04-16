@@ -15,6 +15,7 @@
     "build": "tsc -b"
   },
   "dependencies": {
+    "@repo/domains-composition": "workspace:*",
     "@repo/domains-runtime-catalog": "workspace:*",
     "@repo/kernel": "workspace:*"
   },

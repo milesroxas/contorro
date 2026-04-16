@@ -1,4 +1,4 @@
-import type { PageComposition } from "@repo/contracts-zod";
+import type { CompositionNode, PageComposition } from "@repo/contracts-zod";
 import { type Result, err, ok } from "@repo/kernel";
 
 import { normalizedLayoutSlotId } from "../layout-slot.js";
@@ -90,6 +90,36 @@ function validateLayoutSlotsUnique(
   return ok(undefined);
 }
 
+function validateCollectionBindingsUnderCollection(
+  nodes: PageComposition["nodes"],
+): Result<void, string> {
+  for (const [id, node] of Object.entries(nodes)) {
+    const cb = node.contentBinding;
+    if (cb?.source !== "collection") {
+      continue;
+    }
+    let cur: CompositionNode | undefined = node;
+    let found = false;
+    while (cur?.parentId) {
+      const parent: CompositionNode | undefined = nodes[cur.parentId];
+      if (!parent) {
+        break;
+      }
+      if (parent.definitionKey === "primitive.collection") {
+        found = true;
+        break;
+      }
+      cur = parent;
+    }
+    if (!found) {
+      return err(
+        `node "${id}" binds to a collection field but is not nested under a Collection`,
+      );
+    }
+  }
+  return ok(undefined);
+}
+
 function validateEditorFieldNamesUnique(
   nodes: PageComposition["nodes"],
 ): Result<void, string> {
@@ -156,6 +186,7 @@ export function validatePageCompositionInvariants(
     validateNodesStyleBindingAlignment(nodes, styleBindings),
     validateChildParentLinks(nodes),
     validateLayoutSlotsUnique(nodes),
+    validateCollectionBindingsUnderCollection(nodes),
     validateEditorFieldNamesUnique(nodes),
     validateNonRootNodesLinked(rootId, nodes),
   ];

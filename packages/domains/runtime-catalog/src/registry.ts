@@ -7,6 +7,8 @@ export type BindingStrategy = "static" | "lazy" | "remote";
 export type RuntimePrimitiveProps = {
   node: CompositionNode;
   children?: ReactNode;
+  /** Repeated subtree for `primitive.collection` (set by the composition renderer). */
+  collectionTemplate?: ReactNode;
   /** Merged from {@link resolveStyleBinding} at the renderer shell. */
   className?: string;
   style?: CSSProperties;
