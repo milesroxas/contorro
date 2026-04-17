@@ -19,6 +19,13 @@ const dirname = path.dirname(filename);
 
 const env = parseStudioEnv(process.env);
 
+/** Vercel Blob rejects non-matching tokens at init; placeholders must not be passed through. */
+const vercelBlobRwToken =
+  typeof env.BLOB_READ_WRITE_TOKEN === "string" &&
+  /^vercel_blob_rw_[a-z\d]+_[a-z\d]+$/i.test(env.BLOB_READ_WRITE_TOKEN)
+    ? env.BLOB_READ_WRITE_TOKEN
+    : undefined;
+
 const db = createPostgresAdapter({
   connectionString: env.POSTGRES_URL,
   migrationDir: path.resolve(dirname, "migrations"),
@@ -110,7 +117,7 @@ export default buildConfig({
       collections: {
         media: true,
       },
-      token: env.BLOB_READ_WRITE_TOKEN,
+      token: vercelBlobRwToken,
     }),
   ],
 });
