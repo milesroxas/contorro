@@ -4,7 +4,7 @@ name: contorro
 
 services:
   db:
-    image: postgres:16
+    image: postgres:17
     restart: unless-stopped
     ports:
       - "${CONTORRO_DB_PORT:-54332}:5432"

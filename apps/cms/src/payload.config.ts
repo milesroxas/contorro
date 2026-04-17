@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { resendAdapter } from "@payloadcms/email-resend";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
+import { vercelBlobStorage } from "@payloadcms/storage-vercel-blob";
 import { parseStudioEnv } from "@repo/config-env/studio";
 import {
   buildStudioConfig,
@@ -104,5 +105,12 @@ export default buildConfig({
     outputFile: path.resolve(dirname, "payload-types.ts"),
   },
   sharp: sharp as unknown as NonNullable<Config["sharp"]>,
-  plugins: [],
+  plugins: [
+    vercelBlobStorage({
+      collections: {
+        media: true,
+      },
+      token: env.BLOB_READ_WRITE_TOKEN,
+    }),
+  ],
 });
