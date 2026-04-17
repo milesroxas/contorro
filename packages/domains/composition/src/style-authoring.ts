@@ -382,9 +382,6 @@ const PRIMITIVE_STYLE_PROPERTIES: Record<string, readonly StyleProperty[]> = {
   "primitive.collection": COLLECTION_STYLE_PROPERTIES,
   "primitive.slot": SLOT_STYLE_PROPERTIES,
   "primitive.libraryComponent": LIBRARY_COMPONENT_STYLE_PROPERTIES,
-  // Legacy primitives.
-  "primitive.stack": BOX_STYLE_PROPERTIES,
-  "primitive.grid": BOX_STYLE_PROPERTIES,
 };
 
 export function stylePropertiesForDefinitionKey(

@@ -3,32 +3,13 @@ import { z } from "zod";
 import { EditorFieldSpecSchema } from "./editor-fields.js";
 import { StyleBindingSchema } from "./style-binding.js";
 
-/** Legacy `contentBinding.source === "slot"` → `"editor"` (CMS fields, not layout slots). */
-function migrateContentBinding(raw: unknown): unknown {
-  if (!raw || typeof raw !== "object") {
-    return raw;
-  }
-  const r = raw as Record<string, unknown>;
-  if (r.source === "slot") {
-    return {
-      source: "editor",
-      key: r.key,
-      editorField: r.slot,
-    };
-  }
-  return raw;
-}
-
 const ContentBindingInnerSchema = z.object({
   source: z.enum(["inline", "field", "global", "editor", "collection"]),
   key: z.string(),
   editorField: EditorFieldSpecSchema.optional(),
 });
 
-export const ContentBindingSchema = z.preprocess(
-  migrateContentBinding,
-  ContentBindingInnerSchema,
-);
+export const ContentBindingSchema = ContentBindingInnerSchema;
 
 export type ContentBinding = z.infer<typeof ContentBindingInnerSchema>;
 
@@ -90,20 +71,3 @@ export const PropContractSchema = z.object({
 });
 
 export type PropContract = z.infer<typeof PropContractSchema>;
-
-/** §5.4 — pre-v0.4 slot shape (maxNodes per slot id). */
-export const LegacySlotContractSchema = z.object({
-  slots: z.record(
-    z.string(),
-    z.object({
-      maxNodes: z.number().int().positive().optional(),
-    }),
-  ),
-});
-
-export type LegacySlotContract = z.infer<typeof LegacySlotContractSchema>;
-
-/** @deprecated Prefer `LegacySlotContractSchema` */
-export const SlotContractSchema = LegacySlotContractSchema;
-/** @deprecated Prefer `LegacySlotContract` */
-export type SlotContract = LegacySlotContract;

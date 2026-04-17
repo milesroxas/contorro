@@ -10,7 +10,7 @@ This document maps what is currently implemented in the repo.
 ## Package groups
 
 - `packages/kernel`: shared `Result`/error primitives.
-- `packages/domains/*`: business/domain logic (`composition`, `design-system`, `publishing`, `runtime-catalog`, `user-access`).
+- `packages/domains/*`: business/domain logic (`composition`, `design-system`, `publishing`, `runtime-catalog`).
 - `packages/application/*`: command/query services (`studio`, `design-system`, `publish-flow`, `contract-sync`).
 - `packages/infrastructure/*`: adapters and config (`payload-config`, `blob-storage`, `event-bus`, `telemetry`, `cache`).
 - `packages/presentation/*`: UI packages — **`@repo/presentation-studio`** (visual Studio: compositions + design-system screens), `preview-ui`, `admin-extensions`, `shared`.

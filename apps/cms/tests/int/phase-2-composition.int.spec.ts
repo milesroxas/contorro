@@ -7,28 +7,23 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 describe("Phase 2 — composition model", () => {
-  it("validates Stack > Box > Text and renders with primitive registry", () => {
+  it("validates Box > Box > Text and renders with primitive registry", () => {
     const raw = {
-      rootId: "stack-1",
+      rootId: "outer-1",
       nodes: {
-        "stack-1": {
-          id: "stack-1",
+        "outer-1": {
+          id: "outer-1",
           kind: "primitive" as const,
-          definitionKey: "primitive.stack",
+          definitionKey: "primitive.box",
           parentId: null,
           childIds: ["box-1"],
-          propValues: {
-            direction: "column",
-            gap: "8px",
-            align: "stretch",
-            justify: "flex-start",
-          },
+          propValues: { tag: "div" },
         },
         "box-1": {
           id: "box-1",
           kind: "primitive" as const,
           definitionKey: "primitive.box",
-          parentId: "stack-1",
+          parentId: "outer-1",
           childIds: ["text-1"],
         },
         "text-1": {
@@ -56,16 +51,13 @@ describe("Phase 2 — composition model", () => {
     expect(screen.getByText("Hello")).toBeDefined();
   });
 
-  it("PropContractSchema validates Stack-relevant fields", () => {
-    const stackLike = PropContractSchema.safeParse({
+  it("PropContractSchema validates primitive prop fields", () => {
+    const parsed = PropContractSchema.safeParse({
       fields: {
-        direction: { valueType: "string" },
-        gap: { valueType: "unknown" },
-        align: { valueType: "string" },
-        justify: { valueType: "string" },
+        tag: { valueType: "string" },
       },
     });
-    expect(stackLike.success).toBe(true);
+    expect(parsed.success).toBe(true);
   });
 
   it("exports JSON Schema 2020-12 for PropContractSchema", () => {

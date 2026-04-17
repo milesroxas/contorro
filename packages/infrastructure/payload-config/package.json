@@ -28,7 +28,6 @@
     "@repo/domains-design-system": "workspace:*",
     "@repo/domains-publishing": "workspace:*",
     "@repo/domains-runtime-catalog": "workspace:*",
-    "@repo/domains-user-access": "workspace:*",
     "@repo/infrastructure-event-bus": "workspace:*",
     "@repo/kernel": "workspace:*",
     "pg": "^8.20.0"

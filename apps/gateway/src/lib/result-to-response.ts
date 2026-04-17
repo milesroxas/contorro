@@ -1,24 +1,13 @@
 import type { Result } from "@repo/kernel";
 import type { Context } from "hono";
 
+/** Status codes returned by current gateway routes (`/health` uses direct JSON). */
 const ERROR_STATUS_MAP: Record<string, number> = {
-  COMPOSITION_NOT_FOUND: 404,
-  TEMPLATE_NOT_FOUND: 404,
-  REVISION_NOT_FOUND: 404,
-  SNAPSHOT_NOT_FOUND: 404,
   NOT_FOUND: 404,
-  INVALID_NODE: 422,
-  SLOT_CAPACITY_EXCEEDED: 422,
   VALIDATION_ERROR: 422,
-  INVALID_STATE: 422,
-  COMPOSITION_INVALID: 422,
-  BREAKING_CHANGE_NOT_ACKNOWLEDGED: 422,
-  CATALOG_NOT_APPROVED: 403,
   PERSISTENCE_ERROR: 500,
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
-  COMPOSITION_CONFLICT: 409,
-  NOT_IMPLEMENTED: 501,
 };
 
 export function resultToResponse<T, E extends string>(

@@ -13,7 +13,7 @@ export { SEED_TOKEN_SCOPE_KEY } from "./design-system-seed-shared.js";
 export const SEED_PAGE_DESIGNER_SLUG = "seed-designer-page";
 
 const SEED_COMPONENT_KEYS = [
-  "primitive.stack",
+  "primitive.box",
   "primitive.text",
   "primitive.slot",
   "seed-card-designer-block-demo",
@@ -39,13 +39,10 @@ export const SEED_USERS = {
   },
 } as const;
 
-const stackDefinition = {
+const boxDefinition = {
   propContract: {
     fields: {
-      direction: { valueType: "string" as const },
-      gap: { valueType: "length" as const },
-      align: { valueType: "string" as const },
-      justify: { valueType: "string" as const },
+      tag: { valueType: "string" as const },
     },
   },
   editorFields: { editorFields: [] },
@@ -86,15 +83,10 @@ const seedCardComposition = {
     "card-root": {
       id: "card-root",
       kind: "primitive" as const,
-      definitionKey: "primitive.stack",
+      definitionKey: "primitive.box",
       parentId: null,
       childIds: ["card-text"],
-      propValues: {
-        direction: "column",
-        gap: "8px",
-        align: "stretch",
-        justify: "flex-start",
-      },
+      propValues: { tag: "div" },
     },
     "card-text": {
       id: "card-text",
@@ -123,7 +115,7 @@ const seedCardComposition = {
  * block-level prop keys in the PropContract sense; layout/text defaults live on nodes in
  * `composition`. What editors fill in Payload are **CMS editor fields** (`editorFields` +
  * `contentBinding.source === "editor"`), surfaced as `editorFieldValues` — not
- * `propContract`. Compare `stackDefinition` / `textDefinition` for non-empty primitive
+ * `propContract`. Compare `boxDefinition` / `textDefinition` for non-empty primitive
  * `propContract` (library / tooling).
  */
 const cardDefinition = {
@@ -133,7 +125,7 @@ const cardDefinition = {
 };
 
 /**
- * Page template tree for builder/admin: stack + inline text + two layout slots (page blocks) + CMS text.
+ * Page template tree for builder/admin: layout box + inline text + two layout slots (page blocks) + CMS text.
  * Editor fields must use `contentBinding.source === "editor"` with `key === editorField.name`.
  * Page blocks live under `contentSlots[].blocks` keyed by `slotId` matching `primitive.slot` `propValues.slotId`.
  */
@@ -143,15 +135,10 @@ const seedComposition = {
     "stack-root": {
       id: "stack-root",
       kind: "primitive" as const,
-      definitionKey: "primitive.stack",
+      definitionKey: "primitive.box",
       parentId: null,
       childIds: ["text-1", "text-hero", "slot-main", "slot-secondary"],
-      propValues: {
-        direction: "column",
-        gap: "8px",
-        align: "stretch",
-        justify: "flex-start",
-      },
+      propValues: { tag: "div" },
     },
     "text-1": {
       id: "text-1",
@@ -308,19 +295,19 @@ async function seed(): Promise<void> {
 
     const { seededScopeKey } = await seedDesignSystemTokens(payload);
 
-    const stackRow = await payload.create({
+    const boxRow = await payload.create({
       collection: "components",
       draft: true,
       data: {
-        key: "primitive.stack",
-        displayName: "Stack (primitive)",
-        ...stackDefinition,
+        key: "primitive.box",
+        displayName: "Box (primitive)",
+        ...boxDefinition,
       },
       overrideAccess: true,
     });
     await payload.update({
       collection: "components",
-      id: stackRow.id,
+      id: boxRow.id,
       data: {},
       draft: false,
       overrideAccess: true,

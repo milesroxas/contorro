@@ -13,20 +13,8 @@ function withTag(
   };
 }
 
-function uniqueNodeId(base: string, nodes: PageComposition["nodes"]): string {
-  if (!nodes[base]) {
-    return base;
-  }
-  let i = 1;
-  while (nodes[`${base}-${i}`]) {
-    i += 1;
-  }
-  return `${base}-${i}`;
-}
-
 /**
- * Upgrades legacy template roots (`primitive.stack`) to the current template shell:
- * root box -> header box + main box(main slot + existing children) + footer box.
+ * Ensures page template shell nodes use semantic `tag` prop values (fragment, header, main, footer).
  */
 export function normalizeTemplateShell(
   composition: PageComposition,
@@ -73,73 +61,5 @@ export function normalizeTemplateShell(
     };
   }
 
-  if (
-    rootNode.parentId !== null ||
-    rootNode.definitionKey !== "primitive.stack"
-  ) {
-    return composition;
-  }
-
-  const headerId = uniqueNodeId("page-header", nodes);
-  const mainId = uniqueNodeId("page-main", nodes);
-  const mainSlotId = uniqueNodeId("page-main-slot", nodes);
-  const footerId = uniqueNodeId("page-footer", nodes);
-  const legacyChildren = [...rootNode.childIds];
-
-  nodes[rootNode.id] = withTag(
-    {
-      ...rootNode,
-      definitionKey: "primitive.box",
-      childIds: [headerId, mainId, footerId],
-    },
-    "fragment",
-  );
-
-  nodes[headerId] = {
-    id: headerId,
-    kind: "primitive",
-    definitionKey: "primitive.box",
-    parentId: rootNode.id,
-    childIds: [],
-    propValues: { tag: "header" },
-  };
-
-  nodes[mainId] = {
-    id: mainId,
-    kind: "primitive",
-    definitionKey: "primitive.box",
-    parentId: rootNode.id,
-    childIds: [mainSlotId, ...legacyChildren],
-    propValues: { tag: "main" },
-  };
-
-  nodes[mainSlotId] = {
-    id: mainSlotId,
-    kind: "slot",
-    definitionKey: "primitive.slot",
-    parentId: mainId,
-    childIds: [],
-    propValues: { slotId: "main" },
-  };
-
-  nodes[footerId] = {
-    id: footerId,
-    kind: "primitive",
-    definitionKey: "primitive.box",
-    parentId: rootNode.id,
-    childIds: [],
-    propValues: { tag: "footer" },
-  };
-
-  for (const childId of legacyChildren) {
-    const child = nodes[childId];
-    if (child) {
-      child.parentId = mainId;
-    }
-  }
-
-  return {
-    ...composition,
-    nodes,
-  };
+  return composition;
 }

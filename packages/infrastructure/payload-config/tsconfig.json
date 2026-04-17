@@ -13,7 +13,6 @@
     { "path": "../../domains/composition" },
     { "path": "../../domains/design-system" },
     { "path": "../../domains/publishing" },
-    { "path": "../../domains/runtime-catalog" },
-    { "path": "../../domains/user-access" }
+    { "path": "../../domains/runtime-catalog" }
   ]
 }

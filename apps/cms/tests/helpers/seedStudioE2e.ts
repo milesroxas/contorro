@@ -5,21 +5,16 @@ export const designerUser = {
   password: "test",
 };
 
-const emptyStackComposition = {
-  rootId: "stack-root",
+const emptyComposition = {
+  rootId: "root",
   nodes: {
-    "stack-root": {
-      id: "stack-root",
+    root: {
+      id: "root",
       kind: "primitive" as const,
-      definitionKey: "primitive.stack",
+      definitionKey: "primitive.box",
       parentId: null,
       childIds: [],
-      propValues: {
-        direction: "column",
-        gap: "8px",
-        align: "stretch",
-        justify: "flex-start",
-      },
+      propValues: { tag: "div" },
     },
   },
   styleBindings: {},
@@ -53,7 +48,7 @@ export async function seedDesignerAndComposition(): Promise<{
     data: {
       title: "Builder E2E",
       slug: "builder-e2e",
-      composition: emptyStackComposition,
+      composition: emptyComposition,
     },
     draft: true,
   });

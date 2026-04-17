@@ -21,7 +21,6 @@ const nextConfig: NextConfig = {
     "@repo/domains-design-system",
     "@repo/domains-publishing",
     "@repo/domains-runtime-catalog",
-    "@repo/domains-user-access",
     "@repo/infrastructure-blob-storage",
     "@repo/infrastructure-event-bus",
     "@repo/infrastructure-payload-config",

@@ -12,15 +12,10 @@ const pageTemplateComposition = {
     "stack-root": {
       id: "stack-root",
       kind: "primitive" as const,
-      definitionKey: "primitive.stack",
+      definitionKey: "primitive.box",
       parentId: null,
       childIds: ["text-1", "text-hero", "slot-main"],
-      propValues: {
-        direction: "column",
-        gap: "8px",
-        align: "stretch",
-        justify: "flex-start",
-      },
+      propValues: { tag: "div" },
     },
     "text-1": {
       id: "text-1",
@@ -77,15 +72,10 @@ const blockComposition = {
     "card-root": {
       id: "card-root",
       kind: "primitive" as const,
-      definitionKey: "primitive.stack",
+      definitionKey: "primitive.box",
       parentId: null,
       childIds: ["card-text"],
-      propValues: {
-        direction: "column",
-        gap: "8px",
-        align: "stretch",
-        justify: "flex-start",
-      },
+      propValues: { tag: "div" },
     },
     "card-text": {
       id: "card-text",

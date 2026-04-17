@@ -6,7 +6,7 @@ import {
   parseEditorFieldsContract,
 } from "@repo/contracts-zod";
 
-/** Collects v0.4 editor field specs from nodes whose `contentBinding.source` is `editor`. */
+/** Collects editor field specs from nodes whose `contentBinding.source` is `editor`. */
 export function editorFieldSpecsFromComposition(
   c: PageComposition,
 ): EditorFieldSpec[] {
@@ -31,7 +31,7 @@ export function editorFieldsContractFromComposition(
 /**
  * Effective editor-fields manifest for a published component definition.
  * The composition tree is canonical: when it parses, fields are derived from it; otherwise
- * stored `editorFields` JSON is used (legacy / partial documents).
+ * stored `editorFields` JSON is used.
  */
 export function resolveEditorFieldsContractForDefinition(args: {
   composition: unknown;

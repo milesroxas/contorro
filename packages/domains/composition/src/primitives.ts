@@ -130,26 +130,6 @@ const PRIMITIVE_SPECS = [
     creatableInStudio: true,
     defaultPropValues: {},
   },
-  // Legacy primitives kept for backwards compatibility with existing data.
-  {
-    definitionKey: "primitive.stack",
-    allowsChildren: true,
-    availableInPalette: false,
-    creatableInStudio: false,
-    defaultPropValues: {
-      direction: "column",
-      gap: "8px",
-      align: "stretch",
-      justify: "flex-start",
-    },
-  },
-  {
-    definitionKey: "primitive.grid",
-    allowsChildren: true,
-    availableInPalette: false,
-    creatableInStudio: false,
-    defaultPropValues: { columns: 1, gap: "0" },
-  },
 ] as const satisfies readonly PrimitiveSpec[];
 
 const PRIMITIVE_SPEC_MAP: Map<string, PrimitiveSpec> = new Map(

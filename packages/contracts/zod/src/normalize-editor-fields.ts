@@ -1,19 +1,10 @@
-import { z } from "zod";
-
-import { LegacySlotContractSchema } from "./composition.js";
 import {
-  EditorFieldSpecSchema,
   type EditorFieldsContract,
   EditorFieldsContractSchema,
 } from "./editor-fields.js";
 
-const zLegacySlotsShape = z.object({
-  slots: z.array(EditorFieldSpecSchema),
-});
-
 /**
- * Coerces stored JSON (v0.4 `{ editorFields }`, legacy `{ slots }`, or legacy maxNodes map)
- * to `{ editorFields: EditorFieldSpec[] }`.
+ * Coerces stored JSON to `{ editorFields }`. Unknown shapes default to empty fields.
  */
 export function normalizeEditorFieldsContract(
   raw: unknown,
@@ -21,14 +12,6 @@ export function normalizeEditorFieldsContract(
   const ed = EditorFieldsContractSchema.safeParse(raw);
   if (ed.success) {
     return ed.data;
-  }
-  const legacy = zLegacySlotsShape.safeParse(raw);
-  if (legacy.success) {
-    return { editorFields: legacy.data.slots };
-  }
-  const leg = LegacySlotContractSchema.safeParse(raw);
-  if (leg.success) {
-    return { editorFields: [] };
   }
   return { editorFields: [] };
 }
@@ -42,14 +25,6 @@ export function parseEditorFieldsContract(
   const ed = EditorFieldsContractSchema.safeParse(raw);
   if (ed.success) {
     return { ok: true, data: ed.data };
-  }
-  const legacy = zLegacySlotsShape.safeParse(raw);
-  if (legacy.success) {
-    return { ok: true, data: { editorFields: legacy.data.slots } };
-  }
-  const leg = LegacySlotContractSchema.safeParse(raw);
-  if (leg.success) {
-    return { ok: true, data: { editorFields: [] } };
   }
   return { ok: false };
 }

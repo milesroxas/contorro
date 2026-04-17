@@ -14,7 +14,7 @@ export type RuntimePrimitiveProps = {
   style?: CSSProperties;
 };
 
-/** Map `definitionKey` (e.g. `primitive.stack`) to a React primitive implementation. */
+/** Map `definitionKey` (e.g. `primitive.box`) to a React primitive implementation. */
 export type RuntimeRegistry = Record<
   string,
   ComponentType<RuntimePrimitiveProps>

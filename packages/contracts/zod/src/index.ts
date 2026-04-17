@@ -3,8 +3,6 @@ export {
   CompositionNodeSchema,
   type ContentBinding,
   ContentBindingSchema,
-  type LegacySlotContract,
-  LegacySlotContractSchema,
   type NodeKind,
   NodeKindSchema,
   type PageComposition,
@@ -12,8 +10,6 @@ export {
   type PropContract,
   PropContractSchema,
   PropFieldSpecSchema,
-  type SlotContract,
-  SlotContractSchema,
 } from "./composition.js";
 export {
   ColorValueSchema,
