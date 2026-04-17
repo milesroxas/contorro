@@ -1,28 +1,15 @@
 import { studioNewCompositionSessionId } from "@repo/domains-composition";
-import { getPayload } from "payload";
 
-import config from "@/payload.config";
+import { requireStudioDesigner } from "@/app/api/studio/_lib/studio-auth";
 
 type CreateBody = {
   kind?: unknown;
 };
 
 export async function POST(request: Request) {
-  const payloadConfig = await config;
-  const payload = await getPayload({ config: payloadConfig });
-  const { user } = await payload.auth({ headers: request.headers });
-  if (!user) {
-    return Response.json(
-      { error: { code: "UNAUTHORIZED" as const } },
-      { status: 401 },
-    );
-  }
-  const role = (user as { role?: string }).role;
-  if (role !== "admin" && role !== "designer") {
-    return Response.json(
-      { error: { code: "FORBIDDEN" as const } },
-      { status: 403 },
-    );
+  const auth = await requireStudioDesigner(request);
+  if (auth instanceof Response) {
+    return auth;
   }
 
   let raw: unknown = {};

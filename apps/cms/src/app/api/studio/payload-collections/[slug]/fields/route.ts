@@ -1,7 +1,6 @@
 import type { Field } from "payload";
-import { getPayload } from "payload";
 
-import config from "@/payload.config";
+import { requireStudioDesigner } from "@/app/api/studio/_lib/studio-auth";
 
 /** Loose shape for walking nested Payload field configs (tabs, group, row, etc.). */
 type LooseField = {
@@ -146,22 +145,11 @@ type RouteCtx = { params: Promise<{ slug: string }> };
  * Filterable field metadata for a Payload collection (derived from config).
  */
 export async function GET(request: Request, ctx: RouteCtx) {
-  const payloadConfig = await config;
-  const payload = await getPayload({ config: payloadConfig });
-  const { user } = await payload.auth({ headers: request.headers });
-  if (!user) {
-    return Response.json(
-      { error: { code: "UNAUTHORIZED" as const } },
-      { status: 401 },
-    );
+  const auth = await requireStudioDesigner(request);
+  if (auth instanceof Response) {
+    return auth;
   }
-  const role = (user as { role?: string }).role;
-  if (role !== "admin" && role !== "designer") {
-    return Response.json(
-      { error: { code: "FORBIDDEN" as const } },
-      { status: 403 },
-    );
-  }
+  const { payload } = auth;
 
   const { slug: rawSlug } = await ctx.params;
   const slug = decodeURIComponent(rawSlug).trim();

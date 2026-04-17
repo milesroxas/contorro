@@ -16,14 +16,12 @@ import {
   parseStudioNewCompositionSessionId,
 } from "@repo/domains-composition";
 import type { Payload } from "payload";
-import { getPayload } from "payload";
-
 import {
   payloadStudioMutationRepository,
   publicationStatusFromDoc,
 } from "@/app/api/studio/_lib/payload-studio-mutation-repository";
+import { requireStudioDesigner } from "@/app/api/studio/_lib/studio-auth";
 import { loadDesignSystemRuntimeForPreview } from "@/lib/load-published-token-set";
-import config from "@/payload.config";
 
 async function designTokensForStudio(payload: Payload): Promise<{
   tokenMetadata: TokenMeta[];
@@ -64,28 +62,6 @@ function normalizeUpdatedAt(value: unknown): string {
 
 function responseUpdatedAt(value: unknown): string {
   return normalizeUpdatedAt(value) || new Date().toISOString();
-}
-
-async function requireStudioDesigner(
-  request: Request,
-): Promise<Response | { payload: Payload; user: unknown }> {
-  const payloadConfig = await config;
-  const payload = await getPayload({ config: payloadConfig });
-  const { user } = await payload.auth({ headers: request.headers });
-  if (!user) {
-    return Response.json(
-      { error: { code: "UNAUTHORIZED" as const } },
-      { status: 401 },
-    );
-  }
-  const role = (user as { role?: string }).role;
-  if (role !== "admin" && role !== "designer") {
-    return Response.json(
-      { error: { code: "FORBIDDEN" as const } },
-      { status: 403 },
-    );
-  }
-  return { payload, user };
 }
 
 async function getNewSessionComposition(
@@ -493,22 +469,11 @@ export async function PATCH(
 ) {
   const { id } = await props.params;
 
-  const payloadConfig = await config;
-  const payload = await getPayload({ config: payloadConfig });
-  const { user } = await payload.auth({ headers: request.headers });
-  if (!user) {
-    return Response.json(
-      { error: { code: "UNAUTHORIZED" as const } },
-      { status: 401 },
-    );
+  const auth = await requireStudioDesigner(request);
+  if (auth instanceof Response) {
+    return auth;
   }
-  const role = (user as { role?: string }).role;
-  if (role !== "admin" && role !== "designer") {
-    return Response.json(
-      { error: { code: "FORBIDDEN" as const } },
-      { status: 403 },
-    );
-  }
+  const { payload, user } = auth;
 
   let raw: unknown;
   try {

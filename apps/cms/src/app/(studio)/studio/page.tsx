@@ -2,6 +2,7 @@ import { StudioShell } from "@repo/presentation-studio";
 import { headers as getHeaders } from "next/headers.js";
 import { redirect } from "next/navigation";
 import { getPayload } from "payload";
+import { resolveUserRole } from "@/lib/resolve-payload-user-role";
 import config from "@/payload.config";
 
 type Args = {
@@ -30,10 +31,7 @@ export default async function StudioPage({ searchParams }: Args) {
     redirect(`${adminRoute}/login?redirect=${encodeURIComponent(returnTo)}`);
   }
 
-  const userRole =
-    user && typeof user === "object" && "role" in user
-      ? String((user as { role?: unknown }).role)
-      : "";
+  const userRole = (await resolveUserRole(payload, user)) ?? "";
 
   return <StudioShell adminRoute={adminRoute} userRole={userRole} />;
 }

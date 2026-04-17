@@ -2,31 +2,8 @@ import type { PageComposition } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
 import { expandLibraryComponentNodes } from "@repo/domains-composition";
 import type { Payload } from "payload";
-import { getPayload } from "payload";
 
-import config from "@/payload.config";
-
-async function requireStudioDesigner(
-  request: Request,
-): Promise<Response | { payload: Payload; user: unknown }> {
-  const payloadConfig = await config;
-  const payload = await getPayload({ config: payloadConfig });
-  const { user } = await payload.auth({ headers: request.headers });
-  if (!user) {
-    return Response.json(
-      { error: { code: "UNAUTHORIZED" as const } },
-      { status: 401 },
-    );
-  }
-  const role = (user as { role?: string }).role;
-  if (role !== "admin" && role !== "designer") {
-    return Response.json(
-      { error: { code: "FORBIDDEN" as const } },
-      { status: 403 },
-    );
-  }
-  return { payload, user };
-}
+import { requireStudioDesigner } from "@/app/api/studio/_lib/studio-auth";
 
 async function loadComponentComposition(
   payload: Payload,
