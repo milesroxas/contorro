@@ -1,3 +1,7 @@
+export {
+  roleFromJwtUser,
+  roleFromRequest,
+} from "./access/jwt-user-role.js";
 export * from "./base-config.js";
 export * from "./collections/index.js";
 export * from "./db.js";

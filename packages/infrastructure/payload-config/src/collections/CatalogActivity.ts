@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import { authenticatedAccess } from "../access/design-system-access.js";
+import { authenticatedAccess } from "../access/rbac.js";
 
 /** Append-only activity log (gateway writes via Local API + overrideAccess). */
 export const CatalogActivity: CollectionConfig = {

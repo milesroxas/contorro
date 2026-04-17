@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import { componentAuthoringAccess } from "../access/composition-access.js";
+import { componentAuthoringAccess } from "../access/rbac.js";
 
 /** Idempotent publish job records. */
 export const PublishJobs: CollectionConfig = {

@@ -19,7 +19,7 @@ export async function requireStudioDesigner(
       { status: 401 },
     );
   }
-  const role = await resolveUserRole(payload, user);
+  const role = resolveUserRole(user);
   if (!isStudioDesignerOrAdminRole(role)) {
     return Response.json(
       { error: { code: "FORBIDDEN" as const } },

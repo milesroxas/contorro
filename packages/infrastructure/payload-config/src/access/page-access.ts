@@ -1,7 +1,6 @@
 import type { Access } from "payload";
 
-import { composerAuthoringAccess } from "./composition-access.js";
-import { designerOrAdminAccess } from "./design-system-access.js";
+import { composerAuthoringAccess, designerOrAdminAccess } from "./rbac.js";
 
 /** Authenticated users (admin) see all versions; anonymous traffic is limited to published docs. */
 export const pagesReadAccess: Access = ({ req: { user } }) => {

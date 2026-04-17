@@ -100,7 +100,8 @@ async function verifyJwtClaims(token: string): Promise<JwtClaims | null> {
 }
 
 /**
- * Verifies Payload JWT (cookie or Authorization) and loads role from `users` when missing in JWT.
+ * Verifies Payload JWT (cookie or Authorization). Role must appear in token claims (`saveToJWT`
+ * on Users.role). Non-numeric `sub` is resolved via DB (legacy email-shaped subjects).
  */
 export async function getActorFromRequest(
   pool: Pool,
@@ -115,10 +116,10 @@ export async function getActorFromRequest(
     return null;
   }
   const { sub, email: jwtEmail, role: jwtRole } = claims;
-  let email = jwtEmail;
-  let role = jwtRole;
+  const email = jwtEmail;
+  const role = jwtRole;
 
-  let id = Number.parseInt(sub, 10);
+  const id = Number.parseInt(sub, 10);
   if (!Number.isFinite(id)) {
     const byEmail = await pool.query<{
       id: number;
@@ -129,20 +130,16 @@ export async function getActorFromRequest(
     if (!row) {
       return null;
     }
-    id = row.id;
-    email = row.email;
-    role = row.role;
-  } else if (!role || role === "") {
-    const r = await pool.query<{ email: string; role: string }>(
-      "select email, role from users where id = $1 limit 1",
-      [id],
-    );
-    const row = r.rows[0];
-    if (!row) {
-      return null;
-    }
-    email = row.email;
-    role = row.role;
+    return {
+      id: row.id,
+      email: row.email,
+      role: row.role,
+      collection: "users",
+    };
+  }
+
+  if (!role || role === "") {
+    return null;
   }
 
   return {

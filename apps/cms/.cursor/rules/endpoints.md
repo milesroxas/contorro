@@ -13,6 +13,5 @@
 
 - `/api/gateway/health`
 - `/api/gateway/contracts/components/:key/schema` (GET/POST)
-- `/api/gateway/studio/compositions/:id` currently returns **`NOT_IMPLEMENTED`** (use CMS app `/api/studio/*` instead).
 
-Do not re-enable gateway composition mutations unless architecture explicitly changes.
+Composition mutations are CMS-only: `/api/studio/*`.

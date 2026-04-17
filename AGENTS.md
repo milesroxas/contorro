@@ -35,8 +35,7 @@ Contorro is multi-surface authoring:
 
 - Canonical **composition** API for Studio is the CMS app’s **`/api/studio/compositions/*`** routes.
 - Route handlers orchestrate only; mutation logic goes through `packages/application/studio` commands.
-- Gateway composition mutation routes are intentionally **`NOT_IMPLEMENTED`**.
-- Gateway remains active for health and contracts under `/api/gateway/*`.
+- Gateway exposes health and contracts under `/api/gateway/*` (composition mutations use CMS `/api/studio/*` only).
 
 ## Drift prevention rules (important)
 

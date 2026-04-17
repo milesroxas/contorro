@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import { composerAuthoringAccess } from "../access/composition-access.js";
+import { composerAuthoringAccess } from "../access/rbac.js";
 
 /** Soft lock while a user has a page template open in the builder. */
 export const CompositionPresence: CollectionConfig = {

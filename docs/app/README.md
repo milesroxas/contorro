@@ -5,7 +5,7 @@ This document maps what is currently implemented in the repo.
 ## Apps
 
 - **CMS app** (`apps/cms`, npm **`@repo/cms`**): Next.js 16 + Payload 3. Hosts admin UI, auth/session, Payload migrations/seeds, the **Studio** surface at **`/studio`** (separate from `/admin`), **Studio-facing HTTP APIs** under `/api/studio/*` (composition load/save), REST for collections/globals used by the design-system editor, preview routes, and same-origin **gateway** forwarding (`/api/gateway/*`).
-- **`apps/gateway`**: Hono app. Exposes `/api/gateway/health`, `/api/gateway/contracts/*`, and a **`/api/gateway/studio/*` namespace** where composition mutations are intentionally **`NOT_IMPLEMENTED`** (canonical mutations go through the CMS app’s `/api/studio/*` routes).
+- **`apps/gateway`**: Hono app. Exposes `/api/gateway/health` and `/api/gateway/contracts/*` (composition mutations go through the CMS app’s `/api/studio/*` routes only).
 
 ## Package groups
 
@@ -47,8 +47,6 @@ Design-system editing in Studio uses Payload **REST** for `design-token-sets` an
 ## Gateway routes
 
 - Gateway app entry: `apps/gateway/src/app.ts`
-- Studio-namespace file: `apps/gateway/src/routes/studio.ts`
-- Composition mutations stub: `apps/gateway/src/routes/composition-mutations.ts` (`NOT_IMPLEMENTED` by design)
 - Contracts: `apps/gateway/src/routes/contracts.ts`
 - **Forwarder** (CMS app): `apps/cms/src/app/api/gateway/[[...route]]/route.ts`
 

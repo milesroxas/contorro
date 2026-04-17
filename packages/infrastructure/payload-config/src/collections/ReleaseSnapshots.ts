@@ -1,6 +1,6 @@
 import type { CollectionConfig } from "payload";
 
-import { authenticatedAccess } from "../access/design-system-access.js";
+import { authenticatedAccess } from "../access/rbac.js";
 
 /** Immutable snapshot at publish time — rollback target. */
 export const ReleaseSnapshots: CollectionConfig = {

@@ -1,8 +1,5 @@
 import type { GlobalConfig } from "payload";
-import {
-  authenticatedAccess,
-  designerOrAdminAccess,
-} from "../access/design-system-access.js";
+import { authenticatedAccess, designerOrAdminAccess } from "../access/rbac.js";
 
 export const DesignSystemSettings: GlobalConfig = {
   slug: "design-system-settings",

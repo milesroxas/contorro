@@ -31,7 +31,7 @@ export default async function StudioPage({ searchParams }: Args) {
     redirect(`${adminRoute}/login?redirect=${encodeURIComponent(returnTo)}`);
   }
 
-  const userRole = (await resolveUserRole(payload, user)) ?? "";
+  const userRole = resolveUserRole(user) ?? "";
 
   return <StudioShell adminRoute={adminRoute} userRole={userRole} />;
 }

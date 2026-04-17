@@ -5,10 +5,7 @@ import {
 } from "@repo/application-design-system";
 import { defaultInProcessEventBus } from "@repo/infrastructure-event-bus";
 import type { CollectionConfig } from "payload";
-import {
-  authenticatedAccess,
-  designerOrAdminAccess,
-} from "../access/design-system-access.js";
+import { authenticatedAccess, designerOrAdminAccess } from "../access/rbac.js";
 import { tokenCategoryFieldOptions } from "./token-category-options.js";
 
 const beforeValidate = createDesignTokenSetBeforeValidateHandler();

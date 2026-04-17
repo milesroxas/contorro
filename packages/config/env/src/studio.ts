@@ -20,10 +20,26 @@ export const studioEnvSchema = z.object({
 
 export type StudioEnv = z.infer<typeof studioEnvSchema>;
 
-/** Prefer SITE_URL; on Vercel builds, VERCEL_URL is set when SITE_URL is not configured. */
+/**
+ * Canonical public URL for Payload cookies and redirects.
+ * Prefer explicit SITE_URL; on Vercel use the stable production hostname when present so
+ * session cookies match the primary domain (avoids logout / CSRF issues from hostname drift).
+ */
 function resolveSiteUrl(env: NodeJS.ProcessEnv): string | undefined {
-  if (env.SITE_URL) return env.SITE_URL;
-  if (env.VERCEL_URL) return `https://${env.VERCEL_URL}`;
+  if (env.SITE_URL) {
+    return env.SITE_URL;
+  }
+  if (
+    env.VERCEL &&
+    env.VERCEL_ENV === "production" &&
+    typeof env.VERCEL_PROJECT_PRODUCTION_URL === "string" &&
+    env.VERCEL_PROJECT_PRODUCTION_URL.length > 0
+  ) {
+    return `https://${env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  if (env.VERCEL_URL) {
+    return `https://${env.VERCEL_URL}`;
+  }
   return undefined;
 }
 

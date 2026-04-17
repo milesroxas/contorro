@@ -1,5 +1,7 @@
 import type { CollectionConfig } from "payload";
 
+import { roleFromRequest } from "../access/jwt-user-role.js";
+
 /** Matches capability matrix personas (architecture spec §5.2). */
 export const userRoleOptions = [
   { label: "Admin", value: "admin" },
@@ -7,16 +9,6 @@ export const userRoleOptions = [
   { label: "Content Editor", value: "contentEditor" },
   { label: "Engineer", value: "engineer" },
 ] as const;
-
-/** RBAC: role must live on the JWT for access checks (Payload access-control docs / template AGENTS.md). */
-function isAdminUser(user: unknown): boolean {
-  return (
-    typeof user === "object" &&
-    user !== null &&
-    "role" in user &&
-    (user as { role: unknown }).role === "admin"
-  );
-}
 
 export const Users: CollectionConfig = {
   slug: "users",
@@ -26,15 +18,21 @@ export const Users: CollectionConfig = {
   },
   auth: true,
   access: {
-    create: ({ req: { user } }) => isAdminUser(user),
+    create: ({ req }) => roleFromRequest(req) === "admin",
     read: ({ req: { user } }) => Boolean(user),
-    update: ({ req: { user }, id }) => {
-      if (!user) return false;
-      if (isAdminUser(user)) return true;
-      if (id === undefined) return false;
-      return String(user.id) === String(id);
+    update: ({ req, id }) => {
+      if (!req.user) {
+        return false;
+      }
+      if (roleFromRequest(req) === "admin") {
+        return true;
+      }
+      if (id === undefined) {
+        return false;
+      }
+      return String(req.user.id) === String(id);
     },
-    delete: ({ req: { user } }) => isAdminUser(user),
+    delete: ({ req }) => roleFromRequest(req) === "admin",
   },
   fields: [
     {
@@ -45,8 +43,8 @@ export const Users: CollectionConfig = {
       options: [...userRoleOptions],
       saveToJWT: true,
       access: {
-        create: ({ req: { user } }) => isAdminUser(user),
-        update: ({ req: { user } }) => isAdminUser(user),
+        create: ({ req }) => roleFromRequest(req) === "admin",
+        update: ({ req }) => roleFromRequest(req) === "admin",
       },
     },
   ],
