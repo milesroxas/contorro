@@ -222,7 +222,7 @@ export function DashboardResourceName({
             <Button
               disabled={saving}
               onClick={cancel}
-              size="xs"
+              size="sm"
               type="button"
               variant="ghost"
             >
@@ -234,7 +234,7 @@ export function DashboardResourceName({
                   className="gap-1.5"
                   data-testid="dashboard-name-save-menu"
                   disabled={saving}
-                  size="xs"
+                  size="sm"
                   type="button"
                   variant="outline"
                 >
@@ -320,7 +320,7 @@ export function DashboardResourceName({
           setDraft(name);
           setEditing(true);
         }}
-        size="xs"
+        size="sm"
         type="button"
         variant="ghost"
       >

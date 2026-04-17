@@ -1,17 +1,27 @@
 /*
- * Tailwind v4: `@source` paths are relative to this file (`src/app/globals.css`).
- * Public / `(frontend)` routes only — Payload admin uses `payload-admin.css` + `studio.css`.
+ * Product UI entry point (Tailwind v4 + shadcn): single source of truth for
+ * frontend pages (`(frontend)`) and Studio (`(studio)`).
+ * Payload admin uses its own `payload-admin.css` — do not import this file there.
  */
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "./_tailwind-safelist.css";
-@import "./_shadcn-theme.css";
+@import "./theme.css";
 
+/* ── Source scanning ────────────────────────────────────────────────────── */
+/* Frontend */
 @source "../app/(frontend)";
 @source "../components/ui";
+
+/* Studio */
+@source "../../../../packages/presentation/studio/src";
+@source "./(studio)/layout.tsx";
+
+/* Shared runtime renderer */
 @source "../../../../packages/runtime/renderer/src";
 
+/* ── Base layer ─────────────────────────────────────────────────────────── */
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -22,5 +32,50 @@
   }
   html {
     @apply font-sans;
+  }
+
+  /*
+   * Preflight does not set `cursor` on interactive controls; UA defaults are often non-pointer.
+   * Cover native buttons, link-as-button (`asChild` → `<a href>`), checkbox/radio, and disabled
+   * text fields so `@repo/presentation-studio` components need not repeat `cursor-*` utilities.
+   * `:where()` keeps specificity at zero so `cursor-default`, `cursor-grab`, etc. still override.
+   */
+  :where(
+      button:not(:disabled):not([aria-disabled="true"]):not(
+          [data-disabled="true"]
+        ),
+      [role="button"]:not([aria-disabled="true"]):not([data-disabled="true"]),
+      a[href]:not([aria-disabled="true"]),
+      input[type="checkbox"]:not(:disabled),
+      input[type="radio"]:not(:disabled)
+    ) {
+    cursor: pointer;
+  }
+
+  :where(
+      button:disabled,
+      button[aria-disabled="true"],
+      button[data-disabled="true"],
+      [role="button"][aria-disabled="true"],
+      [role="button"][data-disabled="true"],
+      a[href][aria-disabled="true"],
+      input[type="checkbox"]:disabled,
+      input[type="radio"]:disabled,
+      input:disabled:not([type="checkbox"]):not([type="radio"]),
+      textarea:disabled,
+      select:disabled
+    ) {
+    cursor: not-allowed;
+  }
+}
+
+/* ── Component layer ────────────────────────────────────────────────────── */
+/*
+ * Studio shell (see `StudioRoot` → class `studio-root`): stacking context for canvas/node UI.
+ */
+@layer components {
+  .studio-root {
+    contain: layout style;
+    isolation: isolate;
   }
 }

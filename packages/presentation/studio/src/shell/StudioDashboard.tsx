@@ -177,10 +177,7 @@ function QuickActionCard({
   const hasSecondaryAction = Boolean(secondaryAction);
 
   return (
-    <Card
-      className="h-full flex-1 flex-col justify-between gap-0 rounded-lg border border-border bg-card py-0 ring-0"
-      size="sm"
-    >
+    <Card className="h-full flex-1 flex-col justify-between gap-3 rounded-lg border border-border bg-card py-0 ring-0">
       <CardHeader className="space-y-3 pb-0">
         <div className="inline-flex size-9 items-center justify-center rounded-md bg-muted/60">
           <Icon className="size-4" aria-hidden />
@@ -198,7 +195,7 @@ function QuickActionCard({
           )}
         >
           {secondaryAction ? (
-            <Button asChild size="xs" variant="secondary">
+            <Button asChild size="sm" variant="secondary">
               <Link href={secondaryAction.href} prefetch={false}>
                 {secondaryAction.label}
               </Link>
@@ -207,7 +204,7 @@ function QuickActionCard({
           {primaryAction.href ? (
             <Button
               asChild
-              size="xs"
+              size="sm"
               variant={primaryAction.variant ?? "default"}
             >
               <Link href={primaryAction.href} prefetch={false}>
@@ -220,7 +217,7 @@ function QuickActionCard({
           ) : (
             <Button
               onClick={primaryAction.onClick}
-              size="xs"
+              size="sm"
               type="button"
               variant={primaryAction.variant ?? "default"}
             >
@@ -300,7 +297,7 @@ function ResourceListCard({
             ) : rows.length === 0 ? (
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">{emptyMessage}</p>
-                <Button asChild size="xs" variant="link">
+                <Button asChild size="sm" variant="link">
                   <Link href={emptyHref} prefetch={false}>
                     {emptyCtaLabel}
                   </Link>
@@ -318,7 +315,7 @@ function ResourceListCard({
                         <ItemDescription>{row.meta}</ItemDescription>
                       </ItemContent>
                       <ItemActions>
-                        <Button asChild size="xs">
+                        <Button asChild size="sm">
                           <Link href={row.studioHref} prefetch={false}>
                             Studio
                             <IconExternalLink
@@ -834,17 +831,17 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
               ) : null}
               <Separator />
               <div className="flex flex-col gap-1">
-                <Button asChild size="xs" variant="link">
+                <Button asChild size="sm" variant="link">
                   <Link href={templateCollectionHref} prefetch={false}>
                     Templates
                   </Link>
                 </Button>
-                <Button asChild size="xs" variant="link">
+                <Button asChild size="sm" variant="link">
                   <Link href={componentCollectionHref} prefetch={false}>
                     Components
                   </Link>
                 </Button>
-                <Button asChild size="xs" variant="link">
+                <Button asChild size="sm" variant="link">
                   <Link href={designSystemHref} prefetch={false}>
                     Design system
                   </Link>
@@ -912,7 +909,7 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
                               {row.resourceType} · {row.meta}
                             </p>
                           </div>
-                          <Button asChild size="xs" variant="default">
+                          <Button asChild size="sm" variant="default">
                             <Link href={row.studioHref} prefetch={false}>
                               Open
                             </Link>

@@ -287,8 +287,8 @@ function StudioDragPreview({
 }) {
   const { Icon, label } = display;
   return (
-    <Card size="sm" variant="dragPreview">
-      <CardContent>
+    <Card className="pointer-events-none w-fit max-w-[min(100vw-2rem,180px)] gap-0 rounded-md border border-border/70 bg-card/90 py-2 ring-0 backdrop-blur-[1px]">
+      <CardContent className="flex items-center gap-1.5 px-2">
         <Icon
           aria-hidden
           className="size-4 shrink-0 text-primary"

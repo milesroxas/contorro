@@ -332,7 +332,7 @@ export function PayloadMediaPickerFields({
               className="text-xs"
               disabled={busy}
               onClick={() => uploadInputRef.current?.click()}
-              size="xs"
+              size="sm"
               type="button"
               variant="default"
             >

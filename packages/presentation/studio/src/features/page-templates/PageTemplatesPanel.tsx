@@ -25,8 +25,8 @@ function isDraft(doc: PageCompositionSummary): boolean {
 
 function publicationBadgeVariant(
   doc: PageCompositionSummary,
-): "statusDraft" | "statusPublished" {
-  return isDraft(doc) ? "statusDraft" : "statusPublished";
+): "secondary" | "outline" {
+  return isDraft(doc) ? "secondary" : "outline";
 }
 
 function publicationLabel(doc: PageCompositionSummary): string {

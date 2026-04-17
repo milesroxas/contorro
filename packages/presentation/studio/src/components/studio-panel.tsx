@@ -135,7 +135,7 @@ export function StudioBulkCollapseButton({
       size="panel"
       title={label}
       type="button"
-      variant="compact"
+      variant="outline"
     >
       {allCollapsed ? "Expand" : "Collapse"}
     </Button>

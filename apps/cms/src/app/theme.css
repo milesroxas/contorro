@@ -1,6 +1,6 @@
 /*
- * Shared shadcn/ui theme: Tailwind `@theme` mappings plus `:root` / `.dark` CSS variables.
- * Import from `globals.css`, `studio.css`, and `payload-admin.css` so all surfaces match.
+ * Product design system: Tailwind v4 `@theme` mappings + `:root` / `.dark` CSS custom properties.
+ * Imported by `globals.css` (product UI) and `payload-admin.css` (admin extensions).
  */
 /* Portals render under `body`; match `data-theme` on `<html>` (Studio) as well as `.dark`. */
 @custom-variant dark (&:is(.dark *, [data-theme="dark"] *));

@@ -10,7 +10,7 @@ export type TokenMeta = {
 export type CompiledTokenOutput = {
   /**
    * Theme + root variable layers only (`@theme`, `:root`, `.dark`) — same conceptual
-   * role as `_shadcn-theme.css` / `globals.css` token wiring.
+   * role as `theme.css` / `globals.css` token wiring.
    */
   cssVariables: string;
   /**

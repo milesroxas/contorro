@@ -380,7 +380,7 @@ export function PropertyInspectorActive({
                     onClick={clearNodeStyles}
                     size="panel"
                     type="button"
-                    variant="compact"
+                    variant="outline"
                   >
                     Reset styles
                   </Button>

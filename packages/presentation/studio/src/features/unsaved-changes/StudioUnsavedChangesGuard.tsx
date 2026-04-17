@@ -165,7 +165,7 @@ export function StudioUnsavedChangesGuard({
             disabled={saving}
             onClick={onDiscard}
             type="button"
-            variant="destructiveOutline"
+            variant="destructive"
           >
             Discard changes
           </Button>

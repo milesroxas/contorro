@@ -3,7 +3,6 @@ import type React from "react";
 import { loadFrontendDesignSystemBundle } from "@/lib/load-frontend-design-system-bundle";
 
 import "../globals.css";
-import "../globals-app-shell.css";
 import "./styles.css";
 
 export const metadata = {

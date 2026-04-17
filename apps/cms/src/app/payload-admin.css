@@ -1,13 +1,12 @@
 /*
- * Payload admin shell: Tailwind + shadcn + custom admin fields (not Studio).
- * Load order in `(payload)/layout.tsx`: `@payloadcms/next/css` → this file → `custom.scss`.
- * Do not scan presentation-studio — Studio Tailwind lives in `studio.css` (loaded after Payload).
+ * Payload admin shell: Tailwind + scoped admin field styles.
+ * Load order in `(payload)/layout.tsx`: `@payloadcms/next/css` → this file → `custom.css`.
+ * Product UI (Studio + frontend) uses `globals.css` — do not import it here.
  */
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "./_tailwind-safelist.css";
-@import "./_shadcn-theme.css";
+@import "./theme.css";
 
 @source "../../../../packages/presentation/admin-extensions/src";
 @source "../components/ui";
@@ -24,13 +23,6 @@
 @source "../components/admin/StudioNavLink.tsx";
 @source "../components/admin/ThemeModeNavToggle.tsx";
 @source "../components/admin/page-composition-form-state.ts";
-
-/* shadcn + Payload: border/outline defaults without forcing body/html (Payload default chrome). */
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-}
 
 @layer components {
   /*

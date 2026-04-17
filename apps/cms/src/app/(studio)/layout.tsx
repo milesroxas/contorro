@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type React from "react";
 
-import "@/app/studio.css";
+import "@/app/globals.css";
 
 export const metadata: Metadata = {
   description: "Contorro Studio",
