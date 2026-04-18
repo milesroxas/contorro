@@ -6,6 +6,7 @@ import {
   getPrimitiveDisplay,
   PRIMITIVE_KEYS,
 } from "../../lib/primitive-display.js";
+import { useTapInsertion } from "../../lib/tap-insertion-context.js";
 import { StudioPaletteTile } from "./studio-palette-tile.js";
 
 function PaletteTile({
@@ -21,9 +22,25 @@ function PaletteTile({
     id: `palette-${definitionKey}`,
     data: { definitionKey, kind: "palette" as const },
   });
+  const tapInsertion = useTapInsertion();
+  const armed =
+    tapInsertion.enabled &&
+    tapInsertion.staged?.definitionKey === definitionKey &&
+    tapInsertion.staged.libraryComponentKey === undefined;
+
+  const onTap = tapInsertion.enabled
+    ? () => {
+        if (armed) {
+          tapInsertion.cancel();
+        } else {
+          tapInsertion.stage({ definitionKey });
+        }
+      }
+    : undefined;
 
   return (
     <StudioPaletteTile
+      armed={armed}
       Icon={Icon}
       attributes={attributes}
       dataTestId={`palette-${label.toLowerCase()}`}
@@ -31,6 +48,7 @@ function PaletteTile({
       label={label}
       labelCapitalize
       listeners={listeners}
+      onTap={onTap}
       tileRef={setNodeRef}
     />
   );
