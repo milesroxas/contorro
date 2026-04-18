@@ -288,6 +288,59 @@ function applyStudioDragEndMutation(
   }
 }
 
+function applyStudioDragStartState(
+  event: DragStartEvent,
+  actions: {
+    clearStagedTapInsertion: () => void;
+    showLayersSidebar: () => void;
+    setActivePaletteKey: (key: string | null) => void;
+    setActiveNodeId: (id: string | null) => void;
+  },
+  stagedTapInsertion: StagedTapInsertion | null,
+): void {
+  // A drag supersedes any armed tap-insertion — never commit both.
+  if (stagedTapInsertion !== null) {
+    actions.clearStagedTapInsertion();
+  }
+  const data = event.active.data.current;
+  if (data?.kind === "palette" && typeof data.definitionKey === "string") {
+    actions.showLayersSidebar();
+    actions.setActivePaletteKey(data.definitionKey);
+    actions.setActiveNodeId(null);
+    return;
+  }
+  if (data?.kind === "node" && typeof data.nodeId === "string") {
+    actions.setActiveNodeId(data.nodeId);
+    actions.setActivePaletteKey(null);
+    return;
+  }
+  actions.setActivePaletteKey(null);
+  actions.setActiveNodeId(null);
+}
+
+function getSelectedNode(
+  composition: PageComposition,
+  selectedNodeId: string | null,
+) {
+  if (!selectedNodeId) {
+    return null;
+  }
+  return composition.nodes[selectedNodeId] ?? null;
+}
+
+function getOverlayDisplay(
+  composition: PageComposition,
+  activePaletteKey: string | null,
+  activeNodeId: string | null,
+) {
+  const definitionKey =
+    activePaletteKey ??
+    (activeNodeId
+      ? (composition.nodes[activeNodeId]?.definitionKey ?? "primitive.box")
+      : null);
+  return definitionKey ? getPrimitiveDisplay(definitionKey) : null;
+}
+
 function StudioDragPreview({
   display,
 }: {
@@ -559,24 +612,16 @@ export function StudioApp({
   }, []);
 
   const onDragStart = (event: DragStartEvent) => {
-    // A drag supersedes any armed tap-insertion — never commit both.
-    if (stagedTapInsertion !== null) {
-      setStagedTapInsertion(null);
-    }
-    const d = event.active.data.current;
-    if (d?.kind === "palette" && typeof d.definitionKey === "string") {
-      showLayersSidebar();
-      setActivePaletteKey(d.definitionKey);
-      setActiveNodeId(null);
-      return;
-    }
-    if (d?.kind === "node" && typeof d.nodeId === "string") {
-      setActiveNodeId(d.nodeId);
-      setActivePaletteKey(null);
-      return;
-    }
-    setActivePaletteKey(null);
-    setActiveNodeId(null);
+    applyStudioDragStartState(
+      event,
+      {
+        clearStagedTapInsertion: () => setStagedTapInsertion(null),
+        setActiveNodeId,
+        setActivePaletteKey,
+        showLayersSidebar,
+      },
+      stagedTapInsertion,
+    );
   };
 
   const onDragEnd = (event: DragEndEvent) => {
@@ -606,7 +651,12 @@ export function StudioApp({
           insertIndex,
           null,
         );
-        addPrimitive(parentId, value.definitionKey, idx, value.libraryComponentKey);
+        addPrimitive(
+          parentId,
+          value.definitionKey,
+          idx,
+          value.libraryComponentKey,
+        );
         setStagedTapInsertion(null);
       },
       enabled: isMobile,
@@ -631,20 +681,74 @@ export function StudioApp({
     );
   }
 
-  const selectedNode = selectedNodeId
-    ? (composition.nodes[selectedNodeId] ?? null)
-    : null;
+  const selectedNode = getSelectedNode(composition, selectedNodeId);
+  const forSelectedNode = useCallback(
+    (run: (nodeId: string) => void) => {
+      if (selectedNodeId) {
+        run(selectedNodeId);
+      }
+    },
+    [selectedNodeId],
+  );
+  const handleClearNodeStyles = useCallback(() => {
+    forSelectedNode((nodeId) => {
+      storeClearNodeStyles(nodeId);
+    });
+  }, [forSelectedNode, storeClearNodeStyles]);
+  const handleNodeStyleEntry = useCallback(
+    (property: string, entry: string) => {
+      forSelectedNode((nodeId) => {
+        setNodeStyleEntry(nodeId, property, entry);
+      });
+    },
+    [forSelectedNode, setNodeStyleEntry],
+  );
+  const handleTextChange = useCallback(
+    (content: string) => {
+      forSelectedNode((nodeId) => {
+        setTextContent(nodeId, content);
+      });
+    },
+    [forSelectedNode, setTextContent],
+  );
+  const handlePatchNodeProps = useCallback(
+    (patch: Record<string, unknown>) => {
+      forSelectedNode((nodeId) => {
+        patchNodeProps(nodeId, patch);
+      });
+    },
+    [forSelectedNode, patchNodeProps],
+  );
+  const handleResetNodePropKey = useCallback(
+    (propKey: string) => {
+      forSelectedNode((nodeId) => {
+        storeResetNodePropKey(nodeId, propKey);
+      });
+    },
+    [forSelectedNode, storeResetNodePropKey],
+  );
+  const handleSetNodeCollectionFieldBinding = useCallback(
+    (fieldPath: string | null) => {
+      forSelectedNode((nodeId) => {
+        setNodeCollectionFieldBinding(nodeId, fieldPath);
+      });
+    },
+    [forSelectedNode, setNodeCollectionFieldBinding],
+  );
+  const handleSetNodeEditorFieldBinding = useCallback(
+    (field: string | null) => {
+      forSelectedNode((nodeId) => {
+        setNodeEditorFieldBinding(nodeId, field);
+      });
+    },
+    [forSelectedNode, setNodeEditorFieldBinding],
+  );
 
-  const overlayDefinitionKey =
-    activePaletteKey !== null
-      ? activePaletteKey
-      : activeNodeId
-        ? (composition.nodes[activeNodeId]?.definitionKey ?? "primitive.box")
-        : null;
-
-  const overlayDisplay = overlayDefinitionKey
-    ? getPrimitiveDisplay(overlayDefinitionKey)
-    : null;
+  const overlayDisplay = getOverlayDisplay(
+    composition,
+    activePaletteKey,
+    activeNodeId,
+  );
   const activeLeftSidebarDef =
     LEFT_SIDEBAR_PANELS.find(({ id }) => id === activeLeftSidebarPanel) ??
     LEFT_SIDEBAR_PANELS[0];
@@ -653,290 +757,266 @@ export function StudioApp({
 
   return (
     <TapInsertionContext.Provider value={tapInsertionValue}>
-    <DndContext
-      collisionDetection={pointerFirstCollisionDetection}
-      onDragCancel={onDragCancel}
-      onDragEnd={onDragEnd}
-      onDragStart={onDragStart}
-      sensors={sensors}
-    >
-      <StudioRoot
-        className={cn(
-          "flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground",
-          theme === "dark" && "dark",
-        )}
-        data-studio-theme={theme}
-        data-testid="studio-app"
+      <DndContext
+        collisionDetection={pointerFirstCollisionDetection}
+        onDragCancel={onDragCancel}
+        onDragEnd={onDragEnd}
+        onDragStart={onDragStart}
+        sensors={sensors}
       >
-        <DraftSaveBar
-          canEditName={canEditName}
-          canRedo={canRedo}
-          canUndo={canUndo}
-          cmsPublicationStatus={cmsPublicationStatus}
-          dirty={dirty}
-          error={error}
-          name={name}
-          resourceLabel={resourceLabel}
-          onPublish={() => void publish()}
-          onRedo={() => redo()}
-          onRename={async (nextName) => {
-            await rename(nextName);
-          }}
-          onSaveDraft={() => void saveDraft()}
-          onUndo={() => undo()}
-          dashboardHref={dashboardHref}
-          componentsHref={componentsHref}
-          designSystemHref={designSystemHref}
-          renaming={renaming}
-          saving={saving}
-          adminHref={adminHref}
-        />
-        <StudioUnsavedChangesGuard
-          dirty={dirty}
-          saving={saving}
-          trySaveDraft={trySaveDraft}
-        />
-        {isMobile ? (
-          <MobileStudioLayout
-            activeInspectorTab={activeInspectorTab}
-            adminHref={adminHref}
+        <StudioRoot
+          className={cn(
+            "flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground",
+            theme === "dark" && "dark",
+          )}
+          data-studio-theme={theme}
+          data-testid="studio-app"
+        >
+          <DraftSaveBar
+            canEditName={canEditName}
             canRedo={canRedo}
             canUndo={canUndo}
-            clearNodeStyles={() => {
-              if (selectedNodeId) {
-                storeClearNodeStyles(selectedNodeId);
-              }
-            }}
-            composition={composition}
-            componentsHref={componentsHref}
-            compositionId={compositionId}
-            dashboardHref={dashboardHref}
-            designSystemHref={designSystemHref}
+            cmsPublicationStatus={cmsPublicationStatus}
             dirty={dirty}
-            onCancelStagedTapInsertion={() => setStagedTapInsertion(null)}
-            onInspectorTabChange={setActiveInspectorTab}
-            onLeftSidebarPanelChange={setActiveLeftSidebarPanel}
-            onNodeStyleEntry={(property, entry) => {
-              if (selectedNodeId) {
-                setNodeStyleEntry(selectedNodeId, property, entry);
-              }
-            }}
-            onPageTemplateListFilterChange={setPageTemplateListFilter}
+            error={error}
+            name={name}
+            resourceLabel={resourceLabel}
             onPublish={() => void publish()}
             onRedo={() => redo()}
-            onRemoveNode={removeNode}
+            onRename={async (nextName) => {
+              await rename(nextName);
+            }}
             onSaveDraft={() => void saveDraft()}
-            onSelectNode={selectNode}
-            onTextChange={(content) => {
-              if (selectedNodeId) {
-                setTextContent(selectedNodeId, content);
-              }
-            }}
-            onToggleTheme={toggleTheme}
             onUndo={() => undo()}
-            onWrapNode={wrapNodeInBox}
-            pageTemplateListFilter={pageTemplateListFilter}
-            patchNodeProps={(patch) => {
-              if (selectedNodeId) {
-                patchNodeProps(selectedNodeId, patch);
-              }
-            }}
-            resetNodePropKey={(propKey) => {
-              if (selectedNodeId) {
-                storeResetNodePropKey(selectedNodeId, propKey);
-              }
-            }}
+            dashboardHref={dashboardHref}
+            componentsHref={componentsHref}
+            designSystemHref={designSystemHref}
+            renaming={renaming}
             saving={saving}
-            selectedNode={selectedNode}
-            selectedNodeId={selectedNodeId}
-            setNodeCollectionFieldBinding={(fieldPath) => {
-              if (selectedNodeId) {
-                setNodeCollectionFieldBinding(selectedNodeId, fieldPath);
-              }
-            }}
-            setNodeEditorFieldBinding={(field) => {
-              if (selectedNodeId) {
-                setNodeEditorFieldBinding(selectedNodeId, field);
-              }
-            }}
-            stagedTapInsertion={stagedTapInsertion}
-            studioResource={studioResource}
-            theme={theme}
-            tokenMetadata={tokenMetadata}
+            adminHref={adminHref}
           />
-        ) : null}
-        <div
-          className={cn(
-            "grid min-h-0 min-w-0 flex-1 grid-cols-1 auto-rows-fr gap-3 overflow-hidden lg:auto-rows-auto lg:grid-cols-[minmax(240px,var(--studio-left-panel-width))_6px_minmax(0,1fr)_6px_minmax(300px,var(--studio-right-panel-width))] lg:grid-rows-1",
-            isResizingPanels && "select-none",
-            isMobile && "hidden",
-          )}
-          ref={layoutRef}
-          style={
-            {
-              "--studio-left-panel-width": `${leftPanelWidth}px`,
-              "--studio-right-panel-width": `${rightPanelWidth}px`,
-            } as CSSProperties
-          }
-        >
-          <div className="flex min-h-0 min-w-0 overflow-hidden">
-            <nav
-              aria-label="Left Studio panels"
-              className="flex shrink-0 flex-col items-center gap-1 border-r border-border/70 bg-muted/20 p-1.5 dark:bg-muted/10"
+          <StudioUnsavedChangesGuard
+            dirty={dirty}
+            saving={saving}
+            trySaveDraft={trySaveDraft}
+          />
+          {isMobile ? (
+            <MobileStudioLayout
+              activeInspectorTab={activeInspectorTab}
+              adminHref={adminHref}
+              canRedo={canRedo}
+              canUndo={canUndo}
+              clearNodeStyles={handleClearNodeStyles}
+              composition={composition}
+              componentsHref={componentsHref}
+              compositionId={compositionId}
+              dashboardHref={dashboardHref}
+              designSystemHref={designSystemHref}
+              dirty={dirty}
+              onCancelStagedTapInsertion={() => setStagedTapInsertion(null)}
+              onInspectorTabChange={setActiveInspectorTab}
+              onLeftSidebarPanelChange={setActiveLeftSidebarPanel}
+              onNodeStyleEntry={handleNodeStyleEntry}
+              onPageTemplateListFilterChange={setPageTemplateListFilter}
+              onPublish={() => void publish()}
+              onRedo={() => redo()}
+              onRemoveNode={removeNode}
+              onSaveDraft={() => void saveDraft()}
+              onSelectNode={selectNode}
+              onTextChange={handleTextChange}
+              onToggleTheme={toggleTheme}
+              onUndo={() => undo()}
+              onWrapNode={wrapNodeInBox}
+              pageTemplateListFilter={pageTemplateListFilter}
+              patchNodeProps={handlePatchNodeProps}
+              resetNodePropKey={handleResetNodePropKey}
+              saving={saving}
+              selectedNode={selectedNode}
+              selectedNodeId={selectedNodeId}
+              setNodeCollectionFieldBinding={
+                handleSetNodeCollectionFieldBinding
+              }
+              setNodeEditorFieldBinding={handleSetNodeEditorFieldBinding}
+              stagedTapInsertion={stagedTapInsertion}
+              studioResource={studioResource}
+              theme={theme}
+              tokenMetadata={tokenMetadata}
+            />
+          ) : null}
+          <div
+            className={cn(
+              "grid min-h-0 min-w-0 flex-1 grid-cols-1 auto-rows-fr gap-3 overflow-hidden lg:auto-rows-auto lg:grid-cols-[minmax(240px,var(--studio-left-panel-width))_6px_minmax(0,1fr)_6px_minmax(300px,var(--studio-right-panel-width))] lg:grid-rows-1",
+              isResizingPanels && "select-none",
+              isMobile && "hidden",
+            )}
+            ref={layoutRef}
+            style={
+              {
+                "--studio-left-panel-width": `${leftPanelWidth}px`,
+                "--studio-right-panel-width": `${rightPanelWidth}px`,
+              } as CSSProperties
+            }
+          >
+            <div className="flex min-h-0 min-w-0 overflow-hidden">
+              <nav
+                aria-label="Left Studio panels"
+                className="flex shrink-0 flex-col items-center gap-1 border-r border-border/70 bg-muted/20 p-1.5 dark:bg-muted/10"
+              >
+                <div className="flex w-full flex-col items-center gap-1">
+                  <LeftRailPanelButtons
+                    activeLeftSidebarPanel={activeLeftSidebarPanel}
+                    onSelect={setActiveLeftSidebarPanel}
+                    panels={LEFT_SIDEBAR_PRIMARY_PANELS}
+                  />
+                </div>
+                <Separator className="my-1 w-8 shrink-0 bg-border/70" />
+                <div className="flex w-full flex-col items-center gap-1">
+                  <LeftRailPanelButtons
+                    activeLeftSidebarPanel={activeLeftSidebarPanel}
+                    onSelect={setActiveLeftSidebarPanel}
+                    panels={LEFT_SIDEBAR_SECONDARY_PANELS}
+                  />
+                </div>
+                <div className="mt-auto flex w-full flex-col items-center gap-2 pt-2">
+                  <Separator className="w-8 bg-border/70" />
+                  <KeyboardShortcutsDrawer
+                    onOpenChange={setKeyboardShortcutsOpen}
+                    open={keyboardShortcutsOpen}
+                  />
+                </div>
+              </nav>
+              <StudioPanel
+                bodyClassName={studioLeftRailGridAdjacentEndClass}
+                className="h-full min-h-0 min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none"
+                collapsible={false}
+                contentClassName="min-h-0 flex-1"
+                headerClassName={studioLeftRailGridAdjacentEndClass}
+                title={activeLeftSidebarDef.label}
+                toolbar={
+                  activeLeftSidebarPanel === "pageTemplates" ? (
+                    <PageTemplateListFilterSelect
+                      onValueChange={setPageTemplateListFilter}
+                      value={pageTemplateListFilter}
+                    />
+                  ) : undefined
+                }
+              >
+                <StudioLeftSidebarPanelBody
+                  activeCompositionId={compositionId}
+                  activeLeftSidebarPanel={activeLeftSidebarPanel}
+                  activePaletteKey={activePaletteKey}
+                  composition={composition}
+                  onRemoveNode={removeNode}
+                  onSelect={selectNode}
+                  onWrapNode={wrapNodeInBox}
+                  pageTemplateListFilter={pageTemplateListFilter}
+                  selectedNodeId={selectedNodeId}
+                  studioResource={studioResource}
+                />
+              </StudioPanel>
+            </div>
+            <button
+              aria-label="Resize left panel"
+              className="group hidden cursor-col-resize items-center justify-center rounded-sm bg-transparent lg:flex"
+              onPointerDown={(event) => {
+                event.preventDefault();
+                startResize("left", event.clientX);
+              }}
+              type="button"
             >
-              <div className="flex w-full flex-col items-center gap-1">
-                <LeftRailPanelButtons
-                  activeLeftSidebarPanel={activeLeftSidebarPanel}
-                  onSelect={setActiveLeftSidebarPanel}
-                  panels={LEFT_SIDEBAR_PRIMARY_PANELS}
-                />
-              </div>
-              <Separator className="my-1 w-8 shrink-0 bg-border/70" />
-              <div className="flex w-full flex-col items-center gap-1">
-                <LeftRailPanelButtons
-                  activeLeftSidebarPanel={activeLeftSidebarPanel}
-                  onSelect={setActiveLeftSidebarPanel}
-                  panels={LEFT_SIDEBAR_SECONDARY_PANELS}
-                />
-              </div>
-              <div className="mt-auto flex w-full flex-col items-center gap-2 pt-2">
-                <Separator className="w-8 bg-border/70" />
-                <KeyboardShortcutsDrawer
-                  onOpenChange={setKeyboardShortcutsOpen}
-                  open={keyboardShortcutsOpen}
-                />
-              </div>
-            </nav>
+              <div className="h-full w-px bg-border/75 transition-colors group-hover:bg-primary/60" />
+            </button>
+            <div className="flex min-h-0 min-w-0 flex-col">
+              <StudioCanvas
+                composition={composition}
+                onCanvasBackground={() => selectNode(null)}
+                onRemoveNode={removeNode}
+                onSelectNode={(nodeId) => {
+                  showLayersSidebar();
+                  selectNode(nodeId);
+                }}
+                onWrapNode={wrapNodeInBox}
+                onToggleTheme={toggleTheme}
+                selectedNodeId={selectedNodeId}
+                studioResource={studioResource}
+                theme={theme}
+                tokenMeta={tokenMetadata}
+              />
+            </div>
+            <button
+              aria-label="Resize inspector panel"
+              className="group hidden cursor-col-resize items-center justify-center rounded-sm bg-transparent lg:flex"
+              onPointerDown={(event) => {
+                event.preventDefault();
+                startResize("right", event.clientX);
+              }}
+              type="button"
+            >
+              <div className="h-full w-px bg-border/75 transition-colors group-hover:bg-primary/60" />
+            </button>
             <StudioPanel
-              bodyClassName={studioLeftRailGridAdjacentEndClass}
-              className="h-full min-h-0 min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none"
+              className="h-full min-h-0 min-w-0 rounded-none border-0 bg-transparent shadow-none [&>div:first-child]:hidden"
               collapsible={false}
               contentClassName="min-h-0 flex-1"
-              headerClassName={studioLeftRailGridAdjacentEndClass}
-              title={activeLeftSidebarDef.label}
-              toolbar={
-                activeLeftSidebarPanel === "pageTemplates" ? (
-                  <PageTemplateListFilterSelect
-                    onValueChange={setPageTemplateListFilter}
-                    value={pageTemplateListFilter}
-                  />
-                ) : undefined
-              }
+              title=""
             >
-              <StudioLeftSidebarPanelBody
-                activeCompositionId={compositionId}
-                activeLeftSidebarPanel={activeLeftSidebarPanel}
-                activePaletteKey={activePaletteKey}
+              <PropertyInspector
+                clearNodeStyles={() => {
+                  if (selectedNodeId) {
+                    storeClearNodeStyles(selectedNodeId);
+                  }
+                }}
+                componentsHref={componentsHref}
                 composition={composition}
-                onRemoveNode={removeNode}
-                onSelect={selectNode}
-                onWrapNode={wrapNodeInBox}
-                pageTemplateListFilter={pageTemplateListFilter}
-                selectedNodeId={selectedNodeId}
+                inspectorTab={activeInspectorTab}
+                node={selectedNode}
+                onInspectorTabChange={setActiveInspectorTab}
+                resetNodePropKey={(propKey) => {
+                  if (selectedNodeId) {
+                    storeResetNodePropKey(selectedNodeId, propKey);
+                  }
+                }}
+                tokenMetadata={tokenMetadata}
+                onNodeStyleEntry={(property, entry) => {
+                  if (selectedNodeId) {
+                    setNodeStyleEntry(selectedNodeId, property, entry);
+                  }
+                }}
+                onTextChange={(c) => {
+                  if (selectedNodeId) {
+                    setTextContent(selectedNodeId, c);
+                  }
+                }}
+                patchNodeProps={(patch) => {
+                  if (selectedNodeId) {
+                    patchNodeProps(selectedNodeId, patch);
+                  }
+                }}
+                setNodeEditorFieldBinding={(field) => {
+                  if (selectedNodeId) {
+                    setNodeEditorFieldBinding(selectedNodeId, field);
+                  }
+                }}
+                setNodeCollectionFieldBinding={(fieldPath) => {
+                  if (selectedNodeId) {
+                    setNodeCollectionFieldBinding(selectedNodeId, fieldPath);
+                  }
+                }}
                 studioResource={studioResource}
               />
             </StudioPanel>
           </div>
-          <button
-            aria-label="Resize left panel"
-            className="group hidden cursor-col-resize items-center justify-center rounded-sm bg-transparent lg:flex"
-            onPointerDown={(event) => {
-              event.preventDefault();
-              startResize("left", event.clientX);
-            }}
-            type="button"
-          >
-            <div className="h-full w-px bg-border/75 transition-colors group-hover:bg-primary/60" />
-          </button>
-          <div className="flex min-h-0 min-w-0 flex-col">
-            <StudioCanvas
-              composition={composition}
-              onCanvasBackground={() => selectNode(null)}
-              onRemoveNode={removeNode}
-              onSelectNode={(nodeId) => {
-                showLayersSidebar();
-                selectNode(nodeId);
-              }}
-              onWrapNode={wrapNodeInBox}
-              onToggleTheme={toggleTheme}
-              selectedNodeId={selectedNodeId}
-              studioResource={studioResource}
-              theme={theme}
-              tokenMeta={tokenMetadata}
-            />
-          </div>
-          <button
-            aria-label="Resize inspector panel"
-            className="group hidden cursor-col-resize items-center justify-center rounded-sm bg-transparent lg:flex"
-            onPointerDown={(event) => {
-              event.preventDefault();
-              startResize("right", event.clientX);
-            }}
-            type="button"
-          >
-            <div className="h-full w-px bg-border/75 transition-colors group-hover:bg-primary/60" />
-          </button>
-          <StudioPanel
-            className="h-full min-h-0 min-w-0 rounded-none border-0 bg-transparent shadow-none [&>div:first-child]:hidden"
-            collapsible={false}
-            contentClassName="min-h-0 flex-1"
-            title=""
-          >
-            <PropertyInspector
-              clearNodeStyles={() => {
-                if (selectedNodeId) {
-                  storeClearNodeStyles(selectedNodeId);
-                }
-              }}
-              componentsHref={componentsHref}
-              composition={composition}
-              inspectorTab={activeInspectorTab}
-              node={selectedNode}
-              onInspectorTabChange={setActiveInspectorTab}
-              resetNodePropKey={(propKey) => {
-                if (selectedNodeId) {
-                  storeResetNodePropKey(selectedNodeId, propKey);
-                }
-              }}
-              tokenMetadata={tokenMetadata}
-              onNodeStyleEntry={(property, entry) => {
-                if (selectedNodeId) {
-                  setNodeStyleEntry(selectedNodeId, property, entry);
-                }
-              }}
-              onTextChange={(c) => {
-                if (selectedNodeId) {
-                  setTextContent(selectedNodeId, c);
-                }
-              }}
-              patchNodeProps={(patch) => {
-                if (selectedNodeId) {
-                  patchNodeProps(selectedNodeId, patch);
-                }
-              }}
-              setNodeEditorFieldBinding={(field) => {
-                if (selectedNodeId) {
-                  setNodeEditorFieldBinding(selectedNodeId, field);
-                }
-              }}
-              setNodeCollectionFieldBinding={(fieldPath) => {
-                if (selectedNodeId) {
-                  setNodeCollectionFieldBinding(selectedNodeId, fieldPath);
-                }
-              }}
-              studioResource={studioResource}
-            />
-          </StudioPanel>
-        </div>
-      </StudioRoot>
-      <DragOverlay
-        adjustScale={false}
-        dropAnimation={null}
-        modifiers={[snapCenterToCursor]}
-      >
-        {overlayDisplay ? <StudioDragPreview display={overlayDisplay} /> : null}
-      </DragOverlay>
-    </DndContext>
+        </StudioRoot>
+        <DragOverlay
+          adjustScale={false}
+          dropAnimation={null}
+          modifiers={[snapCenterToCursor]}
+        >
+          {overlayDisplay ? (
+            <StudioDragPreview display={overlayDisplay} />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     </TapInsertionContext.Provider>
   );
 }

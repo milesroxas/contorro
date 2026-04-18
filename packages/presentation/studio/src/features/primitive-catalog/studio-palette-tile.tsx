@@ -110,8 +110,9 @@ export function StudioPaletteTile({
       {...attributes}
       aria-pressed={armed || undefined}
       onPointerDown={(event) => {
-        (listeners as { onPointerDown?: (e: PointerEvent) => void })
-          ?.onPointerDown?.(event);
+        (
+          listeners as { onPointerDown?: (e: PointerEvent) => void }
+        )?.onPointerDown?.(event);
         if (!event.defaultPrevented) {
           handlePointerDown(event);
         }

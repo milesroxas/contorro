@@ -9,14 +9,14 @@ import type {
   StylePropertyEntry,
 } from "@repo/contracts-zod";
 import {
+  IconArrowBackUp,
+  IconArrowForwardUp,
+  IconDeviceFloppy,
+  IconExternalLink,
   IconLayoutDashboard,
   IconPalette,
   IconPuzzle,
   IconRocket,
-  IconExternalLink,
-  IconDeviceFloppy,
-  IconArrowBackUp,
-  IconArrowForwardUp,
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -264,7 +264,9 @@ export function MobileStudioLayout({
         <DrawerContent
           aria-describedby={undefined}
           className={cn("px-0", activeSheet ? "" : "hidden")}
-          data-testid={activeSheet ? `studio-mobile-sheet-${activeSheet}` : undefined}
+          data-testid={
+            activeSheet ? `studio-mobile-sheet-${activeSheet}` : undefined
+          }
         >
           <DrawerTitle className="sr-only">
             {activeSheet ? sheetTitle[activeSheet] : "Studio sheet"}
@@ -482,8 +484,8 @@ function MobileAddSheet({
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pt-2 pb-4">
       <p className="text-xs leading-snug text-muted-foreground">
-        Tap an item to arm it, then tap a spot on the canvas to place it. Long-press
-        to drag instead.
+        Tap an item to arm it, then tap a spot on the canvas to place it.
+        Long-press to drag instead.
       </p>
       <Tabs
         className="flex min-h-0 flex-1 flex-col"
@@ -498,10 +500,16 @@ function MobileAddSheet({
           <TabsTrigger value="primitives">Primitives</TabsTrigger>
           <TabsTrigger value="components">Components</TabsTrigger>
         </TabsList>
-        <TabsContent className="mt-3 min-h-0 overflow-y-auto" value="primitives">
+        <TabsContent
+          className="mt-3 min-h-0 overflow-y-auto"
+          value="primitives"
+        >
           <PrimitiveCatalog />
         </TabsContent>
-        <TabsContent className="mt-3 min-h-0 overflow-y-auto" value="components">
+        <TabsContent
+          className="mt-3 min-h-0 overflow-y-auto"
+          value="components"
+        >
           <LibraryComponentCatalog />
         </TabsContent>
       </Tabs>
