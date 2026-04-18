@@ -52,6 +52,19 @@ function nestedBoxInnerClass(isOver: boolean): string {
   return "border-muted-foreground/45 bg-background/45 text-muted-foreground dark:bg-background/30";
 }
 
+function emptyContainerSpacingClassName(
+  isLayersScope: boolean,
+  tapArmed: boolean,
+): string {
+  if (isLayersScope) {
+    return "min-h-[2.625rem] py-0.5";
+  }
+  if (tapArmed) {
+    return "min-h-[5rem] p-3";
+  }
+  return "min-h-[4rem] p-2.5";
+}
+
 function InsertionBetweenDropVisual({
   betweenStateClass,
   isLayersScope,
@@ -162,11 +175,10 @@ export function InsertionDropZone({
   }
   const isLayersScope = droppableScope === "layers";
   // Mobile/tap-armed gets larger hit targets so thumbs can land cleanly.
-  const emptyContainerSpacingClass = isLayersScope
-    ? "min-h-[2.625rem] py-0.5"
-    : tapArmed
-      ? "min-h-[5rem] p-3"
-      : "min-h-[4rem] p-2.5";
+  const emptyContainerSpacingClass = emptyContainerSpacingClassName(
+    isLayersScope,
+    tapArmed,
+  );
   const betweenStateClass = betweenDropCueClass(
     isLayersScope,
     isOver,
