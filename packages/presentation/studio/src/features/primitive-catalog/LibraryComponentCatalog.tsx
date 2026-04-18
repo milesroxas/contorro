@@ -4,6 +4,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { IconComponents } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 
+import { useTapInsertion } from "../../lib/tap-insertion-context.js";
 import { StudioPaletteTile } from "./studio-palette-tile.js";
 
 type Item = { key: string; displayName: string };
@@ -18,15 +19,35 @@ function LibraryPaletteTile({ item }: { item: Item }) {
       displayName: item.displayName,
     },
   });
+  const tapInsertion = useTapInsertion();
+  const armed =
+    tapInsertion.enabled &&
+    tapInsertion.staged?.definitionKey === "primitive.libraryComponent" &&
+    tapInsertion.staged.libraryComponentKey === item.key;
+
+  const onTap = tapInsertion.enabled
+    ? () => {
+        if (armed) {
+          tapInsertion.cancel();
+        } else {
+          tapInsertion.stage({
+            definitionKey: "primitive.libraryComponent",
+            libraryComponentKey: item.key,
+          });
+        }
+      }
+    : undefined;
 
   return (
     <StudioPaletteTile
+      armed={armed}
       Icon={IconComponents}
       attributes={attributes}
       isDragging={isDragging}
       label={item.displayName}
       labelCapitalize={false}
       listeners={listeners}
+      onTap={onTap}
       tileRef={setNodeRef}
     />
   );

@@ -9,6 +9,7 @@ import {
   type DragStartEvent,
   PointerSensor,
   pointerWithin,
+  TouchSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -57,11 +58,18 @@ import {
   resolveLeftSidebarPanelShortcut,
 } from "../lib/left-sidebar-panels.js";
 import { getPrimitiveDisplay } from "../lib/primitive-display.js";
+import {
+  type StagedTapInsertion,
+  TapInsertionContext,
+  type TapInsertionContextValue,
+} from "../lib/tap-insertion-context.js";
+import { useIsMobile } from "../lib/use-is-mobile.js";
 import { createStudioStore } from "../model/studio-store.js";
 import {
   persistStudioChromeTheme,
   resolveStudioChromeTheme,
 } from "../shell/hub/resolve-studio-chrome-theme.js";
+import { MobileStudioLayout } from "./mobile/MobileStudioLayout.js";
 import { StudioLeftSidebarPanelBody } from "./studio-left-sidebar-panel-body.js";
 import { useStudioDesignSystemStyleSheet } from "./use-studio-design-system-style-sheet.js";
 
@@ -359,9 +367,17 @@ export function StudioApp({
     [compositionId, authoringClient],
   );
 
+  // PointerSensor drives mouse/trackpad/stylus drags; TouchSensor handles
+  // finger drags with a small delay so vertical scrolling in the palette or
+  // layers tree does not accidentally start a drag.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 180, tolerance: 8 },
+    }),
   );
+
+  const isMobile = useIsMobile();
 
   const [activePaletteKey, setActivePaletteKey] = useState<string | null>(null);
   const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
@@ -376,6 +392,8 @@ export function StudioApp({
   const [rightPanelWidth, setRightPanelWidth] = useState(360);
   const [isResizingPanels, setIsResizingPanels] = useState(false);
   const [keyboardShortcutsOpen, setKeyboardShortcutsOpen] = useState(false);
+  const [stagedTapInsertion, setStagedTapInsertion] =
+    useState<StagedTapInsertion | null>(null);
   const layoutRef = useRef<HTMLDivElement | null>(null);
   const resizeStateRef = useRef<{
     side: ResizeSide;
@@ -532,7 +550,19 @@ export function StudioApp({
     setActiveLeftSidebarPanel((prev) => (prev !== "layers" ? "layers" : prev));
   }, []);
 
+  const toggleTheme = useCallback(() => {
+    setTheme((prevTheme) => {
+      const nextTheme = prevTheme === "dark" ? "light" : "dark";
+      persistStudioChromeTheme(nextTheme);
+      return nextTheme;
+    });
+  }, []);
+
   const onDragStart = (event: DragStartEvent) => {
+    // A drag supersedes any armed tap-insertion — never commit both.
+    if (stagedTapInsertion !== null) {
+      setStagedTapInsertion(null);
+    }
     const d = event.active.data.current;
     if (d?.kind === "palette" && typeof d.definitionKey === "string") {
       showLayersSidebar();
@@ -561,6 +591,37 @@ export function StudioApp({
     setActivePaletteKey(null);
     setActiveNodeId(null);
   };
+
+  const tapInsertionValue = useMemo<TapInsertionContextValue>(() => {
+    return {
+      cancel: () => setStagedTapInsertion(null),
+      commit: (parentId: string, insertIndex: number) => {
+        const value = stagedTapInsertion;
+        if (!value || !composition) {
+          return;
+        }
+        const idx = computeInsertIndex(
+          composition,
+          parentId,
+          insertIndex,
+          null,
+        );
+        addPrimitive(parentId, value.definitionKey, idx, value.libraryComponentKey);
+        setStagedTapInsertion(null);
+      },
+      enabled: isMobile,
+      stage: (value: StagedTapInsertion) => setStagedTapInsertion(value),
+      staged: isMobile ? stagedTapInsertion : null,
+    };
+  }, [addPrimitive, composition, isMobile, stagedTapInsertion]);
+
+  // Drop any staged mobile tap-insertion if the user rotates into the desktop
+  // layout; the mobile dock is gone, so the armed state would be invisible.
+  useEffect(() => {
+    if (!isMobile && stagedTapInsertion !== null) {
+      setStagedTapInsertion(null);
+    }
+  }, [isMobile, stagedTapInsertion]);
 
   if (!composition) {
     return (
@@ -591,6 +652,7 @@ export function StudioApp({
     studioResource === "component" ? "Component" : "Page Template";
 
   return (
+    <TapInsertionContext.Provider value={tapInsertionValue}>
     <DndContext
       collisionDetection={pointerFirstCollisionDetection}
       onDragCancel={onDragCancel}
@@ -634,10 +696,80 @@ export function StudioApp({
           saving={saving}
           trySaveDraft={trySaveDraft}
         />
+        {isMobile ? (
+          <MobileStudioLayout
+            activeInspectorTab={activeInspectorTab}
+            adminHref={adminHref}
+            canRedo={canRedo}
+            canUndo={canUndo}
+            clearNodeStyles={() => {
+              if (selectedNodeId) {
+                storeClearNodeStyles(selectedNodeId);
+              }
+            }}
+            composition={composition}
+            componentsHref={componentsHref}
+            compositionId={compositionId}
+            dashboardHref={dashboardHref}
+            designSystemHref={designSystemHref}
+            dirty={dirty}
+            onCancelStagedTapInsertion={() => setStagedTapInsertion(null)}
+            onInspectorTabChange={setActiveInspectorTab}
+            onLeftSidebarPanelChange={setActiveLeftSidebarPanel}
+            onNodeStyleEntry={(property, entry) => {
+              if (selectedNodeId) {
+                setNodeStyleEntry(selectedNodeId, property, entry);
+              }
+            }}
+            onPageTemplateListFilterChange={setPageTemplateListFilter}
+            onPublish={() => void publish()}
+            onRedo={() => redo()}
+            onRemoveNode={removeNode}
+            onSaveDraft={() => void saveDraft()}
+            onSelectNode={selectNode}
+            onTextChange={(content) => {
+              if (selectedNodeId) {
+                setTextContent(selectedNodeId, content);
+              }
+            }}
+            onToggleTheme={toggleTheme}
+            onUndo={() => undo()}
+            onWrapNode={wrapNodeInBox}
+            pageTemplateListFilter={pageTemplateListFilter}
+            patchNodeProps={(patch) => {
+              if (selectedNodeId) {
+                patchNodeProps(selectedNodeId, patch);
+              }
+            }}
+            resetNodePropKey={(propKey) => {
+              if (selectedNodeId) {
+                storeResetNodePropKey(selectedNodeId, propKey);
+              }
+            }}
+            saving={saving}
+            selectedNode={selectedNode}
+            selectedNodeId={selectedNodeId}
+            setNodeCollectionFieldBinding={(fieldPath) => {
+              if (selectedNodeId) {
+                setNodeCollectionFieldBinding(selectedNodeId, fieldPath);
+              }
+            }}
+            setNodeEditorFieldBinding={(field) => {
+              if (selectedNodeId) {
+                setNodeEditorFieldBinding(selectedNodeId, field);
+              }
+            }}
+            stagedTapInsertion={stagedTapInsertion}
+            studioResource={studioResource}
+            theme={theme}
+            tokenMetadata={tokenMetadata}
+          />
+        ) : null}
         <div
           className={cn(
             "grid min-h-0 min-w-0 flex-1 grid-cols-1 auto-rows-fr gap-3 overflow-hidden lg:auto-rows-auto lg:grid-cols-[minmax(240px,var(--studio-left-panel-width))_6px_minmax(0,1fr)_6px_minmax(300px,var(--studio-right-panel-width))] lg:grid-rows-1",
             isResizingPanels && "select-none",
+            isMobile && "hidden",
           )}
           ref={layoutRef}
           style={
@@ -726,13 +858,7 @@ export function StudioApp({
                 selectNode(nodeId);
               }}
               onWrapNode={wrapNodeInBox}
-              onToggleTheme={() => {
-                setTheme((prevTheme) => {
-                  const nextTheme = prevTheme === "dark" ? "light" : "dark";
-                  persistStudioChromeTheme(nextTheme);
-                  return nextTheme;
-                });
-              }}
+              onToggleTheme={toggleTheme}
               selectedNodeId={selectedNodeId}
               studioResource={studioResource}
               theme={theme}
@@ -811,5 +937,6 @@ export function StudioApp({
         {overlayDisplay ? <StudioDragPreview display={overlayDisplay} /> : null}
       </DragOverlay>
     </DndContext>
+    </TapInsertionContext.Provider>
   );
 }

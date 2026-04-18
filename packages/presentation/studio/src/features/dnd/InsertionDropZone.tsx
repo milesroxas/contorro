@@ -4,6 +4,7 @@ import { useDndContext, useDroppable } from "@dnd-kit/core";
 import { IconRowInsertBottom } from "@tabler/icons-react";
 
 import { cn } from "../../lib/cn.js";
+import { useTapInsertion } from "../../lib/tap-insertion-context.js";
 
 export type InsertDropData = {
   kind: "insert";
@@ -11,11 +12,20 @@ export type InsertDropData = {
   insertIndex: number;
 };
 
-function betweenDropCueClass(isLayersScope: boolean, isOver: boolean): string {
+function betweenDropCueClass(
+  isLayersScope: boolean,
+  isOver: boolean,
+  tapArmed: boolean,
+): string {
   if (isOver) {
     return isLayersScope
       ? "min-h-5 border border-dashed border-primary bg-primary/15 py-0 shadow-md ring-1 ring-primary/30"
       : "min-h-9 border border-dashed border-primary bg-primary/15 py-1 shadow-md ring-1 ring-primary/30";
+  }
+  if (tapArmed) {
+    return isLayersScope
+      ? "min-h-6 border border-dashed border-primary/60 bg-primary/8 py-0"
+      : "min-h-10 border border-dashed border-primary/60 bg-primary/8 py-1 animate-pulse";
   }
   return isLayersScope
     ? "min-h-1 border border-transparent bg-transparent py-0"
@@ -132,10 +142,13 @@ export function InsertionDropZone({
   showNestedBoxPlaceholder?: boolean;
 }) {
   const { active } = useDndContext();
+  const tapInsertion = useTapInsertion();
+  const tapArmed = tapInsertion.enabled && tapInsertion.staged !== null;
   const hasActiveDrag =
     active?.data.current?.kind === "palette" ||
     active?.data.current?.kind === "node";
-  const showCanvasDropCue = droppableScope === "canvas" ? hasActiveDrag : true;
+  const showCanvasDropCue =
+    droppableScope === "canvas" ? hasActiveDrag || tapArmed : true;
   const { setNodeRef, isOver } = useDroppable({
     id: `${droppableScope}-insert:${parentId}:${insertIndex}`,
     data: {
@@ -148,14 +161,28 @@ export function InsertionDropZone({
     return null;
   }
   const isLayersScope = droppableScope === "layers";
+  // Mobile/tap-armed gets larger hit targets so thumbs can land cleanly.
   const emptyContainerSpacingClass = isLayersScope
     ? "min-h-[2.625rem] py-0.5"
-    : "min-h-[4rem] p-2.5";
-  const betweenStateClass = betweenDropCueClass(isLayersScope, isOver);
+    : tapArmed
+      ? "min-h-[5rem] p-3"
+      : "min-h-[4rem] p-2.5";
+  const betweenStateClass = betweenDropCueClass(
+    isLayersScope,
+    isOver,
+    tapArmed && !isLayersScope,
+  );
   const emptySurfaceClass = emptyDropSurfaceClass(isLayersScope);
   const emptyStateClass = emptyDropStateClass(isOver);
   const renderNestedBoxPlaceholder = showNestedBoxPlaceholder && !isLayersScope;
   const nestedInnerStateClass = nestedBoxInnerClass(isOver);
+
+  const handleTapCommit = tapArmed
+    ? (event: React.MouseEvent<HTMLDivElement>) => {
+        event.stopPropagation();
+        tapInsertion.commit(parentId, insertIndex);
+      }
+    : undefined;
 
   return (
     <div
@@ -164,9 +191,11 @@ export function InsertionDropZone({
         variant === "between" && "z-3",
         variant === "between" && !isLayersScope && "py-1",
         variant === "empty" && cn("flex-1", emptyContainerSpacingClass),
+        tapArmed && "cursor-copy",
         className,
       )}
       data-testid={testId}
+      onClick={handleTapCommit}
       ref={setNodeRef}
     >
       {variant === "between" ? (

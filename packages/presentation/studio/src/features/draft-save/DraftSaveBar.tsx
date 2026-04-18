@@ -139,10 +139,13 @@ export function DraftSaveBar({
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-muted/20 px-4 py-3 dark:bg-muted/10">
       <DropdownMenu>
+        {/* On mobile, navigation + save/publish live in the bottom dock's
+            Menu sheet, so we hide these redundant controls to keep the top
+            bar compact. */}
         <DropdownMenuTrigger asChild>
           <Button
             aria-label="Open Studio navigation menu"
-            className="gap-1.5"
+            className="hidden gap-1.5 lg:inline-flex"
             size="sm"
             type="button"
             variant="ghost"
@@ -185,7 +188,11 @@ export function DraftSaveBar({
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Separator aria-hidden className="h-5 bg-border" orientation="vertical" />
+      <Separator
+        aria-hidden
+        className="hidden h-5 bg-border lg:block"
+        orientation="vertical"
+      />
       {editingName && canEditName ? (
         <>
           <input
@@ -258,6 +265,7 @@ export function DraftSaveBar({
       <div className="min-w-0 flex-1" />
       <Button
         aria-label="Undo"
+        className="hidden lg:inline-flex"
         disabled={!canUndo || saving}
         onClick={() => onUndo()}
         size="sm"
@@ -269,6 +277,7 @@ export function DraftSaveBar({
       </Button>
       <Button
         aria-label="Redo"
+        className="hidden lg:inline-flex"
         disabled={!canRedo || saving}
         onClick={() => onRedo()}
         size="sm"
@@ -278,11 +287,15 @@ export function DraftSaveBar({
       >
         <IconArrowForwardUp className="size-4" />
       </Button>
-      <Separator aria-hidden className="h-5 bg-border" orientation="vertical" />
+      <Separator
+        aria-hidden
+        className="hidden h-5 bg-border lg:block"
+        orientation="vertical"
+      />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            className="gap-1.5"
+            className="hidden gap-1.5 lg:inline-flex"
             data-testid="studio-save-menu-trigger"
             disabled={!canOpenSyncMenu}
             size="sm"
