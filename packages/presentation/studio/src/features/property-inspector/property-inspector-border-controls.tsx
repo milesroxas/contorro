@@ -2,6 +2,7 @@
 
 import type { TokenMeta } from "@repo/config-tailwind";
 import type {
+  Breakpoint,
   CompositionNode,
   PageComposition,
   StyleProperty,
@@ -582,12 +583,14 @@ function BorderRadiusUtilityAndTokenRow({
 }
 
 export function BorderControl({
+  activeBreakpoint,
   composition,
   node,
   tokenMetadata,
   availableProperties,
   onNodeStyleEntry,
 }: {
+  activeBreakpoint: Breakpoint | null;
   composition: PageComposition;
   node: CompositionNode;
   tokenMetadata: TokenMeta[];
@@ -611,11 +614,26 @@ export function BorderControl({
     return null;
   }
 
-  const widthEntry = readStyleProperty(composition, node, "borderWidth");
-  const styleEntry = readStyleProperty(composition, node, "borderStyle");
-  const colorEntry = readStyleProperty(composition, node, "borderColor");
+  const widthEntry = readStyleProperty(
+    composition,
+    node,
+    "borderWidth",
+    activeBreakpoint,
+  );
+  const styleEntry = readStyleProperty(
+    composition,
+    node,
+    "borderStyle",
+    activeBreakpoint,
+  );
+  const colorEntry = readStyleProperty(
+    composition,
+    node,
+    "borderColor",
+    activeBreakpoint,
+  );
   const radiusEntry = radiusProperty
-    ? readStyleProperty(composition, node, radiusProperty)
+    ? readStyleProperty(composition, node, radiusProperty, activeBreakpoint)
     : undefined;
 
   return (

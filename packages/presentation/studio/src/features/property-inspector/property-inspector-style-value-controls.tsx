@@ -170,26 +170,36 @@ function stylePropertyValueEditor(args: {
 export function StyleValueSelect({
   property,
   valueEntry,
+  inheritedEntry,
   tokenMetadata,
   onNodeStyleEntry,
 }: {
   property: StyleProperty;
   valueEntry: StylePropertyEntry | undefined;
+  /**
+   * Base-breakpoint entry surfaced when the active breakpoint has no override
+   * of its own. Rendered (read-only) in the picker so the user sees what
+   * actually applies and can tell the value cascades from base.
+   */
+  inheritedEntry?: StylePropertyEntry | undefined;
   tokenMetadata: TokenMeta[];
   onNodeStyleEntry: (
     property: StyleProperty,
     entry: StylePropertyEntry | null,
   ) => void;
 }) {
-  const selectedToken = valueEntry?.type === "token" ? valueEntry.token : null;
+  const effectiveEntry = valueEntry ?? inheritedEntry;
+  const selectedToken =
+    effectiveEntry?.type === "token" ? effectiveEntry.token : null;
   const visibleTokens = tokensForStyleProperty(
     tokenMetadata,
     property,
     selectedToken,
   );
   const utilityValues = utilityValuesForStyleProperty(property);
-  const currentValue = entrySelectValue(valueEntry);
+  const currentValue = entrySelectValue(effectiveEntry);
   const showModified = Boolean(valueEntry);
+  const isInherited = !valueEntry && Boolean(inheritedEntry);
   return (
     <div className="block space-y-2" key={property}>
       <PropertyControlLabel
@@ -209,9 +219,14 @@ export function StyleValueSelect({
         onNodeStyleEntry,
         property,
         utilityValues,
-        valueEntry,
+        valueEntry: effectiveEntry,
         visibleTokens,
       })}
+      {isInherited ? (
+        <span className="inline-flex items-center gap-1 rounded-sm border border-border/60 bg-muted/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+          Inherited from base
+        </span>
+      ) : null}
     </div>
   );
 }

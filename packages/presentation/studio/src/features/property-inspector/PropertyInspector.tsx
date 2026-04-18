@@ -2,6 +2,7 @@
 
 import type { TokenMeta } from "@repo/config-tailwind";
 import type {
+  Breakpoint,
   CompositionNode,
   EditorFieldSpec,
   PageComposition,
@@ -15,6 +16,7 @@ import type { StudioInspectorTab } from "../../lib/inspector-tab-shortcuts.js";
 import { PropertyInspectorActive } from "./property-inspector-active.js";
 
 export function PropertyInspector({
+  activeBreakpoint,
   clearNodeStyles,
   componentsHref = "",
   composition,
@@ -30,6 +32,7 @@ export function PropertyInspector({
   studioResource,
   tokenMetadata,
 }: {
+  activeBreakpoint: Breakpoint | null;
   clearNodeStyles: () => void;
   componentsHref?: string;
   composition: PageComposition | null;
@@ -64,6 +67,7 @@ export function PropertyInspector({
 
   return (
     <PropertyInspectorActive
+      activeBreakpoint={activeBreakpoint}
       clearNodeStyles={clearNodeStyles}
       componentsHref={componentsHref}
       composition={composition}

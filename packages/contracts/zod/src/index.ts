@@ -45,15 +45,20 @@ export type {
   StudioTokenMeta,
 } from "./studio-authoring-client.js";
 export type {
+  Breakpoint,
   StylePropertyEntry,
   TokenStyleProperty,
   UtilityStyleProperty,
 } from "./style-binding.js";
 export {
+  BREAKPOINT_MIN_WIDTH_PX,
+  BREAKPOINTS,
+  BreakpointSchema,
   SIZE_UTILITY_VALUES,
   SPACING_UTILITY_VALUES,
   type StyleBinding,
   StyleBindingSchema,
+  stylePropertyEntryKey,
   utilityValuesForStyleProperty,
 } from "./style-binding.js";
 export {

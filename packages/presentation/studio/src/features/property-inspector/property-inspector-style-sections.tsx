@@ -2,6 +2,7 @@
 
 import type { TokenMeta } from "@repo/config-tailwind";
 import type {
+  Breakpoint,
   CompositionNode,
   PageComposition,
   StyleProperty,
@@ -24,17 +25,19 @@ import {
   inspectorStyleSectionModelFromSection,
   inspectorStyleSectionTopClass,
   moreOptionsGridClassName,
-  readStyleProperty,
+  readStyleEntryCascade,
 } from "./property-inspector-style-model.js";
 import { StyleValueSelect } from "./property-inspector-style-value-controls.js";
 
 function InspectorStyleValueGrid({
+  activeBreakpoint,
   composition,
   node,
   onNodeStyleEntry,
   properties,
   tokenMetadata,
 }: {
+  activeBreakpoint: Breakpoint | null;
   composition: PageComposition;
   node: CompositionNode;
   onNodeStyleEntry: (
@@ -47,14 +50,20 @@ function InspectorStyleValueGrid({
   return (
     <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
       {properties.map((property) => {
-        const styleEntry = readStyleProperty(composition, node, property);
+        const cascade = readStyleEntryCascade(
+          composition,
+          node,
+          property,
+          activeBreakpoint,
+        );
         return (
           <StyleValueSelect
             key={property}
+            inheritedEntry={cascade.inherited ? cascade.base : undefined}
             onNodeStyleEntry={onNodeStyleEntry}
             property={property}
             tokenMetadata={tokenMetadata}
-            valueEntry={styleEntry}
+            valueEntry={cascade.active}
           />
         );
       })}
@@ -63,6 +72,7 @@ function InspectorStyleValueGrid({
 }
 
 function InspectorStyleMoreOptionsBlock({
+  activeBreakpoint,
   composition,
   groupedSecondaryProperties,
   moreOptionsLabel,
@@ -71,6 +81,7 @@ function InspectorStyleMoreOptionsBlock({
   sectionId,
   tokenMetadata,
 }: {
+  activeBreakpoint: Breakpoint | null;
   composition: PageComposition;
   groupedSecondaryProperties: StyleProperty[];
   moreOptionsLabel: string;
@@ -99,14 +110,20 @@ function InspectorStyleMoreOptionsBlock({
       <CollapsibleContent className="pt-3">
         <div className={moreOptionsGridClassName(sectionId)}>
           {groupedSecondaryProperties.map((property) => {
-            const styleEntry = readStyleProperty(composition, node, property);
+            const cascade = readStyleEntryCascade(
+              composition,
+              node,
+              property,
+              activeBreakpoint,
+            );
             return (
               <StyleValueSelect
                 key={property}
+                inheritedEntry={cascade.inherited ? cascade.base : undefined}
                 onNodeStyleEntry={onNodeStyleEntry}
                 property={property}
                 tokenMetadata={tokenMetadata}
-                valueEntry={styleEntry}
+                valueEntry={cascade.active}
               />
             );
           })}
@@ -117,6 +134,7 @@ function InspectorStyleMoreOptionsBlock({
 }
 
 function InspectorSpacingStyleSection({
+  activeBreakpoint,
   composition,
   isStyleSectionOpen,
   model,
@@ -127,6 +145,7 @@ function InspectorSpacingStyleSection({
   setStyleSectionOpen,
   tokenMetadata,
 }: {
+  activeBreakpoint: Breakpoint | null;
   composition: PageComposition;
   isStyleSectionOpen: (sectionId: StyleSectionId) => boolean;
   model: NonNullable<ReturnType<typeof inspectorStyleSectionModelFromSection>>;
@@ -172,6 +191,7 @@ function InspectorSpacingStyleSection({
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-4 pt-3">
           <SpacingBoxControl
+            activeBreakpoint={activeBreakpoint}
             availableProperties={new Set(model.sectionProperties)}
             composition={composition}
             node={node}
@@ -179,6 +199,7 @@ function InspectorSpacingStyleSection({
           />
           {model.visibleProperties.length > 0 ? (
             <InspectorStyleValueGrid
+              activeBreakpoint={activeBreakpoint}
               composition={composition}
               node={node}
               onNodeStyleEntry={onNodeStyleEntry}
@@ -188,6 +209,7 @@ function InspectorSpacingStyleSection({
           ) : null}
           {showMoreOptions ? (
             <InspectorStyleMoreOptionsBlock
+              activeBreakpoint={activeBreakpoint}
               composition={composition}
               groupedSecondaryProperties={model.groupedSecondaryProperties}
               moreOptionsLabel="More spacing options"
@@ -204,6 +226,7 @@ function InspectorSpacingStyleSection({
 }
 
 function InspectorBorderStyleSection({
+  activeBreakpoint,
   composition,
   isStyleSectionOpen,
   model,
@@ -214,6 +237,7 @@ function InspectorBorderStyleSection({
   setStyleSectionOpen,
   tokenMetadata,
 }: {
+  activeBreakpoint: Breakpoint | null;
   composition: PageComposition;
   isStyleSectionOpen: (sectionId: StyleSectionId) => boolean;
   model: NonNullable<ReturnType<typeof inspectorStyleSectionModelFromSection>>;
@@ -257,6 +281,7 @@ function InspectorBorderStyleSection({
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-4 pt-3">
           <BorderControl
+            activeBreakpoint={activeBreakpoint}
             availableProperties={new Set(model.filteredSectionProperties)}
             composition={composition}
             node={node}
@@ -270,6 +295,7 @@ function InspectorBorderStyleSection({
 }
 
 function InspectorDefaultStyleSection({
+  activeBreakpoint,
   composition,
   isStyleSectionOpen,
   model,
@@ -282,6 +308,7 @@ function InspectorDefaultStyleSection({
   setStyleSectionOpen,
   tokenMetadata,
 }: {
+  activeBreakpoint: Breakpoint | null;
   composition: PageComposition;
   isStyleSectionOpen: (sectionId: StyleSectionId) => boolean;
   model: NonNullable<ReturnType<typeof inspectorStyleSectionModelFromSection>>;
@@ -329,6 +356,7 @@ function InspectorDefaultStyleSection({
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-4 pt-3">
           <InspectorStyleValueGrid
+            activeBreakpoint={activeBreakpoint}
             composition={composition}
             node={node}
             onNodeStyleEntry={onNodeStyleEntry}
@@ -337,6 +365,7 @@ function InspectorDefaultStyleSection({
           />
           {showMoreOptions ? (
             <InspectorStyleMoreOptionsBlock
+              activeBreakpoint={activeBreakpoint}
               composition={composition}
               groupedSecondaryProperties={model.groupedSecondaryProperties}
               moreOptionsLabel={`More ${section.label.toLowerCase()} options`}
@@ -363,6 +392,7 @@ function InspectorDefaultStyleSection({
 }
 
 export function InspectorOrderedStyleSectionItem({
+  activeBreakpoint,
   composition,
   gapPropertyAvailable,
   isStyleSectionOpen,
@@ -375,6 +405,7 @@ export function InspectorOrderedStyleSectionItem({
   setStyleSectionOpen,
   tokenMetadata,
 }: {
+  activeBreakpoint: Breakpoint | null;
   composition: PageComposition;
   gapPropertyAvailable: boolean;
   isStyleSectionOpen: (sectionId: StyleSectionId) => boolean;
@@ -400,6 +431,7 @@ export function InspectorOrderedStyleSectionItem({
   if (section.id === "spacing") {
     return (
       <InspectorSpacingStyleSection
+        activeBreakpoint={activeBreakpoint}
         composition={composition}
         isStyleSectionOpen={isStyleSectionOpen}
         model={model}
@@ -415,6 +447,7 @@ export function InspectorOrderedStyleSectionItem({
   if (section.id === "border") {
     return (
       <InspectorBorderStyleSection
+        activeBreakpoint={activeBreakpoint}
         composition={composition}
         isStyleSectionOpen={isStyleSectionOpen}
         model={model}
@@ -429,6 +462,7 @@ export function InspectorOrderedStyleSectionItem({
   }
   return (
     <InspectorDefaultStyleSection
+      activeBreakpoint={activeBreakpoint}
       composition={composition}
       isStyleSectionOpen={isStyleSectionOpen}
       model={model}

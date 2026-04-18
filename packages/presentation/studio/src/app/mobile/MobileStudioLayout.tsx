@@ -2,6 +2,7 @@
 
 import type { TokenMeta } from "@repo/config-tailwind";
 import type {
+  Breakpoint,
   CompositionNode,
   EditorFieldSpec,
   PageComposition,
@@ -80,6 +81,7 @@ function stagedInsertionDisplayLabel(
 }
 
 export function MobileStudioLayout({
+  activeBreakpoint,
   activeInspectorTab,
   adminHref,
   clearNodeStyles,
@@ -88,6 +90,7 @@ export function MobileStudioLayout({
   compositionId,
   dashboardHref,
   designSystemHref,
+  onActiveBreakpointChange,
   onInspectorTabChange,
   onLeftSidebarPanelChange,
   onNodeStyleEntry,
@@ -118,6 +121,7 @@ export function MobileStudioLayout({
   saving,
   dirty,
 }: {
+  activeBreakpoint: Breakpoint | null;
   activeInspectorTab: StudioInspectorTab;
   adminHref: string;
   clearNodeStyles: () => void;
@@ -126,6 +130,7 @@ export function MobileStudioLayout({
   compositionId: string;
   dashboardHref: string;
   designSystemHref: string;
+  onActiveBreakpointChange: (breakpoint: Breakpoint | null) => void;
   onInspectorTabChange: (tab: StudioInspectorTab) => void;
   onLeftSidebarPanelChange: (id: LeftSidebarPanelId) => void;
   onNodeStyleEntry: (
@@ -223,7 +228,9 @@ export function MobileStudioLayout({
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <StudioCanvas
+          activeBreakpoint={activeBreakpoint}
           composition={composition}
+          onActiveBreakpointChange={onActiveBreakpointChange}
           onCanvasBackground={() => onSelectNode(null)}
           onRemoveNode={onRemoveNode}
           onSelectNode={(nodeId) => {
@@ -326,6 +333,7 @@ export function MobileStudioLayout({
             ) : null}
             {activeSheet === "inspect" ? (
               <MobileInspectSheet
+                activeBreakpoint={activeBreakpoint}
                 activeInspectorTab={activeInspectorTab}
                 clearNodeStyles={clearNodeStyles}
                 componentsHref={componentsHref}
@@ -590,6 +598,7 @@ function MobileLayersSheet({
 }
 
 function MobileInspectSheet({
+  activeBreakpoint,
   activeInspectorTab,
   clearNodeStyles,
   componentsHref,
@@ -605,6 +614,7 @@ function MobileInspectSheet({
   studioResource,
   tokenMetadata,
 }: {
+  activeBreakpoint: Breakpoint | null;
   activeInspectorTab: StudioInspectorTab;
   clearNodeStyles: () => void;
   componentsHref: string;
@@ -626,6 +636,7 @@ function MobileInspectSheet({
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-2 pb-4">
       <PropertyInspector
+        activeBreakpoint={activeBreakpoint}
         clearNodeStyles={clearNodeStyles}
         componentsHref={componentsHref}
         composition={composition}

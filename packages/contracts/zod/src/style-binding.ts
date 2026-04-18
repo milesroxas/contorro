@@ -418,10 +418,24 @@ export function utilityValuesForStyleProperty(
   return [];
 }
 
+/** Mobile-first breakpoints. Base = no breakpoint. */
+export const BREAKPOINTS = ["sm", "md", "lg", "xl"] as const;
+export const BreakpointSchema = z.enum(BREAKPOINTS);
+export type Breakpoint = z.infer<typeof BreakpointSchema>;
+
+/** Min-width (px) applied by the responsive CSS emitter. Matches Tailwind defaults. */
+export const BREAKPOINT_MIN_WIDTH_PX: Record<Breakpoint, number> = {
+  sm: 640,
+  md: 768,
+  lg: 1024,
+  xl: 1280,
+};
+
 const TokenStylePropertySchema = z.object({
   type: z.literal("token"),
   property: StylePropertySchema,
   token: z.string(),
+  breakpoint: BreakpointSchema.optional(),
 });
 
 const UtilityStylePropertySchema = z
@@ -429,6 +443,7 @@ const UtilityStylePropertySchema = z
     type: z.literal("utility"),
     property: StylePropertySchema,
     value: z.string().trim().min(1).regex(/^\S+$/),
+    breakpoint: BreakpointSchema.optional(),
   })
   .superRefine((value, ctx) => {
     const allowedValues = utilityValuesForStyleProperty(value.property);
@@ -454,11 +469,35 @@ const StylePropertyEntrySchema = z.union([
   UtilityStylePropertySchema,
 ]);
 
-export const StyleBindingSchema = z.object({
-  id: z.string(),
-  nodeId: z.string(),
-  properties: z.array(StylePropertyEntrySchema),
-});
+/** Uniqueness key for a style entry: (property, breakpoint). Base = no breakpoint. */
+export function stylePropertyEntryKey(entry: {
+  property: string;
+  breakpoint?: Breakpoint;
+}): string {
+  return `${entry.property}@${entry.breakpoint ?? "base"}`;
+}
+
+export const StyleBindingSchema = z
+  .object({
+    id: z.string(),
+    nodeId: z.string(),
+    properties: z.array(StylePropertyEntrySchema),
+  })
+  .superRefine((value, ctx) => {
+    const seen = new Set<string>();
+    for (let i = 0; i < value.properties.length; i += 1) {
+      const key = stylePropertyEntryKey(value.properties[i]);
+      if (seen.has(key)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["properties", i],
+          message: `Duplicate style entry for (${key})`,
+        });
+        return;
+      }
+      seen.add(key);
+    }
+  });
 
 export type TokenStyleProperty = z.infer<typeof TokenStylePropertySchema>;
 export type UtilityStyleProperty = z.infer<typeof UtilityStylePropertySchema>;

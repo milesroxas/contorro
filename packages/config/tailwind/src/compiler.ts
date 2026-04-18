@@ -1,4 +1,8 @@
-import type { StyleProperty } from "@repo/contracts-zod";
+import {
+  BREAKPOINT_MIN_WIDTH_PX,
+  BREAKPOINTS,
+  type StyleProperty,
+} from "@repo/contracts-zod";
 import type { DesignToken, DesignTokenSet } from "@repo/domains-design-system";
 
 export type TokenMeta = {
@@ -133,6 +137,11 @@ function tokenKeyToClassSegment(key: string): string {
   return key.replace(/[^a-zA-Z0-9_-]/g, "-");
 }
 
+/** Escapes `:` for Tailwind-style responsive class selectors (`sm:text-…`). */
+function escapeClassSelector(className: string): string {
+  return className.replace(/\\/g, "\\\\").replace(/:/g, "\\:");
+}
+
 export function styleTokenClassName(
   property: StudioStyleProperty,
   tokenKey: string,
@@ -170,9 +179,17 @@ export function compileTokenSet(
     for (const [property, cssProperty] of Object.entries(
       TOKEN_CSS_PROPERTIES,
     ) as [StudioStyleProperty, string][]) {
+      const baseClass = styleTokenClassName(property, token.key);
+      const rule = `${cssProperty}: var(${token.cssVar});`;
       studioTokenClassLines.push(
-        `.${styleTokenClassName(property, token.key)} { ${cssProperty}: var(${token.cssVar}); }`,
+        `.${escapeClassSelector(baseClass)} { ${rule} }`,
       );
+      for (const bp of BREAKPOINTS) {
+        const prefixed = `${bp}:${baseClass}`;
+        studioTokenClassLines.push(
+          `@media (min-width: ${BREAKPOINT_MIN_WIDTH_PX[bp]}px) { .${escapeClassSelector(prefixed)} { ${rule} } }`,
+        );
+      }
     }
   }
 

@@ -15,8 +15,11 @@ import {
 } from "@dnd-kit/core";
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import type {
+  EditorFieldSpec,
   PageComposition,
   StudioAuthoringClient,
+  StyleProperty,
+  StylePropertyEntry,
 } from "@repo/contracts-zod";
 import {
   type CSSProperties,
@@ -476,6 +479,8 @@ export function StudioApp({
   const setTextContent = useStudioStore((s) => s.setTextContent);
   const patchNodeProps = useStudioStore((s) => s.patchNodeProps);
   const setNodeStyleEntry = useStudioStore((s) => s.setNodeStyleEntry);
+  const activeBreakpoint = useStudioStore((s) => s.activeBreakpoint);
+  const setActiveBreakpoint = useStudioStore((s) => s.setActiveBreakpoint);
   const storeResetNodePropKey = useStudioStore((s) => s.resetNodePropKey);
   const storeClearNodeStyles = useStudioStore((s) => s.clearNodeStyles);
   const setNodeEditorFieldBinding = useStudioStore(
@@ -673,15 +678,6 @@ export function StudioApp({
     }
   }, [isMobile, stagedTapInsertion]);
 
-  if (!composition) {
-    return (
-      <StudioRoot className="flex min-h-0 flex-1 flex-col items-center justify-center p-4 text-sm text-muted-foreground">
-        {error ?? "Loading…"}
-      </StudioRoot>
-    );
-  }
-
-  const selectedNode = getSelectedNode(composition, selectedNodeId);
   const forSelectedNode = useCallback(
     (run: (nodeId: string) => void) => {
       if (selectedNodeId) {
@@ -696,7 +692,7 @@ export function StudioApp({
     });
   }, [forSelectedNode, storeClearNodeStyles]);
   const handleNodeStyleEntry = useCallback(
-    (property: string, entry: string) => {
+    (property: StyleProperty, entry: StylePropertyEntry | null) => {
       forSelectedNode((nodeId) => {
         setNodeStyleEntry(nodeId, property, entry);
       });
@@ -736,13 +732,23 @@ export function StudioApp({
     [forSelectedNode, setNodeCollectionFieldBinding],
   );
   const handleSetNodeEditorFieldBinding = useCallback(
-    (field: string | null) => {
+    (field: EditorFieldSpec | null) => {
       forSelectedNode((nodeId) => {
         setNodeEditorFieldBinding(nodeId, field);
       });
     },
     [forSelectedNode, setNodeEditorFieldBinding],
   );
+
+  if (!composition) {
+    return (
+      <StudioRoot className="flex min-h-0 flex-1 flex-col items-center justify-center p-4 text-sm text-muted-foreground">
+        {error ?? "Loading…"}
+      </StudioRoot>
+    );
+  }
+
+  const selectedNode = getSelectedNode(composition, selectedNodeId);
 
   const overlayDisplay = getOverlayDisplay(
     composition,
@@ -802,6 +808,7 @@ export function StudioApp({
           />
           {isMobile ? (
             <MobileStudioLayout
+              activeBreakpoint={activeBreakpoint}
               activeInspectorTab={activeInspectorTab}
               adminHref={adminHref}
               canRedo={canRedo}
@@ -813,6 +820,7 @@ export function StudioApp({
               dashboardHref={dashboardHref}
               designSystemHref={designSystemHref}
               dirty={dirty}
+              onActiveBreakpointChange={setActiveBreakpoint}
               onCancelStagedTapInsertion={() => setStagedTapInsertion(null)}
               onInspectorTabChange={setActiveInspectorTab}
               onLeftSidebarPanelChange={setActiveLeftSidebarPanel}
@@ -928,7 +936,9 @@ export function StudioApp({
             </button>
             <div className="flex min-h-0 min-w-0 flex-col">
               <StudioCanvas
+                activeBreakpoint={activeBreakpoint}
                 composition={composition}
+                onActiveBreakpointChange={setActiveBreakpoint}
                 onCanvasBackground={() => selectNode(null)}
                 onRemoveNode={removeNode}
                 onSelectNode={(nodeId) => {
@@ -961,6 +971,7 @@ export function StudioApp({
               title=""
             >
               <PropertyInspector
+                activeBreakpoint={activeBreakpoint}
                 clearNodeStyles={() => {
                   if (selectedNodeId) {
                     storeClearNodeStyles(selectedNodeId);

@@ -1,8 +1,9 @@
 import type { TokenMeta } from "@repo/config-tailwind";
 import type { CompositionNode, PageComposition } from "@repo/contracts-zod";
 import type { RuntimeRegistry } from "@repo/domains-runtime-catalog";
-import type { CSSProperties, ReactElement, ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 
+import type { ResolveNodeStyleOptions } from "./style-resolver.js";
 import { resolveNodeStyle } from "./style-resolver.js";
 
 function normalizedLayoutSlotId(node: CompositionNode): string {
@@ -16,7 +17,7 @@ function normalizedLayoutSlotId(node: CompositionNode): string {
 export type RenderCompositionOptions = {
   /** Injected under each `primitive.slot` node, keyed by layout slot id. */
   slotContent?: Record<string, ReactNode>;
-};
+} & ResolveNodeStyleOptions;
 
 function renderNode(
   nodeId: string,
@@ -35,15 +36,24 @@ function renderNode(
     return null;
   }
 
-  const resolvedNodeStyle = resolveNodeStyle(node, composition, tokenMeta);
+  const resolvedNodeStyle = resolveNodeStyle(
+    node,
+    composition,
+    tokenMeta,
+    options?.studioPreviewFlattenToBreakpoint !== undefined
+      ? {
+          studioPreviewFlattenToBreakpoint:
+            options.studioPreviewFlattenToBreakpoint,
+        }
+      : undefined,
+  );
   const className = resolvedNodeStyle.className;
-  const style = resolvedNodeStyle.style as CSSProperties | undefined;
 
   if (node.definitionKey === "primitive.slot") {
     const slotId = normalizedLayoutSlotId(node);
     const injected = options?.slotContent?.[slotId] ?? null;
     return (
-      <Cmp className={className} key={node.id} node={node} style={style}>
+      <Cmp className={className} key={node.id} node={node}>
         {injected}
       </Cmp>
     );
@@ -60,13 +70,12 @@ function renderNode(
         collectionTemplate={childElements}
         key={node.id}
         node={node}
-        style={style}
       />
     );
   }
 
   return (
-    <Cmp className={className} key={node.id} node={node} style={style}>
+    <Cmp className={className} key={node.id} node={node}>
       {childElements}
     </Cmp>
   );

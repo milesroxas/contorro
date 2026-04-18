@@ -1,5 +1,6 @@
 import type { TokenMeta } from "@repo/config-tailwind";
 import type {
+  Breakpoint,
   EditorFieldSpec,
   PageComposition,
   StudioAuthoringClient,
@@ -177,6 +178,9 @@ export type StudioStoreState = {
   canRedo: boolean;
   /** Authoritative template vs component; from API (or inferred from id when absent). */
   studioResource: "pageTemplate" | "component" | null;
+  /** Active breakpoint the inspector writes to; `null` = base. */
+  activeBreakpoint: Breakpoint | null;
+  setActiveBreakpoint: (breakpoint: Breakpoint | null) => void;
   load: () => Promise<void>;
   cancel: () => void;
   undo: () => void;
@@ -200,6 +204,7 @@ export type StudioStoreState = {
     nodeId: string,
     property: StyleProperty,
     entry: StylePropertyEntry | null,
+    breakpoint?: Breakpoint,
   ) => void;
   resetNodePropKey: (nodeId: string, propKey: string) => void;
   clearNodeStyles: (nodeId: string) => void;
@@ -353,6 +358,11 @@ export function createStudioStore(
     canUndo: false,
     canRedo: false,
     studioResource: null,
+    activeBreakpoint: null,
+
+    setActiveBreakpoint: (breakpoint) => {
+      set({ activeBreakpoint: breakpoint });
+    },
 
     cancel: () => {
       void get().load();
@@ -651,8 +661,8 @@ export function createStudioStore(
       });
     },
 
-    setNodeStyleEntry: (nodeId, property, entry) => {
-      const { composition, tokenMetadata } = get();
+    setNodeStyleEntry: (nodeId, property, entry, breakpoint) => {
+      const { composition, tokenMetadata, activeBreakpoint } = get();
       if (!composition) {
         return;
       }
@@ -665,7 +675,14 @@ export function createStudioStore(
           return;
         }
       }
-      const next = setNodeStyleProperty(composition, nodeId, property, entry);
+      const scope = breakpoint ?? activeBreakpoint ?? undefined;
+      const next = setNodeStyleProperty(
+        composition,
+        nodeId,
+        property,
+        entry,
+        scope,
+      );
       if (!next.ok) {
         return;
       }

@@ -1,5 +1,7 @@
 import { styleTokenClassName, type TokenMeta } from "@repo/config-tailwind";
 import {
+  BREAKPOINTS,
+  type Breakpoint,
   type CompositionNode,
   type PageComposition,
   type StyleBinding,
@@ -8,14 +10,17 @@ import {
   utilityValuesForStyleProperty,
 } from "@repo/contracts-zod";
 
+import {
+  utilityClassNameForPropertyValue,
+  withBreakpointPrefix,
+} from "./composition-style-classes.js";
+
 export type ResolvedStyle = {
   classes: string;
-  inlineStyle: Record<string, string>;
 };
 
 export type ResolvedNodeStyle = {
   className?: string;
-  style?: Record<string, string>;
 };
 
 const PADDING_SIDE_PROPERTIES: readonly StyleProperty[] = [
@@ -25,119 +30,23 @@ const PADDING_SIDE_PROPERTIES: readonly StyleProperty[] = [
   "paddingLeft",
 ];
 
-function utilityClassNameForPropertyValue(
-  property: StyleProperty,
-  value: string,
-): string | null {
-  switch (property) {
-    case "borderColor":
-      return `border-${value}`;
-    case "borderRadius":
-      return `rounded-${value}`;
-    case "borderStyle":
-      return `border-${value}`;
-    case "borderWidth":
-      return value === "DEFAULT" ? "border" : `border-${value}`;
-    case "display":
-      return value;
-    case "fontFamily":
-      return `font-${value}`;
-    case "fontSize":
-      return `text-${value}`;
-    case "fontWeight":
-      return `font-${value}`;
-    case "textAlign":
-      return `text-${value}`;
-    case "lineHeight":
-      return `leading-${value}`;
-    case "letterSpacing":
-      return `tracking-${value}`;
-    case "textTransform":
-      return value;
-    case "fontStyle":
-      return value;
-    case "textDecorationLine":
-      return value;
-    case "flexDirection":
-      return `flex-${value}`;
-    case "flexWrap":
-      return `flex-${value}`;
-    case "justifyContent":
-      return `justify-${value}`;
-    case "alignItems":
-      return `items-${value}`;
-    case "alignSelf":
-      return `self-${value}`;
-    case "flex":
-      return `flex-${value}`;
-    case "flexGrow":
-      return value === "0" ? "grow-0" : "grow";
-    case "flexShrink":
-      return value === "0" ? "shrink-0" : "shrink";
-    case "flexBasis":
-      return value === "prose"
-        ? "basis-[var(--container-prose)]"
-        : `basis-${value}`;
-    case "order":
-      return `order-${value}`;
-    case "overflow":
-      return `overflow-${value}`;
-    case "overflowX":
-      return `overflow-x-${value}`;
-    case "overflowY":
-      return `overflow-y-${value}`;
-    case "padding":
-      return `p-${value}`;
-    case "paddingTop":
-      return `pt-${value}`;
-    case "paddingRight":
-      return `pr-${value}`;
-    case "paddingBottom":
-      return `pb-${value}`;
-    case "paddingLeft":
-      return `pl-${value}`;
-    case "gap":
-      return `gap-${value}`;
-    case "margin":
-      return `m-${value}`;
-    case "marginTop":
-      return `mt-${value}`;
-    case "marginRight":
-      return `mr-${value}`;
-    case "marginBottom":
-      return `mb-${value}`;
-    case "marginLeft":
-      return `ml-${value}`;
-    case "width":
-      return value === "container" ? "container" : `w-${value}`;
-    case "minWidth":
-      return `min-w-${value}`;
-    case "maxWidth":
-      return `max-w-${value}`;
-    case "height":
-      return `h-${value}`;
-    case "minHeight":
-      return `min-h-${value}`;
-    case "maxHeight":
-      return `max-h-${value}`;
-    case "aspectRatio":
-      return `aspect-${value}`;
-    default:
-      return null;
-  }
-}
-
 function addClassForStyleEntry(
   classes: Set<string>,
   property: StyleProperty,
   entry: StylePropertyEntry,
   allowedTokenKeys: ReadonlySet<string>,
+  breakpoint: Breakpoint | null,
 ): void {
   if (entry.type === "token") {
     if (!allowedTokenKeys.has(entry.token)) {
       return;
     }
-    classes.add(styleTokenClassName(property, entry.token));
+    classes.add(
+      withBreakpointPrefix(
+        breakpoint,
+        styleTokenClassName(property, entry.token),
+      ),
+    );
     return;
   }
   if (!utilityValuesForStyleProperty(property).includes(entry.value)) {
@@ -148,29 +57,116 @@ function addClassForStyleEntry(
     entry.value,
   );
   if (utilityClassName) {
-    classes.add(utilityClassName);
+    classes.add(withBreakpointPrefix(breakpoint, utilityClassName));
   }
 }
 
 /**
- * Resolves persisted style bindings to utility and token alias classes (§11.4).
+ * Emits utility/token classes for one breakpoint group (base when `breakpoint` is null),
+ * including padding shorthand vs side merging matching Tailwind class semantics.
  */
-export function resolveStyleBinding(
+type BreakpointSegment = Breakpoint | "base";
+
+function segmentChainUpTo(upTo: Breakpoint): BreakpointSegment[] {
+  const out: BreakpointSegment[] = ["base"];
+  for (const bp of BREAKPOINTS) {
+    out.push(bp);
+    if (bp === upTo) {
+      break;
+    }
+  }
+  return out;
+}
+
+function withoutBreakpoint(entry: StylePropertyEntry): StylePropertyEntry {
+  if (entry.breakpoint === undefined) {
+    return entry;
+  }
+  return { ...entry, breakpoint: undefined } as StylePropertyEntry;
+}
+
+function applyEntryToPreviewMap(
+  merged: Map<StyleProperty, StylePropertyEntry>,
+  entry: StylePropertyEntry,
+): void {
+  const normalized = withoutBreakpoint(entry);
+  const p = entry.property;
+  if (p === "padding") {
+    for (const side of PADDING_SIDE_PROPERTIES) {
+      merged.delete(side);
+    }
+    merged.set(p, normalized);
+    return;
+  }
+  if (
+    PADDING_SIDE_PROPERTIES.includes(
+      p as (typeof PADDING_SIDE_PROPERTIES)[number],
+    )
+  ) {
+    merged.delete("padding");
+    merged.set(p, normalized);
+    return;
+  }
+  merged.set(p, normalized);
+}
+
+/** Merge mobile-first entries up to `upTo` into a single base-level list for preview. */
+function mergedEntriesAtBreakpoint(
+  binding: StyleBinding,
+  upTo: Breakpoint,
+): StylePropertyEntry[] {
+  const bySegment = new Map<BreakpointSegment, StylePropertyEntry[]>();
+  for (const entry of binding.properties) {
+    const key: BreakpointSegment = entry.breakpoint ?? "base";
+    const list = bySegment.get(key) ?? [];
+    list.push(entry);
+    bySegment.set(key, list);
+  }
+
+  const merged = new Map<StyleProperty, StylePropertyEntry>();
+  for (const segment of segmentChainUpTo(upTo)) {
+    const list = bySegment.get(segment);
+    if (!list) {
+      continue;
+    }
+    for (const entry of list) {
+      applyEntryToPreviewMap(merged, entry);
+    }
+  }
+  return [...merged.values()];
+}
+
+/**
+ * Like {@link resolveStyleBinding}, but resolves the mobile-first cascade up to `upTo`
+ * into unprefixed utilities so preview matches the selected breakpoint regardless of
+ * actual viewport width.
+ */
+export function resolveStyleBindingAtBreakpoint(
   binding: StyleBinding,
   tokenMeta: TokenMeta[],
+  upTo: Breakpoint,
 ): ResolvedStyle {
+  const merged = mergedEntriesAtBreakpoint(binding, upTo);
+  const classes = resolveStyleClassesForBreakpoint(merged, tokenMeta, null);
+  return { classes: [...classes].join(" ") };
+}
+
+function resolveStyleClassesForBreakpoint(
+  entries: StylePropertyEntry[],
+  tokenMeta: TokenMeta[],
+  breakpoint: Breakpoint | null,
+): Set<string> {
   const classes = new Set<string>();
-  const inlineStyle: Record<string, string> = {};
   const allowedTokenKeys = new Set(tokenMeta.map((token) => token.key));
   const propertyEntries = new Map<StyleProperty, StylePropertyEntry>();
-  for (const prop of binding.properties) {
+  for (const prop of entries) {
     propertyEntries.set(prop.property, prop);
   }
   const hasPaddingSideEntry = PADDING_SIDE_PROPERTIES.some((property) =>
     propertyEntries.has(property),
   );
 
-  for (const prop of binding.properties) {
+  for (const prop of entries) {
     if (
       hasPaddingSideEntry &&
       (prop.property === "padding" ||
@@ -181,7 +177,13 @@ export function resolveStyleBinding(
     ) {
       continue;
     }
-    addClassForStyleEntry(classes, prop.property, prop, allowedTokenKeys);
+    addClassForStyleEntry(
+      classes,
+      prop.property,
+      prop,
+      allowedTokenKeys,
+      breakpoint,
+    );
   }
 
   if (hasPaddingSideEntry) {
@@ -191,21 +193,75 @@ export function resolveStyleBinding(
       if (!entry) {
         continue;
       }
-      addClassForStyleEntry(classes, property, entry, allowedTokenKeys);
+      addClassForStyleEntry(
+        classes,
+        property,
+        entry,
+        allowedTokenKeys,
+        breakpoint,
+      );
     }
   }
 
-  return { classes: Array.from(classes).join(" "), inlineStyle };
+  return classes;
 }
 
 /**
- * Resolves style classes and inline style for one composition node.
- * Shared by canvas preview and published renderer to avoid drift.
+ * Resolves persisted style bindings to Tailwind utility and token alias classes.
+ * Base entries are unprefixed; breakpoint entries use `sm:`/`md:`/`lg:`/`xl:`.
+ */
+export function resolveStyleBinding(
+  binding: StyleBinding,
+  tokenMeta: TokenMeta[],
+): ResolvedStyle {
+  const byBreakpoint = new Map<Breakpoint | "base", StylePropertyEntry[]>();
+  for (const entry of binding.properties) {
+    const key: Breakpoint | "base" = entry.breakpoint ?? "base";
+    const list = byBreakpoint.get(key) ?? [];
+    list.push(entry);
+    byBreakpoint.set(key, list);
+  }
+
+  const classes = new Set<string>();
+  const baseList = byBreakpoint.get("base");
+  if (baseList?.length) {
+    for (const c of resolveStyleClassesForBreakpoint(
+      baseList,
+      tokenMeta,
+      null,
+    )) {
+      classes.add(c);
+    }
+  }
+  for (const bp of BREAKPOINTS) {
+    const list = byBreakpoint.get(bp);
+    if (!list?.length) {
+      continue;
+    }
+    for (const c of resolveStyleClassesForBreakpoint(list, tokenMeta, bp)) {
+      classes.add(c);
+    }
+  }
+
+  return { classes: [...classes].join(" ") };
+}
+
+export type ResolveNodeStyleOptions = {
+  /**
+   * When set, resolve the cascade up to this breakpoint as unprefixed classes (studio
+   * canvas preview). Omit for production rendering (prefixed responsive utilities).
+   */
+  studioPreviewFlattenToBreakpoint?: Breakpoint;
+};
+
+/**
+ * Resolves style classes for one composition node (utilities only; no inline styles).
  */
 export function resolveNodeStyle(
-  node: Pick<CompositionNode, "styleBindingId">,
+  node: Pick<CompositionNode, "id" | "styleBindingId">,
   composition: Pick<PageComposition, "styleBindings">,
   tokenMeta: TokenMeta[],
+  options?: ResolveNodeStyleOptions,
 ): ResolvedNodeStyle {
   if (!node.styleBindingId) {
     return {};
@@ -214,12 +270,12 @@ export function resolveNodeStyle(
   if (!binding) {
     return {};
   }
-  const resolved = resolveStyleBinding(binding, tokenMeta);
+  const flattenTo = options?.studioPreviewFlattenToBreakpoint;
+  const resolved =
+    flattenTo !== undefined
+      ? resolveStyleBindingAtBreakpoint(binding, tokenMeta, flattenTo)
+      : resolveStyleBinding(binding, tokenMeta);
   return {
     className: resolved.classes || undefined,
-    style:
-      Object.keys(resolved.inlineStyle).length > 0
-        ? resolved.inlineStyle
-        : undefined,
   };
 }

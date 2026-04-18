@@ -1,5 +1,6 @@
 import type { TokenMeta } from "@repo/config-tailwind";
 import type {
+  Breakpoint,
   CompositionNode,
   PageComposition,
   StyleProperty,
@@ -24,6 +25,7 @@ export function readStyleProperty(
   composition: PageComposition,
   node: CompositionNode,
   property: StyleProperty,
+  breakpoint: Breakpoint | null = null,
 ): StylePropertyEntry | undefined {
   if (!node.styleBindingId) {
     return undefined;
@@ -32,7 +34,36 @@ export function readStyleProperty(
   if (!sb) {
     return undefined;
   }
-  return sb.properties.find((p) => p.property === property);
+  return sb.properties.find(
+    (p) => p.property === property && (p.breakpoint ?? null) === breakpoint,
+  );
+}
+
+/**
+ * Returns the entry for the active breakpoint plus the base entry so consumers
+ * can render "inherited from base" indicators when the active breakpoint has
+ * no override but a base entry exists.
+ */
+export function readStyleEntryCascade(
+  composition: PageComposition,
+  node: CompositionNode,
+  property: StyleProperty,
+  breakpoint: Breakpoint | null,
+): {
+  active: StylePropertyEntry | undefined;
+  base: StylePropertyEntry | undefined;
+  inherited: boolean;
+} {
+  const base = readStyleProperty(composition, node, property, null);
+  if (breakpoint === null) {
+    return { active: base, base, inherited: false };
+  }
+  const active = readStyleProperty(composition, node, property, breakpoint);
+  return {
+    active,
+    base,
+    inherited: active === undefined && base !== undefined,
+  };
 }
 
 export function nodeHasNonEmptyStyleBinding(

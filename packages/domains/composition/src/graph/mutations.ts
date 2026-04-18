@@ -1,4 +1,5 @@
 import type {
+  Breakpoint,
   CompositionNode,
   PageComposition,
   StyleBinding,
@@ -669,36 +670,62 @@ export function setNodeTokenStyle(
   nodeId: string,
   property: StyleProperty,
   token: string,
+  breakpoint?: Breakpoint,
 ): Result<PageComposition, "INVALID_NODE"> {
   if (token.trim() === "") {
-    return upsertNodeStyleProperty(composition, nodeId, property);
+    return upsertNodeStyleProperty(composition, nodeId, property, breakpoint);
   }
-  return upsertNodeStyleProperty(composition, nodeId, property, {
+  const entry: StylePropertyEntry = {
     type: "token",
     property,
     token: token.trim(),
-  });
+    ...(breakpoint ? { breakpoint } : {}),
+  };
+  return upsertNodeStyleProperty(
+    composition,
+    nodeId,
+    property,
+    breakpoint,
+    entry,
+  );
 }
 
 /**
- * Sets or clears a single style property entry on a node.
+ * Sets or clears a single style property entry on a node, scoped to a breakpoint
+ * (base when omitted). Uniqueness is enforced on the (property, breakpoint) tuple.
  */
 export function setNodeStyleProperty(
   composition: PageComposition,
   nodeId: string,
   property: StyleProperty,
   entry: StylePropertyEntry | null,
+  breakpoint?: Breakpoint,
 ): Result<PageComposition, "INVALID_NODE"> {
+  const scope = entry?.breakpoint ?? breakpoint;
   if (entry === null) {
-    return upsertNodeStyleProperty(composition, nodeId, property);
+    return upsertNodeStyleProperty(composition, nodeId, property, scope);
   }
-  return upsertNodeStyleProperty(composition, nodeId, property, entry);
+  const nextEntry: StylePropertyEntry = scope
+    ? { ...entry, breakpoint: scope }
+    : (() => {
+        const { breakpoint: _drop, ...rest } = entry;
+        void _drop;
+        return rest as StylePropertyEntry;
+      })();
+  return upsertNodeStyleProperty(
+    composition,
+    nodeId,
+    property,
+    scope,
+    nextEntry,
+  );
 }
 
 function upsertNodeStyleProperty(
   composition: PageComposition,
   nodeId: string,
   property: StyleProperty,
+  breakpoint: Breakpoint | undefined,
   nextProperty?: StylePropertyEntry,
 ): Result<PageComposition, "INVALID_NODE"> {
   const node = composition.nodes[nodeId];
@@ -712,7 +739,8 @@ function upsertNodeStyleProperty(
       ? composition.styleBindings[existingBindingId]
       : undefined;
   const filtered = (existing?.properties ?? []).filter(
-    (p) => p.property !== property,
+    (p) =>
+      !(p.property === property && (p.breakpoint ?? undefined) === breakpoint),
   );
   const properties = nextProperty ? [...filtered, nextProperty] : filtered;
 

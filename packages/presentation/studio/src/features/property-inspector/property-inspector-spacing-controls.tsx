@@ -1,6 +1,7 @@
 "use client";
 
 import type {
+  Breakpoint,
   CompositionNode,
   PageComposition,
   StyleProperty,
@@ -352,12 +353,14 @@ function SpacingSidePopover({
 }
 
 function SpacingPropertyPanel({
+  activeBreakpoint,
   shorthandProperty,
   composition,
   node,
   availableProperties,
   onNodeStyleEntry,
 }: {
+  activeBreakpoint: Breakpoint | null;
   shorthandProperty: SpacingShorthandProperty;
   composition: PageComposition;
   node: CompositionNode;
@@ -372,12 +375,23 @@ function SpacingPropertyPanel({
     composition,
     node,
     shorthandProperty,
+    activeBreakpoint,
   );
   const sideEntries: Record<SpacingSideKey, StylePropertyEntry | undefined> = {
-    top: readStyleProperty(composition, node, sideMap.top),
-    right: readStyleProperty(composition, node, sideMap.right),
-    bottom: readStyleProperty(composition, node, sideMap.bottom),
-    left: readStyleProperty(composition, node, sideMap.left),
+    top: readStyleProperty(composition, node, sideMap.top, activeBreakpoint),
+    right: readStyleProperty(
+      composition,
+      node,
+      sideMap.right,
+      activeBreakpoint,
+    ),
+    bottom: readStyleProperty(
+      composition,
+      node,
+      sideMap.bottom,
+      activeBreakpoint,
+    ),
+    left: readStyleProperty(composition, node, sideMap.left, activeBreakpoint),
   };
   const horizontalDisabled = spacingAxisDisabled(
     shorthandProperty,
@@ -528,11 +542,13 @@ function SpacingPropertyPanel({
 }
 
 export function SpacingBoxControl({
+  activeBreakpoint,
   composition,
   node,
   availableProperties,
   onNodeStyleEntry,
 }: {
+  activeBreakpoint: Breakpoint | null;
   composition: PageComposition;
   node: CompositionNode;
   availableProperties: ReadonlySet<StyleProperty>;
@@ -560,6 +576,7 @@ export function SpacingBoxControl({
       </TabsList>
       <TabsContent className="mt-3" value="margin">
         <SpacingPropertyPanel
+          activeBreakpoint={activeBreakpoint}
           availableProperties={availableProperties}
           composition={composition}
           node={node}
@@ -569,6 +586,7 @@ export function SpacingBoxControl({
       </TabsContent>
       <TabsContent className="mt-3" value="padding">
         <SpacingPropertyPanel
+          activeBreakpoint={activeBreakpoint}
           availableProperties={availableProperties}
           composition={composition}
           node={node}

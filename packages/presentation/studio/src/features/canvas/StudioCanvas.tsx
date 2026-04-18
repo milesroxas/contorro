@@ -2,7 +2,13 @@
 
 import { useDndContext, useDraggable } from "@dnd-kit/core";
 import type { TokenMeta } from "@repo/config-tailwind";
-import type { CompositionNode, PageComposition } from "@repo/contracts-zod";
+import {
+  BREAKPOINT_MIN_WIDTH_PX,
+  BREAKPOINTS,
+  type Breakpoint,
+  type CompositionNode,
+  type PageComposition,
+} from "@repo/contracts-zod";
 import {
   resolvePrimitiveImageSrcAlt,
   resolvePrimitiveTextContent,
@@ -219,6 +225,7 @@ function ContainerChildList({
   registry,
   selectedNodeId,
   studioResource,
+  stylePreviewFlattenToBreakpoint,
   tokenMeta,
   onSelectNode,
   onRemoveNode,
@@ -231,6 +238,7 @@ function ContainerChildList({
   registry: PrimitiveRegistry;
   selectedNodeId: string | null;
   studioResource: "pageTemplate" | "component" | null;
+  stylePreviewFlattenToBreakpoint: Breakpoint | undefined;
   tokenMeta: TokenMeta[];
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
@@ -282,6 +290,7 @@ function ContainerChildList({
               registry={registry}
               selectedNodeId={selectedNodeId}
               studioResource={studioResource}
+              stylePreviewFlattenToBreakpoint={stylePreviewFlattenToBreakpoint}
               tokenMeta={tokenMeta}
             />
             <InsertionDropZone
@@ -316,6 +325,7 @@ function ContainerChildList({
             registry={registry}
             selectedNodeId={selectedNodeId}
             studioResource={studioResource}
+            stylePreviewFlattenToBreakpoint={stylePreviewFlattenToBreakpoint}
             tokenMeta={tokenMeta}
           />
           <InsertionDropZone
@@ -516,7 +526,6 @@ function CanvasPrimitiveCollectionBranch({
   onSelectNode,
   onWrapNode,
   selected,
-  style,
 }: {
   childList: ReactNode;
   className: string | undefined;
@@ -528,7 +537,6 @@ function CanvasPrimitiveCollectionBranch({
   onSelectNode: (id: string) => void;
   onWrapNode: (id: string) => void;
   selected: boolean;
-  style: CSSProperties | undefined;
 }): ReactElement {
   return (
     <CanvasNodeFrame
@@ -546,7 +554,6 @@ function CanvasPrimitiveCollectionBranch({
           className={cn(className, "w-full")}
           collectionTemplate={childList}
           node={node}
-          style={style}
         />
         <div
           aria-hidden
@@ -564,6 +571,7 @@ function CanvasNode({
   nodeId,
   registry,
   selectedNodeId,
+  stylePreviewFlattenToBreakpoint,
   tokenMeta,
   editStudioHrefByKey,
   studioResource,
@@ -575,6 +583,7 @@ function CanvasNode({
   nodeId: string;
   registry: PrimitiveRegistry;
   selectedNodeId: string | null;
+  stylePreviewFlattenToBreakpoint: Breakpoint | undefined;
   tokenMeta: TokenMeta[];
   editStudioHrefByKey: Record<string, string>;
   studioResource: "pageTemplate" | "component" | null;
@@ -599,9 +608,15 @@ function CanvasNode({
     pageTemplateStudio,
   );
 
-  const resolvedNodeStyle = resolveNodeStyle(node, composition, tokenMeta);
+  const resolvedNodeStyle = resolveNodeStyle(
+    node,
+    composition,
+    tokenMeta,
+    stylePreviewFlattenToBreakpoint !== undefined
+      ? { studioPreviewFlattenToBreakpoint: stylePreviewFlattenToBreakpoint }
+      : undefined,
+  );
   const className = resolvedNodeStyle.className;
-  const style = resolvedNodeStyle.style as CSSProperties | undefined;
 
   const selected = selectedNodeId === node.id;
   const isContainer = isContainerNode(node);
@@ -633,7 +648,7 @@ function CanvasNode({
         <LibraryCompositionCanvasPreview
           className={className ?? ""}
           node={node}
-          style={style}
+          stylePreviewFlattenToBreakpoint={stylePreviewFlattenToBreakpoint}
           tokenMeta={tokenMeta}
         />
       </CanvasNodeFrame>
@@ -652,6 +667,7 @@ function CanvasNode({
       registry={registry}
       selectedNodeId={selectedNodeId}
       studioResource={studioResource}
+      stylePreviewFlattenToBreakpoint={stylePreviewFlattenToBreakpoint}
       tokenMeta={tokenMeta}
     />
   ) : null;
@@ -669,7 +685,6 @@ function CanvasNode({
         onSelectNode={onSelectNode}
         onWrapNode={onWrapNode}
         selected={selected}
-        style={style}
       />
     );
   }
@@ -679,7 +694,7 @@ function CanvasNode({
     childList,
     className: className ?? "",
     node,
-    style,
+    style: undefined,
   });
 
   if (node.definitionKey === "primitive.text") {
@@ -827,24 +842,36 @@ function CanvasDropRoot({
   );
 }
 
+const BREAKPOINT_SWITCHER_LABELS: Record<Breakpoint | "base", string> = {
+  base: "Base",
+  sm: "SM",
+  md: "MD",
+  lg: "LG",
+  xl: "XL",
+};
+
 export function StudioCanvas({
+  activeBreakpoint,
   composition,
   selectedNodeId,
   onSelectNode,
   onRemoveNode,
   onWrapNode,
   onCanvasBackground,
+  onActiveBreakpointChange,
   theme,
   onToggleTheme,
   tokenMeta = [],
   studioResource,
 }: {
+  activeBreakpoint: Breakpoint | null;
   composition: PageComposition;
   selectedNodeId: string | null;
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
   onWrapNode: (id: string) => void;
   onCanvasBackground?: () => void;
+  onActiveBreakpointChange: (breakpoint: Breakpoint | null) => void;
   theme: "light" | "dark";
   onToggleTheme: () => void;
   tokenMeta?: TokenMeta[];
@@ -864,14 +891,54 @@ export function StudioCanvas({
       registry={registry}
       selectedNodeId={selectedNodeId}
       studioResource={studioResource}
+      stylePreviewFlattenToBreakpoint={activeBreakpoint ?? undefined}
       tokenMeta={tokenMeta}
     />
   );
 
+  const viewportMaxWidthPx = activeBreakpoint
+    ? BREAKPOINT_MIN_WIDTH_PX[activeBreakpoint]
+    : null;
+  const breakpointOptions: readonly (Breakpoint | null)[] = [
+    null,
+    ...BREAKPOINTS,
+  ];
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
       <div className="flex shrink-0 items-center justify-between gap-2">
-        <div className="text-xs font-medium text-muted-foreground">Canvas</div>
+        <div
+          aria-label="Breakpoint"
+          className="inline-flex items-center gap-0.5 rounded-md border border-border/70 bg-background p-0.5"
+          role="radiogroup"
+        >
+          {breakpointOptions.map((option) => {
+            const key = option ?? "base";
+            const active = (option ?? null) === (activeBreakpoint ?? null);
+            return (
+              <button
+                aria-checked={active}
+                className={cn(
+                  "inline-flex h-7 items-center justify-center rounded-sm px-2 text-[11px] font-medium",
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent/50",
+                )}
+                key={key}
+                onClick={() => onActiveBreakpointChange(option)}
+                role="radio"
+                title={
+                  option
+                    ? `${BREAKPOINT_SWITCHER_LABELS[option]} (${BREAKPOINT_MIN_WIDTH_PX[option]}px)`
+                    : BREAKPOINT_SWITCHER_LABELS.base
+                }
+                type="button"
+              >
+                {BREAKPOINT_SWITCHER_LABELS[key]}
+              </button>
+            );
+          })}
+        </div>
         <Button
           aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
           onClick={onToggleTheme}
@@ -895,7 +962,18 @@ export function StudioCanvas({
           }}
           onSelectNode={onSelectNode}
         >
-          <div className="text-foreground" data-testid="studio-canvas-preview">
+          <div
+            className={cn(
+              "text-foreground",
+              viewportMaxWidthPx ? "mx-auto" : null,
+            )}
+            data-testid="studio-canvas-preview"
+            style={
+              viewportMaxWidthPx
+                ? { maxWidth: `${viewportMaxWidthPx}px`, width: "100%" }
+                : undefined
+            }
+          >
             {tree}
           </div>
         </CanvasDropRoot>

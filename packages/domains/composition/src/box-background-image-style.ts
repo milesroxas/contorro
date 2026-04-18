@@ -224,7 +224,7 @@ const BACKGROUND_IMAGE_OPTION_ROWS_FOR_SAFESET = [
 
 /**
  * Sorted unique Tailwind classes emitted at runtime for box background images.
- * Keep `apps/cms/src/app/_tailwind-safelist.css` in sync; guarded by `studio-canvas-styling` int spec.
+ * Keep `apps/cms/src/app/_tailwind-safelist.css` in sync; guarded by `studio-canvas-styling` int spec (reads combined safelist CSS).
  */
 export const BOX_BACKGROUND_IMAGE_TAILWIND_SAFESET: readonly string[] =
   Array.from(

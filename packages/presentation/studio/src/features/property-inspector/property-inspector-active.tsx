@@ -2,6 +2,7 @@
 
 import type { TokenMeta } from "@repo/config-tailwind";
 import type {
+  Breakpoint,
   CompositionNode,
   EditorFieldSpec,
   PageComposition,
@@ -214,6 +215,7 @@ function PropertyInspectorSettingsTab({
 }
 
 export function PropertyInspectorActive({
+  activeBreakpoint,
   clearNodeStyles,
   componentsHref,
   composition,
@@ -231,6 +233,7 @@ export function PropertyInspectorActive({
   styleSectionOpenState,
   tokenMetadata,
 }: {
+  activeBreakpoint: Breakpoint | null;
   clearNodeStyles: () => void;
   componentsHref: string;
   composition: PageComposition;
@@ -410,6 +413,7 @@ export function PropertyInspectorActive({
                 {orderedStyleSections.map((section, sectionIndex) => (
                   <InspectorOrderedStyleSectionItem
                     key={section.id}
+                    activeBreakpoint={activeBreakpoint}
                     composition={composition}
                     gapPropertyAvailable={gapPropertyAvailable}
                     isStyleSectionOpen={isStyleSectionOpen}

@@ -6,10 +6,36 @@ import { utilityValuesForStyleProperty } from "@repo/contracts-zod";
 import { BOX_BACKGROUND_IMAGE_TAILWIND_SAFESET } from "@repo/domains-composition";
 import { StudioCanvas, StudioRoot } from "@repo/presentation-studio";
 import { defaultPrimitiveRegistry } from "@repo/runtime-primitives";
-import { renderComposition } from "@repo/runtime-renderer";
+import {
+  listCompositionUtilitySafelistClasses,
+  renderComposition,
+} from "@repo/runtime-renderer";
 import { render, screen } from "@testing-library/react";
 import { createElement } from "react";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+
+function readTailwindSafelistCombinedCss(): string {
+  const dir = resolve(process.cwd(), "src/app");
+  const main = readFileSync(resolve(dir, "_tailwind-safelist.css"), "utf8");
+  const generated = readFileSync(
+    resolve(dir, "_tailwind-safelist-composition-generated.css"),
+    "utf8",
+  );
+  return `${main}\n${generated}`;
+}
+
+function collectAtSourceInlineClasses(css: string): Set<string> {
+  const out = new Set<string>();
+  for (const match of css.matchAll(/@source inline\("([^"]+)"\);/g)) {
+    for (const token of match[1].split(/\s+/)) {
+      const trimmed = token.trim();
+      if (trimmed.length > 0) {
+        out.add(trimmed);
+      }
+    }
+  }
+  return out;
+}
 
 function imageComposition(): PageComposition {
   return {
@@ -64,23 +90,17 @@ describe("Builder canvas styling safeguards", () => {
     vi.unstubAllGlobals();
   });
 
-  it("keeps globals safelist aligned with aspect ratio utility values", () => {
-    const css = readFileSync(
-      resolve(process.cwd(), "src/app/_tailwind-safelist.css"),
-      "utf8",
-    );
-    const safelistMatch = css.match(/@source inline\("([^"]+)"\);/);
-    expect(safelistMatch).toBeTruthy();
-    if (!safelistMatch) {
-      return;
+  it("keeps generated composition safelist aligned with resolver output", () => {
+    const css = readTailwindSafelistCombinedCss();
+    const safelistedClasses = collectAtSourceInlineClasses(css);
+    for (const cls of listCompositionUtilitySafelistClasses()) {
+      expect(safelistedClasses.has(cls)).toBe(true);
     }
+  });
 
-    const safelistedClasses = new Set(
-      safelistMatch[1]
-        .split(/\s+/)
-        .map((token) => token.trim())
-        .filter(Boolean),
-    );
+  it("keeps globals safelist aligned with aspect ratio utility values", () => {
+    const css = readTailwindSafelistCombinedCss();
+    const safelistedClasses = collectAtSourceInlineClasses(css);
     const aspectValues = utilityValuesForStyleProperty("aspectRatio");
     for (const value of aspectValues) {
       expect(safelistedClasses.has(`aspect-${value}`)).toBe(true);
@@ -88,19 +108,8 @@ describe("Builder canvas styling safeguards", () => {
   });
 
   it("keeps globals safelist aligned with overflow utility values", () => {
-    const css = readFileSync(
-      resolve(process.cwd(), "src/app/_tailwind-safelist.css"),
-      "utf8",
-    );
-    const safelistedClasses = new Set<string>();
-    for (const match of css.matchAll(/@source inline\("([^"]+)"\);/g)) {
-      for (const token of match[1].split(/\s+/)) {
-        const trimmed = token.trim();
-        if (trimmed.length > 0) {
-          safelistedClasses.add(trimmed);
-        }
-      }
-    }
+    const css = readTailwindSafelistCombinedCss();
+    const safelistedClasses = collectAtSourceInlineClasses(css);
     for (const value of utilityValuesForStyleProperty("overflow")) {
       expect(safelistedClasses.has(`overflow-${value}`)).toBe(true);
     }
@@ -113,19 +122,8 @@ describe("Builder canvas styling safeguards", () => {
   });
 
   it("keeps globals safelist aligned with box background image Tailwind classes", () => {
-    const css = readFileSync(
-      resolve(process.cwd(), "src/app/_tailwind-safelist.css"),
-      "utf8",
-    );
-    const safelistedClasses = new Set<string>();
-    for (const match of css.matchAll(/@source inline\("([^"]+)"\);/g)) {
-      for (const token of match[1].split(/\s+/)) {
-        const trimmed = token.trim();
-        if (trimmed.length > 0) {
-          safelistedClasses.add(trimmed);
-        }
-      }
-    }
+    const css = readTailwindSafelistCombinedCss();
+    const safelistedClasses = collectAtSourceInlineClasses(css);
     for (const tw of BOX_BACKGROUND_IMAGE_TAILWIND_SAFESET) {
       expect(safelistedClasses.has(tw)).toBe(true);
     }
@@ -151,12 +149,14 @@ describe("Builder canvas styling safeguards", () => {
         StudioRoot,
         null,
         createElement(StudioCanvas, {
+          activeBreakpoint: null,
           composition,
           selectedNodeId: null,
           onSelectNode: () => {},
           onRemoveNode: () => {},
           onWrapNode: () => {},
           onCanvasBackground: () => {},
+          onActiveBreakpointChange: () => {},
           studioResource: null,
           theme: "light",
           onToggleTheme: () => {},

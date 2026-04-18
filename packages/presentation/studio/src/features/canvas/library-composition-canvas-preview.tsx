@@ -1,7 +1,11 @@
 "use client";
 
 import type { TokenMeta } from "@repo/config-tailwind";
-import type { CompositionNode, PageComposition } from "@repo/contracts-zod";
+import type {
+  Breakpoint,
+  CompositionNode,
+  PageComposition,
+} from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
 import {
   defaultPrimitiveRegistry,
@@ -104,11 +108,13 @@ export function LibraryCompositionCanvasPreview({
   node,
   className,
   style,
+  stylePreviewFlattenToBreakpoint,
   tokenMeta,
 }: {
   node: CompositionNode;
   className: string;
   style?: CSSProperties;
+  stylePreviewFlattenToBreakpoint?: Breakpoint;
   tokenMeta: TokenMeta[];
 }): ReactElement {
   const componentKey =
@@ -155,11 +161,20 @@ export function LibraryCompositionCanvasPreview({
       return null;
     }
     try {
-      return renderComposition(expanded, defaultPrimitiveRegistry, tokenMeta);
+      return renderComposition(
+        expanded,
+        defaultPrimitiveRegistry,
+        tokenMeta,
+        stylePreviewFlattenToBreakpoint !== undefined
+          ? {
+              studioPreviewFlattenToBreakpoint: stylePreviewFlattenToBreakpoint,
+            }
+          : undefined,
+      );
     } catch {
       return null;
     }
-  }, [expanded, phase, tokenMeta]);
+  }, [expanded, phase, stylePreviewFlattenToBreakpoint, tokenMeta]);
 
   if (phase === "loading") {
     return (
