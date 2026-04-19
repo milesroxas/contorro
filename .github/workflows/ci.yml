@@ -71,6 +71,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Workspace packages resolve to dist/; fresh checkouts have no dist until build.
+      - run: pnpm build
       - run: pnpm test:gw
 
   test-integration:
@@ -105,6 +107,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # payload.config imports workspace packages via dist/ exports.
+      - run: pnpm build
       - name: Payload migrate
         run: pnpm --filter @repo/cms exec payload migrate
       - name: CMS integration tests
