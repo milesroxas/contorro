@@ -49,7 +49,10 @@ export {
   resolveEditorFieldsContractForDefinition,
 } from "./editor-fields-from-composition.js";
 export { clonePageCompositionWithNewIds } from "./graph/clone-composition.js";
-export { expandLibraryComponentNodes } from "./graph/expand-library-component-nodes.js";
+export {
+  type ExpandLibraryComponentNodesOptions,
+  expandLibraryComponentNodes,
+} from "./graph/expand-library-component-nodes.js";
 export {
   addChildNode,
   clearNodeStyleBinding,
@@ -85,6 +88,7 @@ export {
   isStudioCreatablePrimitiveKey,
   isStudioPalettePrimitiveKey,
   KNOWN_PRIMITIVE_KEYS,
+  minimalSinglePrimitiveComposition,
   primitiveKindForDefinitionKey,
   STUDIO_PALETTE_PRIMITIVE_KEYS,
 } from "./primitives.js";

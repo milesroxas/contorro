@@ -29,7 +29,6 @@ export function PropertyInspector({
   resetNodePropKey,
   setNodeCollectionFieldBinding,
   setNodeEditorFieldBinding,
-  studioResource,
   tokenMetadata,
 }: {
   activeBreakpoint: Breakpoint | null;
@@ -48,7 +47,6 @@ export function PropertyInspector({
   resetNodePropKey: (propKey: string) => void;
   setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
-  studioResource?: "pageTemplate" | "component" | null;
   tokenMetadata: TokenMeta[];
 }) {
   const [styleSectionOpenState, setStyleSectionOpenState] = useState<
@@ -63,8 +61,6 @@ export function PropertyInspector({
     );
   }
 
-  const pageTemplateStudio = studioResource === "pageTemplate";
-
   return (
     <PropertyInspectorActive
       activeBreakpoint={activeBreakpoint}
@@ -76,7 +72,6 @@ export function PropertyInspector({
       onInspectorTabChange={onInspectorTabChange}
       onNodeStyleEntry={onNodeStyleEntry}
       onTextChange={onTextChange}
-      pageTemplateStudio={pageTemplateStudio}
       patchNodeProps={patchNodeProps}
       resetNodePropKey={resetNodePropKey}
       setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}

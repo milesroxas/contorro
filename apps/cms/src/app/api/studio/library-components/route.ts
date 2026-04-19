@@ -19,7 +19,7 @@ function listItemFromComponentDoc(
     composition?: unknown;
   };
   const key = typeof row.key === "string" ? row.key : "";
-  if (key === "" || key.startsWith("primitive.")) {
+  if (key === "") {
     return null;
   }
   if (row.composition === undefined || row.composition === null) {
@@ -42,7 +42,7 @@ function listItemFromComponentDoc(
 
 /**
  * Library components available to place on page templates (designer/admin).
- * Excludes built-in `primitive.*` definition rows.
+ * Includes `primitive.*` rows that store a composition (e.g. seed primitives).
  */
 export async function GET(request: Request) {
   const auth = await requireStudioDesigner(request);

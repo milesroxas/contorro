@@ -2,10 +2,33 @@ import type { PageComposition } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
 import { err, ok, type Result } from "@repo/kernel";
 
+import { mergeEditorFieldValuesIntoComposition } from "../editor-field-values.js";
 import { validatePageCompositionInvariants } from "../validation/page-composition.js";
 import { clonePageCompositionWithNewIds } from "./clone-composition.js";
 
 const REF_KEY = "primitive.libraryComponent";
+
+export type ExpandLibraryComponentNodesOptions = {
+  /**
+   * Map media IDs in `propValues.editorFieldValues` on the ref node to URLs before merging
+   * into the embedded composition (matches `renderDesignerContent` / block rendering).
+   */
+  resolveEditorFieldImages?: (
+    embedded: PageComposition,
+    editorFieldValues: Record<string, unknown>,
+  ) => Promise<Record<string, unknown>>;
+};
+
+function libraryRefEditorFieldValues(
+  refNode: PageComposition["nodes"][string],
+): Record<string, unknown> | null {
+  const raw = refNode.propValues?.editorFieldValues;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return null;
+  }
+  const values = raw as Record<string, unknown>;
+  return Object.keys(values).length > 0 ? values : null;
+}
 
 function findFirstExpandableLibraryRefId(
   composition: PageComposition,
@@ -25,11 +48,12 @@ function findFirstExpandableLibraryRefId(
   return null;
 }
 
-function graftEmbeddedAtRef(
+async function graftEmbeddedAtRef(
   template: PageComposition,
   refId: string,
   embedded: PageComposition,
-): Result<PageComposition, string> {
+  options?: ExpandLibraryComponentNodesOptions,
+): Promise<Result<PageComposition, string>> {
   const refNode = template.nodes[refId];
   if (!refNode) {
     return err(`missing ref node "${refId}"`);
@@ -43,7 +67,23 @@ function graftEmbeddedAtRef(
     return err(`missing parent "${parentId}"`);
   }
 
-  const cloned = clonePageCompositionWithNewIds(embedded);
+  const editorFieldValues = libraryRefEditorFieldValues(refNode);
+  let valuesToMerge: Record<string, unknown> | null = editorFieldValues;
+  if (
+    editorFieldValues !== null &&
+    options?.resolveEditorFieldImages !== undefined
+  ) {
+    valuesToMerge = await options.resolveEditorFieldImages(
+      embedded,
+      editorFieldValues,
+    );
+  }
+  const embeddedWithInstanceValues =
+    valuesToMerge === null
+      ? embedded
+      : mergeEditorFieldValuesIntoComposition(embedded, valuesToMerge);
+
+  const cloned = clonePageCompositionWithNewIds(embeddedWithInstanceValues);
   const newRootId = cloned.rootId;
   const newRoot = cloned.nodes[newRootId];
   if (!newRoot) {
@@ -98,6 +138,7 @@ function graftEmbeddedAtRef(
 export async function expandLibraryComponentNodes(
   composition: PageComposition,
   resolve: (componentKey: string) => Promise<PageComposition | null>,
+  options?: ExpandLibraryComponentNodesOptions,
 ): Promise<PageComposition> {
   let current = composition;
   const skippedRefIds = new Set<string>();
@@ -117,7 +158,7 @@ export async function expandLibraryComponentNodes(
       continue;
     }
 
-    const next = graftEmbeddedAtRef(current, refId, embedded);
+    const next = await graftEmbeddedAtRef(current, refId, embedded, options);
     if (!next.ok) {
       skippedRefIds.add(refId);
       continue;

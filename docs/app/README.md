@@ -52,15 +52,71 @@ Design-system editing in Studio uses Payload **REST** for `design-token-sets` an
 
 ## Root commands
 
-- Dev: `pnpm dev`
-- Build: `pnpm build`
-- Lint: `pnpm lint`
-- Typecheck: `pnpm typecheck`
-- Integration tests: `pnpm test` (CMS app int suite)
-- E2E tests: `pnpm test:e2e`
-- DB up: `pnpm db:up`
-- Migrations: `pnpm migrate`, `pnpm migrate:create`
-- Seed: `pnpm seed`
+Run these from the **repository root** unless you are inside a package directory.
+
+### Development
+
+- **`pnpm dev`** — CMS, Studio watch, admin extensions, payload-config watch, and gateway (same as the historical multi-process dev stack).
+- **`pnpm dev:cms`** — CMS app only.
+- **`pnpm dev:gw`** — Gateway only (`tsx watch`).
+- **`pnpm dev:studio`** — `@repo/presentation-studio` TypeScript watch only.
+
+### Build and quality
+
+- **`pnpm build`** — TypeScript project references (`tsc -b`).
+- **`pnpm build:cms`** — Next production build for `@repo/cms`.
+- **`pnpm build:gw`** — Gateway `tsc` build.
+- **`pnpm lint`** — Biome check (no writes).
+- **`pnpm lint:fix`** — Biome check with `--write` (lint fixes).
+- **`pnpm format`** / **`pnpm fmt`** — Biome format write.
+- **`pnpm typecheck`** / **`pnpm tc`** — Workspace `tsc -b` plus CMS `tsc --noEmit`.
+- **`pnpm check`** — Lint, typecheck, build, migrate (twice, per script), then `pnpm test` (integration).
+
+### Database, migrations, seeding
+
+- **`pnpm db:up`** / **`pnpm db:reset`** — Local Postgres via Docker Compose.
+- **`pnpm migrate`** — Repo migration helper (`scripts/migrate.mjs`).
+- **`pnpm migrate:create`** — `payload migrate:create` in `@repo/cms`.
+- **`pnpm seed`** — Main Payload seed: `payload run src/seeds/index.ts` in the CMS app.
+- **`pnpm seed:design-system`** — `scripts/seed-design-system.mjs`.
+- **`pnpm payload`** — Forwards to the CMS app’s Payload CLI (same `NODE_OPTIONS` as other CMS scripts). Example: `pnpm payload migrate`, `pnpm payload generate:types`.
+
+### Testing
+
+- **`pnpm test`** / **`pnpm test:int`** — CMS **integration** suite (Vitest, `apps/cms/tests/int/**/*.int.spec.ts`). Expects Postgres when tests touch the DB.
+- **`pnpm test:cov`** — Same int suite with **V8 coverage** (reports under `apps/cms/coverage/`; root `.gitignore` covers `coverage/`).
+- **`pnpm test:watch`** — CMS Vitest in watch mode.
+- **`pnpm test:gw`** — Gateway unit tests (`apps/gateway`, Vitest).
+- **`pnpm test:all`** — `test:int` then `test:gw`.
+- **`pnpm e2e`** — CMS Playwright E2E (`apps/cms` config and env).
+- **`pnpm e2e:ui`** — Playwright with `--ui`.
+- **`pnpm test:e2e`** — Alias for **`pnpm e2e`**.
+
+Integration specs that open Payload should use **`getTestPayload`** + **`closeTestPayload`** from `apps/cms/tests/helpers/getTestPayload.ts` so the DB pool is torn down consistently (see that file for details).
+
+### CMS-only scripts
+
+From **`apps/cms`**, you can also run package scripts directly (e.g. `pnpm test:int`, `pnpm test:cov`, `pnpm payload`). Root shortcuts above delegate to these.
+
+## Continuous integration (GitHub Actions)
+
+**Workflow:** [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) (this is the only place CI sets Payload/Postgres env for tests).
+
+On each push and pull request, jobs run in parallel:
+
+| Job | What runs |
+|-----|-----------|
+| `lint` | `pnpm lint` |
+| `typecheck` | `pnpm typecheck` |
+| `build` | `pnpm build` (workspace `tsc -b`) |
+| `test-gateway` | `pnpm test:gw` |
+| `test-integration` | Postgres **17** service (same user/db as [`docker-compose.yml`](../../docker-compose.yml) `db`), `pnpm --filter @repo/cms exec payload migrate`, `pnpm test:int` |
+
+`test-integration` env vars are **non-production placeholders** that satisfy `@repo/config-env/studio` (`PAYLOAD_SECRET`, `PREVIEW_SECRET`, `SITE_URL`, etc.). DB user, password, and database name match the Compose service **`db`** (`app` / `app` / `builder`). CI connects on **`localhost:5432`**; local Compose defaults to host port **`54332`** → `5432` in the container.
+
+**Playwright E2E** is intentionally **not** in this workflow (browser install + app server cost). Run **`pnpm e2e`** locally or add a separate workflow when you want it gated.
+
+**Branch protection (manual):** In GitHub → Settings → Branches, require these checks to pass before merge: `lint`, `typecheck`, `build`, `test-gateway`, `test-integration`.
 
 ## Optional env (CMS app / Next)
 

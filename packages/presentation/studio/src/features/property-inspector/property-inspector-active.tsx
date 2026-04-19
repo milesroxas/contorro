@@ -35,6 +35,7 @@ import {
 import { CollectionPrimitiveInspector } from "./collection-primitive-inspector.js";
 import { SettingsFieldRow } from "./property-control-label.js";
 import { BoxPrimitiveInspector } from "./property-inspector-box-primitive.js";
+import { LibraryComponentInstanceSettings } from "./property-inspector-library-component-settings.js";
 import { semanticShellTagForNode } from "./property-inspector-node-meta.js";
 import {
   ButtonPrimitiveInspector,
@@ -66,7 +67,6 @@ function PropertyInspectorSettingsTab({
   isText,
   node,
   onTextChange,
-  pageTemplateStudio,
   patchNodeProps,
   resetNodePropKey,
   setNodeCollectionFieldBinding,
@@ -86,7 +86,6 @@ function PropertyInspectorSettingsTab({
   isText: boolean;
   node: CompositionNode;
   onTextChange: (content: string) => void;
-  pageTemplateStudio: boolean;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   resetNodePropKey: (propKey: string) => void;
   setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
@@ -175,26 +174,11 @@ function PropertyInspectorSettingsTab({
         </div>
       ) : null}
       {isLibraryComponent ? (
-        <div className="space-y-2 border-t border-border/60 pt-4">
-          {pageTemplateStudio ? (
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              This block uses a published library component. Edit its layout and
-              fields in Component studio — open it from{" "}
-              <a
-                className="font-medium text-foreground underline underline-offset-2 hover:no-underline"
-                href={componentsHref}
-              >
-                Components
-              </a>{" "}
-              in the CMS.
-            </p>
-          ) : (
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Open the referenced component in Component studio to edit its
-              definition.
-            </p>
-          )}
-        </div>
+        <LibraryComponentInstanceSettings
+          componentsHref={componentsHref}
+          node={node}
+          patchNodeProps={patchNodeProps}
+        />
       ) : null}
       {node.definitionKey === "primitive.box" ? (
         <BoxPrimitiveInspector
@@ -224,7 +208,6 @@ export function PropertyInspectorActive({
   onInspectorTabChange,
   onNodeStyleEntry,
   onTextChange,
-  pageTemplateStudio,
   patchNodeProps,
   resetNodePropKey,
   setNodeCollectionFieldBinding,
@@ -245,7 +228,6 @@ export function PropertyInspectorActive({
     entry: StylePropertyEntry | null,
   ) => void;
   onTextChange: (content: string) => void;
-  pageTemplateStudio: boolean;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   resetNodePropKey: (propKey: string) => void;
   setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
@@ -457,7 +439,6 @@ export function PropertyInspectorActive({
               isText={isText}
               node={node}
               onTextChange={onTextChange}
-              pageTemplateStudio={pageTemplateStudio}
               patchNodeProps={patchNodeProps}
               resetNodePropKey={resetNodePropKey}
               setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}

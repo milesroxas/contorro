@@ -1,4 +1,16 @@
+# Continuous integration — single source of truth for CI env is this file
+# (job `test-integration` env block). Postgres credentials match `docker-compose.yml`
+# service `db` (user `app`, password `app`, database `builder`, Postgres 17). In CI the
+# service listens on localhost:5432; locally Compose maps host port 54332 → 5432.
+
 name: CI
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -11,6 +23,7 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -18,11 +31,12 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
       - run: pnpm lint
 
   typecheck:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -30,6 +44,68 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
 
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+  test-gateway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:gw
+
+  test-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: builder
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d builder"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      NODE_ENV: test
+      POSTGRES_URL: postgresql://app:app@localhost:5432/builder
+      PAYLOAD_SECRET: ci-local-payload-secret-do-not-use-in-production-env
+      PREVIEW_SECRET: ci-local-preview-secret-do-not-use-in-production-env
+      BLOB_READ_WRITE_TOKEN: "0"
+      SITE_URL: http://127.0.0.1:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Payload migrate
+        run: pnpm --filter @repo/cms exec payload migrate
+      - name: CMS integration tests
+        run: pnpm test:int

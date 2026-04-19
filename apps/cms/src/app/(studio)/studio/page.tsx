@@ -33,5 +33,5 @@ export default async function StudioPage({ searchParams }: Args) {
 
   const userRole = resolveUserRole(user) ?? "";
 
-  return <StudioShell adminRoute={adminRoute} userRole={userRole} />;
+  return <StudioShell userRole={userRole} />;
 }

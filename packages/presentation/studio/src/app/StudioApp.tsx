@@ -402,18 +402,12 @@ function LeftRailPanelButtons({
 
 export function StudioApp({
   compositionId,
-  adminHref,
-  dashboardHref,
   componentsHref,
-  designSystemHref,
   canEditName,
   authoringClient,
 }: {
   compositionId: string;
-  adminHref: string;
-  dashboardHref: string;
   componentsHref: string;
-  designSystemHref: string;
   canEditName: boolean;
   /** Injected transport (e.g. fetch to your host). Defaults inside the store when omitted. */
   authoringClient?: StudioAuthoringClient;
@@ -481,6 +475,14 @@ export function StudioApp({
   const setNodeStyleEntry = useStudioStore((s) => s.setNodeStyleEntry);
   const activeBreakpoint = useStudioStore((s) => s.activeBreakpoint);
   const setActiveBreakpoint = useStudioStore((s) => s.setActiveBreakpoint);
+  const canvasViewportWidthPx = useStudioStore((s) => s.canvasViewportWidthPx);
+  const setCanvasViewportWidthPx = useStudioStore(
+    (s) => s.setCanvasViewportWidthPx,
+  );
+  const canvasZoomPercent = useStudioStore((s) => s.canvasZoomPercent);
+  const setCanvasZoomPercent = useStudioStore((s) => s.setCanvasZoomPercent);
+  const canvasFontSizePx = useStudioStore((s) => s.canvasFontSizePx);
+  const setCanvasFontSizePx = useStudioStore((s) => s.setCanvasFontSizePx);
   const storeResetNodePropKey = useStudioStore((s) => s.resetNodePropKey);
   const storeClearNodeStyles = useStudioStore((s) => s.clearNodeStyles);
   const setNodeEditorFieldBinding = useStudioStore(
@@ -794,12 +796,8 @@ export function StudioApp({
             }}
             onSaveDraft={() => void saveDraft()}
             onUndo={() => undo()}
-            dashboardHref={dashboardHref}
-            componentsHref={componentsHref}
-            designSystemHref={designSystemHref}
             renaming={renaming}
             saving={saving}
-            adminHref={adminHref}
           />
           <StudioUnsavedChangesGuard
             dirty={dirty}
@@ -810,17 +808,20 @@ export function StudioApp({
             <MobileStudioLayout
               activeBreakpoint={activeBreakpoint}
               activeInspectorTab={activeInspectorTab}
-              adminHref={adminHref}
               canRedo={canRedo}
               canUndo={canUndo}
+              canvasFontSizePx={canvasFontSizePx}
+              canvasViewportWidthPx={canvasViewportWidthPx}
+              canvasZoomPercent={canvasZoomPercent}
               clearNodeStyles={handleClearNodeStyles}
               composition={composition}
               componentsHref={componentsHref}
               compositionId={compositionId}
-              dashboardHref={dashboardHref}
-              designSystemHref={designSystemHref}
               dirty={dirty}
               onActiveBreakpointChange={setActiveBreakpoint}
+              onCanvasFontSizePxChange={setCanvasFontSizePx}
+              onCanvasViewportWidthPxChange={setCanvasViewportWidthPx}
+              onCanvasZoomPercentChange={setCanvasZoomPercent}
               onCancelStagedTapInsertion={() => setStagedTapInsertion(null)}
               onInspectorTabChange={setActiveInspectorTab}
               onLeftSidebarPanelChange={setActiveLeftSidebarPanel}
@@ -853,7 +854,7 @@ export function StudioApp({
           ) : null}
           <div
             className={cn(
-              "grid min-h-0 min-w-0 flex-1 grid-cols-1 auto-rows-fr gap-3 overflow-hidden lg:auto-rows-auto lg:grid-cols-[minmax(240px,var(--studio-left-panel-width))_6px_minmax(0,1fr)_6px_minmax(300px,var(--studio-right-panel-width))] lg:grid-rows-1",
+              "grid min-h-0 min-w-0 flex-1 grid-cols-1 auto-rows-fr gap-0 overflow-hidden lg:auto-rows-auto lg:grid-cols-[minmax(240px,var(--studio-left-panel-width))_6px_minmax(0,1fr)_6px_minmax(300px,var(--studio-right-panel-width))] lg:grid-rows-1",
               isResizingPanels && "select-none",
               isMobile && "hidden",
             )}
@@ -925,7 +926,7 @@ export function StudioApp({
             </div>
             <button
               aria-label="Resize left panel"
-              className="group hidden cursor-col-resize items-center justify-center rounded-sm bg-transparent lg:flex"
+              className="group hidden cursor-col-resize items-stretch justify-end bg-transparent lg:flex"
               onPointerDown={(event) => {
                 event.preventDefault();
                 startResize("left", event.clientX);
@@ -937,9 +938,15 @@ export function StudioApp({
             <div className="flex min-h-0 min-w-0 flex-col">
               <StudioCanvas
                 activeBreakpoint={activeBreakpoint}
+                canvasFontSizePx={canvasFontSizePx}
+                canvasViewportWidthPx={canvasViewportWidthPx}
+                canvasZoomPercent={canvasZoomPercent}
                 composition={composition}
                 onActiveBreakpointChange={setActiveBreakpoint}
+                onCanvasFontSizePxChange={setCanvasFontSizePx}
                 onCanvasBackground={() => selectNode(null)}
+                onCanvasViewportWidthPxChange={setCanvasViewportWidthPx}
+                onCanvasZoomPercentChange={setCanvasZoomPercent}
                 onRemoveNode={removeNode}
                 onSelectNode={(nodeId) => {
                   showLayersSidebar();
@@ -955,7 +962,7 @@ export function StudioApp({
             </div>
             <button
               aria-label="Resize inspector panel"
-              className="group hidden cursor-col-resize items-center justify-center rounded-sm bg-transparent lg:flex"
+              className="group hidden cursor-col-resize items-stretch justify-start bg-transparent lg:flex"
               onPointerDown={(event) => {
                 event.preventDefault();
                 startResize("right", event.clientX);
@@ -1013,7 +1020,6 @@ export function StudioApp({
                     setNodeCollectionFieldBinding(selectedNodeId, fieldPath);
                   }
                 }}
-                studioResource={studioResource}
               />
             </StudioPanel>
           </div>

@@ -17,6 +17,7 @@ import {
   type PageCompositionSummary,
 } from "../../lib/fetch-page-composition-summaries.js";
 import { formatUpdatedAt } from "../../shell/hub/formatters.js";
+import { studioHrefForComposition } from "../../shell/studio-navigation.js";
 import type { PageTemplateListFilter } from "./page-template-list-filter.js";
 
 function isDraft(doc: PageCompositionSummary): boolean {
@@ -83,7 +84,7 @@ function TemplateRow({
   activeCompositionId: string;
 }) {
   const id = String(doc.id);
-  const href = `/studio?composition=${encodeURIComponent(id)}`;
+  const href = studioHrefForComposition(id);
   const isCurrent = id === activeCompositionId;
 
   return (

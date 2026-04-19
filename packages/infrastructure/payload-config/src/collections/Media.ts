@@ -1,5 +1,7 @@
 import type { CollectionConfig } from "payload";
 
+import { authenticatedAccess, designerOrAdminAccess } from "../access/rbac.js";
+
 export const Media: CollectionConfig = {
   slug: "media",
   admin: {
@@ -7,6 +9,9 @@ export const Media: CollectionConfig = {
   },
   access: {
     read: () => true,
+    create: authenticatedAccess,
+    update: authenticatedAccess,
+    delete: designerOrAdminAccess,
   },
   fields: [
     {

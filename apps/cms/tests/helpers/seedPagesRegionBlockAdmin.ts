@@ -1,3 +1,8 @@
+import {
+  buildSeedPageTemplateComposition,
+  headlineCardComposition,
+  headlineCardEditorFields,
+} from "../../src/seeds/seed-content-fixtures.js";
 import { getTestPayload } from "./getTestPayload.js";
 
 /** Admin E2E: pages edit view shows block CMS fields for components in layout regions. */
@@ -5,99 +10,10 @@ export const E2E_REGION_ADMIN_PAGE_SLUG = "e2e-region-block-admin";
 export const E2E_REGION_PC_SLUG = "e2e-region-block-pc";
 export const E2E_REGION_COMPONENT_KEY = "e2e-region-block-cm";
 
-/** Matches `seedComposition` in `src/seeds/index.ts` (one `main` layout slot + template hero field). */
-const pageTemplateComposition = {
-  rootId: "stack-root",
-  nodes: {
-    "stack-root": {
-      id: "stack-root",
-      kind: "primitive" as const,
-      definitionKey: "primitive.box",
-      parentId: null,
-      childIds: ["text-1", "text-hero", "slot-main"],
-      propValues: { tag: "div" },
-    },
-    "text-1": {
-      id: "text-1",
-      kind: "text" as const,
-      definitionKey: "primitive.text",
-      parentId: "stack-root",
-      childIds: [],
-      propValues: { content: "E2E page template." },
-    },
-    "text-hero": {
-      id: "text-hero",
-      kind: "text" as const,
-      definitionKey: "primitive.text",
-      parentId: "stack-root",
-      childIds: [],
-      propValues: { content: "" },
-      contentBinding: {
-        source: "editor" as const,
-        key: "hero-headline",
-        editorField: {
-          name: "hero-headline",
-          type: "text" as const,
-          required: true,
-          label: "Hero headline",
-        },
-      },
-    },
-    "slot-main": {
-      id: "slot-main",
-      kind: "slot" as const,
-      definitionKey: "primitive.slot",
-      parentId: "stack-root",
-      childIds: [],
-      propValues: { slotId: "main" },
-    },
-  },
-  styleBindings: {},
-};
-
-const blockEditorManifest = {
-  editorFields: [
-    {
-      name: "headline",
-      type: "text" as const,
-      required: true,
-      label: "Headline",
-    },
-  ],
-};
-
-const blockComposition = {
-  rootId: "card-root",
-  nodes: {
-    "card-root": {
-      id: "card-root",
-      kind: "primitive" as const,
-      definitionKey: "primitive.box",
-      parentId: null,
-      childIds: ["card-text"],
-      propValues: { tag: "div" },
-    },
-    "card-text": {
-      id: "card-text",
-      kind: "text" as const,
-      definitionKey: "primitive.text",
-      parentId: "card-root",
-      childIds: [],
-      propValues: { content: "" },
-      contentBinding: {
-        source: "editor" as const,
-        key: "headline",
-        editorField: {
-          name: "headline",
-          type: "text" as const,
-          required: true,
-          label: "Headline",
-        },
-      },
-    },
-  },
-  styleBindings: {},
-};
+const pageTemplateComposition = buildSeedPageTemplateComposition({
+  minimalHero: true,
+  heroHeadlineDescription: false,
+});
 
 export async function seedPagesRegionBlockAdminFixture(): Promise<{
   pageId: number;
@@ -127,8 +43,8 @@ export async function seedPagesRegionBlockAdminFixture(): Promise<{
       key: E2E_REGION_COMPONENT_KEY,
       displayName: "E2E region block",
       propContract: { fields: {} },
-      editorFields: blockEditorManifest,
-      composition: blockComposition,
+      editorFields: headlineCardEditorFields,
+      composition: headlineCardComposition,
     },
     overrideAccess: true,
   });

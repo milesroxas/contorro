@@ -16,8 +16,12 @@
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
     "test": "pnpm run test:int && pnpm run test:e2e",
+    "test:cov": "pnpm run test:coverage",
+    "test:coverage": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts --coverage",
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" playwright test --config=playwright.config.ts",
-    "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts"
+    "test:e2e:ui": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" playwright test --config=playwright.config.ts --ui",
+    "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
+    "test:watch": "cross-env NODE_OPTIONS=--no-deprecation vitest --config ./vitest.config.mts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.83.0",
@@ -40,6 +44,7 @@
     "@repo/infrastructure-blob-storage": "workspace:*",
     "@repo/infrastructure-event-bus": "workspace:*",
     "@repo/infrastructure-payload-config": "workspace:*",
+    "@repo/infrastructure-payload-media-client": "workspace:*",
     "@repo/infrastructure-telemetry": "workspace:*",
     "@repo/kernel": "workspace:*",
     "@repo/presentation-admin-extensions": "workspace:*",
@@ -75,6 +80,7 @@
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.1",
+    "@vitest/coverage-v8": "4.1.4",
     "jsdom": "29.0.2",
     "tsx": "4.21.0",
     "typescript": "^6.0.2",

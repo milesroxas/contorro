@@ -1,4 +1,5 @@
-import type { CompositionNode } from "@repo/contracts-zod";
+import type { CompositionNode, PageComposition } from "@repo/contracts-zod";
+import { PageCompositionSchema } from "@repo/contracts-zod";
 
 import {
   DEFAULT_BACKGROUND_IMAGE_ATTACHMENT,
@@ -186,4 +187,35 @@ export function primitiveKindForDefinitionKey(
     return "designerComponent";
   }
   return "primitive";
+}
+
+const MINIMAL_PRIMITIVE_COMPOSITION_ROOT_ID = "seed-primitive-root";
+
+/**
+ * Single-node composition for a built-in primitive — store on `components` rows so they
+ * qualify as library entries (Studio Components palette, expand, preview).
+ */
+export function minimalSinglePrimitiveComposition(
+  definitionKey: string,
+): PageComposition | null {
+  if (
+    !isKnownPrimitiveKey(definitionKey) ||
+    definitionKey === "primitive.libraryComponent"
+  ) {
+    return null;
+  }
+  const kind = primitiveKindForDefinitionKey(definitionKey);
+  const node: CompositionNode = {
+    id: MINIMAL_PRIMITIVE_COMPOSITION_ROOT_ID,
+    kind,
+    definitionKey,
+    parentId: null,
+    childIds: [],
+    propValues: defaultPrimitivePropValues(definitionKey),
+  };
+  return PageCompositionSchema.parse({
+    rootId: MINIMAL_PRIMITIVE_COMPOSITION_ROOT_ID,
+    nodes: { [MINIMAL_PRIMITIVE_COMPOSITION_ROOT_ID]: node },
+    styleBindings: {},
+  });
 }

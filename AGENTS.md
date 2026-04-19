@@ -31,6 +31,13 @@ Contorro is multi-surface authoring:
 - Shared contracts: `packages/contracts/zod` (includes **`StudioAuthoringClient`**); default fetch implementation: `packages/presentation/studio/src/lib/fetch-studio-authoring-client.ts`.
 - Component row-id mapping for Payload `cmp-` IDs: **`packages/domains/composition/src/studio-component-row-id.ts`** (re-exported from `packages/infrastructure/payload-config/src/studio-row-id.ts` for compatibility).
 
+## Image editor fields and `mergeEditorFieldValuesIntoComposition` (do not regress)
+
+- **`mergeEditorFieldValuesIntoComposition`** (`packages/domains/composition/src/editor-field-values.ts`) applies CMS editor values onto bound nodes. For **`field.type === "image"`** it only copies **`src`** when the effective value is already a **URL string**. Payload often stores **media ids** (numbers or `{ id }`); those become **`src: ""`** if merged directly — images disappear in render/canvas.
+- **Server:** always resolve ids to URLs **before** merge using **`resolveImageEditorFieldValuesForRender`** (`apps/cms/src/lib/resolve-editor-field-image-values.ts`). When grafting embedded library trees, pass **`resolveEditorFieldImages`** into **`expandLibraryComponentNodes`** (see `apps/cms/src/app/(frontend)/[slug]/page.tsx`, `apps/cms/src/app/api/studio/library-components/preview/route.ts`, `apps/cms/src/lib/page-template-editor-fields.ts`). Block rendering: `apps/cms/src/lib/render-designer-content.tsx` resolves block `editorFieldValues` before merge.
+- **Studio (browser):** cannot call Payload; use **`resolveEditorFieldImageValuesForCanvas`** (`packages/presentation/studio/src/lib/resolve-editor-field-images-client.ts`) before merging instance **`editorFieldValues`** (e.g. library canvas preview in `library-composition-canvas-preview.tsx`). **`GET /api/studio/compositions/*`** returns **raw** compositions — any client-side preview that merges `editorFieldValues` must resolve image fields itself.
+- **Checklist for new features:** if you merge `editorFieldValues` or template image fields into a composition for display, add the matching **server or client** resolver; do not assume numeric ids work in `mergeEditorFieldValuesIntoComposition`.
+
 ## Current API split (important)
 
 - Canonical **composition** API for Studio is the CMS app’s **`/api/studio/compositions/*`** routes.
@@ -70,10 +77,12 @@ This applies across **Studio** (`packages/presentation/studio`) and **CMS app UI
 
 ## Tooling and checks
 
-- Lint/format: Biome only (`pnpm lint`, `pnpm format`).
-- Typecheck: `pnpm typecheck`.
-- Root dev: `pnpm dev` (CMS app + `@repo/presentation-studio` watch + `@repo/presentation-admin-extensions` watch + `@repo/infrastructure-payload-config` watch + gateway).
+- Lint/format: Biome only (`pnpm lint`, `pnpm format`; apply fixes with `pnpm lint:fix`).
+- Typecheck: `pnpm typecheck` (shortcut: `pnpm tc`).
+- Root dev: `pnpm dev` (CMS app + `@repo/presentation-studio` watch + `@repo/presentation-admin-extensions` watch + `@repo/infrastructure-payload-config` watch + gateway). Single-package dev: `pnpm dev:cms`, `pnpm dev:gw`, `pnpm dev:studio`.
 - DB local: `pnpm db:up`.
+- Seeding: `pnpm seed`, `pnpm seed:design-system`; Payload CLI from root: `pnpm payload -- …`.
+- Command reference: `docs/app/README.md` (root commands table).
 
 ### Lint discipline (Biome)
 
@@ -83,9 +92,15 @@ This applies across **Studio** (`packages/presentation/studio`) and **CMS app UI
 
 ## Testing
 
-- Integration tests: `pnpm test` (CMS app int suite, `@repo/cms`).
-- E2E tests: `pnpm test:e2e`.
+- **CI:** `.github/workflows/ci.yml` runs lint, typecheck, workspace build, gateway tests, and CMS integration tests (with Postgres). Env for the integration job is defined only in that workflow. See `docs/app/README.md` → *Continuous integration (GitHub Actions)*.
+- Integration tests: `pnpm test` or `pnpm test:int` (CMS app Vitest int suite, `@repo/cms`).
+- Coverage (CMS int suite): `pnpm test:cov` (V8; config in `apps/cms/vitest.config.mts`).
+- Watch mode: `pnpm test:watch`.
+- Gateway unit tests: `pnpm test:gw` (`apps/gateway`).
+- Combined int + gateway: `pnpm test:all`.
+- E2E: `pnpm e2e` (alias: `pnpm test:e2e`); UI mode: `pnpm e2e:ui` — not run in CI by default.
 - Persistence tests expect Postgres available.
+- Payload in tests: integration specs should use `getTestPayload()` and `closeTestPayload()` from `apps/cms/tests/helpers/getTestPayload.ts`, not ad hoc `getPayload({ config })` without teardown.
 
 ## Default workflow for agents
 

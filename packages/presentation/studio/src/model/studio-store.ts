@@ -22,6 +22,14 @@ import {
   updateNodePropValues,
 } from "@repo/domains-composition";
 import { createSafeStore } from "@repo/presentation-shared";
+import {
+  DEFAULT_CANVAS_FONT_SIZE_PX,
+  DEFAULT_CANVAS_ZOOM_PERCENT,
+  defaultCanvasViewportWidthPx,
+  normalizeCanvasFontSizePx,
+  normalizeCanvasViewportWidthPx,
+  normalizeCanvasZoomPercent,
+} from "../features/canvas/studio-canvas-viewport.js";
 
 import { getDefaultStudioAuthoringClient } from "../lib/fetch-studio-authoring-client.js";
 import { prepareForSave } from "../lib/persist.js";
@@ -180,7 +188,13 @@ export type StudioStoreState = {
   studioResource: "pageTemplate" | "component" | null;
   /** Active breakpoint the inspector writes to; `null` = base. */
   activeBreakpoint: Breakpoint | null;
+  canvasViewportWidthPx: number;
+  canvasZoomPercent: number;
+  canvasFontSizePx: number;
   setActiveBreakpoint: (breakpoint: Breakpoint | null) => void;
+  setCanvasViewportWidthPx: (widthPx: number) => void;
+  setCanvasZoomPercent: (zoomPercent: number) => void;
+  setCanvasFontSizePx: (fontSizePx: number) => void;
   load: () => Promise<void>;
   cancel: () => void;
   undo: () => void;
@@ -359,9 +373,27 @@ export function createStudioStore(
     canRedo: false,
     studioResource: null,
     activeBreakpoint: null,
+    canvasViewportWidthPx: defaultCanvasViewportWidthPx(null),
+    canvasZoomPercent: DEFAULT_CANVAS_ZOOM_PERCENT,
+    canvasFontSizePx: DEFAULT_CANVAS_FONT_SIZE_PX,
 
     setActiveBreakpoint: (breakpoint) => {
-      set({ activeBreakpoint: breakpoint });
+      set({
+        activeBreakpoint: breakpoint,
+        canvasViewportWidthPx: defaultCanvasViewportWidthPx(breakpoint),
+      });
+    },
+
+    setCanvasViewportWidthPx: (widthPx) => {
+      set({ canvasViewportWidthPx: normalizeCanvasViewportWidthPx(widthPx) });
+    },
+
+    setCanvasZoomPercent: (zoomPercent) => {
+      set({ canvasZoomPercent: normalizeCanvasZoomPercent(zoomPercent) });
+    },
+
+    setCanvasFontSizePx: (fontSizePx) => {
+      set({ canvasFontSizePx: normalizeCanvasFontSizePx(fontSizePx) });
     },
 
     cancel: () => {

@@ -4,8 +4,12 @@ import config from "../../src/payload.config.js";
 let cached: Payload | null = null;
 
 /**
- * Returns the Payload singleton for E2E seed/cleanup helpers.
- * Reuses the same instance across calls within a single worker.
+ * Returns the Payload singleton for tests that talk to Postgres (integration,
+ * E2E seed/cleanup). Reuses one instance per worker.
+ *
+ * **Integration specs:** use `getTestPayload` in `beforeAll` and call
+ * `closeTestPayload` from `afterAll` so the pool is released and the global
+ * Payload cache is cleared — do not call `getPayload({ config })` directly.
  */
 export async function getTestPayload(): Promise<Payload> {
   if (!cached) {

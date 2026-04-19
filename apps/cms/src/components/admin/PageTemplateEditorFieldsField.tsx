@@ -8,6 +8,7 @@ import {
 } from "@payloadcms/ui/forms/Form";
 import {
   type EditorFieldSpec,
+  EditorFieldSpecSchema,
   type PageComposition,
   PageCompositionSchema,
 } from "@repo/contracts-zod";
@@ -205,28 +206,31 @@ async function fetchEditorFieldSpecsForPageComposition(
   { ok: true; fields: EditorFieldSpec[] } | { ok: false; message: string }
 > {
   try {
-    const res = await fetch(`/api/page-compositions/${compositionId}?depth=0`, {
-      credentials: "include",
-    });
+    const res = await fetch(
+      `/api/studio/page-template-editor-fields?compositionId=${compositionId}`,
+      { credentials: "include" },
+    );
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}`);
     }
-    const json = (await res.json()) as Record<string, unknown>;
-    const doc =
-      json.doc !== undefined &&
-      json.doc !== null &&
-      typeof json.doc === "object" &&
-      !Array.isArray(json.doc)
-        ? (json.doc as { composition?: unknown })
-        : (json as { composition?: unknown });
-    const raw = doc.composition;
-    const parsed = PageCompositionSchema.safeParse(raw);
-    if (!parsed.success) {
-      return { ok: false, message: "Invalid page template tree." };
+    const json = (await res.json()) as {
+      data?: { fields?: unknown };
+    };
+    const rawFields = json.data?.fields;
+    if (!Array.isArray(rawFields)) {
+      return { ok: false, message: "Invalid template editor fields response." };
+    }
+    const fields: EditorFieldSpec[] = [];
+    for (const rawField of rawFields) {
+      const parsedField = EditorFieldSpecSchema.safeParse(rawField);
+      if (!parsedField.success) {
+        return { ok: false, message: "Invalid editor field in response." };
+      }
+      fields.push(parsedField.data);
     }
     return {
       ok: true,
-      fields: editorFieldSpecsFromComposition(parsed.data),
+      fields,
     };
   } catch (e) {
     return {
@@ -315,12 +319,6 @@ function PageTemplateEditorFieldsField(props: JSONFieldClientProps) {
   >(null);
 
   useEffect(() => {
-    if (embeddedTree !== null) {
-      setRemoteEditorFields(null);
-      setLoadError(null);
-      return;
-    }
-
     if (compositionId === undefined) {
       setRemoteEditorFields(null);
       setLoadError(null);
@@ -348,13 +346,16 @@ function PageTemplateEditorFieldsField(props: JSONFieldClientProps) {
     return () => {
       cancelled = true;
     };
-  }, [embeddedTree, compositionId]);
+  }, [compositionId]);
 
   const editorFields: EditorFieldSpec[] = useMemo(() => {
+    if (remoteEditorFields !== null) {
+      return remoteEditorFields;
+    }
     if (embeddedTree !== null) {
       return editorFieldSpecsFromComposition(embeddedTree);
     }
-    return remoteEditorFields ?? [];
+    return [];
   }, [embeddedTree, remoteEditorFields]);
 
   const current = useMemo(() => {

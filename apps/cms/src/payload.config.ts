@@ -102,6 +102,7 @@ export default buildConfig({
       afterNavLinks: ["/components/admin/StudioNavLink"],
       actions: ["/components/admin/ThemeModeNavToggle"],
       beforeDashboard: [
+        "/components/admin/DesignerDashboardRedirect",
         "/components/admin/DesignSystemPreviewCallout",
         "/components/admin/PageCompositionOpenStudio",
       ],

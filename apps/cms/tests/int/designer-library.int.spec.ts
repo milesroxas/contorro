@@ -1,7 +1,12 @@
-import { describe, expect, it } from "vitest";
-import { getTestPayload } from "../helpers/getTestPayload.js";
+import { afterAll, describe, expect, it } from "vitest";
+
+import { closeTestPayload, getTestPayload } from "../helpers/getTestPayload.js";
 
 describe("Designer library (components)", () => {
+  afterAll(async () => {
+    await closeTestPayload();
+  });
+
   it("creates a url key from the title and keeps it stable when the title changes", async () => {
     const payload = await getTestPayload();
     const suffix = Date.now();

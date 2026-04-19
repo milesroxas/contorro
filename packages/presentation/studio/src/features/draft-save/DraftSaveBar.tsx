@@ -5,11 +5,7 @@ import {
   IconArrowForwardUp,
   IconChevronDown,
   IconDeviceFloppy,
-  IconExternalLink,
-  IconLayoutDashboard,
-  IconPalette,
   IconPencil,
-  IconPuzzle,
   IconRocket,
 } from "@tabler/icons-react";
 import { useEffect, useMemo, useState } from "react";
@@ -21,7 +17,6 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu.js";
 import { Separator } from "../../components/ui/separator.js";
@@ -72,10 +67,6 @@ export function DraftSaveBar({
   name,
   resourceLabel,
   canEditName,
-  adminHref,
-  dashboardHref,
-  componentsHref,
-  designSystemHref,
   cmsPublicationStatus,
   canUndo,
   canRedo,
@@ -92,10 +83,6 @@ export function DraftSaveBar({
   name: string;
   resourceLabel: "Component" | "Page Template";
   canEditName: boolean;
-  adminHref: string;
-  dashboardHref: string;
-  componentsHref: string;
-  designSystemHref: string;
   cmsPublicationStatus: "draft" | "published" | null;
   canUndo: boolean;
   canRedo: boolean;
@@ -138,61 +125,6 @@ export function DraftSaveBar({
 
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-muted/20 px-4 py-3 dark:bg-muted/10">
-      <DropdownMenu>
-        {/* On mobile, navigation + save/publish live in the bottom dock's
-            Menu sheet, so we hide these redundant controls to keep the top
-            bar compact. */}
-        <DropdownMenuTrigger asChild>
-          <Button
-            aria-label="Open Studio navigation menu"
-            className="hidden gap-1.5 lg:inline-flex"
-            size="sm"
-            type="button"
-            variant="ghost"
-          >
-            Menu
-            <IconChevronDown aria-hidden className="size-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56">
-          <DropdownMenuLabel>Studio</DropdownMenuLabel>
-          <DropdownMenuGroup>
-            <DropdownMenuItem asChild className="gap-2">
-              <a href={dashboardHref}>
-                <IconLayoutDashboard aria-hidden className="size-4" />
-                Dashboard
-              </a>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="gap-2">
-              <a href={componentsHref}>
-                <IconPuzzle aria-hidden className="size-4" />
-                Components
-              </a>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="gap-2">
-              <a href={designSystemHref}>
-                <IconPalette aria-hidden className="size-4" />
-                Design system
-              </a>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel>CMS</DropdownMenuLabel>
-          <DropdownMenuGroup>
-            <DropdownMenuItem asChild className="gap-2">
-              <a href={adminHref} rel="noopener noreferrer" target="_blank">
-                <IconExternalLink aria-hidden className="size-4" />
-                Open CMS
-              </a>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <Separator
-        aria-hidden
-        className="hidden h-5 bg-border lg:block"
-        orientation="vertical"
-      />
       {editingName && canEditName ? (
         <>
           <input

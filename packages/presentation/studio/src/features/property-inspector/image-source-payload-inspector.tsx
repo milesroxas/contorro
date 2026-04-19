@@ -2,6 +2,11 @@
 
 import type { CompositionNode } from "@repo/contracts-zod";
 import {
+  fetchMediaRecords,
+  type MediaListItem,
+  parsePayloadMediaRefId,
+} from "@repo/infrastructure-payload-media-client";
+import {
   type Dispatch,
   type RefObject,
   type SetStateAction,
@@ -18,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select.js";
-import { fetchMediaRecords, type MediaListItem } from "../../lib/cms-media.js";
 import { PayloadMediaPickerFields } from "./payload-media-picker-fields.js";
 import { SettingsFieldRow } from "./property-control-label.js";
 
@@ -52,14 +56,8 @@ export function parseMediaIdFromPropValues(
   if (!propValues) {
     return "";
   }
-  const raw = propValues[mediaIdKey];
-  if (typeof raw === "number") {
-    return raw;
-  }
-  if (typeof raw === "string" && /^\d+$/.test(raw) && raw.trim().length > 0) {
-    return Number.parseInt(raw, 10);
-  }
-  return "";
+  const id = parsePayloadMediaRefId(propValues[mediaIdKey]);
+  return id ?? "";
 }
 
 export function usePayloadMediaPickerSession(): {

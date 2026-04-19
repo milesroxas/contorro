@@ -2,6 +2,7 @@
 
 import type { CompositionNode } from "@repo/contracts-zod";
 import { useEffect, useState } from "react";
+import { studioHrefForComposition } from "../shell/studio-navigation.js";
 
 type ListItem = {
   key: string;
@@ -54,8 +55,7 @@ async function loadLibraryComponentIndex(): Promise<LibraryComponentIndexCache> 
         ? it.studioCompositionId.trim()
         : "";
     if (studioCompositionId !== "") {
-      editStudioHrefByKey[k] =
-        `/studio?composition=${encodeURIComponent(studioCompositionId)}`;
+      editStudioHrefByKey[k] = studioHrefForComposition(studioCompositionId);
     }
   }
   return { editStudioHrefByKey, labels };

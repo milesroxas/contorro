@@ -13,12 +13,9 @@ import {
   IconArrowBackUp,
   IconArrowForwardUp,
   IconDeviceFloppy,
-  IconExternalLink,
-  IconLayoutDashboard,
-  IconPalette,
-  IconPuzzle,
   IconRocket,
 } from "@tabler/icons-react";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "../../components/ui/button.js";
@@ -52,6 +49,10 @@ import {
   writeMobilePref,
 } from "../../lib/studio-mobile-storage.js";
 import type { StagedTapInsertion } from "../../lib/tap-insertion-context.js";
+import {
+  STUDIO_NAV_ITEMS,
+  type StudioTopLevelScreen,
+} from "../../shell/studio-navigation.js";
 import { MobileStagingHud } from "./MobileStagingHud.js";
 import { MobileStudioDock } from "./MobileStudioDock.js";
 import type {
@@ -83,14 +84,17 @@ function stagedInsertionDisplayLabel(
 export function MobileStudioLayout({
   activeBreakpoint,
   activeInspectorTab,
-  adminHref,
+  canvasFontSizePx,
+  canvasViewportWidthPx,
+  canvasZoomPercent,
   clearNodeStyles,
   composition,
   componentsHref,
   compositionId,
-  dashboardHref,
-  designSystemHref,
   onActiveBreakpointChange,
+  onCanvasFontSizePxChange,
+  onCanvasViewportWidthPxChange,
+  onCanvasZoomPercentChange,
   onInspectorTabChange,
   onLeftSidebarPanelChange,
   onNodeStyleEntry,
@@ -123,14 +127,17 @@ export function MobileStudioLayout({
 }: {
   activeBreakpoint: Breakpoint | null;
   activeInspectorTab: StudioInspectorTab;
-  adminHref: string;
+  canvasFontSizePx: number;
+  canvasViewportWidthPx: number;
+  canvasZoomPercent: number;
   clearNodeStyles: () => void;
   composition: PageComposition;
   componentsHref: string;
   compositionId: string;
-  dashboardHref: string;
-  designSystemHref: string;
   onActiveBreakpointChange: (breakpoint: Breakpoint | null) => void;
+  onCanvasFontSizePxChange: (fontSizePx: number) => void;
+  onCanvasViewportWidthPxChange: (widthPx: number) => void;
+  onCanvasZoomPercentChange: (zoomPercent: number) => void;
   onInspectorTabChange: (tab: StudioInspectorTab) => void;
   onLeftSidebarPanelChange: (id: LeftSidebarPanelId) => void;
   onNodeStyleEntry: (
@@ -221,6 +228,12 @@ export function MobileStudioLayout({
     layers: "Layers",
     menu: "Studio menu",
   };
+  const activeNavScreen: StudioTopLevelScreen | null =
+    studioResource === "component"
+      ? "components"
+      : studioResource === "pageTemplate"
+        ? "templates"
+        : null;
 
   const closeSheet = () => setActiveSheet(null);
 
@@ -229,9 +242,15 @@ export function MobileStudioLayout({
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <StudioCanvas
           activeBreakpoint={activeBreakpoint}
+          canvasFontSizePx={canvasFontSizePx}
+          canvasViewportWidthPx={canvasViewportWidthPx}
+          canvasZoomPercent={canvasZoomPercent}
           composition={composition}
           onActiveBreakpointChange={onActiveBreakpointChange}
+          onCanvasFontSizePxChange={onCanvasFontSizePxChange}
           onCanvasBackground={() => onSelectNode(null)}
+          onCanvasViewportWidthPxChange={onCanvasViewportWidthPxChange}
+          onCanvasZoomPercentChange={onCanvasZoomPercentChange}
           onRemoveNode={onRemoveNode}
           onSelectNode={(nodeId) => {
             onSelectNode(nodeId);
@@ -281,12 +300,9 @@ export function MobileStudioLayout({
           <div className="flex max-h-[min(88vh,88dvh)] min-h-[40vh] min-w-0 flex-col overflow-hidden pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             {activeSheet === "menu" ? (
               <MobileMenuSheet
-                adminHref={adminHref}
+                activeNavScreen={activeNavScreen}
                 canRedo={canRedo}
                 canUndo={canUndo}
-                componentsHref={componentsHref}
-                dashboardHref={dashboardHref}
-                designSystemHref={designSystemHref}
                 dirty={dirty}
                 onPublish={() => {
                   onPublish();
@@ -346,7 +362,6 @@ export function MobileStudioLayout({
                 resetNodePropKey={resetNodePropKey}
                 setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
                 setNodeEditorFieldBinding={setNodeEditorFieldBinding}
-                studioResource={studioResource}
                 tokenMetadata={tokenMetadata}
               />
             ) : null}
@@ -370,12 +385,9 @@ function usePreviousStaging(value: StagedTapInsertion | null) {
 }
 
 function MobileMenuSheet({
-  adminHref,
+  activeNavScreen,
   canRedo,
   canUndo,
-  componentsHref,
-  dashboardHref,
-  designSystemHref,
   dirty,
   onPublish,
   onRedo,
@@ -383,12 +395,9 @@ function MobileMenuSheet({
   onUndo,
   saving,
 }: {
-  adminHref: string;
+  activeNavScreen: StudioTopLevelScreen | null;
   canRedo: boolean;
   canUndo: boolean;
-  componentsHref: string;
-  dashboardHref: string;
-  designSystemHref: string;
   dirty: boolean;
   onPublish: () => void;
   onRedo: () => void;
@@ -447,36 +456,24 @@ function MobileMenuSheet({
       </div>
       <Separator className="my-2" />
       <div className="flex flex-col gap-1 text-sm">
-        <a
-          className="flex h-11 items-center gap-2 rounded-md px-2 text-foreground hover:bg-accent"
-          href={dashboardHref}
-        >
-          <IconLayoutDashboard aria-hidden className="size-4" />
-          Dashboard
-        </a>
-        <a
-          className="flex h-11 items-center gap-2 rounded-md px-2 text-foreground hover:bg-accent"
-          href={componentsHref}
-        >
-          <IconPuzzle aria-hidden className="size-4" />
-          Components
-        </a>
-        <a
-          className="flex h-11 items-center gap-2 rounded-md px-2 text-foreground hover:bg-accent"
-          href={designSystemHref}
-        >
-          <IconPalette aria-hidden className="size-4" />
-          Design system
-        </a>
-        <a
-          className="flex h-11 items-center gap-2 rounded-md px-2 text-foreground hover:bg-accent"
-          href={adminHref}
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          <IconExternalLink aria-hidden className="size-4" />
-          Open CMS
-        </a>
+        {STUDIO_NAV_ITEMS.map(({ id, href, Icon, label }) => {
+          const isActive = activeNavScreen === id;
+          return (
+            <Link
+              aria-current={isActive ? "page" : undefined}
+              className={cn(
+                "flex h-11 items-center gap-2 rounded-md px-2 text-foreground hover:bg-accent",
+                isActive && "bg-accent text-accent-foreground",
+              )}
+              href={href}
+              key={id}
+              prefetch={false}
+            >
+              <Icon aria-hidden className="size-4" />
+              {label}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
@@ -611,7 +608,6 @@ function MobileInspectSheet({
   resetNodePropKey,
   setNodeCollectionFieldBinding,
   setNodeEditorFieldBinding,
-  studioResource,
   tokenMetadata,
 }: {
   activeBreakpoint: Breakpoint | null;
@@ -630,7 +626,6 @@ function MobileInspectSheet({
   resetNodePropKey: (propKey: string) => void;
   setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
-  studioResource: "pageTemplate" | "component" | null;
   tokenMetadata: TokenMeta[];
 }) {
   return (
@@ -649,7 +644,6 @@ function MobileInspectSheet({
         resetNodePropKey={resetNodePropKey}
         setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
         setNodeEditorFieldBinding={setNodeEditorFieldBinding}
-        studioResource={studioResource}
         tokenMetadata={tokenMetadata}
       />
     </div>

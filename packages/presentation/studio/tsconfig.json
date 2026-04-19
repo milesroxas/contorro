@@ -13,6 +13,7 @@
   },
   "include": ["src/**/*"],
   "references": [
+    { "path": "../../infrastructure/payload-media-client" },
     { "path": "../../kernel" },
     { "path": "../../contracts/zod" },
     { "path": "../../domains/composition" },

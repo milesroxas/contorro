@@ -33,6 +33,7 @@ import { default as default_8c9b89b59982f178478f894900f16872 } from '../../../co
 import { FolderTypeField as FolderTypeField_2b8867833a34864a02ddf429b0728a40 } from '@payloadcms/next/client'
 import { default as default_4a6ee751a613d9923e69a9b97ecaf3b4 } from '../../../components/admin/ThemeModeNavToggle'
 import { default as default_c0d1034a8709d8a749125120127fbc46 } from '../../../components/admin/StudioNavLink'
+import { default as default_734bf2582e2c57256822d0fa34deff2f } from '../../../components/admin/DesignerDashboardRedirect'
 import { default as default_55b8bdcdde915bae2246f3a37b9e345d } from '../../../components/admin/DesignSystemPreviewCallout'
 import { default as default_fddf24e2605d3ae099922bff952ee3f2 } from '../../../components/admin/PayloadAdminTheme'
 import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e } from '@payloadcms/storage-vercel-blob/client'
@@ -75,6 +76,7 @@ export const importMap = {
   "@payloadcms/next/client#FolderTypeField": FolderTypeField_2b8867833a34864a02ddf429b0728a40,
   "/components/admin/ThemeModeNavToggle#default": default_4a6ee751a613d9923e69a9b97ecaf3b4,
   "/components/admin/StudioNavLink#default": default_c0d1034a8709d8a749125120127fbc46,
+  "/components/admin/DesignerDashboardRedirect#default": default_734bf2582e2c57256822d0fa34deff2f,
   "/components/admin/DesignSystemPreviewCallout#default": default_55b8bdcdde915bae2246f3a37b9e345d,
   "/components/admin/PayloadAdminTheme#default": default_fddf24e2605d3ae099922bff952ee3f2,
   "@payloadcms/storage-vercel-blob/client#VercelBlobClientUploadHandler": VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e,

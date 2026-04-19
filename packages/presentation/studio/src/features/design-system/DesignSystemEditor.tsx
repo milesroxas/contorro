@@ -422,7 +422,7 @@ function DesignSystemEditorPreviewCard({
   setPreviewPath: Dispatch<SetStateAction<string>>;
 }) {
   return (
-    <Card className="min-h-0 overflow-hidden">
+    <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <CardHeader className="space-y-3 border-b border-border/70 pb-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -459,8 +459,8 @@ function DesignSystemEditorPreviewCard({
           {isDirty ? " · Unsaved changes" : ""}
         </div>
       </CardHeader>
-      <CardContent className="min-h-0 p-2">
-        <div className="h-[calc(100dvh-12rem)] overflow-hidden rounded-md border border-border">
+      <CardContent className="min-h-0 flex-1 p-2">
+        <div className="h-full overflow-hidden rounded-md border border-border">
           <iframe
             className="h-full w-full bg-white"
             key={`${previewUrl}-${previewKey}`}
@@ -685,7 +685,7 @@ export function DesignSystemEditor({
   }
 
   return (
-    <StudioRoot className="flex min-h-dvh w-full min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
+    <StudioRoot className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-3 p-3 xl:grid-cols-[minmax(340px,420px)_1fr]">
           <Card className="min-h-0 overflow-hidden">
@@ -792,7 +792,7 @@ export function DesignSystemEditor({
                 </p>
               ) : null}
             </CardHeader>
-            <CardContent className="min-h-0 p-0">
+            <CardContent className="min-h-0 flex-1 p-0">
               <div className="flex h-full min-h-0 flex-col">
                 <div className="grid grid-cols-3 border-b border-border/70">
                   {(
@@ -817,7 +817,7 @@ export function DesignSystemEditor({
                     </button>
                   ))}
                 </div>
-                <ScrollArea className="h-[calc(100dvh-18rem)] px-4 py-4">
+                <ScrollArea className="min-h-0 flex-1 px-4 py-4">
                   <DesignSystemEditorTokenScrollBody
                     activeTab={activeTab}
                     colorSearch={colorSearch}

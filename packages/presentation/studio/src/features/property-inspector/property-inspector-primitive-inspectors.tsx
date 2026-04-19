@@ -7,6 +7,10 @@ import {
   EditorFieldSpecSchema,
   type PageComposition,
 } from "@repo/contracts-zod";
+import {
+  fetchMediaRecords,
+  type MediaListItem,
+} from "@repo/infrastructure-payload-media-client";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "../../components/ui/button.js";
 import { Checkbox } from "../../components/ui/checkbox.js";
@@ -30,7 +34,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "../../components/ui/sheet.js";
-import { fetchMediaRecords, type MediaListItem } from "../../lib/cms-media.js";
 import { cn } from "../../lib/cn.js";
 import {
   fetchPayloadCollectionDocs,

@@ -20,18 +20,38 @@ import {
   useOptionalCollectionItemDoc,
 } from "@repo/runtime-primitives";
 import { resolveNodeStyle } from "@repo/runtime-renderer";
-import { IconMoonStars, IconSunHigh } from "@tabler/icons-react";
+import {
+  IconAdjustments,
+  IconMoonStars,
+  IconSunHigh,
+} from "@tabler/icons-react";
 import type {
   ComponentPropsWithoutRef,
   CSSProperties,
   ElementType,
   ReactElement,
+  KeyboardEvent as ReactKeyboardEvent,
   ReactNode,
 } from "react";
-import { Fragment, forwardRef, useEffect, useState } from "react";
+import {
+  Fragment,
+  forwardRef,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { Button } from "../../components/ui/button.js";
-import { ScrollArea } from "../../components/ui/scroll-area.js";
+import { Input } from "../../components/ui/input.js";
+import { Label } from "../../components/ui/label.js";
+import {
+  Popover,
+  PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "../../components/ui/popover.js";
 import { cn } from "../../lib/cn.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
 import { isChildContainerPrimitive } from "../../lib/style-controls.js";
@@ -42,6 +62,12 @@ import {
 import { PrimitiveNodeContextMenu } from "../context-menu/PrimitiveNodeContextMenu.js";
 import { InsertionDropZone } from "../dnd/InsertionDropZone.js";
 import { LibraryCompositionCanvasPreview } from "./library-composition-canvas-preview.js";
+import {
+  defaultCanvasViewportWidthPx,
+  normalizeCanvasFontSizePx,
+  normalizeCanvasViewportWidthPx,
+  normalizeCanvasZoomPercent,
+} from "./studio-canvas-viewport.js";
 
 type PrimitiveRegistry = typeof defaultPrimitiveRegistry;
 
@@ -850,8 +876,183 @@ const BREAKPOINT_SWITCHER_LABELS: Record<Breakpoint | "base", string> = {
   xl: "XL",
 };
 
+function parseNumericInput(value: string): number | null {
+  const parsed = Number(value.trim());
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+  return parsed;
+}
+
+function CanvasViewportControlPopover({
+  viewportWidthPx,
+  viewportZoomPercent,
+  viewportFontSizePx,
+  onViewportWidthChange,
+  onViewportZoomChange,
+  onViewportFontSizeChange,
+}: {
+  viewportWidthPx: number;
+  viewportZoomPercent: number;
+  viewportFontSizePx: number;
+  onViewportWidthChange: (widthPx: number) => void;
+  onViewportZoomChange: (zoomPercent: number) => void;
+  onViewportFontSizeChange: (fontSizePx: number) => void;
+}) {
+  const widthInputId = useId();
+  const zoomInputId = useId();
+  const fontSizeInputId = useId();
+  const [widthInput, setWidthInput] = useState(`${viewportWidthPx}`);
+  const [zoomInput, setZoomInput] = useState(`${viewportZoomPercent}`);
+  const [fontSizeInput, setFontSizeInput] = useState(`${viewportFontSizePx}`);
+
+  useEffect(() => {
+    setWidthInput(`${viewportWidthPx}`);
+  }, [viewportWidthPx]);
+
+  useEffect(() => {
+    setZoomInput(`${viewportZoomPercent}`);
+  }, [viewportZoomPercent]);
+
+  useEffect(() => {
+    setFontSizeInput(`${viewportFontSizePx}`);
+  }, [viewportFontSizePx]);
+
+  const commitNumberField = (
+    rawValue: string,
+    fallbackValue: number,
+    normalize: (value: number) => number,
+    onCommit: (value: number) => void,
+    setInputValue: (value: string) => void,
+  ) => {
+    const parsed = parseNumericInput(rawValue);
+    if (parsed === null) {
+      setInputValue(`${fallbackValue}`);
+      return;
+    }
+    const next = normalize(parsed);
+    onCommit(next);
+    setInputValue(`${next}`);
+  };
+
+  const onNumberFieldKeyDown = (
+    event: ReactKeyboardEvent<HTMLInputElement>,
+    commit: () => void,
+  ) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+    event.preventDefault();
+    commit();
+    event.currentTarget.blur();
+  };
+
+  const commitWidth = () => {
+    commitNumberField(
+      widthInput,
+      viewportWidthPx,
+      normalizeCanvasViewportWidthPx,
+      onViewportWidthChange,
+      setWidthInput,
+    );
+  };
+  const commitZoom = () => {
+    commitNumberField(
+      zoomInput,
+      viewportZoomPercent,
+      normalizeCanvasZoomPercent,
+      onViewportZoomChange,
+      setZoomInput,
+    );
+  };
+  const commitFontSize = () => {
+    commitNumberField(
+      fontSizeInput,
+      viewportFontSizePx,
+      normalizeCanvasFontSizePx,
+      onViewportFontSizeChange,
+      setFontSizeInput,
+    );
+  };
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button size="sm" type="button" variant="outline">
+          <IconAdjustments aria-hidden className="size-4" />
+          <span className="hidden text-xs sm:inline">
+            {viewportWidthPx}px / {viewportZoomPercent}% / {viewportFontSizePx}
+            px
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-64" sideOffset={8}>
+        <PopoverHeader>
+          <PopoverTitle>Canvas preview controls</PopoverTitle>
+        </PopoverHeader>
+        <div className="mt-3 grid gap-3">
+          <div className="grid gap-1.5">
+            <Label
+              className="text-xs text-muted-foreground"
+              htmlFor={widthInputId}
+            >
+              Viewport width (px)
+            </Label>
+            <Input
+              className="h-8 text-sm"
+              id={widthInputId}
+              inputMode="numeric"
+              onBlur={commitWidth}
+              onChange={(event) => setWidthInput(event.target.value)}
+              onKeyDown={(event) => onNumberFieldKeyDown(event, commitWidth)}
+              value={widthInput}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label
+              className="text-xs text-muted-foreground"
+              htmlFor={zoomInputId}
+            >
+              Browser zoom (%)
+            </Label>
+            <Input
+              className="h-8 text-sm"
+              id={zoomInputId}
+              inputMode="numeric"
+              onBlur={commitZoom}
+              onChange={(event) => setZoomInput(event.target.value)}
+              onKeyDown={(event) => onNumberFieldKeyDown(event, commitZoom)}
+              value={zoomInput}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label
+              className="text-xs text-muted-foreground"
+              htmlFor={fontSizeInputId}
+            >
+              Default font size (px)
+            </Label>
+            <Input
+              className="h-8 text-sm"
+              id={fontSizeInputId}
+              inputMode="numeric"
+              onBlur={commitFontSize}
+              onChange={(event) => setFontSizeInput(event.target.value)}
+              onKeyDown={(event) => onNumberFieldKeyDown(event, commitFontSize)}
+              value={fontSizeInput}
+            />
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function StudioCanvas({
   activeBreakpoint,
+  canvasViewportWidthPx,
+  canvasZoomPercent,
+  canvasFontSizePx,
   composition,
   selectedNodeId,
   onSelectNode,
@@ -859,12 +1060,18 @@ export function StudioCanvas({
   onWrapNode,
   onCanvasBackground,
   onActiveBreakpointChange,
+  onCanvasViewportWidthPxChange,
+  onCanvasZoomPercentChange,
+  onCanvasFontSizePxChange,
   theme,
   onToggleTheme,
   tokenMeta = [],
   studioResource,
 }: {
   activeBreakpoint: Breakpoint | null;
+  canvasViewportWidthPx: number;
+  canvasZoomPercent: number;
+  canvasFontSizePx: number;
   composition: PageComposition;
   selectedNodeId: string | null;
   onSelectNode: (id: string) => void;
@@ -872,6 +1079,9 @@ export function StudioCanvas({
   onWrapNode: (id: string) => void;
   onCanvasBackground?: () => void;
   onActiveBreakpointChange: (breakpoint: Breakpoint | null) => void;
+  onCanvasViewportWidthPxChange: (widthPx: number) => void;
+  onCanvasZoomPercentChange: (zoomPercent: number) => void;
+  onCanvasFontSizePxChange: (fontSizePx: number) => void;
   theme: "light" | "dark";
   onToggleTheme: () => void;
   tokenMeta?: TokenMeta[];
@@ -896,65 +1106,202 @@ export function StudioCanvas({
     />
   );
 
-  const viewportMaxWidthPx = activeBreakpoint
-    ? BREAKPOINT_MIN_WIDTH_PX[activeBreakpoint]
-    : null;
+  const viewportBoundsRef = useRef<HTMLDivElement | null>(null);
+  const didInitializeViewportWidthRef = useRef(false);
+  const viewportResizeStateRef = useRef<{
+    startX: number;
+    startWidthPx: number;
+    startAutoFitScale: number;
+  } | null>(null);
+  const [viewportBoundsWidthPx, setViewportBoundsWidthPx] = useState<
+    number | null
+  >(null);
+  const [isViewportResizing, setIsViewportResizing] = useState(false);
+
+  const normalizedZoomPercent = normalizeCanvasZoomPercent(canvasZoomPercent);
+  const normalizedFontSizePx = normalizeCanvasFontSizePx(canvasFontSizePx);
+  const viewportLogicalWidthPx = normalizeCanvasViewportWidthPx(
+    canvasViewportWidthPx,
+  );
+  const viewportAvailableWidthPx = Math.max(
+    1,
+    Math.round(viewportBoundsWidthPx ?? viewportLogicalWidthPx),
+  );
+  const autoFitScale = Math.min(
+    1,
+    viewportAvailableWidthPx / viewportLogicalWidthPx,
+  );
+  const zoomScale = normalizedZoomPercent / 100;
+  const combinedCanvasScale = zoomScale * autoFitScale;
+  const zoomAdjustedViewportWidthPx = Math.max(
+    1,
+    Math.round(viewportLogicalWidthPx / zoomScale),
+  );
+  const viewportRenderedWidthPx = Math.max(
+    1,
+    Math.round(viewportLogicalWidthPx * autoFitScale),
+  );
+
+  useEffect(() => {
+    const host = viewportBoundsRef.current;
+    if (!host || typeof ResizeObserver === "undefined") {
+      return;
+    }
+    const updateBounds = () => {
+      setViewportBoundsWidthPx(Math.round(host.getBoundingClientRect().width));
+    };
+    updateBounds();
+    const observer = new ResizeObserver(() => {
+      updateBounds();
+    });
+    observer.observe(host);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (didInitializeViewportWidthRef.current) {
+      return;
+    }
+    if (viewportBoundsWidthPx === null) {
+      return;
+    }
+    const expectedDefaultWidth = defaultCanvasViewportWidthPx(activeBreakpoint);
+    const currentWidth = normalizeCanvasViewportWidthPx(canvasViewportWidthPx);
+    if (currentWidth !== expectedDefaultWidth) {
+      didInitializeViewportWidthRef.current = true;
+      return;
+    }
+    onCanvasViewportWidthPxChange(
+      normalizeCanvasViewportWidthPx(viewportBoundsWidthPx),
+    );
+    didInitializeViewportWidthRef.current = true;
+  }, [
+    activeBreakpoint,
+    canvasViewportWidthPx,
+    onCanvasViewportWidthPxChange,
+    viewportBoundsWidthPx,
+  ]);
+
+  useEffect(() => {
+    const onPointerMove = (event: PointerEvent) => {
+      const resizeState = viewportResizeStateRef.current;
+      if (!resizeState) {
+        return;
+      }
+      const scale =
+        resizeState.startAutoFitScale > 0 ? resizeState.startAutoFitScale : 1;
+      const delta = (event.clientX - resizeState.startX) / scale;
+      const next = normalizeCanvasViewportWidthPx(
+        resizeState.startWidthPx + delta,
+      );
+      onCanvasViewportWidthPxChange(next);
+    };
+    const stopResize = () => {
+      if (!viewportResizeStateRef.current) {
+        return;
+      }
+      viewportResizeStateRef.current = null;
+      setIsViewportResizing(false);
+    };
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", stopResize);
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", stopResize);
+    };
+  }, [onCanvasViewportWidthPxChange]);
+
+  const startViewportResize = (clientX: number) => {
+    viewportResizeStateRef.current = {
+      startX: clientX,
+      startWidthPx: viewportLogicalWidthPx,
+      startAutoFitScale: autoFitScale,
+    };
+    setIsViewportResizing(true);
+  };
+
   const breakpointOptions: readonly (Breakpoint | null)[] = [
     null,
     ...BREAKPOINTS,
   ];
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
-      <div className="flex shrink-0 items-center justify-between gap-2">
-        <div
-          aria-label="Breakpoint"
-          className="inline-flex items-center gap-0.5 rounded-md border border-border/70 bg-background p-0.5"
-          role="radiogroup"
-        >
-          {breakpointOptions.map((option) => {
-            const key = option ?? "base";
-            const active = (option ?? null) === (activeBreakpoint ?? null);
-            return (
-              <button
-                aria-checked={active}
-                className={cn(
-                  "inline-flex h-7 items-center justify-center rounded-sm px-2 text-[11px] font-medium",
-                  active
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent/50",
-                )}
-                key={key}
-                onClick={() => onActiveBreakpointChange(option)}
-                role="radio"
-                title={
-                  option
-                    ? `${BREAKPOINT_SWITCHER_LABELS[option]} (${BREAKPOINT_MIN_WIDTH_PX[option]}px)`
-                    : BREAKPOINT_SWITCHER_LABELS.base
-                }
-                type="button"
-              >
-                {BREAKPOINT_SWITCHER_LABELS[key]}
-              </button>
-            );
-          })}
+    <div
+      className={cn(
+        "flex min-h-0 flex-1 flex-col overflow-hidden border-y border-border/70 bg-background/40",
+        isViewportResizing && "select-none",
+      )}
+    >
+      <div className="flex h-11 shrink-0 items-center justify-between gap-3 border-b border-border/70 bg-muted/10 px-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="hidden text-[10px] font-medium tracking-[0.12em] text-muted-foreground uppercase sm:inline">
+            Viewport
+          </span>
+          <div
+            aria-label="Breakpoint"
+            className="inline-flex items-center gap-0.5 rounded-md border border-border/70 bg-background p-0.5"
+            role="radiogroup"
+          >
+            {breakpointOptions.map((option) => {
+              const key = option ?? "base";
+              const active = (option ?? null) === (activeBreakpoint ?? null);
+              return (
+                <button
+                  aria-checked={active}
+                  className={cn(
+                    "inline-flex h-7 items-center justify-center rounded-sm px-2 text-[11px] font-medium",
+                    active
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-accent/50",
+                  )}
+                  key={key}
+                  onClick={() => onActiveBreakpointChange(option)}
+                  role="radio"
+                  title={
+                    option
+                      ? `${BREAKPOINT_SWITCHER_LABELS[option]} (${BREAKPOINT_MIN_WIDTH_PX[option]}px)`
+                      : BREAKPOINT_SWITCHER_LABELS.base
+                  }
+                  type="button"
+                >
+                  {BREAKPOINT_SWITCHER_LABELS[key]}
+                </button>
+              );
+            })}
+          </div>
         </div>
-        <Button
-          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-          onClick={onToggleTheme}
-          size="sm"
-          title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-          type="button"
-          variant="ghost"
-        >
-          {theme === "dark" ? (
-            <IconSunHigh className="size-4" />
-          ) : (
-            <IconMoonStars className="size-4" />
-          )}
-        </Button>
+        <div className="flex items-center gap-1">
+          <CanvasViewportControlPopover
+            onViewportFontSizeChange={onCanvasFontSizePxChange}
+            onViewportWidthChange={(widthPx) => {
+              onCanvasViewportWidthPxChange(
+                normalizeCanvasViewportWidthPx(widthPx),
+              );
+            }}
+            onViewportZoomChange={onCanvasZoomPercentChange}
+            viewportFontSizePx={normalizedFontSizePx}
+            viewportWidthPx={viewportLogicalWidthPx}
+            viewportZoomPercent={normalizedZoomPercent}
+          />
+          <Button
+            aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            onClick={onToggleTheme}
+            size="icon-sm"
+            title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+            type="button"
+            variant="ghost"
+          >
+            {theme === "dark" ? (
+              <IconSunHigh className="size-4" />
+            ) : (
+              <IconMoonStars className="size-4" />
+            )}
+          </Button>
+        </div>
       </div>
-      <ScrollArea className="min-h-0 flex-1 rounded-md border border-border bg-background dark:bg-card/30">
+      <div className="min-h-0 flex-1 overflow-auto bg-background dark:bg-card/30">
         <CanvasDropRoot
           composition={composition}
           onBackgroundPointer={() => {
@@ -962,22 +1309,52 @@ export function StudioCanvas({
           }}
           onSelectNode={onSelectNode}
         >
-          <div
-            className={cn(
-              "text-foreground",
-              viewportMaxWidthPx ? "mx-auto" : null,
-            )}
-            data-testid="studio-canvas-preview"
-            style={
-              viewportMaxWidthPx
-                ? { maxWidth: `${viewportMaxWidthPx}px`, width: "100%" }
-                : undefined
-            }
-          >
-            {tree}
+          <div className="flex w-full justify-center" ref={viewportBoundsRef}>
+            <div
+              className="relative mx-auto shrink-0"
+              style={{ width: `${viewportRenderedWidthPx}px` }}
+            >
+              <div
+                className="text-foreground"
+                data-testid="studio-canvas-preview"
+                style={
+                  {
+                    width: `${zoomAdjustedViewportWidthPx}px`,
+                    zoom: combinedCanvasScale,
+                    fontSize: `${normalizedFontSizePx}px`,
+                  } as CSSProperties
+                }
+              >
+                {tree}
+              </div>
+              <button
+                aria-label="Resize canvas viewport width"
+                className={cn(
+                  "absolute top-0 right-0 hidden h-full w-4 translate-x-1/2 cursor-ew-resize items-center justify-center md:flex",
+                  isViewportResizing
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+                onPointerDown={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  startViewportResize(event.clientX);
+                }}
+                title="Drag to resize viewport width"
+                type="button"
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    "h-14 w-px bg-border/80 transition-colors",
+                    isViewportResizing && "bg-primary",
+                  )}
+                />
+              </button>
+            </div>
           </div>
         </CanvasDropRoot>
-      </ScrollArea>
+      </div>
     </div>
   );
 }

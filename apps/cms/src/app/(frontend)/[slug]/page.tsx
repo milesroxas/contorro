@@ -81,22 +81,33 @@ async function renderCompositionWithLibraryAndEditorFields(
   tokenMeta: import("@repo/config-tailwind").TokenMeta[],
   slotContent: Record<string, ReactNode> | undefined,
 ): Promise<ReactNode> {
-  let tree = await expandLibraryComponentNodes(templateTree, async (key) => {
-    const found = await payload.find({
-      collection: "components",
-      where: { key: { equals: key } },
-      depth: 0,
-      draft: isEnabled,
-      limit: 1,
-      overrideAccess: true,
-    });
-    const doc = found.docs[0] as { composition?: unknown } | undefined;
-    if (!doc?.composition) {
-      return null;
-    }
-    const parsed = PageCompositionSchema.safeParse(doc.composition);
-    return parsed.success ? parsed.data : null;
-  });
+  let tree = await expandLibraryComponentNodes(
+    templateTree,
+    async (key) => {
+      const found = await payload.find({
+        collection: "components",
+        where: { key: { equals: key } },
+        depth: 0,
+        draft: isEnabled,
+        limit: 1,
+        overrideAccess: true,
+      });
+      const doc = found.docs[0] as { composition?: unknown } | undefined;
+      if (!doc?.composition) {
+        return null;
+      }
+      const parsed = PageCompositionSchema.safeParse(doc.composition);
+      return parsed.success ? parsed.data : null;
+    },
+    {
+      resolveEditorFieldImages: async (embedded, editorFieldValues) =>
+        resolveImageEditorFieldValuesForRender(
+          payload,
+          editorFieldSpecsFromComposition(embedded),
+          editorFieldValues,
+        ),
+    },
+  );
   const tmpl = page.templateEditorFields;
   if (
     tmpl &&

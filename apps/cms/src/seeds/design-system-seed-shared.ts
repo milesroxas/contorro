@@ -304,8 +304,9 @@ export async function seedDesignSystemTokens(
   await payload.update({
     collection: "design-token-sets",
     id: tokenSet.id,
-    data: {},
-    draft: false,
+    data: {
+      _status: "published",
+    },
     overrideAccess: true,
   });
 

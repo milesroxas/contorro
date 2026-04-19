@@ -35,12 +35,17 @@ Root `pnpm dev` runs the CMS app, `@repo/presentation-studio` watch, `@repo/pres
 
 ## Useful scripts
 
-- `pnpm --filter @repo/cms dev`
-- `pnpm --filter @repo/cms build`
-- `pnpm --filter @repo/cms run generate:types`
-- `pnpm --filter @repo/cms run generate:importmap`
-- `pnpm --filter @repo/cms run test:int`
-- `pnpm --filter @repo/cms run test:e2e`
+From the **repo root**, prefer the short aliases (see `docs/app/README.md`): e.g. `pnpm dev:cms`, `pnpm build:cms`, `pnpm test`, `pnpm test:cov`, `pnpm e2e`, `pnpm seed`, `pnpm payload -- generate:types`.
+
+From **`apps/cms`** (this directory):
+
+- **`pnpm dev`** / **`pnpm build`** — Next dev / production build (`prebuild` builds gateway).
+- **`pnpm generate:types`**, **`pnpm generate:importmap`** — Payload codegen.
+- **`pnpm test:int`**, **`pnpm test:cov`**, **`pnpm test:watch`** — Vitest integration tests and coverage.
+- **`pnpm test:e2e`**, **`pnpm test:e2e:ui`** — Playwright.
+- **`pnpm payload`** — Payload CLI (`NODE_OPTIONS` set for deprecation noise).
+
+Full `pnpm --filter @repo/cms …` forms still work from the monorepo root if you prefer explicit filters.
 
 ## Guardrails
 

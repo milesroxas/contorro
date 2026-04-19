@@ -19,6 +19,7 @@ Use this file for changes inside **`apps/cms`** (package **`@repo/cms`**). Root 
 - Payload repository adapter: `apps/cms/src/app/api/studio/_lib/payload-studio-mutation-repository.ts`
 - Gateway forwarding endpoint: `apps/cms/src/app/api/gateway/[[...route]]/route.ts`
 - Studio UI: Next route **`/studio`** (`app/(studio)/studio/page.tsx`) — `payload.auth` + `StudioShell` from `@repo/presentation-studio` (hub, design system screen, editor) and `createFetchStudioAuthoringClient` (optional env: `NEXT_PUBLIC_STUDIO_COMPOSITION_API_BASE`, `NEXT_PUBLIC_STUDIO_RESOURCE_API_BASE`).
+- **Image editor fields:** before `mergeEditorFieldValuesIntoComposition`, resolve Payload media ids to URLs via **`resolveImageEditorFieldValuesForRender`** (`src/lib/resolve-editor-field-image-values.ts`). When calling **`expandLibraryComponentNodes`**, always pass **`resolveEditorFieldImages`** using that helper. Full rules: repo root **`AGENTS.md`** → *Image editor fields and mergeEditorFieldValuesIntoComposition*.
 
 ## Security-critical patterns
 
@@ -40,7 +41,7 @@ Use this file for changes inside **`apps/cms`** (package **`@repo/cms`**). Root 
 
 ## Required checks after relevant changes
 
-- Schema/config changes: run `pnpm --filter @repo/cms run generate:types` and `pnpm --filter @repo/cms run generate:importmap` as needed.
+- Schema/config changes: run `pnpm payload generate:types` and `pnpm payload generate:importmap` from the repo root (or the equivalent `pnpm --filter @repo/cms run …` commands). See `docs/app/README.md` for script shortcuts.
 - Run `pnpm lint` (no `biome-ignore` or other suppressions to silence rules — see root `AGENTS.md`).
 - Run `pnpm typecheck` for cross-package impact.
-- Run `pnpm --filter @repo/cms run test:int` for behavior changes.
+- Run `pnpm test` or `pnpm test:int` for integration coverage of CMS behavior; use `pnpm test:cov` when you need a coverage report.

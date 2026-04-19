@@ -6,7 +6,7 @@ import type {
   CompositionNode,
   PageComposition,
 } from "@repo/contracts-zod";
-import { PageCompositionSchema } from "@repo/contracts-zod";
+import { mergeEditorFieldValuesIntoComposition } from "@repo/domains-composition";
 import {
   defaultPrimitiveRegistry,
   LibraryComponent,
@@ -16,6 +16,11 @@ import type { CSSProperties, ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import { cn } from "../../lib/cn.js";
+import { fetchExpandedLibraryComposition } from "../../lib/fetch-library-component-preview.js";
+import {
+  editorFieldImageValuesNeedMediaFetch,
+  resolveEditorFieldImageValuesForCanvas,
+} from "../../lib/resolve-editor-field-images-client.js";
 
 function LibraryCompositionPreviewSkeleton({
   className,
@@ -77,31 +82,15 @@ function LibraryCompositionPreviewSkeleton({
   );
 }
 
-function parsePreviewResponse(raw: unknown): PageComposition | null {
+function libraryInstanceEditorFieldValues(
+  node: CompositionNode,
+): Record<string, unknown> | null {
+  const raw = node.propValues?.editorFieldValues;
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return null;
   }
-  const comp = (raw as { data?: { composition?: unknown } }).data?.composition;
-  const parsed = PageCompositionSchema.safeParse(comp);
-  return parsed.success ? parsed.data : null;
-}
-
-async function fetchExpandedLibraryComposition(
-  componentKey: string,
-): Promise<PageComposition | null> {
-  try {
-    const res = await fetch(
-      `/api/studio/library-components/preview?key=${encodeURIComponent(componentKey)}`,
-      { credentials: "include" },
-    );
-    if (!res.ok) {
-      return null;
-    }
-    const json: unknown = await res.json();
-    return parsePreviewResponse(json);
-  } catch {
-    return null;
-  }
+  const values = raw as Record<string, unknown>;
+  return Object.keys(values).length > 0 ? values : null;
 }
 
 export function LibraryCompositionCanvasPreview({
@@ -121,11 +110,56 @@ export function LibraryCompositionCanvasPreview({
     typeof node.propValues?.componentKey === "string"
       ? node.propValues.componentKey.trim()
       : "";
+  const instanceFieldValues = useMemo(
+    () => libraryInstanceEditorFieldValues(node),
+    [node],
+  );
 
   const [expanded, setExpanded] = useState<PageComposition | null>(null);
   const [phase, setPhase] = useState<"loading" | "ready" | "fallback">(
     "loading",
   );
+  const syncMergeValues = useMemo(() => {
+    if (!expanded || instanceFieldValues === null) {
+      return null;
+    }
+    if (editorFieldImageValuesNeedMediaFetch(expanded, instanceFieldValues)) {
+      return null;
+    }
+    return instanceFieldValues;
+  }, [expanded, instanceFieldValues]);
+
+  const [asyncMergeValues, setAsyncMergeValues] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
+
+  useEffect(() => {
+    if (!expanded || instanceFieldValues === null) {
+      setAsyncMergeValues(null);
+      return;
+    }
+    if (!editorFieldImageValuesNeedMediaFetch(expanded, instanceFieldValues)) {
+      setAsyncMergeValues(null);
+      return;
+    }
+    let cancelled = false;
+    setAsyncMergeValues(null);
+    void resolveEditorFieldImageValuesForCanvas(
+      expanded,
+      instanceFieldValues,
+    ).then((resolved) => {
+      if (!cancelled) {
+        setAsyncMergeValues(resolved);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [expanded, instanceFieldValues]);
+
+  const valuesForMerge =
+    instanceFieldValues === null ? null : (syncMergeValues ?? asyncMergeValues);
 
   useEffect(() => {
     if (!componentKey) {
@@ -160,9 +194,17 @@ export function LibraryCompositionCanvasPreview({
     if (phase !== "ready" || !expanded) {
       return null;
     }
+    if (instanceFieldValues !== null && valuesForMerge === null) {
+      return null;
+    }
     try {
+      const toMerge = instanceFieldValues === null ? null : valuesForMerge;
+      const composition =
+        toMerge === null
+          ? expanded
+          : mergeEditorFieldValuesIntoComposition(expanded, toMerge);
       return renderComposition(
-        expanded,
+        composition,
         defaultPrimitiveRegistry,
         tokenMeta,
         stylePreviewFlattenToBreakpoint !== undefined
@@ -174,9 +216,22 @@ export function LibraryCompositionCanvasPreview({
     } catch {
       return null;
     }
-  }, [expanded, phase, stylePreviewFlattenToBreakpoint, tokenMeta]);
+  }, [
+    expanded,
+    instanceFieldValues,
+    phase,
+    stylePreviewFlattenToBreakpoint,
+    tokenMeta,
+    valuesForMerge,
+  ]);
 
-  if (phase === "loading") {
+  if (
+    phase === "loading" ||
+    (phase === "ready" &&
+      expanded &&
+      instanceFieldValues !== null &&
+      valuesForMerge === null)
+  ) {
     return (
       <LibraryCompositionPreviewSkeleton className={className} style={style} />
     );

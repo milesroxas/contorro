@@ -1,10 +1,6 @@
 "use client";
 
 import {
-  studioNewCompositionSessionId,
-  studioRowIdForComponent,
-} from "@repo/domains-composition";
-import {
   IconClock,
   IconExternalLink,
   IconLayout,
@@ -49,7 +45,12 @@ import { DashboardResourceName } from "./DashboardResourceName.js";
 import { COMPONENTS_SLUG, PAGE_COMPOSITIONS_SLUG } from "./hub/constants.js";
 import { formatUpdatedAt } from "./hub/formatters.js";
 import { useStudioDocumentTheme } from "./hub/use-studio-document-theme.js";
-import { adminCollectionsIndexHref } from "./lib/admin-hrefs.js";
+import {
+  studioHrefForComponentDocument,
+  studioHrefForComposition,
+  studioHrefForNewSession,
+  studioHrefForScreen,
+} from "./studio-navigation.js";
 
 type PageTemplateRow = {
   id: string | number;
@@ -337,11 +338,9 @@ function ResourceListCard({
   );
 }
 
-export type StudioDashboardProps = {
-  adminRoute: string;
-};
+export type StudioDashboardProps = Record<string, never>;
 
-export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
+export default function StudioDashboard() {
   const router = useRouter();
   const { setTheme, theme } = useStudioDocumentTheme();
 
@@ -419,9 +418,7 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
 
   const openNewStudioSession = useCallback(
     (kind: "template" | "component") => {
-      const tempId = studioNewCompositionSessionId(kind);
-      const studioHref = `/studio?composition=${encodeURIComponent(tempId)}`;
-      router.push(studioHref);
+      router.push(studioHrefForNewSession(kind));
     },
     [router],
   );
@@ -505,15 +502,9 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
     };
   }, [fetchDashboardData]);
 
-  const templateCollectionHref = useMemo(
-    () => adminCollectionsIndexHref(adminRoute, PAGE_COMPOSITIONS_SLUG),
-    [adminRoute],
-  );
-  const componentCollectionHref = useMemo(
-    () => adminCollectionsIndexHref(adminRoute, COMPONENTS_SLUG),
-    [adminRoute],
-  );
-  const designSystemHref = "/studio?screen=design-system";
+  const templateCollectionHref = studioHrefForScreen("templates");
+  const componentCollectionHref = studioHrefForScreen("components");
+  const designSystemHref = studioHrefForScreen("design-system");
 
   const templateRows = useMemo<ResourceListRow[]>(() => {
     const docs = templateDocs ?? [];
@@ -525,7 +516,7 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
         .join(" · ");
       return {
         _status: doc._status,
-        studioHref: `/studio?composition=${encodeURIComponent(id)}`,
+        studioHref: studioHrefForComposition(id),
         id,
         meta,
         resourceType: "Template",
@@ -551,7 +542,7 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
         .join(" · ");
       return {
         _status: doc._status,
-        studioHref: `/studio?composition=${encodeURIComponent(studioRowIdForComponent(id))}`,
+        studioHref: studioHrefForComponentDocument(id),
         id,
         meta,
         resourceType: "Component",
@@ -642,6 +633,7 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
       componentCollectionHref,
       createComponentAndOpenStudio,
       createTemplateAndOpenStudio,
+      designSystemHref,
       templateCollectionHref,
     ],
   );
@@ -670,9 +662,6 @@ export default function StudioDashboard({ adminRoute }: StudioDashboardProps) {
     <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto px-4 py-4 md:px-6 md:py-5 xl:px-8 lg:overflow-hidden">
       <header className="shrink-0 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
-          <p className="text-xs font-medium tracking-[0.12em] text-muted-foreground uppercase">
-            Workspace
-          </p>
           <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
             Studio
           </h1>

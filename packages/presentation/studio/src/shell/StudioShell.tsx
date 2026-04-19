@@ -1,25 +1,55 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Suspense, useMemo } from "react";
+import { type ReactNode, Suspense, useMemo } from "react";
 
 import { StudioApp } from "../app/StudioApp.js";
 import { DesignSystemEditor } from "../features/design-system/DesignSystemEditor.js";
+import { cn } from "../lib/cn.js";
 import { createFetchStudioAuthoringClient } from "../lib/fetch-studio-authoring-client.js";
-import { COMPONENTS_SLUG } from "./hub/constants.js";
 import { StudioChromeThemeHtmlSync } from "./hub/StudioChromeThemeHtmlSync.js";
-import { adminCollectionsIndexHref } from "./lib/admin-hrefs.js";
+import StudioCollectionView from "./StudioCollectionView.js";
 import StudioDashboard from "./StudioDashboard.js";
+import { StudioPrimaryNav } from "./StudioPrimaryNav.js";
+import {
+  resolveStudioShellScreen,
+  type StudioTopLevelScreen,
+  studioHrefForScreen,
+  studioNavScreenForEditorComposition,
+} from "./studio-navigation.js";
 
 export type StudioShellProps = {
-  adminRoute: string;
   userRole: string;
 };
 
-function StudioShellInner({ adminRoute, userRole }: StudioShellProps) {
-  const studioDashboardHref = "/studio";
-  const componentsHref = adminCollectionsIndexHref(adminRoute, COMPONENTS_SLUG);
-  const designSystemHref = "/studio?screen=design-system";
+function StudioShellFrame({
+  activeScreen,
+  hideNavUntilDesktop = false,
+  children,
+}: {
+  activeScreen: StudioTopLevelScreen | null;
+  hideNavUntilDesktop?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
+      <div
+        className={cn(
+          "shrink-0 border-b border-border/70 bg-muted/20 px-4 py-2 dark:bg-muted/10",
+          hideNavUntilDesktop && "hidden lg:block",
+        )}
+      >
+        <StudioPrimaryNav activeScreen={activeScreen} />
+      </div>
+      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function StudioShellInner({ userRole }: StudioShellProps) {
+  const componentsHref = studioHrefForScreen("components");
   const authoringClient = useMemo(
     () =>
       createFetchStudioAuthoringClient({
@@ -32,8 +62,7 @@ function StudioShellInner({ adminRoute, userRole }: StudioShellProps) {
   );
 
   const sp = useSearchParams();
-  const compositionId = sp.get("composition") ?? "";
-  const screen = sp.get("screen") ?? "";
+  const route = resolveStudioShellScreen(sp);
 
   if (userRole === "contentEditor") {
     return (
@@ -48,41 +77,56 @@ function StudioShellInner({ adminRoute, userRole }: StudioShellProps) {
   }
 
   const canAccessDesignSystem = userRole === "admin" || userRole === "designer";
+  const activeNavScreen =
+    route.screen === "editor" && route.compositionId
+      ? studioNavScreenForEditorComposition(route.compositionId)
+      : route.screen === "editor"
+        ? null
+        : route.screen;
 
-  if (screen === "design-system") {
+  if (route.screen === "design-system") {
     return (
-      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
+      <StudioShellFrame activeScreen={activeNavScreen}>
         <DesignSystemEditor
           authoringClient={authoringClient}
           canAccess={canAccessDesignSystem}
         />
-      </div>
+      </StudioShellFrame>
     );
   }
 
-  if (!compositionId) {
-    return <StudioDashboard adminRoute={adminRoute} />;
+  if (route.screen === "templates" || route.screen === "components") {
+    return (
+      <StudioShellFrame activeScreen={activeNavScreen}>
+        <StudioCollectionView screen={route.screen} />
+      </StudioShellFrame>
+    );
+  }
+
+  if (route.screen !== "editor" || !route.compositionId) {
+    return (
+      <StudioShellFrame activeScreen={activeNavScreen}>
+        <StudioDashboard />
+      </StudioShellFrame>
+    );
   }
 
   return (
-    <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
+    <StudioShellFrame activeScreen={activeNavScreen} hideNavUntilDesktop>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <StudioApp
-          adminHref={adminRoute}
           authoringClient={authoringClient}
           canEditName
-          compositionId={compositionId}
+          compositionId={route.compositionId}
           componentsHref={componentsHref}
-          dashboardHref={studioDashboardHref}
-          designSystemHref={designSystemHref}
         />
       </div>
-    </div>
+    </StudioShellFrame>
   );
 }
 
 /** Studio route shell: hub, design system screen, and composition editor. */
-export function StudioShell({ adminRoute, userRole }: StudioShellProps) {
+export function StudioShell({ userRole }: StudioShellProps) {
   return (
     <div className="flex min-h-dvh w-full min-w-0 flex-1 flex-col overflow-y-auto bg-background text-foreground lg:h-dvh lg:max-h-dvh lg:overflow-hidden">
       <StudioChromeThemeHtmlSync />
@@ -94,7 +138,7 @@ export function StudioShell({ adminRoute, userRole }: StudioShellProps) {
             </div>
           }
         >
-          <StudioShellInner adminRoute={adminRoute} userRole={userRole} />
+          <StudioShellInner userRole={userRole} />
         </Suspense>
       </div>
     </div>

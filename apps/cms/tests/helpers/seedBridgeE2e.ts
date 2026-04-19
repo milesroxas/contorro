@@ -1,52 +1,12 @@
+import {
+  headlineCardComposition,
+  headlineCardEditorFields,
+} from "../../src/seeds/seed-content-fixtures.js";
 import { getTestPayload } from "./getTestPayload.js";
 
 /** Stable slugs / keys for `bridge-designer-public.e2e.spec.ts`. */
 export const BRIDGE_E2E_PAGE_SLUG = "e2e-bridge-public";
 export const BRIDGE_E2E_COMPONENT_KEY = "e2e-bridge-card";
-
-const cardEditorFieldsManifest = {
-  editorFields: [
-    {
-      name: "headline",
-      type: "text" as const,
-      required: true,
-      label: "Headline",
-    },
-  ],
-};
-
-const cardComposition = {
-  rootId: "card-root",
-  nodes: {
-    "card-root": {
-      id: "card-root",
-      kind: "primitive" as const,
-      definitionKey: "primitive.box",
-      parentId: null,
-      childIds: ["card-text"],
-      propValues: { tag: "div" },
-    },
-    "card-text": {
-      id: "card-text",
-      kind: "text" as const,
-      definitionKey: "primitive.text",
-      parentId: "card-root",
-      childIds: [],
-      propValues: { content: "" },
-      contentBinding: {
-        source: "editor" as const,
-        key: "headline",
-        editorField: {
-          name: "headline",
-          type: "text" as const,
-          required: true,
-          label: "Headline",
-        },
-      },
-    },
-  },
-  styleBindings: {},
-};
 
 /**
  * Seeds a published page whose only body is a designer `content` array row with editor-field
@@ -72,8 +32,8 @@ export async function seedBridgePublicPage(): Promise<void> {
     data: {
       displayName: "E2E bridge card",
       propContract: { fields: {} },
-      editorFields: cardEditorFieldsManifest,
-      composition: cardComposition,
+      editorFields: headlineCardEditorFields,
+      composition: headlineCardComposition,
     },
     overrideAccess: true,
   });

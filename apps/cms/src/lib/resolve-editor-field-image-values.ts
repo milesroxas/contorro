@@ -1,23 +1,6 @@
 import type { EditorFieldSpec } from "@repo/contracts-zod";
+import { parsePayloadMediaRefId } from "@repo/infrastructure-payload-media-client";
 import type { Payload } from "payload";
-
-function parseMediaIdFromRaw(raw: unknown): number | undefined {
-  if (typeof raw === "number") {
-    return raw;
-  }
-  if (typeof raw === "string" && /^\d+$/.test(raw)) {
-    return Number.parseInt(raw, 10);
-  }
-  if (
-    raw &&
-    typeof raw === "object" &&
-    "id" in raw &&
-    typeof (raw as { id: unknown }).id === "number"
-  ) {
-    return (raw as { id: number }).id;
-  }
-  return undefined;
-}
 
 async function mediaUrlForId(payload: Payload, mid: number): Promise<string> {
   try {
@@ -54,8 +37,8 @@ export async function resolveImageEditorFieldValuesForRender(
     if (field.type !== "image") {
       continue;
     }
-    const mid = parseMediaIdFromRaw(rawValues[field.name]);
-    if (mid === undefined) {
+    const mid = parsePayloadMediaRefId(rawValues[field.name]);
+    if (mid === null) {
       continue;
     }
     resolved[field.name] = await mediaUrlForId(payload, mid);

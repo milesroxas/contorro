@@ -20,6 +20,7 @@
     { "path": "./packages/infrastructure/blob-storage" },
     { "path": "./packages/infrastructure/event-bus" },
     { "path": "./packages/infrastructure/payload-config" },
+    { "path": "./packages/infrastructure/payload-media-client" },
     { "path": "./packages/infrastructure/telemetry" },
     { "path": "./packages/presentation/shared" },
     { "path": "./packages/presentation/admin-extensions" },

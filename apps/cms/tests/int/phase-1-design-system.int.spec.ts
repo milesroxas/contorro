@@ -5,9 +5,10 @@ import {
 import { compileTokenSet } from "@repo/config-tailwind";
 import { defaultInProcessEventBus } from "@repo/infrastructure-event-bus";
 import type { Payload } from "payload";
-import { APIError, getPayload } from "payload";
-import { beforeAll, describe, expect, it } from "vitest";
-import config from "@/payload.config";
+import { APIError } from "payload";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+
+import { closeTestPayload, getTestPayload } from "../helpers/getTestPayload.js";
 
 describe("Phase 1 test gate — token compiler", () => {
   it("emits an @theme CSS block and token metadata for the resolver", () => {
@@ -42,8 +43,11 @@ describe("Phase 1 test gate — Postgres + Payload", () => {
   let payload: Payload;
 
   beforeAll(async () => {
-    const payloadConfig = await config;
-    payload = await getPayload({ config: payloadConfig });
+    payload = await getTestPayload();
+  });
+
+  afterAll(async () => {
+    await closeTestPayload();
   });
 
   it("rejects invalid token rows with APIError status 400", async () => {

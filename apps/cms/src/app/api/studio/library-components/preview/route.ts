@@ -1,9 +1,13 @@
 import type { PageComposition } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
-import { expandLibraryComponentNodes } from "@repo/domains-composition";
+import {
+  editorFieldSpecsFromComposition,
+  expandLibraryComponentNodes,
+} from "@repo/domains-composition";
 import type { Payload } from "payload";
 
 import { requireStudioDesigner } from "@/app/api/studio/_lib/studio-auth";
+import { resolveImageEditorFieldValuesForRender } from "@/lib/resolve-editor-field-image-values";
 
 async function loadComponentComposition(
   payload: Payload,
@@ -40,7 +44,7 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const key = url.searchParams.get("key")?.trim() ?? "";
-  if (key === "" || key.startsWith("primitive.")) {
+  if (key === "") {
     return Response.json(
       { error: { code: "VALIDATION_ERROR" as const } },
       { status: 400 },
@@ -55,8 +59,17 @@ export async function GET(request: Request) {
     );
   }
 
-  const expanded = await expandLibraryComponentNodes(base, (nestedKey) =>
-    loadComponentComposition(payload, user, nestedKey),
+  const expanded = await expandLibraryComponentNodes(
+    base,
+    (nestedKey) => loadComponentComposition(payload, user, nestedKey),
+    {
+      resolveEditorFieldImages: async (embedded, editorFieldValues) =>
+        resolveImageEditorFieldValuesForRender(
+          payload,
+          editorFieldSpecsFromComposition(embedded),
+          editorFieldValues,
+        ),
+    },
   );
 
   return Response.json({
