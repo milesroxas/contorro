@@ -26,39 +26,48 @@ function studioRelativeFetchUrl(path: string): string {
   return new URL(path, base).href;
 }
 
+const emptyLibraryComponentIndex = (): LibraryComponentIndexCache => ({
+  editStudioHrefByKey: {},
+  labels: {},
+});
+
 async function loadLibraryComponentIndex(): Promise<LibraryComponentIndexCache> {
-  const res = await fetch(
-    studioRelativeFetchUrl("/api/studio/library-components"),
-    {
-      credentials: "include",
-    },
-  );
-  if (!res.ok) {
-    return { editStudioHrefByKey: {}, labels: {} };
-  }
-  const json = (await res.json()) as { data?: { items?: ListItem[] } };
-  const items = json.data?.items ?? [];
-  const labels: Record<string, string> = {};
-  const editStudioHrefByKey: Record<string, string> = {};
-  for (const it of items) {
-    const k = typeof it.key === "string" ? it.key.trim() : "";
-    if (k === "") {
-      continue;
+  try {
+    const res = await fetch(
+      studioRelativeFetchUrl("/api/studio/library-components"),
+      {
+        credentials: "include",
+      },
+    );
+    if (!res.ok) {
+      return emptyLibraryComponentIndex();
     }
-    const label =
-      typeof it.displayName === "string" && it.displayName.trim() !== ""
-        ? it.displayName.trim()
-        : k;
-    labels[k] = label;
-    const studioCompositionId =
-      typeof it.studioCompositionId === "string"
-        ? it.studioCompositionId.trim()
-        : "";
-    if (studioCompositionId !== "") {
-      editStudioHrefByKey[k] = studioHrefForComposition(studioCompositionId);
+    const json = (await res.json()) as { data?: { items?: ListItem[] } };
+    const items = json.data?.items ?? [];
+    const labels: Record<string, string> = {};
+    const editStudioHrefByKey: Record<string, string> = {};
+    for (const it of items) {
+      const k = typeof it.key === "string" ? it.key.trim() : "";
+      if (k === "") {
+        continue;
+      }
+      const label =
+        typeof it.displayName === "string" && it.displayName.trim() !== ""
+          ? it.displayName.trim()
+          : k;
+      labels[k] = label;
+      const studioCompositionId =
+        typeof it.studioCompositionId === "string"
+          ? it.studioCompositionId.trim()
+          : "";
+      if (studioCompositionId !== "") {
+        editStudioHrefByKey[k] = studioHrefForComposition(studioCompositionId);
+      }
     }
+    return { editStudioHrefByKey, labels };
+  } catch {
+    return emptyLibraryComponentIndex();
   }
-  return { editStudioHrefByKey, labels };
 }
 
 export function useLibraryComponentIndex(): LibraryComponentIndexCache {
