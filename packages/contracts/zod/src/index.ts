@@ -1,4 +1,12 @@
 export {
+  BLOCK_CATALOG,
+  BLOCK_FIELD_BINDABLE_DEFINITION_KEYS,
+  type BlockCatalogEntry,
+  type BlockFieldSpec,
+  type BlockFieldType,
+  blockCatalogEntry,
+} from "./block-catalog.js";
+export {
   type CompositionNode,
   CompositionNodeSchema,
   type ContentBinding,

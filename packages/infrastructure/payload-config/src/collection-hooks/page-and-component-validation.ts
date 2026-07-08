@@ -1,14 +1,13 @@
 import {
+  blockCatalogEntry,
+  type PageComposition,
   PageCompositionSchema,
-  PropContractSchema,
-  parseEditorFieldsContract,
 } from "@repo/contracts-zod";
 import {
-  editorFieldsContractFromComposition,
+  defaultEmptyPageComposition,
+  defaultPageTemplateComposition,
   mergePageContentSlotsToSlotOrder,
   orderedLayoutSlotIds,
-  resolveEditorFieldsContractForDefinition,
-  validateEditorFieldValues,
   validatePageCompositionInvariants,
 } from "@repo/domains-composition";
 import type { CollectionBeforeValidateHook } from "payload";
@@ -18,6 +17,30 @@ import {
   ensureUniqueComponentKey,
   slugifyComponentKeyFromTitle,
 } from "../utils/component-key-from-title.js";
+
+/**
+ * Payload passes partial `data` on update; hooks validate against the merged
+ * view so unrelated field changes never false-negative content checks.
+ * @see https://payloadcms.com/docs/hooks/collections — beforeValidate `originalDoc`
+ */
+function mergedRowView(
+  next: Record<string, unknown>,
+  operation: "create" | "update" | "delete" | undefined,
+  originalDoc: unknown,
+): Record<string, unknown> {
+  return operation === "update" &&
+    originalDoc !== undefined &&
+    originalDoc !== null &&
+    typeof originalDoc === "object"
+    ? { ...(originalDoc as Record<string, unknown>), ...next }
+    : next;
+}
+
+function trimStringField(next: Record<string, unknown>, key: string): void {
+  if (typeof next[key] === "string") {
+    next[key] = (next[key] as string).trim();
+  }
+}
 
 function relationshipId(ref: unknown): number | undefined {
   if (typeof ref === "number" && Number.isFinite(ref)) {
@@ -36,18 +59,26 @@ function relationshipId(ref: unknown): number | undefined {
 
 const DEFAULT_SLOT_ORDER = ["main"] as const;
 
+function parseCompositionOrThrow(raw: unknown): PageComposition {
+  const parsed = PageCompositionSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw new APIError("Invalid page composition shape", 400);
+  }
+  const inv = validatePageCompositionInvariants(parsed.data);
+  if (!inv.ok) {
+    throw new APIError(inv.error, 400);
+  }
+  return parsed.data;
+}
+
 function normalizePageCompositionDraft(
   data: object,
   operation: "create" | "update" | "delete" | undefined,
   originalDoc: unknown,
 ): Record<string, unknown> {
   const next = { ...(data as Record<string, unknown>) };
-  if (typeof next.title === "string") {
-    next.title = next.title.trim();
-  }
-  if (typeof next.slug === "string") {
-    next.slug = next.slug.trim();
-  }
+  trimStringField(next, "title");
+  trimStringField(next, "slug");
   if (
     (next.slug === undefined || next.slug === null || next.slug === "") &&
     operation === "update" &&
@@ -61,32 +92,21 @@ function normalizePageCompositionDraft(
     next.slug = `template-${crypto.randomUUID().slice(0, 12)}`;
   }
 
-  const merged: Record<string, unknown> =
-    operation === "update" &&
-    originalDoc !== undefined &&
-    originalDoc !== null &&
-    typeof originalDoc === "object"
-      ? { ...(originalDoc as Record<string, unknown>), ...next }
-      : next;
+  const merged = mergedRowView(next, operation, originalDoc);
 
-  const raw = (merged as { composition?: unknown }).composition;
+  let raw = (merged as { composition?: unknown }).composition;
   if (raw === undefined || raw === null) {
-    throw new APIError("Composition is required", 400);
-  }
-
-  const parsed = PageCompositionSchema.safeParse(raw);
-  if (!parsed.success) {
-    throw new APIError("Invalid page composition shape", 400);
-  }
-
-  const inv = validatePageCompositionInvariants(parsed.data);
-  if (!inv.ok) {
-    throw new APIError(inv.error, 400);
+    if (operation !== "create") {
+      throw new APIError("Composition is required", 400);
+    }
+    // Admin “Create New” sends no composition; default a valid shell that
+    // opens in Studio instead of rejecting the create.
+    raw = defaultPageTemplateComposition();
   }
 
   return {
     ...next,
-    composition: parsed.data,
+    composition: parseCompositionOrThrow(raw),
   };
 }
 
@@ -105,169 +125,87 @@ type PayloadReq = Parameters<CollectionBeforeValidateHook>[0] extends {
   ? R
   : never;
 
+/**
+ * Slot order for the page’s selected template.
+ *
+ * - `{ order }` — template resolved (or no template → default order).
+ * - `null` — the template exists but could not be read/parsed; the caller must
+ *   leave `contentSlots` untouched instead of rewriting rows (audit §1.6).
+ */
 async function layoutSlotOrderForPageRelationship(
   req: PayloadReq,
   pageComposition: unknown,
-): Promise<string[]> {
+): Promise<{ order: string[] } | null> {
   const defaultOrder = [...DEFAULT_SLOT_ORDER];
   const hasComposition =
     pageComposition !== undefined &&
     pageComposition !== null &&
     pageComposition !== "";
   if (!hasComposition) {
-    return defaultOrder;
+    return { order: defaultOrder };
   }
   const pcId = relationshipId(pageComposition);
   if (pcId === undefined) {
-    return defaultOrder;
+    return null;
   }
-  const pDoc = await req.payload.findByID({
-    collection: "page-compositions",
-    id: pcId,
-    depth: 0,
-    user: req.user,
-    overrideAccess: !req.user,
-  });
-  const rawComp = pDoc?.composition;
+  let rawComp: unknown;
+  try {
+    const pDoc = await req.payload.findByID({
+      collection: "page-compositions",
+      id: pcId,
+      depth: 0,
+      req,
+      user: req.user,
+      overrideAccess: !req.user,
+    });
+    rawComp = pDoc?.composition;
+  } catch {
+    return null;
+  }
   if (rawComp === undefined || rawComp === null) {
-    return defaultOrder;
+    return null;
   }
   const parsed = PageCompositionSchema.safeParse(rawComp);
   if (!parsed.success) {
-    return defaultOrder;
+    return null;
   }
   const slots = orderedLayoutSlotIds(parsed.data);
-  return slots.length > 0 ? slots : defaultOrder;
+  return { order: slots.length > 0 ? slots : defaultOrder };
 }
 
-async function validateDesignerBlockEditorValues(
-  req: PayloadReq,
-  block: { componentDefinition?: unknown; editorFieldValues?: unknown },
-): Promise<void> {
-  const defRef = block.componentDefinition;
-  const defId =
-    typeof defRef === "object" &&
-    defRef !== null &&
-    "id" in defRef &&
-    typeof (defRef as { id: unknown }).id === "number"
-      ? (defRef as { id: number }).id
-      : typeof defRef === "number"
-        ? defRef
-        : undefined;
-  if (defId === undefined) {
-    throw new APIError("Designer block: missing component definition.", 400);
-  }
-
-  const doc = await req.payload.findByID({
-    collection: "components",
-    id: defId,
-    depth: 0,
-    user: req.user,
-    overrideAccess: !req.user,
-  });
-  if (!doc) {
-    throw new APIError("Designer block: definition not found.", 400);
-  }
-  if (doc.composition === undefined || doc.composition === null) {
-    throw new APIError(
-      "Designer block: definition has no template composition (publish from the builder or set composition on the definition).",
-      400,
-    );
-  }
-
-  const resolved = resolveEditorFieldsContractForDefinition({
-    composition: doc.composition,
-    editorFields: (doc as { editorFields?: unknown }).editorFields,
-  });
-  if (!resolved.ok) {
-    throw new APIError("Invalid editor fields manifest on definition.", 400);
-  }
-  const vs = validateEditorFieldValues(
-    resolved.contract,
-    block.editorFieldValues as Record<string, unknown> | undefined,
+function contentSlotsHaveBlocks(contentSlots: unknown): boolean {
+  return (
+    Array.isArray(contentSlots) &&
+    contentSlots.some(
+      (row) =>
+        row !== null &&
+        typeof row === "object" &&
+        Array.isArray((row as { blocks?: unknown }).blocks) &&
+        (row as { blocks: unknown[] }).blocks.length > 0,
+    )
   );
-  if (!vs.ok) {
-    throw new APIError(vs.error, 400);
-  }
 }
 
-async function validateTemplateEditorFieldsAgainstComposition(
-  req: PayloadReq,
-  pageComposition: unknown,
-  templateEditorFields: Record<string, unknown> | undefined,
-): Promise<void> {
-  const pcId = relationshipId(pageComposition);
-  if (pcId === undefined) {
-    return;
-  }
-  const pDoc = await req.payload.findByID({
-    collection: "page-compositions",
-    id: pcId,
-    depth: 0,
-    user: req.user,
-    overrideAccess: !req.user,
-  });
-  if (!pDoc?.composition) {
-    return;
-  }
-  const pComp = PageCompositionSchema.safeParse(pDoc.composition);
-  if (!pComp.success) {
-    return;
-  }
-  const contract = editorFieldsContractFromComposition(pComp.data);
-  if (contract.editorFields.length === 0) {
-    return;
-  }
-  const vs = validateEditorFieldValues(contract, templateEditorFields);
-  if (!vs.ok) {
-    throw new APIError(vs.error, 400);
-  }
-}
-
-async function validateAndNormalizePageContent(
-  req: PayloadReq,
+/**
+ * Publish-time page content rule. Block field values (required fields
+ * included) are native Payload fields now — Payload skips them on draft save
+ * and enforces them on publish. Only the page-level “has any content” rule
+ * stays, publish-time only.
+ */
+function assertPublishablePageContent(
   base: Record<string, unknown>,
-): Promise<{
-  normalizedSlots: ReturnType<typeof mergePageContentSlotsToSlotOrder>;
-}> {
-  const pc = base.pageComposition;
-  const hasComposition = pc !== undefined && pc !== null && pc !== "";
-
-  const slotOrder = await layoutSlotOrderForPageRelationship(req, pc);
-
-  const normalizedSlots = mergePageContentSlotsToSlotOrder(
-    slotOrder,
-    base.contentSlots,
-  );
-
-  const hasBlocks = normalizedSlots.some(
-    (row) => Array.isArray(row.blocks) && row.blocks.length > 0,
-  );
-
-  if (!hasBlocks && !hasComposition) {
+  hasComposition: boolean,
+  slots: unknown,
+): void {
+  if (base._status !== "published") {
+    return;
+  }
+  if (!hasComposition && !contentSlotsHaveBlocks(slots)) {
     throw new APIError(
-      "Set either a page template or at least one designer block.",
+      "Set either a page template or at least one content block before publishing.",
       400,
     );
   }
-
-  if (hasBlocks) {
-    for (const slot of normalizedSlots) {
-      for (const block of slot.blocks) {
-        await validateDesignerBlockEditorValues(req, block);
-      }
-    }
-  }
-
-  if (hasComposition) {
-    await validateTemplateEditorFieldsAgainstComposition(
-      req,
-      pc,
-      base.templateEditorFields as Record<string, unknown> | undefined,
-    );
-  }
-
-  return { normalizedSlots };
 }
 
 export function createPagesBeforeValidateHandler(): CollectionBeforeValidateHook {
@@ -276,31 +214,31 @@ export function createPagesBeforeValidateHandler(): CollectionBeforeValidateHook
       return data;
     }
     const next = { ...data } as Record<string, unknown>;
-    if (typeof next.slug === "string") {
-      next.slug = next.slug.trim();
-    }
-    if (typeof next.title === "string") {
-      next.title = next.title.trim();
-    }
+    trimStringField(next, "slug");
+    trimStringField(next, "title");
 
-    /**
-     * Payload passes partial `data` on update; validate against merged view so we do not
-     * false-negative “template vs blocks” or editor-field checks when unrelated fields change.
-     * @see https://payloadcms.com/docs/hooks/collections — beforeValidate `originalDoc`
-     */
-    const base: Record<string, unknown> =
-      operation === "update" &&
-      originalDoc !== undefined &&
-      originalDoc !== null &&
-      typeof originalDoc === "object"
-        ? { ...(originalDoc as Record<string, unknown>), ...next }
-        : next;
+    const base = mergedRowView(next, operation, originalDoc);
 
-    const { normalizedSlots } = await validateAndNormalizePageContent(
-      req,
+    const pc = base.pageComposition;
+    const hasComposition = pc !== undefined && pc !== null && pc !== "";
+
+    const resolved = await layoutSlotOrderForPageRelationship(req, pc);
+    if (resolved !== null) {
+      // Align rows to the template’s slot order; blocks in removed regions are
+      // preserved in the first region (never dropped — audit §1.6).
+      next.contentSlots = mergePageContentSlotsToSlotOrder(
+        resolved.order,
+        base.contentSlots,
+      );
+    }
+    // resolved === null → template unreadable: leave contentSlots untouched.
+
+    assertPublishablePageContent(
       base,
+      hasComposition,
+      resolved !== null ? next.contentSlots : base.contentSlots,
     );
-    next.contentSlots = normalizedSlots;
+
     return next;
   };
 }
@@ -330,59 +268,87 @@ async function assignComponentDocumentKey(
     next.key = explicit;
     return;
   }
+  if (explicit !== "") {
+    next.key = explicit;
+    return;
+  }
   const title = typeof next.displayName === "string" ? next.displayName : "";
   if (title === "") {
     throw new APIError("Title is required", 400);
   }
   const base = slugifyComponentKeyFromTitle(title);
-  next.key = await ensureUniqueComponentKey(req.payload, base);
+  next.key = await ensureUniqueComponentKey(req, base);
 }
 
-function validateComponentPayloadShape(
-  next: Record<string, unknown>,
-  merged: Record<string, unknown>,
-): Record<string, unknown> {
-  const row = merged as {
-    propContract?: unknown;
-    editorFields?: unknown;
-    composition?: unknown;
-  };
-
-  const p = PropContractSchema.safeParse(row.propContract);
-  if (!p.success) {
-    throw new APIError("Invalid propContract", 400);
-  }
-
-  const hasComposition =
-    row.composition !== undefined && row.composition !== null;
-
-  if (hasComposition) {
-    const comp = PageCompositionSchema.safeParse(row.composition);
-    if (!comp.success) {
-      throw new APIError("Invalid composition template", 400);
+/**
+ * Publish gate: a design that declares a `blockType` must bind exactly the
+ * catalog contract — every required field bound once, no unknown or duplicate
+ * binding names. Empty `blockType` = design-only, bindings not validated.
+ */
+function editorBindingCounts(
+  composition: PageComposition,
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const node of Object.values(composition.nodes)) {
+    const cb = node.contentBinding;
+    if (cb?.source !== "editor") {
+      continue;
     }
-    const inv = validatePageCompositionInvariants(comp.data);
-    if (!inv.ok) {
-      throw new APIError(inv.error, 400);
+    const name = cb.editorField?.name ?? cb.key;
+    counts.set(name, (counts.get(name) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function blockBindingProblems(
+  blockType: string,
+  entry: NonNullable<ReturnType<typeof blockCatalogEntry>>,
+  bindingCounts: Map<string, number>,
+): string[] {
+  const problems: string[] = [];
+  const catalogNames = new Set(entry.fields.map((f) => f.name));
+  for (const [name, count] of bindingCounts) {
+    if (!catalogNames.has(name)) {
+      problems.push(
+        `binding "${name}" is not a field of block type "${blockType}"`,
+      );
+    } else if (count > 1) {
+      problems.push(`field "${name}" is bound ${count} times (max once)`);
     }
-    return {
-      ...next,
-      propContract: p.data,
-      composition: comp.data,
-      editorFields: editorFieldsContractFromComposition(comp.data),
-    };
   }
-
-  const s = parseEditorFieldsContract(row.editorFields);
-  if (!s.ok) {
-    throw new APIError("Invalid editorFields", 400);
+  for (const field of entry.fields) {
+    if (field.required && !bindingCounts.has(field.name)) {
+      problems.push(`required field "${field.name}" is not bound`);
+    }
   }
+  return problems;
+}
 
-  return {
-    ...next,
-    propContract: p.data,
-    editorFields: s.data,
-  };
+function validatePublishedBlockDesignBindings(
+  blockType: string,
+  composition: PageComposition,
+): void {
+  const entry = blockCatalogEntry(blockType);
+  if (!entry) {
+    throw new APIError(`Unknown block type "${blockType}"`, 400);
+  }
+  const problems = blockBindingProblems(
+    blockType,
+    entry,
+    editorBindingCounts(composition),
+  );
+  if (problems.length > 0) {
+    throw new APIError(
+      `Design does not satisfy block type "${blockType}": ${problems.join("; ")}.`,
+      400,
+    );
+  }
+}
+
+function normalizedBlockType(merged: Record<string, unknown>): string | null {
+  return typeof merged.blockType === "string" && merged.blockType.trim() !== ""
+    ? merged.blockType.trim()
+    : null;
 }
 
 export function createComponentsBeforeValidateHandler(): CollectionBeforeValidateHook {
@@ -392,20 +358,29 @@ export function createComponentsBeforeValidateHandler(): CollectionBeforeValidat
     }
 
     const next = { ...(data as Record<string, unknown>) };
-    if (typeof next.displayName === "string") {
-      next.displayName = next.displayName.trim();
-    }
+    trimStringField(next, "displayName");
 
     await assignComponentDocumentKey(next, operation, originalDoc, req);
 
-    const merged: Record<string, unknown> =
-      operation === "update" &&
-      originalDoc !== undefined &&
-      originalDoc !== null &&
-      typeof originalDoc === "object"
-        ? { ...(originalDoc as Record<string, unknown>), ...next }
-        : next;
+    const merged = mergedRowView(next, operation, originalDoc);
 
-    return validateComponentPayloadShape(next, merged);
+    // Admin “Create New” sends no composition; default a valid empty shell
+    // that opens in Studio instead of rejecting the create.
+    const rawComposition =
+      merged.composition === undefined || merged.composition === null
+        ? defaultEmptyPageComposition()
+        : merged.composition;
+
+    const composition = parseCompositionOrThrow(rawComposition);
+
+    const blockType = normalizedBlockType(merged);
+    if (merged._status === "published" && blockType !== null) {
+      validatePublishedBlockDesignBindings(blockType, composition);
+    }
+
+    return {
+      ...next,
+      composition,
+    };
   };
 }

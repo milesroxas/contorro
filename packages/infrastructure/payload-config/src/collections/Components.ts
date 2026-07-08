@@ -1,10 +1,10 @@
+import { BLOCK_CATALOG } from "@repo/contracts-zod";
 import type { CollectionConfig } from "payload";
 import {
   componentAuthoringAccess,
   publishedOrAuthenticatedReadAccess,
 } from "../access/rbac.js";
 import { createComponentsBeforeValidateHandler } from "../collection-hooks/page-and-component-validation.js";
-import { enrichComponentsEditorFieldsAfterRead } from "../hooks/enrich-components-editor-fields.js";
 
 const beforeValidate = createComponentsBeforeValidateHandler();
 
@@ -22,9 +22,9 @@ export const Components: CollectionConfig = {
   admin: {
     group: "Layout & library",
     useAsTitle: "displayName",
-    defaultColumns: ["displayName", "key", "_status", "updatedAt"],
+    defaultColumns: ["displayName", "key", "blockType", "_status", "updatedAt"],
     description:
-      "Reusable blocks for your library and pages. Author in the builder; publish when ready.",
+      "Block designs and library parts. Author in the builder; set a block type to make a design selectable on pages.",
     listSearchableFields: ["displayName", "key"],
   },
   access: {
@@ -53,19 +53,19 @@ export const Components: CollectionConfig = {
       },
     },
     {
-      name: "propContract",
-      type: "json",
-      required: true,
+      name: "blockType",
+      type: "select",
+      label: "Block type",
+      index: true,
+      options: BLOCK_CATALOG.map((entry) => ({
+        label: entry.label,
+        value: entry.slug,
+      })),
       admin: {
-        hidden: true,
-      },
-    },
-    {
-      name: "editorFields",
-      type: "json",
-      required: true,
-      admin: {
-        hidden: true,
+        position: "sidebar",
+        isClearable: true,
+        description:
+          "Content contract this design implements. Leave empty for a design-only library part.",
       },
     },
     {
@@ -102,6 +102,5 @@ export const Components: CollectionConfig = {
         return data;
       },
     ],
-    afterRead: [enrichComponentsEditorFieldsAfterRead],
   },
 };

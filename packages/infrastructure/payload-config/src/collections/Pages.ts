@@ -1,5 +1,6 @@
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import type { CollectionConfig } from "payload";
+import { blocksFromCatalog } from "../blocks-from-catalog.js";
 import { createPagesBeforeValidateHandler } from "../collection-hooks/page-and-component-validation.js";
 
 const pageMetadataLexical = lexicalEditor();
@@ -43,7 +44,7 @@ export const Pages: CollectionConfig = {
     useAsTitle: "title",
     defaultColumns: ["title", "slug", "_status", "updatedAt"],
     description:
-      "Site page: add a page template from the builder and/or place library blocks. Metadata fields in Page setup are for SEO and social metadata only—not page body content.",
+      "Site page: choose a page template and place typed content blocks in its layout regions. Metadata fields in Page setup are for SEO and social metadata only—not page body content.",
     preview: (doc) => previewUrlForDoc(doc),
   },
   access: {
@@ -115,7 +116,7 @@ export const Pages: CollectionConfig = {
         {
           label: "Content",
           description:
-            "Choose a page template, fill its CMS fields, and place blocks in layout regions.",
+            "Choose a page template, then place content blocks in its layout regions.",
           fields: [
             {
               name: "pageComposition",
@@ -124,28 +125,7 @@ export const Pages: CollectionConfig = {
               label: "Page template",
               admin: {
                 description:
-                  "Full-page layout from the builder. Layout slots (where components go) and props are authored there; CMS fields exposed on the template appear below.",
-              },
-            },
-            {
-              name: "templateEditorFields",
-              type: "json",
-              label: "Template CMS fields",
-              defaultValue: {},
-              admin: {
-                description:
-                  "Values for CMS-managed fields exposed on the page template (defined in the builder). Distinct from Blocks and from component props.",
-                condition: (data) => {
-                  const row = data as {
-                    pageComposition?: unknown;
-                    version?: { pageComposition?: unknown };
-                  };
-                  const p = row.pageComposition ?? row.version?.pageComposition;
-                  return p !== null && p !== undefined && p !== "";
-                },
-                components: {
-                  Field: "/components/admin/PageTemplateEditorFieldsField",
-                },
+                  "Full-page layout from the builder. Layout regions (where blocks go) are authored there.",
               },
             },
             {
@@ -163,7 +143,6 @@ export const Pages: CollectionConfig = {
                 initCollapsed: false,
                 isSortable: false,
                 components: {
-                  Field: "/components/admin/PageContentSlotsField",
                   RowLabel: "/components/admin/ContentSlotRowLabel",
                 },
               },
@@ -178,7 +157,7 @@ export const Pages: CollectionConfig = {
                 },
                 {
                   name: "blocks",
-                  type: "array",
+                  type: "blocks",
                   label: "Blocks",
                   labels: {
                     singular: "Block",
@@ -186,41 +165,8 @@ export const Pages: CollectionConfig = {
                   },
                   admin: {
                     initCollapsed: false,
-                    isSortable: true,
-                    components: {
-                      RowLabel: "/components/admin/BlocksRowLabel",
-                    },
                   },
-                  fields: [
-                    {
-                      name: "componentDefinition",
-                      type: "relationship",
-                      relationTo: "components",
-                      required: true,
-                      label: "Component",
-                      admin: {
-                        description:
-                          "Choose a published component from your library.",
-                      },
-                      filterOptions: () => ({
-                        _status: { equals: "published" },
-                      }),
-                    },
-                    {
-                      name: "editorFieldValues",
-                      type: "json",
-                      label: false,
-                      required: true,
-                      defaultValue: {},
-                      admin: {
-                        description:
-                          "CMS field values for this block (manifest from the component template).",
-                        components: {
-                          Field: "/components/admin/DesignerEditorFieldsField",
-                        },
-                      },
-                    },
-                  ],
+                  blocks: blocksFromCatalog(),
                 },
               ],
             },

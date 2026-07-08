@@ -1,5 +1,4 @@
-import type { Payload } from "payload";
-import { APIError } from "payload";
+import type { PayloadRequest } from "payload";
 
 export function slugifyComponentKeyFromTitle(title: string): string {
   const t = title.trim();
@@ -13,30 +12,27 @@ export function slugifyComponentKeyFromTitle(title: string): string {
   return slug || "component";
 }
 
+/**
+ * Allocates a component key from a slugified title. The unique index on
+ * `components.key` is the real guard: we do one best-effort read (inside the
+ * request transaction) for a friendly key, then fall back to a random suffix.
+ * A losing race surfaces as the unique-constraint validation error on insert
+ * instead of a TOCTOU scan loop.
+ */
 export async function ensureUniqueComponentKey(
-  payload: Payload,
+  req: PayloadRequest,
   base: string,
-  excludeId?: string | number,
 ): Promise<string> {
-  for (let n = 0; n < 64; n++) {
-    const candidate = n === 0 ? base : `${base}-${n + 1}`;
-    const found = await payload.find({
-      collection: "components",
-      where: {
-        and: [
-          { key: { equals: candidate } },
-          ...(excludeId !== undefined
-            ? [{ id: { not_equals: excludeId } }]
-            : []),
-        ],
-      },
-      limit: 1,
-      depth: 0,
-      overrideAccess: true,
-    });
-    if (found.docs.length === 0) {
-      return candidate;
-    }
+  const found = await req.payload.find({
+    collection: "components",
+    where: { key: { equals: base } },
+    limit: 1,
+    depth: 0,
+    req,
+    overrideAccess: true,
+  });
+  if (found.docs.length === 0) {
+    return base;
   }
-  throw new APIError("Could not allocate a unique component key", 500);
+  return `${base}-${crypto.randomUUID().slice(0, 8)}`;
 }

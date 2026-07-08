@@ -1,30 +1,29 @@
 "use client";
 
 import { useRowLabel } from "@payloadcms/ui";
+import { blockCatalogEntry } from "@repo/contracts-zod";
 
 type RowData = {
-  componentDefinition?:
-    | number
-    | { id?: number; displayName?: string }
-    | null
-    | undefined;
+  blockType?: string | null;
+  heading?: unknown;
 };
 
-/** Array row title: prefers populated `displayName`, otherwise the definition id. */
+/** Block row title: catalog label for the block type, plus the heading value when present. */
 export default function BlocksRowLabel() {
   const { data, rowNumber } = useRowLabel<RowData>();
-  const rel = data?.componentDefinition;
-  const label =
-    typeof rel === "object" &&
-    rel !== null &&
-    typeof rel.displayName === "string" &&
-    rel.displayName.length > 0
-      ? rel.displayName
-      : typeof rel === "number"
-        ? `Block #${rel}`
-        : typeof rel === "object" && rel !== null && typeof rel.id === "number"
-          ? `Block #${rel.id}`
-          : `Block ${String(rowNumber ?? "").padStart(2, "0")}`;
 
-  return <span>{label}</span>;
+  const slug = typeof data?.blockType === "string" ? data.blockType : "";
+  const entry = slug !== "" ? blockCatalogEntry(slug) : null;
+  const typeLabel =
+    entry?.label ??
+    (slug !== ""
+      ? slug
+      : `Block ${String((rowNumber ?? 0) + 1).padStart(2, "0")}`);
+
+  const heading =
+    typeof data?.heading === "string" && data.heading.trim() !== ""
+      ? data.heading.trim()
+      : null;
+
+  return <span>{heading ? `${typeLabel} — ${heading}` : typeLabel}</span>;
 }

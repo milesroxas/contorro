@@ -32,13 +32,17 @@ function normalizedBlocksFromRow(
 
 /**
  * Aligns page `contentSlots` rows to the template’s slot order. Merges blocks by `slotId`
- * (and strips legacy per-block `layoutSlotId`). Used by Payload `beforeValidate` and admin sync UI.
+ * (and strips legacy per-block `layoutSlotId`). Blocks in slots absent from the new order
+ * are never dropped: they are appended to the FIRST slot row (the renderer treats unknown
+ * slots as `main` anyway). Used by the Pages `beforeValidate` hook.
  */
 export function mergePageContentSlotsToSlotOrder(
   slotOrder: string[],
   rawSlots: unknown,
 ): { slotId: string; blocks: Record<string, unknown>[] }[] {
   const mergedBlocks = new Map<string, Record<string, unknown>[]>();
+  const orphanBlocks: Record<string, unknown>[] = [];
+  const known = new Set(slotOrder);
 
   if (Array.isArray(rawSlots)) {
     for (const row of rawSlots as ContentSlotRow[]) {
@@ -47,13 +51,20 @@ export function mergePageContentSlotsToSlotOrder(
       }
       const sid = trimSlotId(row.slotId);
       const chunk = normalizedBlocksFromRow(row.blocks);
-      const prev = mergedBlocks.get(sid) ?? [];
-      mergedBlocks.set(sid, [...prev, ...chunk]);
+      if (known.has(sid)) {
+        const prev = mergedBlocks.get(sid) ?? [];
+        mergedBlocks.set(sid, [...prev, ...chunk]);
+      } else {
+        orphanBlocks.push(...chunk);
+      }
     }
   }
 
-  return slotOrder.map((slotId) => ({
+  return slotOrder.map((slotId, index) => ({
     slotId,
-    blocks: mergedBlocks.get(slotId) ?? [],
+    blocks:
+      index === 0
+        ? [...(mergedBlocks.get(slotId) ?? []), ...orphanBlocks]
+        : (mergedBlocks.get(slotId) ?? []),
   }));
 }

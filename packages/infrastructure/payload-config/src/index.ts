@@ -3,6 +3,7 @@ export {
   roleFromRequest,
 } from "./access/jwt-user-role.js";
 export * from "./base-config.js";
+export * from "./blocks-from-catalog.js";
 export * from "./collections/index.js";
 export * from "./db.js";
 export * from "./globals/index.js";
