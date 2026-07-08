@@ -14,10 +14,10 @@ Contorro is multi-surface authoring:
 ## Layer rules (non-negotiable)
 
 - Domain rules live in `packages/domains/*` only.
-- Mutations must enter through `packages/application/*` commands/services.
-- Presentation packages **must not** import `packages/infrastructure/*`. Authoring UI (`@repo/presentation-studio`) depends on kernel, contracts, domains, and related presentation/runtime packages; **orchestration** (`@repo/application-studio`) runs in the **CMS app** route handlers, not inside the Studio package.
+- Mutations must enter through the studio command modules (`apps/cms/src/lib/studio-commands`).
+- Presentation packages **must not** import `packages/infrastructure/*`. Authoring UI (`@repo/presentation-studio`) depends on contracts, domains, and runtime packages; **orchestration** (`apps/cms/src/lib/studio-commands`) runs in the **CMS app** route handlers, not inside the Studio package.
 - Infrastructure implements ports/adapters and Payload config.
-- Kernel stays minimal (`Result`, errors, IDs, events). Keep runtime deps minimal.
+- Shared kernel utilities (`Result`, `ok`/`err`, `makeId`) live in `@repo/contracts-zod`. Keep runtime deps minimal.
 
 ## Source of truth by concern
 
@@ -79,7 +79,7 @@ This applies across **Studio** (`packages/presentation/studio`) and **CMS app UI
 
 - Lint/format: Biome only (`pnpm lint`, `pnpm format`; apply fixes with `pnpm lint:fix`).
 - Typecheck: `pnpm typecheck` (shortcut: `pnpm tc`).
-- Root dev: `pnpm dev` (CMS app + `@repo/presentation-studio` watch + `@repo/presentation-admin-extensions` watch + `@repo/infrastructure-payload-config` watch + gateway). Single-package dev: `pnpm dev:cms`, `pnpm dev:gw`, `pnpm dev:studio`.
+- Root dev: `pnpm dev` (CMS app + `@repo/presentation-studio` watch + `@repo/infrastructure-payload-config` watch). Single-package dev: `pnpm dev:cms`, `pnpm dev:studio`.
 - DB local: `pnpm db:up`.
 - Seeding: `pnpm seed`, `pnpm seed:design-system`; Payload CLI from root: `pnpm payload -- …`.
 - Command reference: `docs/app/README.md` (root commands table).
