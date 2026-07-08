@@ -8,7 +8,7 @@
     "check": "pnpm lint && pnpm typecheck && pnpm build && pnpm --filter @repo/cms exec payload migrate && pnpm test",
     "db:up": "docker compose up db -d",
     "db:reset": "docker compose down -v && docker compose up db -d",
-    "dev": "pnpm --filter @repo/presentation-studio dev & pnpm --filter @repo/presentation-admin-extensions dev & pnpm --filter @repo/infrastructure-payload-config dev & pnpm --filter @repo/cms dev",
+    "dev": "pnpm --filter @repo/presentation-studio dev & pnpm --filter @repo/infrastructure-payload-config dev & pnpm --filter @repo/cms dev",
     "dev:cms": "pnpm --filter @repo/cms dev",
     "dev:studio": "pnpm --filter @repo/presentation-studio dev",
     "e2e": "pnpm --filter @repo/cms run test:e2e",

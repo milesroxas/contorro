@@ -73,9 +73,6 @@ importers:
       '@repo/infrastructure-payload-config':
         specifier: workspace:*
         version: link:../../packages/infrastructure/payload-config
-      '@repo/presentation-admin-extensions':
-        specifier: workspace:*
-        version: link:../../packages/presentation/admin-extensions
       '@repo/presentation-studio':
         specifier: workspace:*
         version: link:../../packages/presentation/studio
@@ -277,25 +274,6 @@ importers:
       '@types/pg':
         specifier: ^8.20.0
         version: 8.20.0
-
-  packages/presentation/admin-extensions:
-    dependencies:
-      payload:
-        specifier: 3.83.0
-        version: 3.83.0(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6)
-      react:
-        specifier: 19.2.5
-        version: 19.2.5
-      react-dom:
-        specifier: 19.2.5
-        version: 19.2.5(react@19.2.5)
-    devDependencies:
-      '@types/react':
-        specifier: 19.2.14
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: 19.2.3
-        version: 19.2.3(@types/react@19.2.14)
 
   packages/presentation/studio:
     dependencies:

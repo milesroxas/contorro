@@ -18,7 +18,6 @@ const nextConfig: NextConfig = {
     "@repo/domains-composition",
     "@repo/domains-design-system",
     "@repo/infrastructure-payload-config",
-    "@repo/presentation-admin-extensions",
     "@repo/presentation-studio",
     "@repo/runtime-renderer",
   ],

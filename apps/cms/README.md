@@ -31,7 +31,7 @@ From repo root:
 2. `pnpm db:up`
 3. `pnpm dev`
 
-Root `pnpm dev` runs the CMS app, `@repo/presentation-studio` watch, `@repo/presentation-admin-extensions` watch, `@repo/infrastructure-payload-config` watch, and gateway.
+Root `pnpm dev` runs the CMS app, `@repo/presentation-studio` watch, and `@repo/infrastructure-payload-config` watch.
 
 ## Useful scripts
 

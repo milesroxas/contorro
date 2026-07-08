@@ -8,7 +8,6 @@
 @import "shadcn/tailwind.css";
 @import "./theme.css";
 
-@source "../../../../packages/presentation/admin-extensions/src";
 @source "../components/ui";
 @source "../components/admin/BlocksRowLabel.tsx";
 @source "../components/admin/ComponentOpenStudio.tsx";

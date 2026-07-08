@@ -37,7 +37,6 @@
     "@repo/contracts-zod": "workspace:*",
     "@repo/domains-composition": "workspace:*",
     "@repo/infrastructure-payload-config": "workspace:*",
-    "@repo/presentation-admin-extensions": "workspace:*",
     "@repo/presentation-studio": "workspace:*",
     "@repo/runtime-renderer": "workspace:*",
     "@tabler/icons-react": "^3.41.1",

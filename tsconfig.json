@@ -29,9 +29,6 @@
       "path": "./packages/infrastructure/payload-config"
     },
     {
-      "path": "./packages/presentation/admin-extensions"
-    },
-    {
       "path": "./packages/presentation/studio"
     }
   ]
