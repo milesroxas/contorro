@@ -5,9 +5,6 @@
       "path": "./packages/domains/composition"
     },
     {
-      "path": "./packages/domains/design-system"
-    },
-    {
       "path": "./packages/contracts/zod"
     },
     {
@@ -18,9 +15,6 @@
     },
     {
       "path": "./packages/application/studio"
-    },
-    {
-      "path": "./packages/application/design-system"
     },
     {
       "path": "./packages/runtime/renderer"

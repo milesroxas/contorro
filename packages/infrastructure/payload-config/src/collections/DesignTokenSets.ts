@@ -1,9 +1,9 @@
+import type { CollectionConfig } from "payload";
+import { authenticatedAccess, designerOrAdminAccess } from "../access/rbac.js";
 import {
   createDesignTokenSetBeforeChangeHandler,
   createDesignTokenSetBeforeValidateHandler,
-} from "@repo/application-design-system";
-import type { CollectionConfig } from "payload";
-import { authenticatedAccess, designerOrAdminAccess } from "../access/rbac.js";
+} from "../design-tokens/token-set-hooks.js";
 import { tokenCategoryFieldOptions } from "./token-category-options.js";
 
 const beforeValidate = createDesignTokenSetBeforeValidateHandler();

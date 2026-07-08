@@ -54,3 +54,25 @@ export const OverrideValueSchema = z.union([
   z.number(),
   z.string(),
 ]);
+
+/**
+ * Single token entry in a {@link DesignTokenSet}.
+ * Keys are immutable after the set is first published (enforced by aggregate rules).
+ */
+export type DesignToken = {
+  key: string;
+  mode?: "light" | "dark";
+  category: string;
+  /** Canonical CSS-ready value (e.g. hex color, length with unit). */
+  resolvedValue: string;
+};
+
+export type DesignTokenSet = {
+  id: string;
+  title: string;
+  /** Stable scope identifier (e.g. brand / theme). */
+  scopeKey: string;
+  tokens: DesignToken[];
+  /** When true, token keys in this set must not be renamed or removed (only value updates). */
+  hasBeenPublished: boolean;
+};

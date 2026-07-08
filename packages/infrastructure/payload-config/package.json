@@ -18,10 +18,8 @@
   "dependencies": {
     "@payloadcms/db-postgres": "3.83.0",
     "@payloadcms/richtext-lexical": "3.83.0",
-    "@repo/application-design-system": "workspace:*",
     "@repo/contracts-zod": "workspace:*",
     "@repo/domains-composition": "workspace:*",
-    "@repo/domains-design-system": "workspace:*",
     "pg": "^8.20.0"
   },
   "peerDependencies": {

@@ -30,7 +30,6 @@
     "@payloadcms/translations": "3.83.0",
     "@payloadcms/ui": "3.83.0",
     "@radix-ui/react-dialog": "^1.1.15",
-    "@repo/application-design-system": "workspace:*",
     "@repo/application-studio": "workspace:*",
     "@repo/config-env": "workspace:*",
     "@repo/config-tailwind": "workspace:*",

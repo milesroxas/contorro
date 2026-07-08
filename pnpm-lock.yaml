@@ -52,9 +52,6 @@ importers:
       '@radix-ui/react-dialog':
         specifier: ^1.1.15
         version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
-      '@repo/application-design-system':
-        specifier: workspace:*
-        version: link:../../packages/application/design-system
       '@repo/application-studio':
         specifier: workspace:*
         version: link:../../packages/application/studio
@@ -174,18 +171,6 @@ importers:
         specifier: 4.1.4
         version: 4.1.4(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(@vitest/coverage-v8@4.1.4)(happy-dom@20.9.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jsdom@29.0.2(@noble/hashes@1.8.0))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.2))(vite@8.0.8(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(sass@1.77.4)(tsx@4.21.0)(yaml@2.8.3))
 
-  packages/application/design-system:
-    dependencies:
-      '@repo/contracts-zod':
-        specifier: workspace:*
-        version: link:../../contracts/zod
-      '@repo/domains-design-system':
-        specifier: workspace:*
-        version: link:../../domains/design-system
-      payload:
-        specifier: 3.83.0
-        version: 3.83.0(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6)
-
   packages/application/studio:
     dependencies:
       '@repo/contracts-zod':
@@ -213,9 +198,6 @@ importers:
       '@repo/contracts-zod':
         specifier: workspace:*
         version: link:../../contracts/zod
-      '@repo/domains-design-system':
-        specifier: workspace:*
-        version: link:../../domains/design-system
       tailwindcss:
         specifier: ^4.2.2
         version: 4.2.2
@@ -235,15 +217,6 @@ importers:
         specifier: workspace:*
         version: link:../../contracts/zod
 
-  packages/domains/design-system:
-    dependencies:
-      '@repo/contracts-zod':
-        specifier: workspace:*
-        version: link:../../contracts/zod
-      zod:
-        specifier: ^4.3.6
-        version: 4.3.6
-
   packages/infrastructure/payload-config:
     dependencies:
       '@payloadcms/db-postgres':
@@ -252,18 +225,12 @@ importers:
       '@payloadcms/richtext-lexical':
         specifier: 3.83.0
         version: 3.83.0(@faceless-ui/modal@3.0.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(@faceless-ui/scroll-info@2.0.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(@payloadcms/next@3.83.0(@types/react@19.2.14)(graphql@16.13.2)(monaco-editor@0.55.1)(next@16.2.4(@opentelemetry/api@1.9.1)(@playwright/test@1.59.1)(babel-plugin-macros@3.1.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(sass@1.77.4))(payload@3.83.0(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.2))(@types/react@19.2.14)(bufferutil@4.1.0)(monaco-editor@0.55.1)(next@16.2.4(@opentelemetry/api@1.9.1)(@playwright/test@1.59.1)(babel-plugin-macros@3.1.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(sass@1.77.4))(payload@3.83.0(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.2)(utf-8-validate@6.0.6)(yjs@13.6.30)
-      '@repo/application-design-system':
-        specifier: workspace:*
-        version: link:../../application/design-system
       '@repo/contracts-zod':
         specifier: workspace:*
         version: link:../../contracts/zod
       '@repo/domains-composition':
         specifier: workspace:*
         version: link:../../domains/composition
-      '@repo/domains-design-system':
-        specifier: workspace:*
-        version: link:../../domains/design-system
       payload:
         specifier: 3.83.0
         version: 3.83.0(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6)

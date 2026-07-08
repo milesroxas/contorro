@@ -1,9 +1,9 @@
+import type { DesignToken, DesignTokenSet } from "@repo/contracts-zod";
 import {
   BREAKPOINT_MIN_WIDTH_PX,
   BREAKPOINTS,
   type StyleProperty,
 } from "@repo/contracts-zod";
-import type { DesignToken, DesignTokenSet } from "@repo/domains-design-system";
 
 export type TokenMeta = {
   key: string;

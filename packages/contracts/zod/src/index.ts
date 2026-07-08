@@ -13,8 +13,10 @@ export {
 } from "./composition.js";
 export {
   ColorValueSchema,
+  type DesignToken,
   type DesignTokenInput,
   DesignTokenSchema,
+  type DesignTokenSet,
   LengthUnitSchema,
   LengthValueSchema,
   OverrideValueSchema,

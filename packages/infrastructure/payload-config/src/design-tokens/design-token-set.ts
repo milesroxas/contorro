@@ -1,17 +1,8 @@
-import type { Result } from "@repo/contracts-zod";
+import type { DesignToken, DesignTokenSet, Result } from "@repo/contracts-zod";
 import { err, ok } from "@repo/contracts-zod";
-import type { DesignToken } from "../entities/design-token.js";
-import { isValidTokenKey } from "../value-objects/token-key.js";
+import { isValidTokenKey } from "./token-key.js";
 
-export type DesignTokenSet = {
-  id: string;
-  title: string;
-  /** Stable scope identifier (e.g. brand / theme). */
-  scopeKey: string;
-  tokens: DesignToken[];
-  /** When true, token keys in this set must not be renamed or removed (only value updates). */
-  hasBeenPublished: boolean;
-};
+export type { DesignToken, DesignTokenSet };
 
 export function createDesignTokenSet(
   input: Omit<DesignTokenSet, "hasBeenPublished"> & {

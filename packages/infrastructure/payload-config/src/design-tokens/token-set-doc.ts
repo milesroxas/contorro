@@ -1,7 +1,5 @@
-import {
-  createDesignTokenSet,
-  type DesignTokenSet,
-} from "@repo/domains-design-system";
+import type { DesignTokenSet } from "@repo/contracts-zod";
+import { createDesignTokenSet } from "./design-token-set.js";
 
 export type DesignTokenSetPayloadDoc = {
   id?: string | number | null;

@@ -1,17 +1,17 @@
 import { DesignTokenSchema } from "@repo/contracts-zod";
-import {
-  assertTokenKeyStability,
-  validateTokensForSave,
-} from "@repo/domains-design-system";
 import type {
   CollectionBeforeChangeHook,
   CollectionBeforeValidateHook,
 } from "payload";
 import { APIError } from "payload";
 import {
+  assertTokenKeyStability,
+  validateTokensForSave,
+} from "./design-token-set.js";
+import {
   type DesignTokenSetPayloadDoc,
   toDesignTokenSetAggregate,
-} from "../lib/token-set-doc.js";
+} from "./token-set-doc.js";
 
 function validateAndNormalizeTokenRows(
   tokens: NonNullable<DesignTokenSetPayloadDoc["tokens"]>,
