@@ -1,7 +1,7 @@
 "use client";
 
 import { resolvePrimitiveTextContent } from "@repo/domains-composition";
-import type { RuntimePrimitiveProps } from "@repo/domains-runtime-catalog";
+import type { RuntimePrimitiveProps } from "@repo/runtime-renderer";
 
 import { useOptionalCollectionItemDoc } from "./collection-item-context.js";
 

@@ -6,10 +6,17 @@
   },
   "include": ["src/**/*"],
   "references": [
-    { "path": "../../application/design-system" },
-    { "path": "../../contracts/zod" },
-    { "path": "../../domains/composition" },
-    { "path": "../../domains/design-system" },
-    { "path": "../../domains/runtime-catalog" }
+    {
+      "path": "../../application/design-system"
+    },
+    {
+      "path": "../../contracts/zod"
+    },
+    {
+      "path": "../../domains/composition"
+    },
+    {
+      "path": "../../domains/design-system"
+    }
   ]
 }

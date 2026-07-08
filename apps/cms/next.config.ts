@@ -17,7 +17,6 @@ const nextConfig: NextConfig = {
     "@repo/contracts-zod",
     "@repo/domains-composition",
     "@repo/domains-design-system",
-    "@repo/domains-runtime-catalog",
     "@repo/infrastructure-payload-config",
     "@repo/infrastructure-payload-media-client",
     "@repo/presentation-admin-extensions",

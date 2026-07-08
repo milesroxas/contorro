@@ -17,8 +17,7 @@
   },
   "dependencies": {
     "@repo/config-tailwind": "workspace:*",
-    "@repo/contracts-zod": "workspace:*",
-    "@repo/domains-runtime-catalog": "workspace:*"
+    "@repo/contracts-zod": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.0.0"

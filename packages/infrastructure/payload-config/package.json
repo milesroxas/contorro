@@ -22,7 +22,6 @@
     "@repo/contracts-zod": "workspace:*",
     "@repo/domains-composition": "workspace:*",
     "@repo/domains-design-system": "workspace:*",
-    "@repo/domains-runtime-catalog": "workspace:*",
     "pg": "^8.20.0"
   },
   "peerDependencies": {

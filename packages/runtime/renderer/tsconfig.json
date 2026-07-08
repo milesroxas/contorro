@@ -7,8 +7,11 @@
   },
   "include": ["src/**/*"],
   "references": [
-    { "path": "../../config/tailwind" },
-    { "path": "../../contracts/zod" },
-    { "path": "../../domains/runtime-catalog" }
+    {
+      "path": "../../config/tailwind"
+    },
+    {
+      "path": "../../contracts/zod"
+    }
   ]
 }

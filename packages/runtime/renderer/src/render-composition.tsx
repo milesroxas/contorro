@@ -1,7 +1,7 @@
 import type { TokenMeta } from "@repo/config-tailwind";
 import type { CompositionNode, PageComposition } from "@repo/contracts-zod";
-import type { RuntimeRegistry } from "@repo/domains-runtime-catalog";
 import type { ReactElement, ReactNode } from "react";
+import type { RuntimeRegistry } from "./runtime-catalog.js";
 
 import type { ResolveNodeStyleOptions } from "./style-resolver.js";
 import { resolveNodeStyle } from "./style-resolver.js";

@@ -1,6 +1,6 @@
 "use client";
 
-import type { RuntimePrimitiveProps } from "@repo/domains-runtime-catalog";
+import type { RuntimePrimitiveProps } from "@repo/runtime-renderer";
 import {
   Children,
   cloneElement,

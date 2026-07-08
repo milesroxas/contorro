@@ -8,6 +8,11 @@ export {
   type RenderCompositionOptions,
   renderComposition,
 } from "./render-composition.js";
+export type {
+  BindingStrategy,
+  RuntimePrimitiveProps,
+  RuntimeRegistry,
+} from "./runtime-catalog.js";
 export {
   type ResolvedNodeStyle,
   type ResolvedStyle,

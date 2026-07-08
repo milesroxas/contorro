@@ -1,20 +1,47 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/domains/composition" },
-    { "path": "./packages/domains/design-system" },
-    { "path": "./packages/domains/runtime-catalog" },
-    { "path": "./packages/contracts/zod" },
-    { "path": "./packages/config/env" },
-    { "path": "./packages/config/tailwind" },
-    { "path": "./packages/application/studio" },
-    { "path": "./packages/application/design-system" },
-    { "path": "./packages/runtime/primitives" },
-    { "path": "./packages/runtime/renderer" },
-    { "path": "./packages/infrastructure/payload-config" },
-    { "path": "./packages/infrastructure/payload-media-client" },
-    { "path": "./packages/presentation/shared" },
-    { "path": "./packages/presentation/admin-extensions" },
-    { "path": "./packages/presentation/studio" }
+    {
+      "path": "./packages/domains/composition"
+    },
+    {
+      "path": "./packages/domains/design-system"
+    },
+    {
+      "path": "./packages/contracts/zod"
+    },
+    {
+      "path": "./packages/config/env"
+    },
+    {
+      "path": "./packages/config/tailwind"
+    },
+    {
+      "path": "./packages/application/studio"
+    },
+    {
+      "path": "./packages/application/design-system"
+    },
+    {
+      "path": "./packages/runtime/primitives"
+    },
+    {
+      "path": "./packages/runtime/renderer"
+    },
+    {
+      "path": "./packages/infrastructure/payload-config"
+    },
+    {
+      "path": "./packages/infrastructure/payload-media-client"
+    },
+    {
+      "path": "./packages/presentation/shared"
+    },
+    {
+      "path": "./packages/presentation/admin-extensions"
+    },
+    {
+      "path": "./packages/presentation/studio"
+    }
   ]
 }
