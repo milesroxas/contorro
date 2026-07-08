@@ -215,7 +215,10 @@ export type StudioStoreState = {
   pasteNode: (targetNodeId: string | null) => void;
   duplicateNode: (nodeId: string) => void;
   wrapNodeInBox: (nodeId: string) => void;
-  createComponentFromNode: (nodeId: string, displayName: string) => Promise<void>;
+  createComponentFromNode: (
+    nodeId: string,
+    displayName: string,
+  ) => Promise<void>;
   setTextContent: (nodeId: string, content: string) => void;
   patchNodeProps: (nodeId: string, patch: Record<string, unknown>) => void;
   setNodeStyleEntry: (

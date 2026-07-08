@@ -149,7 +149,10 @@ export function addChildNode(
   };
 
   if (definitionKey === "primitive.button") {
-    const editorField = editorFieldSpecForPrimitiveButton(newId, newNode.propValues);
+    const editorField = editorFieldSpecForPrimitiveButton(
+      newId,
+      newNode.propValues,
+    );
     newNode = {
       ...newNode,
       contentBinding: {
@@ -805,9 +808,15 @@ export function replaceNodeWithLibraryComponent(
   if (!removed.ok) {
     return removed;
   }
-  return addChildNode(removed.value, parentId, "primitive.libraryComponent", index, {
-    libraryComponentKey: k,
-  });
+  return addChildNode(
+    removed.value,
+    parentId,
+    "primitive.libraryComponent",
+    index,
+    {
+      libraryComponentKey: k,
+    },
+  );
 }
 
 /**

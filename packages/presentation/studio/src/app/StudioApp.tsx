@@ -74,13 +74,13 @@ import {
   persistStudioChromeTheme,
   resolveStudioChromeTheme,
 } from "../shell/hub/resolve-studio-chrome-theme.js";
-import { MobileStudioLayout } from "./mobile/MobileStudioLayout.js";
-import { StudioLeftSidebarPanelBody } from "./studio-left-sidebar-panel-body.js";
-import { useStudioDesignSystemStyleSheet } from "./use-studio-design-system-style-sheet.js";
 import {
   isStudioComponentEditFromTemplateRoute,
   STUDIO_DEEP_LINK_SELECT_NODE_PARAM,
 } from "../shell/studio-navigation.js";
+import { MobileStudioLayout } from "./mobile/MobileStudioLayout.js";
+import { StudioLeftSidebarPanelBody } from "./studio-left-sidebar-panel-body.js";
+import { useStudioDesignSystemStyleSheet } from "./use-studio-design-system-style-sheet.js";
 
 const pointerFirstCollisionDetection: CollisionDetection = (args) => {
   const pointerCollisions = pointerWithin(args);
@@ -523,9 +523,7 @@ export function StudioApp({
   );
 
   const searchParams = useSearchParams();
-  const selectNodeParam = searchParams.get(
-    STUDIO_DEEP_LINK_SELECT_NODE_PARAM,
-  );
+  const selectNodeParam = searchParams.get(STUDIO_DEEP_LINK_SELECT_NODE_PARAM);
   const initialSelectFromUrlRef = useRef<string | null>(null);
 
   const templateReturn = useMemo(
@@ -586,7 +584,10 @@ export function StudioApp({
   }, [composition, compositionId, selectNode, selectNodeParam]);
 
   useEffect(() => {
-    if (componentEditFromTemplate && activeLeftSidebarPanel === "pageTemplates") {
+    if (
+      componentEditFromTemplate &&
+      activeLeftSidebarPanel === "pageTemplates"
+    ) {
       setActiveLeftSidebarPanel("layers");
     }
   }, [activeLeftSidebarPanel, componentEditFromTemplate]);
@@ -896,9 +897,7 @@ export function StudioApp({
               canvasZoomPercent={canvasZoomPercent}
               clearNodeStyles={handleClearNodeStyles}
               composition={composition}
-              componentsHref={
-                componentEditFromTemplate ? "" : componentsHref
-              }
+              componentsHref={componentEditFromTemplate ? "" : componentsHref}
               compositionId={compositionId}
               componentEditFromTemplate={componentEditFromTemplate}
               templateReturn={templateReturn}
@@ -1074,9 +1073,7 @@ export function StudioApp({
                     storeClearNodeStyles(selectedNodeId);
                   }
                 }}
-                componentsHref={
-                  componentEditFromTemplate ? "" : componentsHref
-                }
+                componentsHref={componentEditFromTemplate ? "" : componentsHref}
                 composition={composition}
                 inspectorTab={activeInspectorTab}
                 node={selectedNode}

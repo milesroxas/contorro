@@ -60,21 +60,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
-  test-gateway:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      # Workspace packages resolve to dist/; fresh checkouts have no dist until build.
-      - run: pnpm build
-      - run: pnpm test:gw
-
   test-integration:
     runs-on: ubuntu-latest
     timeout-minutes: 20

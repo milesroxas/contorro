@@ -837,9 +837,7 @@ function LayerSubtree({
     templateReturn,
   );
   const createComponentForRow =
-    isLibraryComponent || !onCreateComponent
-      ? undefined
-      : onCreateComponent;
+    isLibraryComponent || !onCreateComponent ? undefined : onCreateComponent;
 
   const row = (
     <LayerSubtreeLayerRow

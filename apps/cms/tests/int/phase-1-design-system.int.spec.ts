@@ -1,9 +1,4 @@
-import {
-  TOKEN_PUBLISHED,
-  type TokenPublishedPayload,
-} from "@repo/application-design-system";
 import { compileTokenSet } from "@repo/config-tailwind";
-import { defaultInProcessEventBus } from "@repo/infrastructure-event-bus";
 import type { Payload } from "payload";
 import { APIError } from "payload";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -76,15 +71,7 @@ describe("Phase 1 test gate — Postgres + Payload", () => {
     }
   });
 
-  it("creates a draft token set, publishes it, and emits TokenPublished once", async () => {
-    const received: TokenPublishedPayload[] = [];
-    const unsubscribe = defaultInProcessEventBus.subscribe(
-      TOKEN_PUBLISHED,
-      async (event) => {
-        received.push(event.payload as TokenPublishedPayload);
-      },
-    );
-
+  it("creates a draft token set and publishes it", async () => {
     const scopeKey = `gate-publish-${Date.now()}`;
     let createdId: string | number | undefined;
 
@@ -108,7 +95,7 @@ describe("Phase 1 test gate — Postgres + Payload", () => {
       });
       createdId = doc.id;
 
-      await payload.update({
+      const published = await payload.update({
         collection: "design-token-sets",
         id: doc.id,
         data: {
@@ -117,11 +104,9 @@ describe("Phase 1 test gate — Postgres + Payload", () => {
         overrideAccess: true,
       });
 
-      expect(received).toHaveLength(1);
-      expect(received[0]?.scopeKey).toBe(scopeKey);
-      expect(received[0]?.tokenSetId).toBe(String(doc.id));
+      expect(published._status).toBe("published");
+      expect(published.hasBeenPublished).toBe(true);
     } finally {
-      unsubscribe();
       if (createdId !== undefined) {
         await payload.delete({
           collection: "design-token-sets",

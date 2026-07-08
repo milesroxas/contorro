@@ -39,7 +39,6 @@ import { PageTemplateListFilterSelect } from "../../features/page-templates/page
 import { LibraryComponentCatalog } from "../../features/primitive-catalog/LibraryComponentCatalog.js";
 import { PrimitiveCatalog } from "../../features/primitive-catalog/PrimitiveCatalog.js";
 import { PropertyInspector } from "../../features/property-inspector/PropertyInspector.js";
-import type { LibraryComponentTemplateReturnBase } from "../../lib/use-library-component-labels.js";
 import { cn } from "../../lib/cn.js";
 import type { StudioInspectorTab } from "../../lib/inspector-tab-shortcuts.js";
 import type { LeftSidebarPanelId } from "../../lib/left-sidebar-panels.js";
@@ -50,6 +49,7 @@ import {
   writeMobilePref,
 } from "../../lib/studio-mobile-storage.js";
 import type { StagedTapInsertion } from "../../lib/tap-insertion-context.js";
+import type { LibraryComponentTemplateReturnBase } from "../../lib/use-library-component-labels.js";
 import {
   STUDIO_NAV_ITEMS,
   type StudioTopLevelScreen,

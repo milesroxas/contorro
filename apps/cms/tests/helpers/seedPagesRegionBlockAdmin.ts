@@ -62,8 +62,6 @@ export async function seedPagesRegionBlockAdminFixture(): Promise<{
       title: "E2E region page template",
       slug: E2E_REGION_PC_SLUG,
       composition: pageTemplateComposition,
-      catalogReviewStatus: "approved",
-      catalogSubmittedAt: "2026-04-01T12:00:00.000Z",
     },
     draft: true,
     overrideAccess: true,

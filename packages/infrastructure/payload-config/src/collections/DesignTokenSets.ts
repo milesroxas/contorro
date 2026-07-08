@@ -1,18 +1,13 @@
 import {
-  createDesignTokenSetAfterChangeHandler,
   createDesignTokenSetBeforeChangeHandler,
   createDesignTokenSetBeforeValidateHandler,
 } from "@repo/application-design-system";
-import { defaultInProcessEventBus } from "@repo/infrastructure-event-bus";
 import type { CollectionConfig } from "payload";
 import { authenticatedAccess, designerOrAdminAccess } from "../access/rbac.js";
 import { tokenCategoryFieldOptions } from "./token-category-options.js";
 
 const beforeValidate = createDesignTokenSetBeforeValidateHandler();
 const beforeChange = createDesignTokenSetBeforeChangeHandler();
-const afterChange = createDesignTokenSetAfterChangeHandler({
-  eventBus: defaultInProcessEventBus,
-});
 
 export const DesignTokenSets: CollectionConfig = {
   slug: "design-token-sets",
@@ -101,6 +96,5 @@ export const DesignTokenSets: CollectionConfig = {
   hooks: {
     beforeValidate: [beforeValidate],
     beforeChange: [beforeChange],
-    afterChange: [afterChange],
   },
 };

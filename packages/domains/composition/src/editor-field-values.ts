@@ -69,7 +69,9 @@ function buttonValueFromUnknown(
   }
   return {
     label:
-      typeof prev.label === "string" ? prev.label : stringFromUnknownEffective(effective),
+      typeof prev.label === "string"
+        ? prev.label
+        : stringFromUnknownEffective(effective),
     href: typeof prev.href === "string" ? prev.href : "",
     openInNewTab: Boolean(prev.openInNewTab),
   };

@@ -34,6 +34,7 @@ export {
   isCollectionFieldKindCompatibleWithPrimitive,
   primitiveSupportsCollectionFieldBinding,
 } from "./collection-primitive-field-binding.js";
+export type { CompositionActor } from "./composition-actor.js";
 export { defaultEmptyPageComposition } from "./default-empty-page-composition.js";
 export { defaultPageTemplateComposition } from "./default-page-template-composition.js";
 export {
@@ -77,11 +78,6 @@ export {
 } from "./layout-slot.js";
 export { normalizeTemplateShell } from "./normalize-template-shell.js";
 export { mergePageContentSlotsToSlotOrder } from "./page-content-slots.js";
-export type {
-  CompositionActor,
-  CompositionRepository,
-  LoadedComposition,
-} from "./ports/composition-repository.js";
 export { imageTailwindUtilitiesFromPropValues } from "./primitive-image-tailwind-utilities.js";
 export { isPrimitivePropValueModified } from "./primitive-prop-override.js";
 export {

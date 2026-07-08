@@ -1,13 +1,9 @@
 import { DesignTokenSchema } from "@repo/contracts-zod";
 import {
   assertTokenKeyStability,
-  TOKEN_PUBLISHED,
-  type TokenPublishedPayload,
   validateTokensForSave,
 } from "@repo/domains-design-system";
-import type { DomainEvent, EventBus } from "@repo/kernel";
 import type {
-  CollectionAfterChangeHook,
   CollectionBeforeChangeHook,
   CollectionBeforeValidateHook,
 } from "payload";
@@ -111,39 +107,5 @@ export function createDesignTokenSetBeforeChangeHandler(): CollectionBeforeChang
     }
 
     return incoming;
-  };
-}
-
-export function createDesignTokenSetAfterChangeHandler(deps: {
-  eventBus: EventBus;
-}): CollectionAfterChangeHook {
-  return async (args) => {
-    const { doc, previousDoc } = args;
-    const current = doc as DesignTokenSetPayloadDoc & {
-      _status?: string | null;
-    };
-    const prev = previousDoc as
-      | (DesignTokenSetPayloadDoc & { _status?: string | null })
-      | undefined;
-
-    const isPublished = current._status === "published";
-    const wasPublished = prev?._status === "published";
-    if (!isPublished || wasPublished) {
-      return doc;
-    }
-
-    const payload: TokenPublishedPayload = {
-      tokenSetId: String(current.id ?? ""),
-      scopeKey: String(current.scopeKey ?? ""),
-    };
-
-    const event = {
-      type: TOKEN_PUBLISHED,
-      occurredAt: new Date(),
-      payload,
-    } satisfies DomainEvent<typeof TOKEN_PUBLISHED, TokenPublishedPayload>;
-
-    await deps.eventBus.publish(event);
-    return doc;
   };
 }

@@ -73,10 +73,6 @@ export interface Config {
     'design-token-sets': DesignTokenSet;
     components: Component;
     'page-compositions': PageComposition;
-    'release-snapshots': ReleaseSnapshot;
-    'publish-jobs': PublishJob;
-    'catalog-activity': CatalogActivity;
-    'composition-presence': CompositionPresence;
     'payload-kv': PayloadKv;
     'payload-folders': FolderInterface;
     'payload-locked-documents': PayloadLockedDocument;
@@ -95,10 +91,6 @@ export interface Config {
     'design-token-sets': DesignTokenSetsSelect<false> | DesignTokenSetsSelect<true>;
     components: ComponentsSelect<false> | ComponentsSelect<true>;
     'page-compositions': PageCompositionsSelect<false> | PageCompositionsSelect<true>;
-    'release-snapshots': ReleaseSnapshotsSelect<false> | ReleaseSnapshotsSelect<true>;
-    'publish-jobs': PublishJobsSelect<false> | PublishJobsSelect<true>;
-    'catalog-activity': CatalogActivitySelect<false> | CatalogActivitySelect<true>;
-    'composition-presence': CompositionPresenceSelect<false> | CompositionPresenceSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-folders': PayloadFoldersSelect<false> | PayloadFoldersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -258,8 +250,6 @@ export interface PageComposition {
     | number
     | boolean
     | null;
-  catalogSubmittedAt?: string | null;
-  catalogReviewStatus: 'none' | 'submitted' | 'approved' | 'rejected';
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -416,83 +406,6 @@ export interface DesignTokenSet {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * Point-in-time page template tree captured when a page goes live.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "release-snapshots".
- */
-export interface ReleaseSnapshot {
-  id: number;
-  page?: (number | null) | Page;
-  pageComposition: number | PageComposition;
-  snapshotComposition:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * Internal record of publish operations (idempotent).
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "publish-jobs".
- */
-export interface PublishJob {
-  id: number;
-  idempotencyKey: string;
-  kind: 'page_publish' | 'component_publish' | 'rollback';
-  status: 'pending' | 'succeeded' | 'failed';
-  targetPage?: (number | null) | Page;
-  targetComponent?: (number | null) | Component;
-  releaseSnapshot?: (number | null) | ReleaseSnapshot;
-  errorMessage?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * Internal publishing activity log.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "catalog-activity".
- */
-export interface CatalogActivity {
-  id: number;
-  resourceType: 'pageComposition' | 'componentRevision' | 'componentDefinition' | 'page';
-  resourceId: string;
-  action: 'submit' | 'approve' | 'reject' | 'publish' | 'rollback' | 'presence';
-  actor?: (number | null) | User;
-  metadata?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * Heartbeat while a user has a page template open in the builder.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "composition-presence".
- */
-export interface CompositionPresence {
-  id: number;
-  composition: number | PageComposition;
-  holder: number | User;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -539,22 +452,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'page-compositions';
         value: number | PageComposition;
-      } | null)
-    | ({
-        relationTo: 'release-snapshots';
-        value: number | ReleaseSnapshot;
-      } | null)
-    | ({
-        relationTo: 'publish-jobs';
-        value: number | PublishJob;
-      } | null)
-    | ({
-        relationTo: 'catalog-activity';
-        value: number | CatalogActivity;
-      } | null)
-    | ({
-        relationTo: 'composition-presence';
-        value: number | CompositionPresence;
       } | null)
     | ({
         relationTo: 'payload-folders';
@@ -716,60 +613,9 @@ export interface PageCompositionsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   composition?: T;
-  catalogSubmittedAt?: T;
-  catalogReviewStatus?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "release-snapshots_select".
- */
-export interface ReleaseSnapshotsSelect<T extends boolean = true> {
-  page?: T;
-  pageComposition?: T;
-  snapshotComposition?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "publish-jobs_select".
- */
-export interface PublishJobsSelect<T extends boolean = true> {
-  idempotencyKey?: T;
-  kind?: T;
-  status?: T;
-  targetPage?: T;
-  targetComponent?: T;
-  releaseSnapshot?: T;
-  errorMessage?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "catalog-activity_select".
- */
-export interface CatalogActivitySelect<T extends boolean = true> {
-  resourceType?: T;
-  resourceId?: T;
-  action?: T;
-  actor?: T;
-  metadata?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "composition-presence_select".
- */
-export interface CompositionPresenceSelect<T extends boolean = true> {
-  composition?: T;
-  holder?: T;
-  updatedAt?: T;
-  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

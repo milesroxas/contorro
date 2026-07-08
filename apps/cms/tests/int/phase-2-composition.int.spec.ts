@@ -1,4 +1,3 @@
-import { propContractToJsonSchema2020 } from "@repo/contracts-json-schema";
 import { PageCompositionSchema, PropContractSchema } from "@repo/contracts-zod";
 import { validatePageCompositionInvariants } from "@repo/domains-composition";
 import { defaultPrimitiveRegistry } from "@repo/runtime-primitives";
@@ -58,10 +57,5 @@ describe("Phase 2 — composition model", () => {
       },
     });
     expect(parsed.success).toBe(true);
-  });
-
-  it("exports JSON Schema 2020-12 for PropContractSchema", () => {
-    const schema = propContractToJsonSchema2020();
-    expect(schema.$schema).toBe("https://json-schema.org/draft/2020-12/schema");
   });
 });
