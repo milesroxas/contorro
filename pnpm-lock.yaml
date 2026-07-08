@@ -79,9 +79,6 @@ importers:
       '@repo/presentation-admin-extensions':
         specifier: workspace:*
         version: link:../../packages/presentation/admin-extensions
-      '@repo/presentation-shared':
-        specifier: workspace:*
-        version: link:../../packages/presentation/shared
       '@repo/presentation-studio':
         specifier: workspace:*
         version: link:../../packages/presentation/studio
@@ -288,9 +285,6 @@ importers:
 
   packages/presentation/admin-extensions:
     dependencies:
-      '@repo/presentation-shared':
-        specifier: workspace:*
-        version: link:../shared
       payload:
         specifier: 3.83.0
         version: 3.83.0(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6)
@@ -307,21 +301,6 @@ importers:
       '@types/react-dom':
         specifier: 19.2.3
         version: 19.2.3(@types/react@19.2.14)
-
-  packages/presentation/shared:
-    dependencies:
-      '@repo/contracts-zod':
-        specifier: workspace:*
-        version: link:../../contracts/zod
-      '@repo/domains-composition':
-        specifier: workspace:*
-        version: link:../../domains/composition
-      react:
-        specifier: 19.2.5
-        version: 19.2.5
-      zustand:
-        specifier: ^5.0.12
-        version: 5.0.12(@types/react@19.2.14)(react@19.2.5)(use-sync-external-store@1.6.0(react@19.2.5))
 
   packages/presentation/studio:
     dependencies:
@@ -349,9 +328,6 @@ importers:
       '@repo/infrastructure-payload-media-client':
         specifier: workspace:*
         version: link:../../infrastructure/payload-media-client
-      '@repo/presentation-shared':
-        specifier: workspace:*
-        version: link:../shared
       '@repo/runtime-renderer':
         specifier: workspace:*
         version: link:../../runtime/renderer

@@ -1,5 +1,5 @@
 import type { PageComposition } from "@repo/contracts-zod";
-import { prepareCompositionForSave } from "@repo/presentation-shared";
+import { prepareCompositionForSave } from "./prepare-composition-for-save.js";
 
 /** Validates local composition before gateway save (architecture spec §10.3). */
 export function prepareForSave(

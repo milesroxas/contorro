@@ -39,7 +39,6 @@
     "@repo/infrastructure-payload-config": "workspace:*",
     "@repo/infrastructure-payload-media-client": "workspace:*",
     "@repo/presentation-admin-extensions": "workspace:*",
-    "@repo/presentation-shared": "workspace:*",
     "@repo/presentation-studio": "workspace:*",
     "@repo/runtime-renderer": "workspace:*",
     "@tabler/icons-react": "^3.41.1",

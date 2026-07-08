@@ -15,9 +15,7 @@
     "build": "tsc -b",
     "dev": "tsc -b --watch --preserveWatchOutput"
   },
-  "dependencies": {
-    "@repo/presentation-shared": "workspace:*"
-  },
+  "dependencies": {},
   "peerDependencies": {
     "payload": "^3.0.0",
     "react": "^19.0.0",

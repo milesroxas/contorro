@@ -23,9 +23,6 @@
       "path": "../../domains/composition"
     },
     {
-      "path": "../shared"
-    },
-    {
       "path": "../../runtime/renderer"
     }
   ]

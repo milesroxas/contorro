@@ -24,7 +24,6 @@ import {
   studioNewCompositionSessionId,
   updateNodePropValues,
 } from "@repo/domains-composition";
-import { createSafeStore } from "@repo/presentation-shared";
 import {
   DEFAULT_CANVAS_FONT_SIZE_PX,
   DEFAULT_CANVAS_ZOOM_PERCENT,
@@ -33,6 +32,7 @@ import {
   normalizeCanvasViewportWidthPx,
   normalizeCanvasZoomPercent,
 } from "../features/canvas/studio-canvas-viewport.js";
+import { createSafeStore } from "../lib/create-safe-store.js";
 
 import { getDefaultStudioAuthoringClient } from "../lib/fetch-studio-authoring-client.js";
 import { prepareForSave } from "../lib/persist.js";

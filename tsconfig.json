@@ -32,9 +32,6 @@
       "path": "./packages/infrastructure/payload-media-client"
     },
     {
-      "path": "./packages/presentation/shared"
-    },
-    {
       "path": "./packages/presentation/admin-extensions"
     },
     {
