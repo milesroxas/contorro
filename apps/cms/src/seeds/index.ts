@@ -1,5 +1,9 @@
 import { fileURLToPath } from "node:url";
-import { getPayload, type Payload } from "payload";
+import {
+  getPayload,
+  type Payload,
+  type RequiredDataFromCollectionSlug,
+} from "payload";
 
 import config from "../payload.config.js";
 
@@ -7,23 +11,24 @@ import { seedDesignSystemTokens } from "./design-system-seed-shared.js";
 import {
   buildSeedPageTemplateComposition,
   buildSeedPageTemplateWithLibraryComposition,
-  headlineCardComposition,
-  headlineCardEditorFields,
+  lexicalRichText,
+  SEED_CONTENT_DESIGN_COMPONENT_KEY,
   SEED_CONTENT_HIGHLIGHT_COMPONENT_KEY,
-  SEED_CTA_SECTION_COMPONENT_KEY,
-  SEED_FEATURE_GRID_SECTION_COMPONENT_KEY,
-  SEED_HERO_SECTION_COMPONENT_KEY,
+  SEED_CTA_DESIGN_COMPONENT_KEY,
+  SEED_FEATURE_DESIGN_COMPONENT_KEY,
+  SEED_HERO_DESIGN_COMPONENT_KEY,
   SEED_PRIMARY_BUTTON_COMPONENT_KEY,
-  seedCtaSectionComposition,
-  seedFeatureGridSectionComposition,
-  seedHeroSectionComposition,
+  seedContentDesignComposition,
+  seedContentHighlightComposition,
+  seedCtaDesignComposition,
+  seedFeatureDesignComposition,
+  seedHeroDesignComposition,
   seedPrimaryButtonComposition,
-  withLibraryEmbedHighlightEditorFieldValues,
 } from "./seed-content-fixtures.js";
 
 /** Stable identifiers — re-run deletes and recreates these documents. */
 export const SEED_PAGE_COMPOSITION_SLUG = "seed-composition";
-/** Template that embeds {@link SEED_CONTENT_HIGHLIGHT_COMPONENT_KEY} via `primitive.libraryComponent`. */
+/** Template that embeds design-only library parts via `primitive.libraryComponent`. */
 export const SEED_PAGE_COMPOSITION_WITH_LIBRARY_SLUG =
   "seed-composition-with-library";
 export const SEED_PAGE_SLUG = "seed-page";
@@ -41,11 +46,12 @@ const SEED_COMPONENT_KEYS = [
   "primitive.heading",
   "primitive.button",
   "primitive.image",
+  SEED_HERO_DESIGN_COMPONENT_KEY,
+  SEED_FEATURE_DESIGN_COMPONENT_KEY,
+  SEED_CTA_DESIGN_COMPONENT_KEY,
+  SEED_CONTENT_DESIGN_COMPONENT_KEY,
   SEED_CONTENT_HIGHLIGHT_COMPONENT_KEY,
   SEED_PRIMARY_BUTTON_COMPONENT_KEY,
-  SEED_HERO_SECTION_COMPONENT_KEY,
-  SEED_FEATURE_GRID_SECTION_COMPONENT_KEY,
-  SEED_CTA_SECTION_COMPONENT_KEY,
 ] as const;
 
 const SEED_MEDIA_ASSETS = {
@@ -123,43 +129,9 @@ function asNumericMediaId(id: unknown): number {
   throw new Error(`Seed media id must be numeric, received "${String(id)}"`);
 }
 
-/**
- * Seeded library components are authored as realistic, website-ready blocks.
- * `propContract.fields` stays empty because structure and defaults live in `composition`.
- */
-const cardDefinition = {
-  propContract: { fields: {} },
-  editorFields: headlineCardEditorFields,
-  composition: headlineCardComposition,
-};
-
-const primaryButtonDefinition = {
-  propContract: { fields: {} },
-  editorFields: { editorFields: [] },
-  composition: seedPrimaryButtonComposition,
-};
-
-const heroSectionDefinition = {
-  propContract: { fields: {} },
-  editorFields: { editorFields: [] },
-  composition: seedHeroSectionComposition,
-};
-
-const featureGridSectionDefinition = {
-  propContract: { fields: {} },
-  editorFields: { editorFields: [] },
-  composition: seedFeatureGridSectionComposition,
-};
-
-const ctaSectionDefinition = {
-  propContract: { fields: {} },
-  editorFields: { editorFields: [] },
-  composition: seedCtaSectionComposition,
-};
-
 async function createAndPublishSeedComponent(
   payload: Payload,
-  data: Record<string, unknown>,
+  data: RequiredDataFromCollectionSlug<"components">,
 ) {
   const created = await payload.create({
     collection: "components",
@@ -177,43 +149,92 @@ async function createAndPublishSeedComponent(
   return created;
 }
 
-const seedComposition = buildSeedPageTemplateComposition();
+async function deleteSeedDocuments(payload: Payload): Promise<void> {
+  for (const slug of [
+    SEED_PAGE_SLUG,
+    SEED_PAGE_DESIGNER_SLUG,
+    SEED_PAGE_WITH_LIBRARY_SLUG,
+  ]) {
+    await payload.delete({
+      collection: "pages",
+      where: { slug: { equals: slug } },
+      overrideAccess: true,
+    });
+  }
+  for (const slug of [
+    SEED_PAGE_COMPOSITION_SLUG,
+    SEED_PAGE_COMPOSITION_WITH_LIBRARY_SLUG,
+  ]) {
+    await payload.delete({
+      collection: "page-compositions",
+      where: { slug: { equals: slug } },
+      overrideAccess: true,
+    });
+  }
+  for (const key of SEED_COMPONENT_KEYS) {
+    await payload.delete({
+      collection: "components",
+      where: { key: { equals: key } },
+      overrideAccess: true,
+    });
+  }
+  // Media: Local API uses `overrideAccess: true` (bootstrap; no session). REST `/api/media`
+  // still enforces collection access (`authenticatedAccess` / delete rules) for browser uploads.
+  for (const asset of Object.values(SEED_MEDIA_ASSETS)) {
+    await payload.delete({
+      collection: "media",
+      where: { alt: { equals: asset.alt } },
+      overrideAccess: true,
+    });
+  }
+  for (const u of Object.values(SEED_USERS)) {
+    await payload.delete({
+      collection: "users",
+      where: { email: { equals: u.email } },
+      overrideAccess: true,
+    });
+  }
+}
 
-const seedPageContentSlots = [
-  {
-    slotId: "main",
-    blocks: [
-      {
-        componentDefinition: null as number | null,
-        editorFieldValues: {
-          headline:
-            "Main region — this highlight block sits below the hero. Replace with your sections.",
-          body: "Seeded content block with style bindings and media-backed image.",
-          image: null as number | null,
-        },
-      },
-    ],
-  },
-];
+async function createAndPublishPageComposition(
+  payload: Payload,
+  data: RequiredDataFromCollectionSlug<"page-compositions">,
+) {
+  const created = await payload.create({
+    collection: "page-compositions",
+    data,
+    draft: true,
+    overrideAccess: true,
+  });
+  await payload.update({
+    collection: "page-compositions",
+    id: created.id,
+    data: { _status: "published" },
+    draft: false,
+    overrideAccess: true,
+  });
+  return created;
+}
 
-const seedDesignerPageContentSlots = [
-  {
-    slotId: "main",
-    blocks: [
-      {
-        componentDefinition: null as number | null,
-        editorFieldValues: {
-          headline: "Designer-only page: main region highlight.",
-          body: "Designer seed content with optional image editor field.",
-          image: null as number | null,
-        },
-      },
-    ],
-  },
-];
-
-/** Main slot only; highlight already lives in the template via library embed. */
-const seedLibraryTemplatePageContentSlots = [{ slotId: "main", blocks: [] }];
+async function createAndPublishPage(
+  payload: Payload,
+  data: RequiredDataFromCollectionSlug<"pages">,
+) {
+  const created = await payload.create({
+    collection: "pages",
+    data,
+    draft: true,
+    overrideAccess: true,
+  });
+  await payload.update({
+    collection: "pages",
+    id: created.id,
+    data: { _status: "published" },
+    draft: false,
+    overrideAccess: true,
+  });
+  return created;
+}
 
 async function seed(): Promise<void> {
   const payload = await getPayload({ config });
@@ -229,55 +250,7 @@ async function seed(): Promise<void> {
       overrideAccess: true,
     });
 
-    await payload.delete({
-      collection: "pages",
-      where: { slug: { equals: SEED_PAGE_SLUG } },
-      overrideAccess: true,
-    });
-    await payload.delete({
-      collection: "pages",
-      where: { slug: { equals: SEED_PAGE_DESIGNER_SLUG } },
-      overrideAccess: true,
-    });
-    await payload.delete({
-      collection: "pages",
-      where: { slug: { equals: SEED_PAGE_WITH_LIBRARY_SLUG } },
-      overrideAccess: true,
-    });
-    await payload.delete({
-      collection: "page-compositions",
-      where: { slug: { equals: SEED_PAGE_COMPOSITION_SLUG } },
-      overrideAccess: true,
-    });
-    await payload.delete({
-      collection: "page-compositions",
-      where: { slug: { equals: SEED_PAGE_COMPOSITION_WITH_LIBRARY_SLUG } },
-      overrideAccess: true,
-    });
-    for (const key of SEED_COMPONENT_KEYS) {
-      await payload.delete({
-        collection: "components",
-        where: { key: { equals: key } },
-        overrideAccess: true,
-      });
-    }
-    // Media: Local API uses `overrideAccess: true` (bootstrap; no session). REST `/api/media`
-    // still enforces collection access (`authenticatedAccess` / delete rules) for browser uploads.
-    for (const asset of Object.values(SEED_MEDIA_ASSETS)) {
-      await payload.delete({
-        collection: "media",
-        where: { alt: { equals: asset.alt } },
-        overrideAccess: true,
-      });
-    }
-
-    for (const u of Object.values(SEED_USERS)) {
-      await payload.delete({
-        collection: "users",
-        where: { email: { equals: u.email } },
-        overrideAccess: true,
-      });
-    }
+    await deleteSeedDocuments(payload);
 
     for (const u of Object.values(SEED_USERS)) {
       await payload.create({
@@ -297,179 +270,163 @@ async function seed(): Promise<void> {
       filePath: SEED_MEDIA_ASSETS.landscape.filePath,
       overrideAccess: true,
     });
-    const seedSquareMedia = await payload.create({
-      collection: "media",
-      data: { alt: SEED_MEDIA_ASSETS.square.alt },
-      filePath: SEED_MEDIA_ASSETS.square.filePath,
-      overrideAccess: true,
-    });
     const seedMediaIds = {
       landscape: asNumericMediaId(seedLandscapeMedia.id),
-      square: asNumericMediaId(seedSquareMedia.id),
+      square: asNumericMediaId(
+        (
+          await payload.create({
+            collection: "media",
+            data: { alt: SEED_MEDIA_ASSETS.square.alt },
+            filePath: SEED_MEDIA_ASSETS.square.filePath,
+            overrideAccess: true,
+          })
+        ).id,
+      ),
     } as const;
-
-    const seedCompositionWithLibrary =
-      withLibraryEmbedHighlightEditorFieldValues(
-        buildSeedPageTemplateWithLibraryComposition(),
-        { image: seedMediaIds.landscape, heroImage: seedMediaIds.square },
-      );
 
     const { seededScopeKey } = await seedDesignSystemTokens(payload);
 
-    const highlightCreated = await createAndPublishSeedComponent(payload, {
+    // Block designs (blockType set) — selectable in the page block picker.
+    const heroDesign = await createAndPublishSeedComponent(payload, {
+      displayName: "Seed hero design",
+      key: SEED_HERO_DESIGN_COMPONENT_KEY,
+      blockType: "hero",
+      composition: seedHeroDesignComposition,
+    });
+    const featureDesign = await createAndPublishSeedComponent(payload, {
+      displayName: "Seed feature design",
+      key: SEED_FEATURE_DESIGN_COMPONENT_KEY,
+      blockType: "feature",
+      composition: seedFeatureDesignComposition,
+    });
+    const ctaDesign = await createAndPublishSeedComponent(payload, {
+      displayName: "Seed CTA design",
+      key: SEED_CTA_DESIGN_COMPONENT_KEY,
+      blockType: "cta",
+      composition: seedCtaDesignComposition,
+    });
+    const contentDesign = await createAndPublishSeedComponent(payload, {
+      displayName: "Seed content design",
+      key: SEED_CONTENT_DESIGN_COMPONENT_KEY,
+      blockType: "content",
+      composition: seedContentDesignComposition,
+    });
+
+    // Design-only library parts (no blockType) — embedded in templates.
+    await createAndPublishSeedComponent(payload, {
       displayName: "Seed content highlight",
-      ...cardDefinition,
+      key: SEED_CONTENT_HIGHLIGHT_COMPONENT_KEY,
+      composition: seedContentHighlightComposition,
     });
     await createAndPublishSeedComponent(payload, {
       displayName: "Seed primary button",
-      ...primaryButtonDefinition,
-    });
-    await createAndPublishSeedComponent(payload, {
-      displayName: "Seed hero section",
-      ...heroSectionDefinition,
-    });
-    await createAndPublishSeedComponent(payload, {
-      displayName: "Seed feature grid section",
-      ...featureGridSectionDefinition,
-    });
-    await createAndPublishSeedComponent(payload, {
-      displayName: "Seed CTA section",
-      ...ctaSectionDefinition,
+      key: SEED_PRIMARY_BUTTON_COMPONENT_KEY,
+      composition: seedPrimaryButtonComposition,
     });
 
-    const pageContentSlots = seedPageContentSlots.map((row) => ({
-      ...row,
-      blocks: row.blocks.map((block) => ({
-        ...block,
-        componentDefinition: highlightCreated.id,
-        editorFieldValues: {
-          ...block.editorFieldValues,
-          image: seedMediaIds.landscape,
-        },
-      })),
-    }));
-    const designerPageContentSlots = seedDesignerPageContentSlots.map(
-      (row) => ({
-        ...row,
-        blocks: row.blocks.map((block) => ({
-          ...block,
-          componentDefinition: highlightCreated.id,
-          editorFieldValues: {
-            ...block.editorFieldValues,
-            image: seedMediaIds.square,
-          },
-        })),
-      }),
+    const composition = await createAndPublishPageComposition(payload, {
+      title: "Seed page template",
+      slug: SEED_PAGE_COMPOSITION_SLUG,
+      composition: buildSeedPageTemplateComposition(),
+    });
+    const compositionWithLibrary = await createAndPublishPageComposition(
+      payload,
+      {
+        title: "Seed template (embedded library parts)",
+        slug: SEED_PAGE_COMPOSITION_WITH_LIBRARY_SLUG,
+        composition: buildSeedPageTemplateWithLibraryComposition(),
+      },
     );
 
-    const composition = await payload.create({
-      collection: "page-compositions",
-      data: {
-        title: "Seed page template",
-        slug: SEED_PAGE_COMPOSITION_SLUG,
-        composition: seedComposition,
-      },
-      draft: true,
-      overrideAccess: true,
-    });
-
-    await payload.update({
-      collection: "page-compositions",
-      id: composition.id,
-      data: { _status: "published" },
-      draft: false,
-      overrideAccess: true,
-    });
-
-    const compositionWithLibrary = await payload.create({
-      collection: "page-compositions",
-      data: {
-        title: "Seed template (embedded library block)",
-        slug: SEED_PAGE_COMPOSITION_WITH_LIBRARY_SLUG,
-        composition: seedCompositionWithLibrary,
-      },
-      draft: true,
-      overrideAccess: true,
-    });
-
-    await payload.update({
-      collection: "page-compositions",
-      id: compositionWithLibrary.id,
-      data: { _status: "published" },
-      draft: false,
-      overrideAccess: true,
-    });
-
-    const _page = await payload.create({
-      collection: "pages",
-      data: {
-        title: "Seed starter page",
-        slug: SEED_PAGE_SLUG,
-        pageComposition: composition.id,
-        templateEditorFields: {
-          "hero-headline":
-            "Welcome — this page uses the seed template’s hero field.",
-          "hero-subhead":
-            "Template CMS copy under the headline — edit in Pages or swap the template in Studio.",
+    await createAndPublishPage(payload, {
+      title: "Seed starter page",
+      slug: SEED_PAGE_SLUG,
+      pageComposition: composition.id,
+      contentSlots: [
+        {
+          slotId: "main",
+          blocks: [
+            {
+              blockType: "hero",
+              design: heroDesign.id,
+              heading: "Welcome — this hero block uses the seed hero design.",
+              body: lexicalRichText(
+                "Typed block content authored in /admin, rendered through the Studio-built design.",
+              ),
+              image: seedMediaIds.landscape,
+              cta: {
+                label: "Start designing",
+                linkType: "url",
+                url: "/studio",
+                openInNewTab: false,
+              },
+            },
+            {
+              blockType: "feature",
+              design: featureDesign.id,
+              heading: "Everything your website launch needs",
+              body: lexicalRichText(
+                "Feature block seeded with typed values; the image field stays empty (optional).",
+              ),
+            },
+            {
+              blockType: "cta",
+              design: ctaDesign.id,
+              heading: "Ready to ship your next page?",
+              body: lexicalRichText(
+                "CTA block with a required button field bound to the design's primary button.",
+              ),
+              button: {
+                label: "Book a demo",
+                linkType: "url",
+                url: "/contact",
+                openInNewTab: false,
+              },
+            },
+          ],
         },
-        contentSlots: pageContentSlots,
-      },
-      draft: true,
-      overrideAccess: true,
+      ],
     });
 
-    await payload.update({
-      collection: "pages",
-      id: _page.id,
-      data: { _status: "published" },
-      draft: false,
-      overrideAccess: true,
-    });
-
-    const _designerPage = await payload.create({
-      collection: "pages",
-      data: {
-        title: "Seed designer page",
-        slug: SEED_PAGE_DESIGNER_SLUG,
-        contentSlots: designerPageContentSlots,
-      },
-      draft: true,
-      overrideAccess: true,
-    });
-
-    await payload.update({
-      collection: "pages",
-      id: _designerPage.id,
-      data: { _status: "published" },
-      draft: false,
-      overrideAccess: true,
-    });
-
-    const _pageWithLibraryTemplate = await payload.create({
-      collection: "pages",
-      data: {
-        title: "Seed page (template with embedded library block)",
-        slug: SEED_PAGE_WITH_LIBRARY_SLUG,
-        pageComposition: compositionWithLibrary.id,
-        templateEditorFields: {
-          "hero-headline":
-            "Embedded highlight template — hero is still template CMS.",
-          "hero-subhead":
-            "Seeded hero, feature grid, highlight, CTA, and primary button components are wired in this template.",
+    await createAndPublishPage(payload, {
+      title: "Seed designer page",
+      slug: SEED_PAGE_DESIGNER_SLUG,
+      contentSlots: [
+        {
+          slotId: "main",
+          blocks: [
+            {
+              blockType: "content",
+              design: contentDesign.id,
+              body: lexicalRichText(
+                "Blocks-only page: no template, a single content block renders standalone.",
+              ),
+            },
+          ],
         },
-        contentSlots: seedLibraryTemplatePageContentSlots,
-      },
-      draft: true,
-      overrideAccess: true,
+      ],
     });
 
-    await payload.update({
-      collection: "pages",
-      id: _pageWithLibraryTemplate.id,
-      data: { _status: "published" },
-      draft: false,
-      overrideAccess: true,
+    await createAndPublishPage(payload, {
+      title: "Seed page (template with embedded library parts)",
+      slug: SEED_PAGE_WITH_LIBRARY_SLUG,
+      pageComposition: compositionWithLibrary.id,
+      contentSlots: [
+        {
+          slotId: "main",
+          blocks: [
+            {
+              blockType: "content",
+              design: contentDesign.id,
+              body: lexicalRichText(
+                "Main-region content block below the embedded design-only library parts.",
+              ),
+            },
+          ],
+        },
+      ],
     });
+
     const base = (process.env.SITE_URL ?? "http://localhost:3000").replace(
       /\/$/,
       "",
@@ -483,13 +440,13 @@ async function seed(): Promise<void> {
       `  Page template:   ${SEED_PAGE_COMPOSITION_SLUG} (id: ${compositionId})`,
     );
     console.log(
-      `  Page template:   ${SEED_PAGE_COMPOSITION_WITH_LIBRARY_SLUG} (id: ${compositionWithLibraryId}) — embeds ${SEED_HERO_SECTION_COMPONENT_KEY}, ${SEED_FEATURE_GRID_SECTION_COMPONENT_KEY}, ${SEED_CONTENT_HIGHLIGHT_COMPONENT_KEY}, ${SEED_CTA_SECTION_COMPONENT_KEY}, ${SEED_PRIMARY_BUTTON_COMPONENT_KEY}`,
+      `  Page template:   ${SEED_PAGE_COMPOSITION_WITH_LIBRARY_SLUG} (id: ${compositionWithLibraryId}) — embeds ${SEED_CONTENT_HIGHLIGHT_COMPONENT_KEY}, ${SEED_PRIMARY_BUTTON_COMPONENT_KEY}`,
     );
     console.log(
-      `  Seed page:       ${SEED_PAGE_SLUG} (hero + main slot with highlight block)`,
+      `  Seed page:       ${SEED_PAGE_SLUG} (hero + feature + CTA blocks in main region)`,
     );
     console.log(
-      `  Seed page:       ${SEED_PAGE_WITH_LIBRARY_SLUG} (template embeds all seeded library components; empty main slot)`,
+      `  Seed page:       ${SEED_PAGE_WITH_LIBRARY_SLUG} (template embeds design-only parts; content block in main)`,
     );
     console.log(
       `  Designer page:   ${SEED_PAGE_DESIGNER_SLUG} (blocks only, no template)`,
@@ -499,10 +456,10 @@ async function seed(): Promise<void> {
       "  Design system:   default token set and active brand key configured",
     );
     console.log(
-      "  Media:           seeded placeholder uploads (16:9 + 1:1) for image editor fields",
+      "  Media:           seeded placeholder uploads (16:9 + 1:1) for hero image",
     );
     console.log(
-      "  Library:         published components with a template appear in the block picker",
+      `  Block designs:   hero (${heroDesign.id}), feature (${featureDesign.id}), cta (${ctaDesign.id}), content (${contentDesign.id})`,
     );
     console.log(`\n  Log in (all use password: ${seedPassword}):`);
     for (const [label, u] of Object.entries(SEED_USERS)) {

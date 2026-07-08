@@ -17,8 +17,6 @@ describe("Designer library (components)", () => {
       draft: true,
       data: {
         displayName,
-        propContract: { fields: {} },
-        editorFields: { editorFields: [] },
       },
       overrideAccess: true,
     });

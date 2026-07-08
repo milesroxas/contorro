@@ -179,7 +179,6 @@ export function payloadStudioMutationRepository(
           collection: "components",
           data: {
             displayName: title,
-            propContract: { fields: {} },
             composition: defaultEmptyPageComposition(),
           },
           draft: true,

@@ -1,19 +1,16 @@
 import {
   buildSeedPageTemplateComposition,
-  headlineCardComposition,
-  headlineCardEditorFields,
+  seedHeroDesignComposition,
 } from "../../src/seeds/seed-content-fixtures.js";
 import { getTestPayload } from "./getTestPayload.js";
 
-/** Admin E2E: pages edit view shows block CMS fields for components in layout regions. */
+/** Admin E2E: pages edit view shows native block fields for blocks in layout regions. */
 export const E2E_REGION_ADMIN_PAGE_SLUG = "e2e-region-block-admin";
 export const E2E_REGION_PC_SLUG = "e2e-region-block-pc";
-export const E2E_REGION_COMPONENT_KEY = "e2e-region-block-cm";
+export const E2E_REGION_COMPONENT_KEY = "e2e-region-block-design";
+export const E2E_REGION_BLOCK_HEADING = "E2E block heading seed";
 
-const pageTemplateComposition = buildSeedPageTemplateComposition({
-  minimalHero: true,
-  heroHeadlineDescription: false,
-});
+const pageTemplateComposition = buildSeedPageTemplateComposition();
 
 export async function seedPagesRegionBlockAdminFixture(): Promise<{
   pageId: number;
@@ -36,22 +33,21 @@ export async function seedPagesRegionBlockAdminFixture(): Promise<{
     overrideAccess: true,
   });
 
-  const block = await payload.create({
+  const design = await payload.create({
     collection: "components",
     draft: true,
     data: {
       key: E2E_REGION_COMPONENT_KEY,
-      displayName: "E2E region block",
-      propContract: { fields: {} },
-      editorFields: headlineCardEditorFields,
-      composition: headlineCardComposition,
+      displayName: "E2E region hero design",
+      blockType: "hero",
+      composition: seedHeroDesignComposition,
     },
     overrideAccess: true,
   });
   await payload.update({
     collection: "components",
-    id: block.id,
-    data: {},
+    id: design.id,
+    data: { _status: "published" },
     draft: false,
     overrideAccess: true,
   });
@@ -80,16 +76,14 @@ export async function seedPagesRegionBlockAdminFixture(): Promise<{
       title: "E2E region admin page",
       slug: E2E_REGION_ADMIN_PAGE_SLUG,
       pageComposition: pc.id,
-      templateEditorFields: {
-        "hero-headline": "Template hero for E2E",
-      },
       contentSlots: [
         {
           slotId: "main",
           blocks: [
             {
-              componentDefinition: block.id,
-              editorFieldValues: { headline: "E2E block headline seed" },
+              blockType: "hero",
+              design: design.id,
+              heading: E2E_REGION_BLOCK_HEADING,
             },
           ],
         },

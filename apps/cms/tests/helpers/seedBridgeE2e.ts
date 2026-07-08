@@ -1,16 +1,17 @@
 import {
-  headlineCardComposition,
-  headlineCardEditorFields,
+  lexicalRichText,
+  seedContentDesignComposition,
 } from "../../src/seeds/seed-content-fixtures.js";
 import { getTestPayload } from "./getTestPayload.js";
 
 /** Stable slugs / keys for `bridge-designer-public.e2e.spec.ts`. */
 export const BRIDGE_E2E_PAGE_SLUG = "e2e-bridge-public";
-export const BRIDGE_E2E_COMPONENT_KEY = "e2e-bridge-card";
+export const BRIDGE_E2E_COMPONENT_KEY = "e2e-bridge-content-design";
+export const BRIDGE_E2E_BLOCK_TEXT = "Hello World";
 
 /**
- * Seeds a published page whose only body is a designer `content` array row with editor-field
- * substitution (Section D.5 — public render path).
+ * Seeds a published page whose only body is a native `content` block with a
+ * published block design — covers the public blocks render path end to end.
  */
 export async function seedBridgePublicPage(): Promise<void> {
   const payload = await getTestPayload();
@@ -26,29 +27,22 @@ export async function seedBridgePublicPage(): Promise<void> {
     overrideAccess: true,
   });
 
-  const def = await payload.create({
+  const design = await payload.create({
     collection: "components",
     draft: true,
     data: {
-      displayName: "E2E bridge card",
-      propContract: { fields: {} },
-      editorFields: headlineCardEditorFields,
-      composition: headlineCardComposition,
+      key: BRIDGE_E2E_COMPONENT_KEY,
+      displayName: "E2E bridge content design",
+      blockType: "content",
+      composition: seedContentDesignComposition,
     },
     overrideAccess: true,
   });
 
   await payload.update({
     collection: "components",
-    id: def.id,
+    id: design.id,
     data: { _status: "published" },
-    draft: false,
-    overrideAccess: true,
-  });
-
-  const publishedComponent = await payload.findByID({
-    collection: "components",
-    id: def.id,
     draft: false,
     overrideAccess: true,
   });
@@ -64,8 +58,9 @@ export async function seedBridgePublicPage(): Promise<void> {
           slotId: "main",
           blocks: [
             {
-              componentDefinition: publishedComponent.id,
-              editorFieldValues: { headline: "Hello World" },
+              blockType: "content",
+              design: design.id,
+              body: lexicalRichText(BRIDGE_E2E_BLOCK_TEXT),
             },
           ],
         },

@@ -3,15 +3,17 @@ import { closeTestPayload } from "../helpers/getTestPayload";
 import { login } from "../helpers/login";
 import {
   cleanupPagesRegionBlockAdmin,
+  E2E_REGION_BLOCK_HEADING,
   seedPagesRegionBlockAdminFixture,
 } from "../helpers/seedPagesRegionBlockAdmin";
 import { cleanupTestUser, seedTestUser, testUser } from "../helpers/seedUser";
 
 /**
- * Regression: Pages → layout region → block must show CMS fields (e.g. Headline) for the selected
- * component, same contract as template CMS fields.
+ * Pages → layout region → native block: Payload renders the catalog-generated
+ * block fields (e.g. the hero Heading text input) with the stored value —
+ * no custom Field components involved.
  */
-test.describe("Pages admin — block CMS fields in regions", () => {
+test.describe("Pages admin — native block fields in regions", () => {
   test.describe.configure({ mode: "serial" });
 
   let pageId: number;
@@ -28,7 +30,7 @@ test.describe("Pages admin — block CMS fields in regions", () => {
     await closeTestPayload();
   });
 
-  test("edit view shows Headline field for block in Region main", async ({
+  test("edit view shows the hero block Heading field in Region main", async ({
     page,
   }) => {
     await login({ page, user: testUser });
@@ -42,8 +44,14 @@ test.describe("Pages admin — block CMS fields in regions", () => {
       page.getByRole("heading", { name: /layout regions/i }),
     ).toBeVisible({ timeout: 30_000 });
 
-    const headline = page.getByLabel(/^Headline/i).first();
-    await expect(headline).toBeVisible({ timeout: 45_000 });
-    await expect(headline).toHaveValue("E2E block headline seed");
+    // Native blocks field: the hero block row exposes its typed Heading input.
+    const heading = page.getByLabel(/^Heading/i).first();
+    await expect(heading).toBeVisible({ timeout: 45_000 });
+    await expect(heading).toHaveValue(E2E_REGION_BLOCK_HEADING);
+
+    // The design relationship renders with its published design selected.
+    await expect(
+      page.getByText("E2E region hero design").first(),
+    ).toBeVisible();
   });
 });

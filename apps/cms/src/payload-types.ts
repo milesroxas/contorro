@@ -136,7 +136,7 @@ export interface UserAuthOperations {
   };
 }
 /**
- * Site page: add a page template from the builder and/or place library blocks. Metadata fields in Page setup are for SEO and social metadata only—not page body content.
+ * Site page: choose a page template and place typed content blocks in its layout regions. Metadata fields in Page setup are for SEO and social metadata only—not page body content.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "pages".
@@ -182,21 +182,9 @@ export interface Page {
     [k: string]: unknown;
   } | null;
   /**
-   * Full-page layout from the builder. Layout slots (where components go) and props are authored there; CMS fields exposed on the template appear below.
+   * Full-page layout from the builder. Layout regions (where blocks go) are authored there.
    */
   pageComposition?: (number | null) | PageComposition;
-  /**
-   * Values for CMS-managed fields exposed on the page template (defined in the builder). Distinct from Blocks and from component props.
-   */
-  templateEditorFields?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
   /**
    * Regions match the selected page template’s layout slots. Add blocks inside each region; reordering regions is disabled.
    */
@@ -204,25 +192,123 @@ export interface Page {
     | {
         slotId: string;
         blocks?:
-          | {
-              /**
-               * Choose a published component from your library.
-               */
-              componentDefinition: number | Component;
-              /**
-               * CMS field values for this block (manifest from the component template).
-               */
-              editorFieldValues:
-                | {
+          | (
+              | {
+                  /**
+                   * Choose a published design for this block.
+                   */
+                  design: number | Component;
+                  heading: string;
+                  body?: {
+                    root: {
+                      type: string;
+                      children: {
+                        type: any;
+                        version: number;
+                        [k: string]: unknown;
+                      }[];
+                      direction: ('ltr' | 'rtl') | null;
+                      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                      indent: number;
+                      version: number;
+                    };
                     [k: string]: unknown;
-                  }
-                | unknown[]
-                | string
-                | number
-                | boolean
-                | null;
-              id?: string | null;
-            }[]
+                  } | null;
+                  image?: (number | null) | Media;
+                  cta?: {
+                    label?: string | null;
+                    linkType?: ('url' | 'page') | null;
+                    url?: string | null;
+                    page?: (number | null) | Page;
+                    openInNewTab?: boolean | null;
+                  };
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'hero';
+                }
+              | {
+                  /**
+                   * Choose a published design for this block.
+                   */
+                  design: number | Component;
+                  heading: string;
+                  body?: {
+                    root: {
+                      type: string;
+                      children: {
+                        type: any;
+                        version: number;
+                        [k: string]: unknown;
+                      }[];
+                      direction: ('ltr' | 'rtl') | null;
+                      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                      indent: number;
+                      version: number;
+                    };
+                    [k: string]: unknown;
+                  } | null;
+                  image?: (number | null) | Media;
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'feature';
+                }
+              | {
+                  /**
+                   * Choose a published design for this block.
+                   */
+                  design: number | Component;
+                  heading: string;
+                  body?: {
+                    root: {
+                      type: string;
+                      children: {
+                        type: any;
+                        version: number;
+                        [k: string]: unknown;
+                      }[];
+                      direction: ('ltr' | 'rtl') | null;
+                      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                      indent: number;
+                      version: number;
+                    };
+                    [k: string]: unknown;
+                  } | null;
+                  button: {
+                    label: string;
+                    linkType?: ('url' | 'page') | null;
+                    url?: string | null;
+                    page?: (number | null) | Page;
+                    openInNewTab?: boolean | null;
+                  };
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'cta';
+                }
+              | {
+                  /**
+                   * Choose a published design for this block.
+                   */
+                  design: number | Component;
+                  body: {
+                    root: {
+                      type: string;
+                      children: {
+                        type: any;
+                        version: number;
+                        [k: string]: unknown;
+                      }[];
+                      direction: ('ltr' | 'rtl') | null;
+                      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                      indent: number;
+                      version: number;
+                    };
+                    [k: string]: unknown;
+                  };
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'content';
+                }
+            )[]
           | null;
         id?: string | null;
       }[]
@@ -255,7 +341,7 @@ export interface PageComposition {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * Reusable blocks for your library and pages. Author in the builder; publish when ready.
+ * Block designs and library parts. Author in the builder; set a block type to make a design selectable on pages.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "components".
@@ -267,24 +353,10 @@ export interface Component {
    * Stable id derived from the title when the component is created. Shown for reference only.
    */
   key: string;
-  propContract:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  editorFields:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
+  /**
+   * Content contract this design implements. Leave empty for a design-only library part.
+   */
+  blockType?: ('hero' | 'feature' | 'cta' | 'content') | null;
   composition?:
     | {
         [k: string]: unknown;
@@ -509,7 +581,6 @@ export interface PagesSelect<T extends boolean = true> {
   seoDescription?: T;
   socialShareText?: T;
   pageComposition?: T;
-  templateEditorFields?: T;
   contentSlots?:
     | T
     | {
@@ -517,9 +588,61 @@ export interface PagesSelect<T extends boolean = true> {
         blocks?:
           | T
           | {
-              componentDefinition?: T;
-              editorFieldValues?: T;
-              id?: T;
+              hero?:
+                | T
+                | {
+                    design?: T;
+                    heading?: T;
+                    body?: T;
+                    image?: T;
+                    cta?:
+                      | T
+                      | {
+                          label?: T;
+                          linkType?: T;
+                          url?: T;
+                          page?: T;
+                          openInNewTab?: T;
+                        };
+                    id?: T;
+                    blockName?: T;
+                  };
+              feature?:
+                | T
+                | {
+                    design?: T;
+                    heading?: T;
+                    body?: T;
+                    image?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              cta?:
+                | T
+                | {
+                    design?: T;
+                    heading?: T;
+                    body?: T;
+                    button?:
+                      | T
+                      | {
+                          label?: T;
+                          linkType?: T;
+                          url?: T;
+                          page?: T;
+                          openInNewTab?: T;
+                        };
+                    id?: T;
+                    blockName?: T;
+                  };
+              content?:
+                | T
+                | {
+                    design?: T;
+                    body?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
             };
         id?: T;
       };
@@ -596,8 +719,7 @@ export interface DesignTokenSetsSelect<T extends boolean = true> {
 export interface ComponentsSelect<T extends boolean = true> {
   displayName?: T;
   key?: T;
-  propContract?: T;
-  editorFields?: T;
+  blockType?: T;
   composition?: T;
   lastTouchedBy?: T;
   folder?: T;
