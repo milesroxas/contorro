@@ -1,5 +1,5 @@
-import type { Result } from "@repo/kernel";
-import { err, ok } from "@repo/kernel";
+import type { Result } from "@repo/contracts-zod";
+import { err, ok } from "@repo/contracts-zod";
 import type { DesignToken } from "../entities/design-token.js";
 import { isValidTokenKey } from "../value-objects/token-key.js";
 

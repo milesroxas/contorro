@@ -76,9 +76,6 @@ importers:
       '@repo/infrastructure-payload-media-client':
         specifier: workspace:*
         version: link:../../packages/infrastructure/payload-media-client
-      '@repo/kernel':
-        specifier: workspace:*
-        version: link:../../packages/kernel
       '@repo/presentation-admin-extensions':
         specifier: workspace:*
         version: link:../../packages/presentation/admin-extensions
@@ -197,9 +194,6 @@ importers:
       '@repo/domains-design-system':
         specifier: workspace:*
         version: link:../../domains/design-system
-      '@repo/kernel':
-        specifier: workspace:*
-        version: link:../../kernel
       payload:
         specifier: 3.83.0
         version: 3.83.0(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6)
@@ -212,9 +206,6 @@ importers:
       '@repo/domains-composition':
         specifier: workspace:*
         version: link:../../domains/composition
-      '@repo/kernel':
-        specifier: workspace:*
-        version: link:../../kernel
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -243,9 +234,9 @@ importers:
 
   packages/contracts/zod:
     dependencies:
-      '@repo/kernel':
-        specifier: workspace:*
-        version: link:../../kernel
+      nanoid:
+        specifier: ^5.1.9
+        version: 5.1.9
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -255,15 +246,12 @@ importers:
       '@repo/contracts-zod':
         specifier: workspace:*
         version: link:../../contracts/zod
-      '@repo/kernel':
-        specifier: workspace:*
-        version: link:../../kernel
 
   packages/domains/design-system:
     dependencies:
-      '@repo/kernel':
+      '@repo/contracts-zod':
         specifier: workspace:*
-        version: link:../../kernel
+        version: link:../../contracts/zod
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -273,9 +261,6 @@ importers:
       '@repo/contracts-zod':
         specifier: workspace:*
         version: link:../../contracts/zod
-      '@repo/kernel':
-        specifier: workspace:*
-        version: link:../../kernel
       react:
         specifier: 19.2.5
         version: 19.2.5
@@ -307,9 +292,6 @@ importers:
       '@repo/domains-runtime-catalog':
         specifier: workspace:*
         version: link:../../domains/runtime-catalog
-      '@repo/kernel':
-        specifier: workspace:*
-        version: link:../../kernel
       payload:
         specifier: 3.83.0
         version: 3.83.0(bufferutil@4.1.0)(graphql@16.13.2)(typescript@6.0.2)(utf-8-validate@6.0.6)
@@ -322,12 +304,6 @@ importers:
         version: 8.20.0
 
   packages/infrastructure/payload-media-client: {}
-
-  packages/kernel:
-    dependencies:
-      nanoid:
-        specifier: ^5.1.9
-        version: 5.1.9
 
   packages/presentation/admin-extensions:
     dependencies:
@@ -392,9 +368,6 @@ importers:
       '@repo/infrastructure-payload-media-client':
         specifier: workspace:*
         version: link:../../infrastructure/payload-media-client
-      '@repo/kernel':
-        specifier: workspace:*
-        version: link:../../kernel
       '@repo/presentation-shared':
         specifier: workspace:*
         version: link:../shared
@@ -456,9 +429,6 @@ importers:
       '@repo/domains-runtime-catalog':
         specifier: workspace:*
         version: link:../../domains/runtime-catalog
-      '@repo/kernel':
-        specifier: workspace:*
-        version: link:../../kernel
       react:
         specifier: 19.2.5
         version: 19.2.5
@@ -484,9 +454,6 @@ importers:
       '@repo/domains-runtime-catalog':
         specifier: workspace:*
         version: link:../../domains/runtime-catalog
-      '@repo/kernel':
-        specifier: workspace:*
-        version: link:../../kernel
       react:
         specifier: 19.2.5
         version: 19.2.5

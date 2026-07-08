@@ -30,6 +30,15 @@ export {
   EditorFieldsContractSchema,
 } from "./editor-fields.js";
 export {
+  type AsyncResult,
+  type Err,
+  err,
+  makeId,
+  type Ok,
+  ok,
+  type Result,
+} from "./kernel.js";
+export {
   normalizeEditorFieldsContract,
   parseEditorFieldsContract,
 } from "./normalize-editor-fields.js";

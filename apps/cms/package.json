@@ -38,7 +38,6 @@
     "@repo/domains-composition": "workspace:*",
     "@repo/infrastructure-payload-config": "workspace:*",
     "@repo/infrastructure-payload-media-client": "workspace:*",
-    "@repo/kernel": "workspace:*",
     "@repo/presentation-admin-extensions": "workspace:*",
     "@repo/presentation-shared": "workspace:*",
     "@repo/presentation-studio": "workspace:*",

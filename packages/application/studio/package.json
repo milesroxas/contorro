@@ -17,7 +17,6 @@
   "dependencies": {
     "@repo/contracts-zod": "workspace:*",
     "@repo/domains-composition": "workspace:*",
-    "@repo/kernel": "workspace:*",
     "zod": "^4.3.6"
   }
 }

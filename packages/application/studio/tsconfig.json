@@ -6,7 +6,6 @@
   },
   "include": ["src/**/*"],
   "references": [
-    { "path": "../../kernel" },
     { "path": "../../contracts/zod" },
     { "path": "../../domains/composition" }
   ]

@@ -1,7 +1,6 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/kernel" },
     { "path": "./packages/domains/composition" },
     { "path": "./packages/domains/design-system" },
     { "path": "./packages/domains/runtime-catalog" },

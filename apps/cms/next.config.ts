@@ -20,7 +20,6 @@ const nextConfig: NextConfig = {
     "@repo/domains-runtime-catalog",
     "@repo/infrastructure-payload-config",
     "@repo/infrastructure-payload-media-client",
-    "@repo/kernel",
     "@repo/presentation-admin-extensions",
     "@repo/presentation-studio",
     "@repo/presentation-shared",

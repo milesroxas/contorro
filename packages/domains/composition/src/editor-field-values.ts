@@ -3,8 +3,12 @@ import type {
   EditorFieldsContract,
   PageComposition,
 } from "@repo/contracts-zod";
-import { PageCompositionSchema } from "@repo/contracts-zod";
-import { err, ok, type Result } from "@repo/kernel";
+import {
+  err,
+  ok,
+  PageCompositionSchema,
+  type Result,
+} from "@repo/contracts-zod";
 
 /**
  * Validates CMS-supplied values against required editor fields.

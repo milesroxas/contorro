@@ -16,8 +16,7 @@
   },
   "dependencies": {
     "@repo/contracts-zod": "workspace:*",
-    "@repo/domains-design-system": "workspace:*",
-    "@repo/kernel": "workspace:*"
+    "@repo/domains-design-system": "workspace:*"
   },
   "peerDependencies": {
     "payload": "^3.0.0"

@@ -6,8 +6,13 @@ import type {
   StyleProperty,
   StylePropertyEntry,
 } from "@repo/contracts-zod";
-import { PageCompositionSchema } from "@repo/contracts-zod";
-import { err, makeId, ok, type Result } from "@repo/kernel";
+import {
+  err,
+  makeId,
+  ok,
+  PageCompositionSchema,
+  type Result,
+} from "@repo/contracts-zod";
 import { editorFieldSpecForPrimitiveButton } from "../button-editor-binding.js";
 import {
   defaultPrimitivePropValues,

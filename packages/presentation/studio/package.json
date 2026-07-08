@@ -24,7 +24,6 @@
     "@repo/contracts-zod": "workspace:*",
     "@repo/domains-composition": "workspace:*",
     "@repo/infrastructure-payload-media-client": "workspace:*",
-    "@repo/kernel": "workspace:*",
     "@repo/presentation-shared": "workspace:*",
     "@repo/runtime-primitives": "workspace:*",
     "@repo/runtime-renderer": "workspace:*",

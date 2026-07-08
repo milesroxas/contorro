@@ -15,8 +15,7 @@
     "build": "tsc -b"
   },
   "dependencies": {
-    "@repo/contracts-zod": "workspace:*",
-    "@repo/kernel": "workspace:*"
+    "@repo/contracts-zod": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.0.0"

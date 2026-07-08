@@ -1,6 +1,5 @@
-import type { PageComposition } from "@repo/contracts-zod";
+import type { AsyncResult, PageComposition } from "@repo/contracts-zod";
 import type { CompositionActor } from "@repo/domains-composition";
-import type { AsyncResult } from "@repo/kernel";
 
 export type StudioCompositionRevision = {
   updatedAt: string;

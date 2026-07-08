@@ -3,7 +3,7 @@ import type {
   PageComposition,
   StyleBinding,
 } from "@repo/contracts-zod";
-import { makeId } from "@repo/kernel";
+import { makeId } from "@repo/contracts-zod";
 
 function remapChildIds(
   nodeIdMap: Map<string, string>,

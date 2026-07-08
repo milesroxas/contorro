@@ -1,11 +1,11 @@
 import type { StudioMutationRepository } from "@repo/application-studio";
+import { type AsyncResult, err, ok } from "@repo/contracts-zod";
 import {
   componentIdFromStudioRowId,
   defaultEmptyPageComposition,
   defaultPageTemplateComposition,
   studioRowIdForComponent,
 } from "@repo/domains-composition";
-import { type AsyncResult, err, ok } from "@repo/kernel";
 import type { Payload } from "payload";
 
 function normalizeUpdatedAt(value: unknown): string {

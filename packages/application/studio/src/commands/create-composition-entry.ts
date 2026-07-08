@@ -1,5 +1,5 @@
+import { type AsyncResult, err } from "@repo/contracts-zod";
 import type { CompositionActor } from "@repo/domains-composition";
-import { type AsyncResult, err } from "@repo/kernel";
 
 import type { StudioMutationRepository } from "../ports/studio-mutation-repository.js";
 

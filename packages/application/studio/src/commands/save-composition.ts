@@ -1,8 +1,11 @@
 import type { PageComposition } from "@repo/contracts-zod";
-import { PageCompositionSchema } from "@repo/contracts-zod";
+import {
+  type AsyncResult,
+  err,
+  PageCompositionSchema,
+} from "@repo/contracts-zod";
 import type { CompositionActor } from "@repo/domains-composition";
 import { validatePageCompositionInvariants } from "@repo/domains-composition";
-import { type AsyncResult, err } from "@repo/kernel";
 
 import type { StudioMutationRepository } from "../ports/studio-mutation-repository.js";
 

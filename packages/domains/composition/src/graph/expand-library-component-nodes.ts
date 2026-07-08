@@ -1,6 +1,10 @@
 import type { PageComposition } from "@repo/contracts-zod";
-import { PageCompositionSchema } from "@repo/contracts-zod";
-import { err, ok, type Result } from "@repo/kernel";
+import {
+  err,
+  ok,
+  PageCompositionSchema,
+  type Result,
+} from "@repo/contracts-zod";
 
 import { mergeEditorFieldValuesIntoComposition } from "../editor-field-values.js";
 import { validatePageCompositionInvariants } from "../validation/page-composition.js";

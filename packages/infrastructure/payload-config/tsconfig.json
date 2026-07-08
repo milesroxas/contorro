@@ -8,7 +8,6 @@
   "references": [
     { "path": "../../application/design-system" },
     { "path": "../../contracts/zod" },
-    { "path": "../../kernel" },
     { "path": "../../domains/composition" },
     { "path": "../../domains/design-system" },
     { "path": "../../domains/runtime-catalog" }
