@@ -21,6 +21,7 @@ import type {
   StyleProperty,
   StylePropertyEntry,
 } from "@repo/contracts-zod";
+import { useSearchParams } from "next/navigation";
 import {
   type CSSProperties,
   useCallback,
@@ -37,6 +38,7 @@ import { StudioRoot } from "../components/studio-root.js";
 import { Card, CardContent } from "../components/ui/card.js";
 import { Separator } from "../components/ui/separator.js";
 import { StudioCanvas } from "../features/canvas/StudioCanvas.js";
+import { ComponentEditReturnBar } from "../features/component-edit/ComponentEditReturnBar.js";
 import type { InsertDropData } from "../features/dnd/InsertionDropZone.js";
 import { DraftSaveBar } from "../features/draft-save/DraftSaveBar.js";
 import {
@@ -75,6 +77,10 @@ import {
 import { MobileStudioLayout } from "./mobile/MobileStudioLayout.js";
 import { StudioLeftSidebarPanelBody } from "./studio-left-sidebar-panel-body.js";
 import { useStudioDesignSystemStyleSheet } from "./use-studio-design-system-style-sheet.js";
+import {
+  isStudioComponentEditFromTemplateRoute,
+  STUDIO_DEEP_LINK_SELECT_NODE_PARAM,
+} from "../shell/studio-navigation.js";
 
 const pointerFirstCollisionDetection: CollisionDetection = (args) => {
   const pointerCollisions = pointerWithin(args);
@@ -501,6 +507,58 @@ export function StudioApp({
   const pasteNode = useStudioStore((s) => s.pasteNode);
   const duplicateNode = useStudioStore((s) => s.duplicateNode);
   const wrapNodeInBox = useStudioStore((s) => s.wrapNodeInBox);
+  const createComponentFromNode = useStudioStore(
+    (s) => s.createComponentFromNode,
+  );
+
+  const onCreateComponent = useCallback(
+    (nodeId: string) => {
+      const title = window.prompt("Component name", "New component")?.trim();
+      if (!title) {
+        return;
+      }
+      void createComponentFromNode(nodeId, title);
+    },
+    [createComponentFromNode],
+  );
+
+  const searchParams = useSearchParams();
+  const selectNodeParam = searchParams.get(
+    STUDIO_DEEP_LINK_SELECT_NODE_PARAM,
+  );
+  const initialSelectFromUrlRef = useRef<string | null>(null);
+
+  const templateReturn = useMemo(
+    () =>
+      studioResource === "pageTemplate"
+        ? { templateCompositionId: compositionId, templateLabel: name }
+        : null,
+    [compositionId, name, studioResource],
+  );
+
+  const componentEditFromTemplate = isStudioComponentEditFromTemplateRoute(
+    searchParams,
+    compositionId,
+  );
+
+  const leftRailPrimaryPanels = useMemo(
+    () =>
+      componentEditFromTemplate
+        ? LEFT_SIDEBAR_PRIMARY_PANELS.filter((p) => p.id !== "pageTemplates")
+        : LEFT_SIDEBAR_PRIMARY_PANELS,
+    [componentEditFromTemplate],
+  );
+
+  const selectLeftSidebarPanel = useCallback(
+    (id: LeftSidebarPanelId) => {
+      if (componentEditFromTemplate && id === "pageTemplates") {
+        setActiveLeftSidebarPanel("layers");
+        return;
+      }
+      setActiveLeftSidebarPanel(id);
+    },
+    [componentEditFromTemplate],
+  );
 
   const trySaveDraft = useCallback(async () => {
     await saveDraft();
@@ -511,6 +569,27 @@ export function StudioApp({
   useEffect(() => {
     void useStudioStore.getState().load();
   }, [useStudioStore]);
+
+  useEffect(() => {
+    const spec = selectNodeParam?.trim() ?? "";
+    const key = `${compositionId}|${spec}`;
+    if (spec === "" || !composition) {
+      return;
+    }
+    if (initialSelectFromUrlRef.current === key) {
+      return;
+    }
+    if (composition.nodes[spec]) {
+      selectNode(spec);
+    }
+    initialSelectFromUrlRef.current = key;
+  }, [composition, compositionId, selectNode, selectNodeParam]);
+
+  useEffect(() => {
+    if (componentEditFromTemplate && activeLeftSidebarPanel === "pageTemplates") {
+      setActiveLeftSidebarPanel("layers");
+    }
+  }, [activeLeftSidebarPanel, componentEditFromTemplate]);
 
   useEffect(() => {
     setTheme(resolveStudioChromeTheme());
@@ -526,7 +605,7 @@ export function StudioApp({
         removeNode,
         selectedNodeId,
         setActiveInspectorTab,
-        setActiveLeftSidebarPanel,
+        setActiveLeftSidebarPanel: selectLeftSidebarPanel,
         setKeyboardShortcutsOpen,
         undo,
         wrapNodeInBox,
@@ -542,6 +621,7 @@ export function StudioApp({
     pasteNode,
     redo,
     removeNode,
+    selectLeftSidebarPanel,
     selectedNodeId,
     undo,
     wrapNodeInBox,
@@ -799,6 +879,7 @@ export function StudioApp({
             renaming={renaming}
             saving={saving}
           />
+          <ComponentEditReturnBar currentCompositionId={compositionId} />
           <StudioUnsavedChangesGuard
             dirty={dirty}
             saving={saving}
@@ -815,8 +896,12 @@ export function StudioApp({
               canvasZoomPercent={canvasZoomPercent}
               clearNodeStyles={handleClearNodeStyles}
               composition={composition}
-              componentsHref={componentsHref}
+              componentsHref={
+                componentEditFromTemplate ? "" : componentsHref
+              }
               compositionId={compositionId}
+              componentEditFromTemplate={componentEditFromTemplate}
+              templateReturn={templateReturn}
               dirty={dirty}
               onActiveBreakpointChange={setActiveBreakpoint}
               onCanvasFontSizePxChange={setCanvasFontSizePx}
@@ -824,7 +909,7 @@ export function StudioApp({
               onCanvasZoomPercentChange={setCanvasZoomPercent}
               onCancelStagedTapInsertion={() => setStagedTapInsertion(null)}
               onInspectorTabChange={setActiveInspectorTab}
-              onLeftSidebarPanelChange={setActiveLeftSidebarPanel}
+              onLeftSidebarPanelChange={selectLeftSidebarPanel}
               onNodeStyleEntry={handleNodeStyleEntry}
               onPageTemplateListFilterChange={setPageTemplateListFilter}
               onPublish={() => void publish()}
@@ -835,6 +920,7 @@ export function StudioApp({
               onTextChange={handleTextChange}
               onToggleTheme={toggleTheme}
               onUndo={() => undo()}
+              onCreateComponent={onCreateComponent}
               onWrapNode={wrapNodeInBox}
               pageTemplateListFilter={pageTemplateListFilter}
               patchNodeProps={handlePatchNodeProps}
@@ -874,15 +960,15 @@ export function StudioApp({
                 <div className="flex w-full flex-col items-center gap-1">
                   <LeftRailPanelButtons
                     activeLeftSidebarPanel={activeLeftSidebarPanel}
-                    onSelect={setActiveLeftSidebarPanel}
-                    panels={LEFT_SIDEBAR_PRIMARY_PANELS}
+                    onSelect={selectLeftSidebarPanel}
+                    panels={leftRailPrimaryPanels}
                   />
                 </div>
                 <Separator className="my-1 w-8 shrink-0 bg-border/70" />
                 <div className="flex w-full flex-col items-center gap-1">
                   <LeftRailPanelButtons
                     activeLeftSidebarPanel={activeLeftSidebarPanel}
-                    onSelect={setActiveLeftSidebarPanel}
+                    onSelect={selectLeftSidebarPanel}
                     panels={LEFT_SIDEBAR_SECONDARY_PANELS}
                   />
                 </div>
@@ -915,12 +1001,14 @@ export function StudioApp({
                   activeLeftSidebarPanel={activeLeftSidebarPanel}
                   activePaletteKey={activePaletteKey}
                   composition={composition}
+                  onCreateComponent={onCreateComponent}
                   onRemoveNode={removeNode}
                   onSelect={selectNode}
                   onWrapNode={wrapNodeInBox}
                   pageTemplateListFilter={pageTemplateListFilter}
                   selectedNodeId={selectedNodeId}
                   studioResource={studioResource}
+                  templateReturn={templateReturn}
                 />
               </StudioPanel>
             </div>
@@ -947,6 +1035,7 @@ export function StudioApp({
                 onCanvasBackground={() => selectNode(null)}
                 onCanvasViewportWidthPxChange={setCanvasViewportWidthPx}
                 onCanvasZoomPercentChange={setCanvasZoomPercent}
+                onCreateComponent={onCreateComponent}
                 onRemoveNode={removeNode}
                 onSelectNode={(nodeId) => {
                   showLayersSidebar();
@@ -956,6 +1045,7 @@ export function StudioApp({
                 onToggleTheme={toggleTheme}
                 selectedNodeId={selectedNodeId}
                 studioResource={studioResource}
+                templateReturn={templateReturn}
                 theme={theme}
                 tokenMeta={tokenMetadata}
               />
@@ -984,7 +1074,9 @@ export function StudioApp({
                     storeClearNodeStyles(selectedNodeId);
                   }
                 }}
-                componentsHref={componentsHref}
+                componentsHref={
+                  componentEditFromTemplate ? "" : componentsHref
+                }
                 composition={composition}
                 inspectorTab={activeInspectorTab}
                 node={selectedNode}

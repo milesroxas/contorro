@@ -121,10 +121,13 @@ function PropertyInspectorSettingsTab({
       {isButton ? (
         <ButtonPrimitiveInspector
           composition={composition}
+          exposeToEditors={exposeToEditors}
+          fieldBound={fieldBound}
           node={node}
           patchNodeProps={patchNodeProps}
           resetNodePropKey={resetNodePropKey}
           setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
+          setNodeEditorFieldBinding={setNodeEditorFieldBinding}
         />
       ) : null}
       {isImage ? (
@@ -391,7 +394,7 @@ export function PropertyInspectorActive({
           </div>
           <TabsContent className="mt-4 min-w-0" value="styles">
             {hasStyleControls ? (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {orderedStyleSections.map((section, sectionIndex) => (
                   <InspectorOrderedStyleSectionItem
                     key={section.id}

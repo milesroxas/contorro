@@ -39,6 +39,7 @@ import { PageTemplateListFilterSelect } from "../../features/page-templates/page
 import { LibraryComponentCatalog } from "../../features/primitive-catalog/LibraryComponentCatalog.js";
 import { PrimitiveCatalog } from "../../features/primitive-catalog/PrimitiveCatalog.js";
 import { PropertyInspector } from "../../features/property-inspector/PropertyInspector.js";
+import type { LibraryComponentTemplateReturnBase } from "../../lib/use-library-component-labels.js";
 import { cn } from "../../lib/cn.js";
 import type { StudioInspectorTab } from "../../lib/inspector-tab-shortcuts.js";
 import type { LeftSidebarPanelId } from "../../lib/left-sidebar-panels.js";
@@ -91,6 +92,8 @@ export function MobileStudioLayout({
   composition,
   componentsHref,
   compositionId,
+  componentEditFromTemplate = false,
+  templateReturn = null,
   onActiveBreakpointChange,
   onCanvasFontSizePxChange,
   onCanvasViewportWidthPxChange,
@@ -107,6 +110,7 @@ export function MobileStudioLayout({
   onToggleTheme,
   onUndo,
   onWrapNode,
+  onCreateComponent,
   pageTemplateListFilter,
   onPageTemplateListFilterChange,
   patchNodeProps,
@@ -134,6 +138,9 @@ export function MobileStudioLayout({
   composition: PageComposition;
   componentsHref: string;
   compositionId: string;
+  /** Hide Studio hub navigation; only return-to-template and in-editor actions. */
+  componentEditFromTemplate?: boolean;
+  templateReturn?: LibraryComponentTemplateReturnBase | null;
   onActiveBreakpointChange: (breakpoint: Breakpoint | null) => void;
   onCanvasFontSizePxChange: (fontSizePx: number) => void;
   onCanvasViewportWidthPxChange: (widthPx: number) => void;
@@ -153,6 +160,7 @@ export function MobileStudioLayout({
   onToggleTheme: () => void;
   onUndo: () => void;
   onWrapNode: (id: string) => void;
+  onCreateComponent?: (id: string) => void;
   pageTemplateListFilter: PageTemplateListFilter;
   onPageTemplateListFilterChange: (value: PageTemplateListFilter) => void;
   patchNodeProps: (patch: Record<string, unknown>) => void;
@@ -256,10 +264,12 @@ export function MobileStudioLayout({
             onSelectNode(nodeId);
             onLeftSidebarPanelChange("layers");
           }}
+          onCreateComponent={onCreateComponent}
           onToggleTheme={onToggleTheme}
           onWrapNode={onWrapNode}
           selectedNodeId={selectedNodeId}
           studioResource={studioResource}
+          templateReturn={templateReturn}
           theme={theme}
           tokenMeta={tokenMetadata}
         />
@@ -304,6 +314,7 @@ export function MobileStudioLayout({
                 canRedo={canRedo}
                 canUndo={canUndo}
                 dirty={dirty}
+                hideStudioHubNavigation={componentEditFromTemplate}
                 onPublish={() => {
                   onPublish();
                   closeSheet();
@@ -334,6 +345,8 @@ export function MobileStudioLayout({
                 activeTab={layersTab}
                 composition={composition}
                 compositionId={compositionId}
+                componentEditFromTemplate={componentEditFromTemplate}
+                onCreateComponent={onCreateComponent}
                 onPageTemplateListFilterChange={onPageTemplateListFilterChange}
                 onRemoveNode={onRemoveNode}
                 onSelect={(nodeId) => {
@@ -345,6 +358,7 @@ export function MobileStudioLayout({
                 pageTemplateListFilter={pageTemplateListFilter}
                 selectedNodeId={selectedNodeId}
                 studioResource={studioResource}
+                templateReturn={templateReturn}
               />
             ) : null}
             {activeSheet === "inspect" ? (
@@ -389,6 +403,7 @@ function MobileMenuSheet({
   canRedo,
   canUndo,
   dirty,
+  hideStudioHubNavigation = false,
   onPublish,
   onRedo,
   onSaveDraft,
@@ -399,6 +414,7 @@ function MobileMenuSheet({
   canRedo: boolean;
   canUndo: boolean;
   dirty: boolean;
+  hideStudioHubNavigation?: boolean;
   onPublish: () => void;
   onRedo: () => void;
   onSaveDraft: () => void;
@@ -454,27 +470,31 @@ function MobileMenuSheet({
           Publish
         </Button>
       </div>
-      <Separator className="my-2" />
-      <div className="flex flex-col gap-1 text-sm">
-        {STUDIO_NAV_ITEMS.map(({ id, href, Icon, label }) => {
-          const isActive = activeNavScreen === id;
-          return (
-            <Link
-              aria-current={isActive ? "page" : undefined}
-              className={cn(
-                "flex h-11 items-center gap-2 rounded-md px-2 text-foreground hover:bg-accent",
-                isActive && "bg-accent text-accent-foreground",
-              )}
-              href={href}
-              key={id}
-              prefetch={false}
-            >
-              <Icon aria-hidden className="size-4" />
-              {label}
-            </Link>
-          );
-        })}
-      </div>
+      {hideStudioHubNavigation ? null : (
+        <>
+          <Separator className="my-2" />
+          <div className="flex flex-col gap-1 text-sm">
+            {STUDIO_NAV_ITEMS.map(({ id, href, Icon, label }) => {
+              const isActive = activeNavScreen === id;
+              return (
+                <Link
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "flex h-11 items-center gap-2 rounded-md px-2 text-foreground hover:bg-accent",
+                    isActive && "bg-accent text-accent-foreground",
+                  )}
+                  href={href}
+                  key={id}
+                  prefetch={false}
+                >
+                  <Icon aria-hidden className="size-4" />
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -526,27 +546,53 @@ function MobileLayersSheet({
   activeTab,
   composition,
   compositionId,
+  componentEditFromTemplate = false,
   onPageTemplateListFilterChange,
   onRemoveNode,
   onSelect,
   onTabChange,
   onWrapNode,
+  onCreateComponent,
   pageTemplateListFilter,
   selectedNodeId,
   studioResource,
+  templateReturn = null,
 }: {
   activeTab: MobileLayersTab;
   composition: PageComposition;
   compositionId: string;
+  componentEditFromTemplate?: boolean;
   onPageTemplateListFilterChange: (value: PageTemplateListFilter) => void;
   onRemoveNode: (id: string) => void;
   onSelect: (id: string | null) => void;
   onTabChange: (value: MobileLayersTab) => void;
   onWrapNode: (id: string) => void;
+  onCreateComponent?: (id: string) => void;
   pageTemplateListFilter: PageTemplateListFilter;
   selectedNodeId: string | null;
   studioResource: "pageTemplate" | "component" | null;
+  templateReturn?: LibraryComponentTemplateReturnBase | null;
 }) {
+  if (componentEditFromTemplate) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pt-2 pb-4">
+        <p className="text-sm font-medium text-foreground">Layers</p>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <NodeTree
+            composition={composition}
+            onCreateComponent={onCreateComponent}
+            onRemoveNode={onRemoveNode}
+            onSelect={onSelect}
+            onWrapNode={onWrapNode}
+            selectedNodeId={selectedNodeId}
+            studioResource={studioResource}
+            templateReturn={templateReturn}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pt-2 pb-4">
       <Tabs
@@ -565,11 +611,13 @@ function MobileLayersSheet({
         <TabsContent className="mt-3 min-h-0 overflow-y-auto" value="layers">
           <NodeTree
             composition={composition}
+            onCreateComponent={onCreateComponent}
             onRemoveNode={onRemoveNode}
             onSelect={onSelect}
             onWrapNode={onWrapNode}
             selectedNodeId={selectedNodeId}
             studioResource={studioResource}
+            templateReturn={templateReturn}
           />
         </TabsContent>
         <TabsContent

@@ -232,7 +232,7 @@ export type InspectorOrderedStyleSection = ReturnType<
 >[number];
 
 export function inspectorStyleSectionTopClass(sectionIndex: number): string {
-  return sectionIndex === 0 ? "" : "border-t border-border/60 pt-4 ";
+  return sectionIndex === 0 ? "" : "border-t border-border/60 pt-2 ";
 }
 
 /**

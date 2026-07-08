@@ -16,6 +16,7 @@ export {
   type ResolvedBoxBackgroundImagePresentation,
   resolvedBoxBackgroundImagePresentation,
 } from "./box-background-image-style.js";
+export { editorFieldSpecForPrimitiveButton } from "./button-editor-binding.js";
 export { findNearestCollectionAncestorNodeId } from "./collection-ancestor.js";
 export {
   mediaUrlFromCollectionValue,
@@ -57,8 +58,10 @@ export {
   addChildNode,
   clearNodeStyleBinding,
   duplicateNode,
+  extractNodeSubtreeToNewPageComposition,
   moveNode,
   removeSubtree,
+  replaceNodeWithLibraryComponent,
   resetNodePropKeyToPrimitiveDefault,
   setNodeContentBinding,
   setNodeStyleProperty,

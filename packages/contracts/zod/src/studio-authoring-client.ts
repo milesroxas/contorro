@@ -32,6 +32,8 @@ export type StudioSaveResult = {
   id: string;
   updatedAt: string;
   _status?: "draft" | "published" | null;
+  /** Populated when the first save created a new library component. */
+  componentKey?: string;
 };
 
 export type StudioRenameResult = {

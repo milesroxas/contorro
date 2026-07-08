@@ -227,6 +227,9 @@ async function postPersist(
     id: json.data.id ?? compositionId,
     updatedAt: json.data.updatedAt,
     ...(json.data._status !== undefined ? { _status: json.data._status } : {}),
+    ...(json.data.componentKey !== undefined
+      ? { componentKey: json.data.componentKey }
+      : {}),
   };
 }
 

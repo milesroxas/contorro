@@ -12,6 +12,7 @@ import StudioCollectionView from "./StudioCollectionView.js";
 import StudioDashboard from "./StudioDashboard.js";
 import { StudioPrimaryNav } from "./StudioPrimaryNav.js";
 import {
+  isStudioComponentEditFromTemplateRoute,
   resolveStudioShellScreen,
   type StudioTopLevelScreen,
   studioHrefForScreen,
@@ -25,22 +26,28 @@ export type StudioShellProps = {
 function StudioShellFrame({
   activeScreen,
   hideNavUntilDesktop = false,
+  hidePrimaryNav = false,
   children,
 }: {
   activeScreen: StudioTopLevelScreen | null;
+  /** Mobile: primary nav is hidden; it shows from `lg` and up. */
   hideNavUntilDesktop?: boolean;
+  /** When true, Dashboard / Templates / etc. is not shown at any breakpoint. */
+  hidePrimaryNav?: boolean;
   children: ReactNode;
 }) {
   return (
     <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
-      <div
-        className={cn(
-          "shrink-0 border-b border-border/70 bg-muted/20 px-4 py-2 dark:bg-muted/10",
-          hideNavUntilDesktop && "hidden lg:block",
-        )}
-      >
-        <StudioPrimaryNav activeScreen={activeScreen} />
-      </div>
+      {hidePrimaryNav ? null : (
+        <div
+          className={cn(
+            "shrink-0 border-b border-border/70 bg-muted/20 px-4 py-2 dark:bg-muted/10",
+            hideNavUntilDesktop && "hidden lg:block",
+          )}
+        >
+          <StudioPrimaryNav activeScreen={activeScreen} />
+        </div>
+      )}
       <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
         {children}
       </div>
@@ -111,8 +118,17 @@ function StudioShellInner({ userRole }: StudioShellProps) {
     );
   }
 
+  const hidePrimaryNav = isStudioComponentEditFromTemplateRoute(
+    sp,
+    route.compositionId,
+  );
+
   return (
-    <StudioShellFrame activeScreen={activeNavScreen} hideNavUntilDesktop>
+    <StudioShellFrame
+      activeScreen={activeNavScreen}
+      hideNavUntilDesktop={!hidePrimaryNav}
+      hidePrimaryNav={hidePrimaryNav}
+    >
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <StudioApp
           authoringClient={authoringClient}

@@ -74,6 +74,82 @@ export function studioHrefForComposition(compositionId: string): string {
   return `${STUDIO_SCREEN_HREFS.dashboard}?composition=${encodeURIComponent(compositionId)}`;
 }
 
+/** When editing a component from a page template, the template to return to. */
+export const STUDIO_RETURN_COMPOSITION_PARAM = "returnComposition";
+/** Node id in the page template to re-select when returning. */
+export const STUDIO_RETURN_NODE_PARAM = "returnNode";
+/** Display label for the template (for the return affordance in Component studio). */
+export const STUDIO_RETURN_LABEL_PARAM = "returnLabel";
+/**
+ * Deep link: which node to select when opening a page template in Studio
+ * (e.g. after returning from component editing).
+ */
+export const STUDIO_DEEP_LINK_SELECT_NODE_PARAM = "selectNode";
+
+export type ComponentEditReturnToTemplateFields = {
+  templateCompositionId: string;
+  instanceNodeId: string;
+  templateLabel: string;
+};
+
+/**
+ * Add return-context query params to a Component studio URL opened from
+ * a page template (e.g. “Edit component” from the canvas or layers).
+ */
+export function appendComponentEditReturnToStudioHref(
+  baseRelativeHref: string,
+  ctx: ComponentEditReturnToTemplateFields,
+): string {
+  const u = new URL(baseRelativeHref, "http://localhost");
+  u.searchParams.set(
+    STUDIO_RETURN_COMPOSITION_PARAM,
+    ctx.templateCompositionId,
+  );
+  u.searchParams.set(STUDIO_RETURN_NODE_PARAM, ctx.instanceNodeId);
+  if (ctx.templateLabel.trim() !== "") {
+    u.searchParams.set(STUDIO_RETURN_LABEL_PARAM, ctx.templateLabel);
+  }
+  return `${u.pathname}${u.search}`;
+}
+
+/**
+ * Href to reopen a page template in Studio, optionally re-selecting a node
+ * (library component instance) after returning from Component studio.
+ */
+export function studioHrefReturnToPageTemplate(
+  templateCompositionId: string,
+  options?: { selectNodeId?: string },
+): string {
+  const path = studioHrefForComposition(templateCompositionId);
+  if (!options?.selectNodeId || options.selectNodeId.trim() === "") {
+    return path;
+  }
+  const u = new URL(path, "http://localhost");
+  u.searchParams.set(
+    STUDIO_DEEP_LINK_SELECT_NODE_PARAM,
+    options.selectNodeId.trim(),
+  );
+  return `${u.pathname}${u.search}`;
+}
+
+/**
+ * User opened Component studio from a page template (“Edit component”); shell and
+ * editor can hide top-level nav so only “back to template” leaves this context.
+ */
+export function isStudioComponentEditFromTemplateRoute(
+  searchParams: SearchParamReader,
+  compositionId: string | null,
+): boolean {
+  if (!compositionId || compositionId.trim() === "") {
+    return false;
+  }
+  if (!isStudioComponentRowId(compositionId)) {
+    return false;
+  }
+  const ret = searchParams.get(STUDIO_RETURN_COMPOSITION_PARAM);
+  return typeof ret === "string" && ret.trim() !== "";
+}
+
 export function studioHrefForComponentDocument(componentId: string): string {
   return studioHrefForComposition(studioRowIdForComponent(componentId));
 }

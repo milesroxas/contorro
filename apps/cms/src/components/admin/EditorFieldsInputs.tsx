@@ -110,6 +110,9 @@ function fieldTypeLabel(fieldType: EditorFieldSpec["type"]): string {
   if (fieldType === "boolean") {
     return "Toggle";
   }
+  if (fieldType === "button") {
+    return "Button";
+  }
   return fieldType;
 }
 
@@ -877,6 +880,95 @@ function EditorLinkFieldRow({
   );
 }
 
+function EditorButtonFieldRow({
+  field,
+  v,
+  disabled,
+  patchField,
+  id,
+  label,
+  desc,
+}: CommonFieldBits) {
+  const o =
+    v && typeof v === "object" && !Array.isArray(v)
+      ? (v as Record<string, unknown>)
+      : {};
+  const btnLabel = typeof o.label === "string" ? o.label : "";
+  const href = typeof o.href === "string" ? o.href : "";
+  const openInNewTab = Boolean(o.openInNewTab);
+  const labelId = `${id}-label`;
+  const hrefId = `${id}-href`;
+  const tabId = `${id}-new-tab`;
+  return (
+    <div className={fieldStyles.row}>
+      <FieldHeader
+        desc={desc}
+        fieldType={field.type}
+        id={id}
+        label={label}
+        required={field.required}
+      />
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground" htmlFor={labelId}>
+            Label
+          </Label>
+          <Input
+            disabled={disabled}
+            id={labelId}
+            onChange={(e) =>
+              patchField(field.name, {
+                label: e.target.value,
+                href,
+                openInNewTab,
+              })
+            }
+            type="text"
+            value={btnLabel}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground" htmlFor={hrefId}>
+            URL
+          </Label>
+          <Input
+            autoComplete="url"
+            disabled={disabled}
+            id={hrefId}
+            onChange={(e) =>
+              patchField(field.name, {
+                label: btnLabel,
+                href: e.target.value,
+                openInNewTab,
+              })
+            }
+            placeholder="https://"
+            type="url"
+            value={href}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            checked={openInNewTab}
+            disabled={disabled}
+            id={tabId}
+            onCheckedChange={(next) =>
+              patchField(field.name, {
+                label: btnLabel,
+                href,
+                openInNewTab: next === true,
+              })
+            }
+          />
+          <Label className="text-sm font-normal" htmlFor={tabId}>
+            Open in new tab
+          </Label>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EditorTextFieldRow({
   field,
   v,
@@ -974,6 +1066,9 @@ function EditorSingleFieldRow(props: SingleFieldProps): ReactNode {
   }
   if (t === "link") {
     return <EditorLinkFieldRow {...common} />;
+  }
+  if (t === "button") {
+    return <EditorButtonFieldRow {...common} />;
   }
   return <EditorTextFieldRow {...common} />;
 }

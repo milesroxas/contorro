@@ -327,7 +327,7 @@ function InspectorDefaultStyleSection({
   const showMoreOptions =
     model.secondaryProperties.length > 0 && model.primaryProperties.length > 0;
   return (
-    <div className={`${inspectorStyleSectionTopClass(sectionIndex)}space-y-4`}>
+    <div className={`${inspectorStyleSectionTopClass(sectionIndex)}`}>
       <Collapsible
         onOpenChange={(open) => setStyleSectionOpen(section.id, open)}
         open={isStyleSectionOpen(section.id)}
@@ -354,7 +354,7 @@ function InspectorDefaultStyleSection({
             />
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-4 pt-3">
+        <CollapsibleContent className="space-y-2 pt-3">
           <InspectorStyleValueGrid
             activeBreakpoint={activeBreakpoint}
             composition={composition}

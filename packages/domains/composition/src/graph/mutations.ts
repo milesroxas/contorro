@@ -8,6 +8,7 @@ import type {
 } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
 import { err, makeId, ok, type Result } from "@repo/kernel";
+import { editorFieldSpecForPrimitiveButton } from "../button-editor-binding.js";
 import {
   defaultPrimitivePropValues,
   isStudioCreatablePrimitiveKey,
@@ -135,7 +136,7 @@ export function addChildNode(
 
   const newId = makeId();
   const kind = primitiveKindForDefinitionKey(definitionKey);
-  const newNode: CompositionNode = {
+  let newNode: CompositionNode = {
     id: newId,
     kind,
     definitionKey,
@@ -146,6 +147,18 @@ export function addChildNode(
         ? { componentKey: options?.libraryComponentKey?.trim() ?? "" }
         : defaultPrimitivePropValues(definitionKey),
   };
+
+  if (definitionKey === "primitive.button") {
+    const editorField = editorFieldSpecForPrimitiveButton(newId, newNode.propValues);
+    newNode = {
+      ...newNode,
+      contentBinding: {
+        source: "editor",
+        key: editorField.name,
+        editorField,
+      },
+    };
+  }
 
   const siblings = [...parent.childIds];
   const at =
@@ -418,10 +431,21 @@ function cloneOneDuplicatedNode(
     };
   }
 
-  const contentBinding =
-    oldNode.contentBinding?.source === "editor"
-      ? undefined
-      : oldNode.contentBinding;
+  let contentBinding: CompositionNode["contentBinding"];
+  if (oldNode.contentBinding?.source === "collection") {
+    contentBinding = oldNode.contentBinding;
+  } else if (oldNode.definitionKey === "primitive.button") {
+    const editorField = editorFieldSpecForPrimitiveButton(newId, propValues);
+    contentBinding = {
+      source: "editor",
+      key: editorField.name,
+      editorField,
+    };
+  } else if (oldNode.contentBinding?.source === "editor") {
+    contentBinding = undefined;
+  } else {
+    contentBinding = oldNode.contentBinding;
+  }
 
   const newStyleBindingId = oldNode.styleBindingId
     ? sbIdMap.get(oldNode.styleBindingId)
@@ -564,6 +588,226 @@ export function duplicateNode(
     return err("INVALID_NODE");
   }
   return ok(parsed.data);
+}
+
+function cloneOneExtractedNode(
+  composition: PageComposition,
+  oldId: string,
+  extractRootId: string,
+  nodeIdMap: Map<string, string>,
+  sbIdMap: Map<string, string>,
+): Result<CompositionNode, "INVALID_NODE"> {
+  const oldNode = composition.nodes[oldId];
+  if (!oldNode) {
+    return err("INVALID_NODE");
+  }
+  const newId = nodeIdMap.get(oldId);
+  if (!newId) {
+    return err("INVALID_NODE");
+  }
+  const newParentId =
+    oldId === extractRootId
+      ? null
+      : oldNode.parentId === null
+        ? null
+        : (nodeIdMap.get(oldNode.parentId) ?? null);
+  if (oldId !== extractRootId && newParentId === null) {
+    return err("INVALID_NODE");
+  }
+
+  let propValues = oldNode.propValues;
+  if (oldNode.definitionKey === "primitive.slot") {
+    propValues = {
+      ...(propValues ?? {}),
+      slotId: makeId(),
+    };
+  }
+
+  let contentBinding: CompositionNode["contentBinding"];
+  if (oldNode.contentBinding?.source === "collection") {
+    contentBinding = oldNode.contentBinding;
+  } else if (oldNode.definitionKey === "primitive.button") {
+    const editorField = editorFieldSpecForPrimitiveButton(newId, propValues);
+    contentBinding = {
+      source: "editor",
+      key: editorField.name,
+      editorField,
+    };
+  } else if (oldNode.contentBinding?.source === "editor") {
+    contentBinding = undefined;
+  } else {
+    contentBinding = oldNode.contentBinding;
+  }
+
+  const newStyleBindingId = oldNode.styleBindingId
+    ? sbIdMap.get(oldNode.styleBindingId)
+    : undefined;
+  if (oldNode.styleBindingId && newStyleBindingId === undefined) {
+    return err("INVALID_NODE");
+  }
+
+  const newChildIds: string[] = [];
+  for (const cid of oldNode.childIds) {
+    const mapped = nodeIdMap.get(cid);
+    if (!mapped) {
+      return err("INVALID_NODE");
+    }
+    newChildIds.push(mapped);
+  }
+
+  const cloned: CompositionNode = {
+    ...oldNode,
+    id: newId,
+    parentId: newParentId,
+    childIds: newChildIds,
+    propValues,
+    contentBinding,
+  };
+  if (newStyleBindingId !== undefined) {
+    cloned.styleBindingId = newStyleBindingId;
+  } else {
+    cloned.styleBindingId = undefined;
+  }
+  return ok(cloned);
+}
+
+function styleBindingsForExtractedSubtree(
+  styleBindings: PageComposition["styleBindings"],
+  descendants: Set<string>,
+  nodeIdMap: Map<string, string>,
+  sbIdMap: Map<string, string>,
+): Result<PageComposition["styleBindings"], "INVALID_NODE"> {
+  const next: PageComposition["styleBindings"] = {};
+  for (const [oldSbId, sb] of Object.entries(styleBindings)) {
+    if (!descendants.has(sb.nodeId)) {
+      continue;
+    }
+    const newSbId = sbIdMap.get(oldSbId);
+    const newNid = nodeIdMap.get(sb.nodeId);
+    if (!newSbId || !newNid) {
+      return err("INVALID_NODE");
+    }
+    next[newSbId] = {
+      ...sb,
+      id: newSbId,
+      nodeId: newNid,
+    };
+  }
+  return ok(next);
+}
+
+/**
+ * Clones the subtree at `nodeId` into a standalone composition whose root is that
+ * node (new ids). For persisting a new library component. Cannot extract the
+ * document root. Mirrors duplicate-node rules (e.g. not under `primitive.slot`).
+ */
+export function extractNodeSubtreeToNewPageComposition(
+  composition: PageComposition,
+  nodeId: string,
+): Result<PageComposition, "INVALID_NODE"> {
+  if (nodeId === composition.rootId) {
+    return err("INVALID_NODE");
+  }
+  const node = composition.nodes[nodeId];
+  if (!node || node.parentId === null) {
+    return err("INVALID_NODE");
+  }
+  const parent = composition.nodes[node.parentId];
+  if (!parent) {
+    return err("INVALID_NODE");
+  }
+  if (parent.definitionKey === "primitive.slot") {
+    return err("INVALID_NODE");
+  }
+
+  const descendants = collectDescendants(composition.nodes, nodeId);
+  const { nodeIdMap, sbIdMap } = idMapsForDuplicateSubtree(
+    descendants,
+    composition.styleBindings,
+  );
+
+  const nextNodes: PageComposition["nodes"] = {};
+  for (const oldId of descendants) {
+    const cloned = cloneOneExtractedNode(
+      composition,
+      oldId,
+      nodeId,
+      nodeIdMap,
+      sbIdMap,
+    );
+    if (!cloned.ok) {
+      return cloned;
+    }
+    nextNodes[cloned.value.id] = cloned.value;
+  }
+
+  const newRootId = nodeIdMap.get(nodeId);
+  if (!newRootId) {
+    return err("INVALID_NODE");
+  }
+
+  const bindingsResult = styleBindingsForExtractedSubtree(
+    composition.styleBindings,
+    descendants,
+    nodeIdMap,
+    sbIdMap,
+  );
+  if (!bindingsResult.ok) {
+    return bindingsResult;
+  }
+
+  const assembled: PageComposition = {
+    rootId: newRootId,
+    nodes: nextNodes,
+    styleBindings: bindingsResult.value,
+  };
+
+  const parsed = PageCompositionSchema.safeParse(assembled);
+  if (!parsed.success) {
+    return err("INVALID_NODE");
+  }
+  return ok(parsed.data);
+}
+
+/**
+ * Removes `nodeId` and inserts a `primitive.libraryComponent` with `libraryComponentKey`
+ * at the same index under the same parent.
+ */
+export function replaceNodeWithLibraryComponent(
+  composition: PageComposition,
+  nodeId: string,
+  libraryComponentKey: string,
+): Result<PageComposition, "INVALID_NODE"> {
+  if (nodeId === composition.rootId) {
+    return err("INVALID_NODE");
+  }
+  const node = composition.nodes[nodeId];
+  if (!node || node.parentId === null) {
+    return err("INVALID_NODE");
+  }
+  const parent = composition.nodes[node.parentId];
+  if (!parent) {
+    return err("INVALID_NODE");
+  }
+  if (parent.definitionKey === "primitive.slot") {
+    return err("INVALID_NODE");
+  }
+  const index = parent.childIds.indexOf(nodeId);
+  if (index < 0) {
+    return err("INVALID_NODE");
+  }
+  const k = libraryComponentKey.trim();
+  if (!k) {
+    return err("INVALID_NODE");
+  }
+  const parentId = node.parentId;
+  const removed = removeSubtree(composition, nodeId);
+  if (!removed.ok) {
+    return removed;
+  }
+  return addChildNode(removed.value, parentId, "primitive.libraryComponent", index, {
+    libraryComponentKey: k,
+  });
 }
 
 /**

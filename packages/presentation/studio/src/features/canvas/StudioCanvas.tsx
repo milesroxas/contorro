@@ -56,6 +56,7 @@ import { cn } from "../../lib/cn.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
 import { isChildContainerPrimitive } from "../../lib/style-controls.js";
 import {
+  type LibraryComponentTemplateReturnBase,
   libraryComponentEditStudioHref,
   useLibraryComponentIndex,
 } from "../../lib/use-library-component-labels.js";
@@ -252,10 +253,12 @@ function ContainerChildList({
   selectedNodeId,
   studioResource,
   stylePreviewFlattenToBreakpoint,
+  templateReturn,
   tokenMeta,
   onSelectNode,
   onRemoveNode,
   onWrapNode,
+  onCreateComponent,
 }: {
   composition: PageComposition;
   childIds: string[];
@@ -265,10 +268,12 @@ function ContainerChildList({
   selectedNodeId: string | null;
   studioResource: "pageTemplate" | "component" | null;
   stylePreviewFlattenToBreakpoint: Breakpoint | undefined;
+  templateReturn: LibraryComponentTemplateReturnBase | null;
   tokenMeta: TokenMeta[];
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
   onWrapNode: (id: string) => void;
+  onCreateComponent?: (id: string) => void;
 }) {
   const isTemplateShellRootParent =
     parentNode.id === composition.rootId && isTemplateShellRoot(composition);
@@ -310,6 +315,7 @@ function ContainerChildList({
               composition={composition}
               editStudioHrefByKey={editStudioHrefByKey}
               nodeId={cid}
+              onCreateComponent={onCreateComponent}
               onRemoveNode={onRemoveNode}
               onSelectNode={onSelectNode}
               onWrapNode={onWrapNode}
@@ -317,6 +323,7 @@ function ContainerChildList({
               selectedNodeId={selectedNodeId}
               studioResource={studioResource}
               stylePreviewFlattenToBreakpoint={stylePreviewFlattenToBreakpoint}
+              templateReturn={templateReturn}
               tokenMeta={tokenMeta}
             />
             <InsertionDropZone
@@ -345,6 +352,7 @@ function ContainerChildList({
             composition={composition}
             editStudioHrefByKey={editStudioHrefByKey}
             nodeId={cid}
+            onCreateComponent={onCreateComponent}
             onRemoveNode={onRemoveNode}
             onSelectNode={onSelectNode}
             onWrapNode={onWrapNode}
@@ -352,6 +360,7 @@ function ContainerChildList({
             selectedNodeId={selectedNodeId}
             studioResource={studioResource}
             stylePreviewFlattenToBreakpoint={stylePreviewFlattenToBreakpoint}
+            templateReturn={templateReturn}
             tokenMeta={tokenMeta}
           />
           <InsertionDropZone
@@ -406,6 +415,7 @@ function CanvasNodeFrame({
   onSelectNode,
   onRemoveNode,
   onWrapNode,
+  onCreateComponent,
   selected,
   dragContainerOutline,
   editComponentHref,
@@ -417,6 +427,7 @@ function CanvasNodeFrame({
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
   onWrapNode: (id: string) => void;
+  onCreateComponent?: (id: string) => void;
   dragContainerOutline: "none" | "idle" | "active";
   editComponentHref?: string | null;
   children: React.ReactNode;
@@ -468,6 +479,7 @@ function CanvasNodeFrame({
           layerIcon={layerIcon}
           layerLabel={layerLabel}
           nodeId={node.id}
+          onCreateComponent={onCreateComponent}
           onRemoveNode={onRemoveNode}
           onSelectNode={onSelectNode}
           onWrapNode={onWrapNode}
@@ -506,6 +518,7 @@ function CanvasImageOrVideoNodeFrame({
   onRemoveNode,
   onSelectNode,
   onWrapNode,
+  onCreateComponent,
   primitive,
   selected,
 }: {
@@ -517,6 +530,7 @@ function CanvasImageOrVideoNodeFrame({
   onRemoveNode: (id: string) => void;
   onSelectNode: (id: string) => void;
   onWrapNode: (id: string) => void;
+  onCreateComponent?: (id: string) => void;
   primitive: ReactNode;
   selected: boolean;
 }): ReactElement {
@@ -531,6 +545,7 @@ function CanvasImageOrVideoNodeFrame({
       dragContainerOutline={dragContainerOutline}
       editComponentHref={editComponentHref ?? undefined}
       node={node}
+      onCreateComponent={onCreateComponent}
       onRemoveNode={onRemoveNode}
       onSelectNode={onSelectNode}
       onWrapNode={onWrapNode}
@@ -551,6 +566,7 @@ function CanvasPrimitiveCollectionBranch({
   onRemoveNode,
   onSelectNode,
   onWrapNode,
+  onCreateComponent,
   selected,
 }: {
   childList: ReactNode;
@@ -562,6 +578,7 @@ function CanvasPrimitiveCollectionBranch({
   onRemoveNode: (id: string) => void;
   onSelectNode: (id: string) => void;
   onWrapNode: (id: string) => void;
+  onCreateComponent?: (id: string) => void;
   selected: boolean;
 }): ReactElement {
   return (
@@ -570,6 +587,7 @@ function CanvasPrimitiveCollectionBranch({
       dragContainerOutline={dragContainerOutline}
       editComponentHref={editComponentHref ?? undefined}
       node={node}
+      onCreateComponent={onCreateComponent}
       onRemoveNode={onRemoveNode}
       onSelectNode={onSelectNode}
       onWrapNode={onWrapNode}
@@ -601,9 +619,11 @@ function CanvasNode({
   tokenMeta,
   editStudioHrefByKey,
   studioResource,
+  templateReturn,
   onSelectNode,
   onRemoveNode,
   onWrapNode,
+  onCreateComponent,
 }: {
   composition: PageComposition;
   nodeId: string;
@@ -613,9 +633,11 @@ function CanvasNode({
   tokenMeta: TokenMeta[];
   editStudioHrefByKey: Record<string, string>;
   studioResource: "pageTemplate" | "component" | null;
+  templateReturn: LibraryComponentTemplateReturnBase | null;
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
   onWrapNode: (id: string) => void;
+  onCreateComponent?: (id: string) => void;
 }): ReactElement | null {
   const node = composition.nodes[nodeId];
   if (!node) {
@@ -632,6 +654,7 @@ function CanvasNode({
     editStudioHrefByKey,
     node,
     pageTemplateStudio,
+    templateReturn,
   );
 
   const resolvedNodeStyle = resolveNodeStyle(
@@ -686,6 +709,7 @@ function CanvasNode({
       childIds={node.childIds}
       composition={composition}
       editStudioHrefByKey={editStudioHrefByKey}
+      onCreateComponent={onCreateComponent}
       onRemoveNode={onRemoveNode}
       onSelectNode={onSelectNode}
       onWrapNode={onWrapNode}
@@ -694,6 +718,7 @@ function CanvasNode({
       selectedNodeId={selectedNodeId}
       studioResource={studioResource}
       stylePreviewFlattenToBreakpoint={stylePreviewFlattenToBreakpoint}
+      templateReturn={templateReturn}
       tokenMeta={tokenMeta}
     />
   ) : null;
@@ -707,6 +732,7 @@ function CanvasNode({
         dragContainerOutline={dragContainerOutline}
         editComponentHref={editComponentHref}
         node={node}
+        onCreateComponent={onCreateComponent}
         onRemoveNode={onRemoveNode}
         onSelectNode={onSelectNode}
         onWrapNode={onWrapNode}
@@ -730,6 +756,7 @@ function CanvasNode({
         dragContainerOutline={dragContainerOutline}
         editComponentHref={editComponentHref}
         node={node}
+        onCreateComponent={onCreateComponent}
         onRemoveNode={onRemoveNode}
         onSelectNode={onSelectNode}
         onWrapNode={onWrapNode}
@@ -751,6 +778,7 @@ function CanvasNode({
         editComponentHref={editComponentHref}
         isVideo={node.definitionKey === "primitive.video"}
         node={node}
+        onCreateComponent={onCreateComponent}
         onRemoveNode={onRemoveNode}
         onSelectNode={onSelectNode}
         onWrapNode={onWrapNode}
@@ -766,6 +794,7 @@ function CanvasNode({
       dragContainerOutline={dragContainerOutline}
       editComponentHref={editComponentHref}
       node={node}
+      onCreateComponent={onCreateComponent}
       onRemoveNode={onRemoveNode}
       onSelectNode={onSelectNode}
       onWrapNode={onWrapNode}
@@ -1058,6 +1087,7 @@ export function StudioCanvas({
   onSelectNode,
   onRemoveNode,
   onWrapNode,
+  onCreateComponent,
   onCanvasBackground,
   onActiveBreakpointChange,
   onCanvasViewportWidthPxChange,
@@ -1067,6 +1097,7 @@ export function StudioCanvas({
   onToggleTheme,
   tokenMeta = [],
   studioResource,
+  templateReturn = null,
 }: {
   activeBreakpoint: Breakpoint | null;
   canvasViewportWidthPx: number;
@@ -1077,6 +1108,7 @@ export function StudioCanvas({
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
   onWrapNode: (id: string) => void;
+  onCreateComponent?: (id: string) => void;
   onCanvasBackground?: () => void;
   onActiveBreakpointChange: (breakpoint: Breakpoint | null) => void;
   onCanvasViewportWidthPxChange: (widthPx: number) => void;
@@ -1086,6 +1118,8 @@ export function StudioCanvas({
   onToggleTheme: () => void;
   tokenMeta?: TokenMeta[];
   studioResource: "pageTemplate" | "component" | null;
+  /** When authoring a page template, library “Edit component” links include return context. */
+  templateReturn?: LibraryComponentTemplateReturnBase | null;
 }) {
   const registry = defaultPrimitiveRegistry;
   const { editStudioHrefByKey } = useLibraryComponentIndex();
@@ -1095,6 +1129,7 @@ export function StudioCanvas({
       composition={composition}
       editStudioHrefByKey={editStudioHrefByKey}
       nodeId={composition.rootId}
+      onCreateComponent={onCreateComponent}
       onRemoveNode={onRemoveNode}
       onSelectNode={onSelectNode}
       onWrapNode={onWrapNode}
@@ -1102,6 +1137,7 @@ export function StudioCanvas({
       selectedNodeId={selectedNodeId}
       studioResource={studioResource}
       stylePreviewFlattenToBreakpoint={activeBreakpoint ?? undefined}
+      templateReturn={templateReturn}
       tokenMeta={tokenMeta}
     />
   );

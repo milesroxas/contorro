@@ -20,6 +20,7 @@ export function PrimitiveNodeContextMenu({
   onSelectNode,
   onRemoveNode,
   onWrapNode,
+  onCreateComponent,
   editComponentHref,
   children,
 }: {
@@ -31,6 +32,8 @@ export function PrimitiveNodeContextMenu({
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
   onWrapNode?: (id: string) => void;
+  /** Saves this layer and its subtree as a new library component and replaces the selection. */
+  onCreateComponent?: (id: string) => void;
   /** When set (e.g. library block on a page template), opens Component studio. */
   editComponentHref?: string | null;
   children: ReactNode;
@@ -64,6 +67,21 @@ export function PrimitiveNodeContextMenu({
           <>
             <ContextMenuItem asChild>
               <a href={editComponentHref}>Edit component</a>
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+          </>
+        ) : null}
+        {onCreateComponent ? (
+          <>
+            <ContextMenuItem
+              disabled={isRoot}
+              onSelect={() => {
+                if (!isRoot) {
+                  onCreateComponent(nodeId);
+                }
+              }}
+            >
+              Create component
             </ContextMenuItem>
             <ContextMenuSeparator />
           </>

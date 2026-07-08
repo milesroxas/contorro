@@ -26,6 +26,7 @@ import { cn } from "../../lib/cn.js";
 import { getPrimitiveDisplay } from "../../lib/primitive-display.js";
 import { isChildContainerPrimitive } from "../../lib/style-controls.js";
 import {
+  type LibraryComponentTemplateReturnBase,
   libraryComponentEditStudioHref,
   libraryDisplayNameForKey,
   useLibraryComponentIndex,
@@ -103,6 +104,7 @@ function DraggableNodeTreeRow({
   onSelect,
   onRemoveNode,
   onWrapNode,
+  onCreateComponent,
   collapseToggleButton,
   Icon,
   kindTitle,
@@ -116,6 +118,7 @@ function DraggableNodeTreeRow({
   onSelect: (id: string) => void;
   onRemoveNode: (id: string) => void;
   onWrapNode: (id: string) => void;
+  onCreateComponent?: (id: string) => void;
   collapseToggleButton: ReactNode;
   Icon: Icon;
   kindTitle: string;
@@ -146,6 +149,7 @@ function DraggableNodeTreeRow({
         layerIcon={Icon}
         layerLabel={layerLabel}
         nodeId={nodeId}
+        onCreateComponent={onCreateComponent}
         onRemoveNode={onRemoveNode}
         onSelectNode={onSelect}
         onWrapNode={onWrapNode}
@@ -511,10 +515,12 @@ function LayerSubtreeNestedList({
   onRemoveNode,
   onSelect,
   onWrapNode,
+  onCreateComponent,
   onSetNodeCollapseState,
   onToggleNodeCollapse,
   pageTemplateStudio,
   selectedNodeId,
+  templateReturn,
 }: {
   childIds: string[];
   collapsedNodeIds: Set<string>;
@@ -526,10 +532,12 @@ function LayerSubtreeNestedList({
   onRemoveNode: (id: string) => void;
   onSelect: (id: string) => void;
   onWrapNode: (id: string) => void;
+  onCreateComponent?: (id: string) => void;
   onSetNodeCollapseState: (ids: string[], collapsed: boolean) => void;
   onToggleNodeCollapse: (id: string) => void;
   pageTemplateStudio: boolean;
   selectedNodeId: string | null;
+  templateReturn: LibraryComponentTemplateReturnBase | null;
 }) {
   if (childIds.length === 0) {
     return (
@@ -565,11 +573,13 @@ function LayerSubtreeNestedList({
             nodeId={cid}
             onSetNodeCollapseState={onSetNodeCollapseState}
             onToggleNodeCollapse={onToggleNodeCollapse}
+            onCreateComponent={onCreateComponent}
             onRemoveNode={onRemoveNode}
             onSelect={onSelect}
             onWrapNode={onWrapNode}
             pageTemplateStudio={pageTemplateStudio}
             selectedNodeId={selectedNodeId}
+            templateReturn={templateReturn}
           />
           <li className={layerTreeItemClass}>
             <InsertionDropZone
@@ -668,6 +678,7 @@ function LayerSubtreeLayerRow({
   onRemoveNode,
   onSelect,
   onWrapNode,
+  onCreateComponent,
   rootId,
   sectionToggleButton,
   selected,
@@ -685,6 +696,7 @@ function LayerSubtreeLayerRow({
   onRemoveNode: (id: string) => void;
   onSelect: (id: string) => void;
   onWrapNode: (id: string) => void;
+  onCreateComponent?: (id: string) => void;
   rootId: string;
   sectionToggleButton: ReactNode;
   selected: boolean;
@@ -712,6 +724,7 @@ function LayerSubtreeLayerRow({
       labelUseExactCasing={labelUseExactCasing}
       layerLabel={layerLabel}
       nodeId={nodeId}
+      onCreateComponent={onCreateComponent}
       onRemoveNode={onRemoveNode}
       onSelect={onSelect}
       onWrapNode={onWrapNode}
@@ -727,6 +740,7 @@ function LayerSubtree({
   onRemoveNode,
   onSelect,
   onWrapNode,
+  onCreateComponent,
   selectedNodeId,
   collapsedNodeIds,
   onToggleNodeCollapse,
@@ -735,6 +749,7 @@ function LayerSubtree({
   globalCollapseToggleButton,
   libraryLabels,
   pageTemplateStudio,
+  templateReturn,
   topLevelSectionIndex,
 }: {
   composition: PageComposition;
@@ -742,6 +757,7 @@ function LayerSubtree({
   onSelect: (id: string) => void;
   onRemoveNode: (id: string) => void;
   onWrapNode: (id: string) => void;
+  onCreateComponent?: (id: string) => void;
   selectedNodeId: string | null;
   collapsedNodeIds: Set<string>;
   onToggleNodeCollapse: (id: string) => void;
@@ -750,6 +766,7 @@ function LayerSubtree({
   globalCollapseToggleButton?: ReactNode;
   libraryLabels: Record<string, string>;
   pageTemplateStudio: boolean;
+  templateReturn: LibraryComponentTemplateReturnBase | null;
   topLevelSectionIndex?: number;
 }) {
   const node = composition.nodes[nodeId];
@@ -817,7 +834,12 @@ function LayerSubtree({
     editStudioHrefByKey,
     node,
     pageTemplateStudio,
+    templateReturn,
   );
+  const createComponentForRow =
+    isLibraryComponent || !onCreateComponent
+      ? undefined
+      : onCreateComponent;
 
   const row = (
     <LayerSubtreeLayerRow
@@ -831,6 +853,7 @@ function LayerSubtree({
       labelUseExactCasing={labelUseExactCasing}
       layerLabel={layerLabel}
       nodeId={nodeId}
+      onCreateComponent={createComponentForRow}
       onRemoveNode={onRemoveNode}
       onSelect={onSelect}
       onWrapNode={onWrapNode}
@@ -858,6 +881,7 @@ function LayerSubtree({
               globalCollapseToggleButton={globalCollapseToggleButton}
               libraryLabels={libraryLabels}
               nodeId={nodeId}
+              onCreateComponent={onCreateComponent}
               onRemoveNode={onRemoveNode}
               onSelect={onSelect}
               onWrapNode={onWrapNode}
@@ -865,6 +889,7 @@ function LayerSubtree({
               onToggleNodeCollapse={onToggleNodeCollapse}
               pageTemplateStudio={pageTemplateStudio}
               selectedNodeId={selectedNodeId}
+              templateReturn={templateReturn}
             />
           </ul>
         ) : null}
@@ -877,8 +902,10 @@ export function NodeTree({
   composition,
   selectedNodeId,
   studioResource,
+  templateReturn = null,
   onRemoveNode,
   onWrapNode,
+  onCreateComponent,
   onSelect,
 }: {
   composition: PageComposition;
@@ -886,7 +913,9 @@ export function NodeTree({
   studioResource: "pageTemplate" | "component" | null;
   onRemoveNode: (id: string) => void;
   onWrapNode: (id: string) => void;
+  onCreateComponent?: (id: string) => void;
   onSelect: (id: string) => void;
+  templateReturn?: LibraryComponentTemplateReturnBase | null;
 }) {
   const { editStudioHrefByKey, labels: libraryLabels } =
     useLibraryComponentIndex();
@@ -1018,6 +1047,7 @@ export function NodeTree({
           key={nodeId}
           libraryLabels={libraryLabels}
           nodeId={nodeId}
+          onCreateComponent={onCreateComponent}
           onSetNodeCollapseState={setNodeCollapseState}
           onToggleNodeCollapse={toggleNodeCollapse}
           onRemoveNode={onRemoveNode}
@@ -1025,6 +1055,7 @@ export function NodeTree({
           onWrapNode={onWrapNode}
           pageTemplateStudio={pageTemplateStudio}
           selectedNodeId={selectedNodeId}
+          templateReturn={templateReturn}
           topLevelSectionIndex={index}
         />
       ))}

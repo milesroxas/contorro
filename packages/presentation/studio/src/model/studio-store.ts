@@ -11,14 +11,17 @@ import {
   addChildNode,
   clearNodeStyleBinding,
   duplicateNode as duplicateNodeInComposition,
+  extractNodeSubtreeToNewPageComposition,
   isStudioComponentRowId,
   isStudioNewCompositionSessionId,
   moveNode as moveNodeInComposition,
   parseStudioNewCompositionSessionId,
   removeSubtree,
+  replaceNodeWithLibraryComponent,
   resetNodePropKeyToPrimitiveDefault,
   setNodeContentBinding,
   setNodeStyleProperty,
+  studioNewCompositionSessionId,
   updateNodePropValues,
 } from "@repo/domains-composition";
 import { createSafeStore } from "@repo/presentation-shared";
@@ -212,6 +215,7 @@ export type StudioStoreState = {
   pasteNode: (targetNodeId: string | null) => void;
   duplicateNode: (nodeId: string) => void;
   wrapNodeInBox: (nodeId: string) => void;
+  createComponentFromNode: (nodeId: string, displayName: string) => Promise<void>;
   setTextContent: (nodeId: string, content: string) => void;
   patchNodeProps: (nodeId: string, patch: Record<string, unknown>) => void;
   setNodeStyleEntry: (
@@ -653,6 +657,72 @@ export function createStudioStore(
         canRedo: false,
         selectedNodeId: wrapped.wrapperId,
       });
+    },
+
+    createComponentFromNode: async (nodeId, displayName) => {
+      const { composition, saving } = get();
+      if (!composition || saving) {
+        return;
+      }
+      const name = displayName.trim();
+      if (name === "") {
+        return;
+      }
+      const extracted = extractNodeSubtreeToNewPageComposition(
+        composition,
+        nodeId,
+      );
+      if (!extracted.ok) {
+        set({ error: "Could not build component from this layer" });
+        return;
+      }
+      const ready = prepareForSave(extracted.value);
+      if (!ready.ok) {
+        set({ error: "Invalid composition" });
+        return;
+      }
+      const newSessionId = studioNewCompositionSessionId("component");
+      set({ error: null, saving: true });
+      try {
+        const saved = await client.postDraft(newSessionId, {
+          composition: ready.data,
+          ifMatchUpdatedAt: null,
+          name,
+        });
+        const key = saved.componentKey?.trim() ?? "";
+        if (key === "") {
+          set({ error: "Save succeeded but component key was not returned" });
+          return;
+        }
+        const replaced = replaceNodeWithLibraryComponent(
+          composition,
+          nodeId,
+          key,
+        );
+        if (!replaced.ok) {
+          set({ error: "Could not insert library component" });
+          return;
+        }
+        const before = firstAddedNodeId(
+          composition.nodes,
+          replaced.value.nodes,
+        );
+        set({
+          composition: replaced.value,
+          historyPast: [...get().historyPast, composition],
+          historyFuture: [],
+          dirty: true,
+          canUndo: true,
+          canRedo: false,
+          selectedNodeId: before ?? get().selectedNodeId,
+        });
+      } catch (e) {
+        set({
+          error: e instanceof Error ? e.message : "create component failed",
+        });
+      } finally {
+        set({ saving: false });
+      }
     },
 
     setTextContent: (nodeId, content) => {

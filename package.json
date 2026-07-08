@@ -24,6 +24,8 @@
     "payload": "pnpm --filter @repo/cms run payload --",
     "seed": "pnpm --filter @repo/cms exec payload run src/seeds/index.ts",
     "seed:design-system": "node ./scripts/seed-design-system.mjs",
+    "seed:full": "node ./scripts/seed-full.mjs",
+    "seed:prod": "node ./scripts/seed-full.mjs prod",
     "tc": "pnpm run typecheck",
     "test": "pnpm --filter @repo/cms run test:int",
     "test:all": "pnpm run test:int && pnpm run test:gw",

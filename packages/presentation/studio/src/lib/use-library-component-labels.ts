@@ -2,7 +2,10 @@
 
 import type { CompositionNode } from "@repo/contracts-zod";
 import { useEffect, useState } from "react";
-import { studioHrefForComposition } from "../shell/studio-navigation.js";
+import {
+  appendComponentEditReturnToStudioHref,
+  studioHrefForComposition,
+} from "../shell/studio-navigation.js";
 
 type ListItem = {
   key: string;
@@ -122,10 +125,17 @@ export function libraryDisplayNameForKey(
   return labels[trimmed] ?? trimmed;
 }
 
+/** When authoring a page template, used to add “return to template” to component edit links. */
+export type LibraryComponentTemplateReturnBase = {
+  templateCompositionId: string;
+  templateLabel: string;
+};
+
 export function libraryComponentEditStudioHref(
   editHrefs: Record<string, string>,
   node: CompositionNode,
   pageTemplateStudio: boolean,
+  templateReturn: LibraryComponentTemplateReturnBase | null = null,
 ): string | null {
   if (
     !pageTemplateStudio ||
@@ -140,5 +150,16 @@ export function libraryComponentEditStudioHref(
   if (key === "") {
     return null;
   }
-  return editHrefs[key] ?? null;
+  const base = editHrefs[key] ?? null;
+  if (base === null) {
+    return null;
+  }
+  if (templateReturn === null) {
+    return base;
+  }
+  return appendComponentEditReturnToStudioHref(base, {
+    templateCompositionId: templateReturn.templateCompositionId,
+    instanceNodeId: node.id,
+    templateLabel: templateReturn.templateLabel,
+  });
 }

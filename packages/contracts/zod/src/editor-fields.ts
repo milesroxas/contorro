@@ -3,7 +3,15 @@ import { z } from "zod";
 /** CMS-editable field bound from the composition tree (not layout “slots” for components). */
 export const EditorFieldSpecSchema = z.object({
   name: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "kebab-case field name"),
-  type: z.enum(["text", "richText", "image", "link", "number", "boolean"]),
+  type: z.enum([
+    "text",
+    "richText",
+    "image",
+    "link",
+    "number",
+    "boolean",
+    "button",
+  ]),
   required: z.boolean(),
   label: z.string().min(1),
   description: z.string().optional(),
@@ -20,6 +28,7 @@ export const EDITOR_FIELD_TYPES = [
   "link",
   "number",
   "boolean",
+  "button",
 ] as const satisfies ReadonlyArray<EditorFieldSpec["type"]>;
 
 /** Published manifest of CMS fields for a component or page template. */

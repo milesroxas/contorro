@@ -7,6 +7,7 @@ import {
   EditorFieldSpecSchema,
   type PageComposition,
 } from "@repo/contracts-zod";
+import { editorFieldSpecForPrimitiveButton } from "@repo/domains-composition";
 import {
   fetchMediaRecords,
   type MediaListItem,
@@ -753,12 +754,18 @@ export function ButtonPrimitiveInspector({
   patchNodeProps,
   resetNodePropKey,
   setNodeCollectionFieldBinding,
+  setNodeEditorFieldBinding,
+  fieldBound,
+  exposeToEditors,
 }: {
   composition: PageComposition;
   node: CompositionNode;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   resetNodePropKey: (propKey: string) => void;
   setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
+  setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
+  fieldBound: EditorFieldSpec | undefined;
+  exposeToEditors: boolean;
 }) {
   const baseId = useId();
   const label =
@@ -782,6 +789,13 @@ export function ButtonPrimitiveInspector({
   const [entryLoading, setEntryLoading] = useState(false);
   const [entryLoadError, setEntryLoadError] = useState<string | null>(null);
   const [entries, setEntries] = useState<PayloadCollectionDocRef[]>([]);
+  const [nameDraft, setNameDraft] = useState(() => fieldBound?.name ?? "");
+  const [cmsLabelDraft, setCmsLabelDraft] = useState(
+    () => fieldBound?.label ?? "",
+  );
+  const [fieldError, setFieldError] = useState<string | null>(null);
+  const committedName = fieldBound?.name;
+  const committedCmsLabel = fieldBound?.label;
 
   useEffect(() => {
     if (!entryPickerOpen || !collectionSlug.trim()) {
@@ -805,11 +819,85 @@ export function ButtonPrimitiveInspector({
 
   const collectionMapped = isNodeCollectionFieldMapped(node);
 
+  useEffect(() => {
+    if (isNodeCollectionFieldMapped(node)) {
+      return;
+    }
+    const cb = node.contentBinding;
+    if (cb?.source === "editor" && cb.editorField?.type === "button") {
+      return;
+    }
+    setNodeEditorFieldBinding(
+      editorFieldSpecForPrimitiveButton(node.id, node.propValues),
+    );
+  }, [node, setNodeEditorFieldBinding]);
+
+  useEffect(() => {
+    if (!exposeToEditors) {
+      setNameDraft("");
+      setCmsLabelDraft("");
+      setFieldError(null);
+      return;
+    }
+    if (committedName === undefined || committedCmsLabel === undefined) {
+      return;
+    }
+    setNameDraft(committedName);
+    setCmsLabelDraft(committedCmsLabel);
+    setFieldError(null);
+  }, [committedCmsLabel, committedName, exposeToEditors]);
+
+  useEffect(() => {
+    if (collectionMapped) {
+      return;
+    }
+    if (!fieldBound || fieldBound.type !== "button") {
+      return;
+    }
+    const nextDefault = { label, href, openInNewTab };
+    const cur = fieldBound.defaultValue;
+    if (
+      cur &&
+      typeof cur === "object" &&
+      !Array.isArray(cur) &&
+      typeof (cur as Record<string, unknown>).label === "string" &&
+      typeof (cur as Record<string, unknown>).href === "string" &&
+      Boolean((cur as Record<string, unknown>).openInNewTab) ===
+        nextDefault.openInNewTab &&
+      (cur as { label: string }).label === nextDefault.label &&
+      (cur as { href: string }).href === nextDefault.href
+    ) {
+      return;
+    }
+    setNodeEditorFieldBinding({
+      ...fieldBound,
+      defaultValue: nextDefault,
+    });
+  }, [
+    collectionMapped,
+    fieldBound,
+    href,
+    label,
+    openInNewTab,
+    setNodeEditorFieldBinding,
+  ]);
+
+  function applyEditorField(next: EditorFieldSpec) {
+    const parsed = EditorFieldSpecSchema.safeParse(next);
+    if (!parsed.success) {
+      const msg = parsed.error.issues[0]?.message ?? "Invalid editor field";
+      setFieldError(msg);
+      return;
+    }
+    setFieldError(null);
+    setNodeEditorFieldBinding(parsed.data);
+  }
+
   return (
     <div className="space-y-4">
       <CollectionFieldBindingSection
         composition={composition}
-        editorFieldBindingActive={false}
+        editorFieldBindingActive={exposeToEditors}
         node={node}
         setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
       />
@@ -900,6 +988,96 @@ export function ButtonPrimitiveInspector({
         propKey="openInNewTab"
         propValues={node.propValues}
       />
+      {collectionMapped ? null : exposeToEditors && fieldBound ? (
+        <div className="space-y-4 rounded-md border border-border/60 p-4">
+          <div className="space-y-3">
+            <Label
+              className="text-sm text-muted-foreground"
+              htmlFor={`${baseId}-btn-cms-name`}
+            >
+              Field name (kebab-case)
+            </Label>
+            <Input
+              aria-invalid={Boolean(fieldError)}
+              className="h-8"
+              id={`${baseId}-btn-cms-name`}
+              onBlur={() => {
+                if (!fieldBound) {
+                  return;
+                }
+                const trimmed = nameDraft.trim();
+                applyEditorField({
+                  ...fieldBound,
+                  name: trimmed,
+                });
+              }}
+              onChange={(e) => {
+                setNameDraft(e.target.value);
+                setFieldError(null);
+              }}
+              placeholder="hero-cta"
+              spellCheck={false}
+              type="text"
+              value={nameDraft}
+            />
+          </div>
+          <div className="space-y-3">
+            <Label
+              className="text-sm text-muted-foreground"
+              htmlFor={`${baseId}-btn-cms-label`}
+            >
+              CMS field label
+            </Label>
+            <Input
+              className="h-8"
+              id={`${baseId}-btn-cms-label`}
+              onBlur={() => {
+                if (!fieldBound) {
+                  return;
+                }
+                const nextLabel = cmsLabelDraft.trim() || "Button";
+                applyEditorField({
+                  ...fieldBound,
+                  label: nextLabel,
+                });
+                setCmsLabelDraft(nextLabel);
+              }}
+              onChange={(e) => {
+                setCmsLabelDraft(e.target.value);
+                setFieldError(null);
+              }}
+              type="text"
+              value={cmsLabelDraft}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              checked={fieldBound.required}
+              id={`${baseId}-btn-cms-req`}
+              onCheckedChange={(v) => {
+                if (!fieldBound) {
+                  return;
+                }
+                applyEditorField({
+                  ...fieldBound,
+                  required: v === true,
+                });
+              }}
+            />
+            <Label
+              className="text-sm font-normal"
+              htmlFor={`${baseId}-btn-cms-req`}
+            >
+              Required
+            </Label>
+          </div>
+          {fieldError ? (
+            <p className="text-sm text-destructive" role="alert">
+              {fieldError}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

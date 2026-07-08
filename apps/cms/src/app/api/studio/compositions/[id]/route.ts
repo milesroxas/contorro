@@ -310,11 +310,35 @@ async function createAndSaveNewSessionComposition(
     );
   }
 
+  let componentKey: string | undefined;
+  if (newSession.kind === "component") {
+    const cid = componentIdFromStudioRowId(created.value.compositionId);
+    if (cid) {
+      try {
+        const compDoc = await payload.findByID({
+          collection: "components",
+          id: cid,
+          depth: 0,
+          draft: true,
+          user,
+          overrideAccess: false,
+        });
+        const k = (compDoc as { key?: unknown } | null)?.key;
+        if (typeof k === "string" && k.trim() !== "") {
+          componentKey = k.trim();
+        }
+      } catch {
+        // omit componentKey; client may resolve key from listing if needed
+      }
+    }
+  }
+
   return Response.json({
     data: {
       id: created.value.compositionId,
       updatedAt: saved.value.updatedAt,
       _status: saved.value._status,
+      ...(componentKey !== undefined ? { componentKey } : {}),
     },
   });
 }

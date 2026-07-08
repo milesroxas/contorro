@@ -22,6 +22,13 @@ export function validateEditorFieldValues(
       continue;
     }
     const v = map[field.name];
+    if (field.type === "button") {
+      const b = buttonValueFromUnknown(v, {});
+      if (!b.label.trim() || !b.href.trim()) {
+        return err(`Missing required editor field "${field.name}"`);
+      }
+      continue;
+    }
     if (v === undefined || v === null || v === "") {
       return err(`Missing required editor field "${field.name}"`);
     }
@@ -37,6 +44,35 @@ function stringFromUnknownEffective(effective: unknown): string {
     return String(effective);
   }
   return "";
+}
+
+function buttonValueFromUnknown(
+  effective: unknown,
+  prev: Record<string, unknown>,
+): { label: string; href: string; openInNewTab: boolean } {
+  if (effective && typeof effective === "object" && !Array.isArray(effective)) {
+    const o = effective as Record<string, unknown>;
+    return {
+      label:
+        typeof o.label === "string"
+          ? o.label
+          : stringFromUnknownEffective(o.label),
+      href:
+        typeof o.href === "string"
+          ? o.href
+          : stringFromUnknownEffective(o.href),
+      openInNewTab:
+        typeof o.openInNewTab === "boolean"
+          ? o.openInNewTab
+          : Boolean(o.openInNewTab),
+    };
+  }
+  return {
+    label:
+      typeof prev.label === "string" ? prev.label : stringFromUnknownEffective(effective),
+    href: typeof prev.href === "string" ? prev.href : "",
+    openInNewTab: Boolean(prev.openInNewTab),
+  };
 }
 
 function propValuesPatchForEditorField(
@@ -66,6 +102,18 @@ function propValuesPatchForEditorField(
       return { ...base, checked: Boolean(effective) };
     case "link":
       return { ...base, href: stringFromUnknownEffective(effective) };
+    case "button": {
+      const b = buttonValueFromUnknown(effective, prev);
+      return {
+        ...base,
+        label: b.label,
+        href: b.href,
+        linkType: "url",
+        openInNewTab: b.openInNewTab,
+        collectionSlug: "",
+        entrySlug: "",
+      };
+    }
     default:
       return base;
   }

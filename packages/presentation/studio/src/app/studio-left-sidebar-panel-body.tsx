@@ -9,6 +9,7 @@ import { LibraryComponentCatalog } from "../features/primitive-catalog/LibraryCo
 import { PrimitiveCatalog } from "../features/primitive-catalog/PrimitiveCatalog.js";
 import { cn } from "../lib/cn.js";
 import type { LeftSidebarPanelId } from "../lib/left-sidebar-panels.js";
+import type { LibraryComponentTemplateReturnBase } from "../lib/use-library-component-labels.js";
 
 /**
  * Renders the active left sidebar tab. While a palette drag is in progress we keep
@@ -24,9 +25,11 @@ export function StudioLeftSidebarPanelBody({
   onRemoveNode,
   onSelect,
   onWrapNode,
+  onCreateComponent,
   pageTemplateListFilter,
   selectedNodeId,
   studioResource,
+  templateReturn = null,
 }: {
   activeCompositionId: string;
   activeLeftSidebarPanel: LeftSidebarPanelId;
@@ -35,9 +38,11 @@ export function StudioLeftSidebarPanelBody({
   onRemoveNode: (id: string) => void;
   onSelect: (id: string | null) => void;
   onWrapNode: (id: string) => void;
+  onCreateComponent?: (id: string) => void;
   pageTemplateListFilter: PageTemplateListFilter;
   selectedNodeId: string | null;
   studioResource: "pageTemplate" | "component" | null;
+  templateReturn?: LibraryComponentTemplateReturnBase | null;
 }) {
   const keepPrimitiveCatalogMounted =
     activeLeftSidebarPanel === "primitives" ||
@@ -74,11 +79,13 @@ export function StudioLeftSidebarPanelBody({
         <div className="flex min-h-0 flex-1 flex-col">
           <NodeTree
             composition={composition}
+            onCreateComponent={onCreateComponent}
             onRemoveNode={onRemoveNode}
             onSelect={onSelect}
             onWrapNode={onWrapNode}
             selectedNodeId={selectedNodeId}
             studioResource={studioResource}
+            templateReturn={templateReturn}
           />
         </div>
       ) : null}

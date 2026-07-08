@@ -182,6 +182,18 @@ const heroImageField = {
   label: "Hero image",
 } as const;
 
+const heroCtaField = {
+  name: "hero-cta",
+  type: "button" as const,
+  required: false,
+  label: "Hero CTA",
+  defaultValue: {
+    label: "Start designing",
+    href: "/studio",
+    openInNewTab: false,
+  },
+} as const;
+
 export const seedPrimaryButtonComposition = {
   rootId: "seed-button-root",
   nodes: {
@@ -199,6 +211,21 @@ export const seedPrimaryButtonComposition = {
         collectionSlug: "",
         entrySlug: "",
         openInNewTab: false,
+      },
+      contentBinding: {
+        source: "editor" as const,
+        key: "seed-primary-cta",
+        editorField: {
+          name: "seed-primary-cta",
+          type: "button" as const,
+          required: false,
+          label: "Button",
+          defaultValue: {
+            label: "Get started",
+            href: "/contact",
+            openInNewTab: false,
+          },
+        },
       },
     },
   },
@@ -290,6 +317,11 @@ export const seedHeroSectionComposition = {
         collectionSlug: "",
         entrySlug: "",
         openInNewTab: false,
+      },
+      contentBinding: {
+        source: "editor" as const,
+        key: heroCtaField.name,
+        editorField: heroCtaField,
       },
     },
     "hero-image": {
@@ -668,6 +700,30 @@ const ctaBodyField = {
   label: "CTA body",
 } as const;
 
+const ctaPrimaryButtonField = {
+  name: "cta-primary-button",
+  type: "button" as const,
+  required: false,
+  label: "Primary button",
+  defaultValue: {
+    label: "Book a demo",
+    href: "/contact",
+    openInNewTab: false,
+  },
+} as const;
+
+const ctaSecondaryButtonField = {
+  name: "cta-secondary-button",
+  type: "button" as const,
+  required: false,
+  label: "Secondary button",
+  defaultValue: {
+    label: "View pricing",
+    href: "/pricing",
+    openInNewTab: false,
+  },
+} as const;
+
 export const seedCtaSectionComposition = {
   rootId: "cta-root",
   nodes: {
@@ -735,6 +791,11 @@ export const seedCtaSectionComposition = {
         entrySlug: "",
         openInNewTab: false,
       },
+      contentBinding: {
+        source: "editor" as const,
+        key: ctaPrimaryButtonField.name,
+        editorField: ctaPrimaryButtonField,
+      },
     },
     "cta-secondary-button": {
       id: "cta-secondary-button",
@@ -750,6 +811,11 @@ export const seedCtaSectionComposition = {
         collectionSlug: "",
         entrySlug: "",
         openInNewTab: false,
+      },
+      contentBinding: {
+        source: "editor" as const,
+        key: ctaSecondaryButtonField.name,
+        editorField: ctaSecondaryButtonField,
       },
     },
   },
@@ -878,6 +944,18 @@ export function buildSeedPageTemplateComposition(
       "Supporting line under the hero headline (template CMS field).",
   };
 
+  const pageHeroCtaField = {
+    name: "page-hero-cta",
+    type: "button" as const,
+    required: false,
+    label: "Hero button",
+    defaultValue: {
+      label: "Get started",
+      href: "#",
+      openInNewTab: false,
+    },
+  } as const;
+
   const heroSectionChildIds = minimalHero
     ? (["page-hero-heading"] as const)
     : (["page-hero-heading", "page-hero-subhead", "page-hero-cta"] as const);
@@ -981,6 +1059,11 @@ export function buildSeedPageTemplateComposition(
         collectionSlug: "",
         entrySlug: "",
         openInNewTab: false,
+      },
+      contentBinding: {
+        source: "editor",
+        key: pageHeroCtaField.name,
+        editorField: pageHeroCtaField,
       },
     };
   }
