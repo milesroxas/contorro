@@ -1,9 +1,7 @@
 export {
   type CompiledTokenOutput,
+  type CompileTokenSetOptions,
   compileTokenSet,
-  mergeCompiledDesignSystemCss,
-  type StudioStyleProperty,
-  styleTokenClassName,
+  cssVariableForTokenKey,
   type TokenMeta,
-  tokenKeyToCssVar,
 } from "./compiler.js";

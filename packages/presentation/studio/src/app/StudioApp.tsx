@@ -461,8 +461,7 @@ export function StudioApp({
   const composition = useStudioStore((s) => s.composition);
   const tokenMetadata = useStudioStore((s) => s.tokenMetadata);
   const cssVariables = useStudioStore((s) => s.cssVariables);
-  const tokenUtilityCss = useStudioStore((s) => s.tokenUtilityCss);
-  useStudioDesignSystemStyleSheet(cssVariables, tokenUtilityCss);
+  useStudioDesignSystemStyleSheet(cssVariables);
   const studioResource = useStudioStore((s) => s.studioResource);
   const name = useStudioStore((s) => s.name);
   const selectedNodeId = useStudioStore((s) => s.selectedNodeId);
@@ -489,6 +488,8 @@ export function StudioApp({
   const setCanvasZoomPercent = useStudioStore((s) => s.setCanvasZoomPercent);
   const canvasFontSizePx = useStudioStore((s) => s.canvasFontSizePx);
   const setCanvasFontSizePx = useStudioStore((s) => s.setCanvasFontSizePx);
+  const canvasColorMode = useStudioStore((s) => s.canvasColorMode);
+  const setCanvasColorMode = useStudioStore((s) => s.setCanvasColorMode);
   const storeResetNodePropKey = useStudioStore((s) => s.resetNodePropKey);
   const storeClearNodeStyles = useStudioStore((s) => s.clearNodeStyles);
   const setNodeEditorFieldBinding = useStudioStore(
@@ -698,6 +699,10 @@ export function StudioApp({
       return nextTheme;
     });
   }, []);
+
+  const toggleCanvasColorMode = useCallback(() => {
+    setCanvasColorMode(canvasColorMode === "dark" ? "light" : "dark");
+  }, [canvasColorMode, setCanvasColorMode]);
 
   const onDragStart = (event: DragStartEvent) => {
     applyStudioDragStartState(
@@ -1025,6 +1030,7 @@ export function StudioApp({
             <div className="flex min-h-0 min-w-0 flex-col">
               <StudioCanvas
                 activeBreakpoint={activeBreakpoint}
+                canvasColorMode={canvasColorMode}
                 canvasFontSizePx={canvasFontSizePx}
                 canvasViewportWidthPx={canvasViewportWidthPx}
                 canvasZoomPercent={canvasZoomPercent}
@@ -1041,12 +1047,12 @@ export function StudioApp({
                   selectNode(nodeId);
                 }}
                 onWrapNode={wrapNodeInBox}
+                onToggleCanvasColorMode={toggleCanvasColorMode}
                 onToggleTheme={toggleTheme}
                 selectedNodeId={selectedNodeId}
                 studioResource={studioResource}
                 templateReturn={templateReturn}
                 theme={theme}
-                tokenMeta={tokenMetadata}
               />
             </div>
             <button

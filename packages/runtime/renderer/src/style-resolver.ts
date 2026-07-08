@@ -1,4 +1,4 @@
-import { styleTokenClassName, type TokenMeta } from "@repo/config-tailwind";
+import { cssVariableForTokenKey } from "@repo/config-tailwind";
 import {
   BREAKPOINTS,
   type Breakpoint,
@@ -9,6 +9,7 @@ import {
   type StylePropertyEntry,
   utilityValuesForStyleProperty,
 } from "@repo/contracts-zod";
+import type { CSSProperties } from "react";
 
 import {
   utilityClassNameForPropertyValue,
@@ -17,10 +18,18 @@ import {
 
 export type ResolvedStyle = {
   classes: string;
+  /** Inline `var()` entries for token-bound properties. */
+  style: CSSProperties;
 };
 
 export type ResolvedNodeStyle = {
   className?: string;
+  style?: CSSProperties;
+};
+
+type ResolveTarget = {
+  classes: Set<string>;
+  style: Record<string, string>;
 };
 
 const PADDING_SIDE_PROPERTIES: readonly StyleProperty[] = [
@@ -30,23 +39,26 @@ const PADDING_SIDE_PROPERTIES: readonly StyleProperty[] = [
   "paddingLeft",
 ];
 
-function addClassForStyleEntry(
-  classes: Set<string>,
+/** React style key for a bound property (`background` binds `background-color`). */
+function tokenStyleKey(property: StyleProperty): string {
+  return property === "background" ? "backgroundColor" : property;
+}
+
+function addStyleEntry(
+  target: ResolveTarget,
   property: StyleProperty,
   entry: StylePropertyEntry,
-  allowedTokenKeys: ReadonlySet<string>,
   breakpoint: Breakpoint | null,
 ): void {
   if (entry.type === "token") {
-    if (!allowedTokenKeys.has(entry.token)) {
-      return;
-    }
-    classes.add(
-      withBreakpointPrefix(
-        breakpoint,
-        styleTokenClassName(property, entry.token),
-      ),
-    );
+    // Token bindings resolve to inline `var()` styles against the compiled theme
+    // variables. Inline styles cannot vary by media query, so in the mobile-first
+    // loop the largest-breakpoint token entry wins at all widths (studio preview
+    // flattens the cascade correctly via `resolveStyleBindingAtBreakpoint`).
+    // Unknown token keys still emit their `var()` — it computes to nothing but
+    // stays debuggable in devtools.
+    target.style[tokenStyleKey(property)] =
+      `var(${cssVariableForTokenKey(entry.token)})`;
     return;
   }
   if (!utilityValuesForStyleProperty(property).includes(entry.value)) {
@@ -57,13 +69,13 @@ function addClassForStyleEntry(
     entry.value,
   );
   if (utilityClassName) {
-    classes.add(withBreakpointPrefix(breakpoint, utilityClassName));
+    target.classes.add(withBreakpointPrefix(breakpoint, utilityClassName));
   }
 }
 
 /**
- * Emits utility/token classes for one breakpoint group (base when `breakpoint` is null),
- * including padding shorthand vs side merging matching Tailwind class semantics.
+ * Emits utility classes / token styles for one breakpoint group (base when `breakpoint`
+ * is null), including padding shorthand vs side merging matching Tailwind class semantics.
  */
 type BreakpointSegment = Breakpoint | "base";
 
@@ -136,6 +148,13 @@ function mergedEntriesAtBreakpoint(
   return [...merged.values()];
 }
 
+function resolvedStyleFromTarget(target: ResolveTarget): ResolvedStyle {
+  return {
+    classes: [...target.classes].join(" "),
+    style: target.style as CSSProperties,
+  };
+}
+
 /**
  * Like {@link resolveStyleBinding}, but resolves the mobile-first cascade up to `upTo`
  * into unprefixed utilities so preview matches the selected breakpoint regardless of
@@ -143,21 +162,19 @@ function mergedEntriesAtBreakpoint(
  */
 export function resolveStyleBindingAtBreakpoint(
   binding: StyleBinding,
-  tokenMeta: TokenMeta[],
   upTo: Breakpoint,
 ): ResolvedStyle {
   const merged = mergedEntriesAtBreakpoint(binding, upTo);
-  const classes = resolveStyleClassesForBreakpoint(merged, tokenMeta, null);
-  return { classes: [...classes].join(" ") };
+  const target: ResolveTarget = { classes: new Set(), style: {} };
+  resolveStyleEntriesForBreakpoint(merged, null, target);
+  return resolvedStyleFromTarget(target);
 }
 
-function resolveStyleClassesForBreakpoint(
+function resolveStyleEntriesForBreakpoint(
   entries: StylePropertyEntry[],
-  tokenMeta: TokenMeta[],
   breakpoint: Breakpoint | null,
-): Set<string> {
-  const classes = new Set<string>();
-  const allowedTokenKeys = new Set(tokenMeta.map((token) => token.key));
+  target: ResolveTarget,
+): void {
   const propertyEntries = new Map<StyleProperty, StylePropertyEntry>();
   for (const prop of entries) {
     propertyEntries.set(prop.property, prop);
@@ -177,13 +194,7 @@ function resolveStyleClassesForBreakpoint(
     ) {
       continue;
     }
-    addClassForStyleEntry(
-      classes,
-      prop.property,
-      prop,
-      allowedTokenKeys,
-      breakpoint,
-    );
+    addStyleEntry(target, prop.property, prop, breakpoint);
   }
 
   if (hasPaddingSideEntry) {
@@ -193,27 +204,17 @@ function resolveStyleClassesForBreakpoint(
       if (!entry) {
         continue;
       }
-      addClassForStyleEntry(
-        classes,
-        property,
-        entry,
-        allowedTokenKeys,
-        breakpoint,
-      );
+      addStyleEntry(target, property, entry, breakpoint);
     }
   }
-
-  return classes;
 }
 
 /**
- * Resolves persisted style bindings to Tailwind utility and token alias classes.
- * Base entries are unprefixed; breakpoint entries use `sm:`/`md:`/`lg:`/`xl:`.
+ * Resolves persisted style bindings to Tailwind utility classes plus inline `var()`
+ * styles for token-bound properties. Base entries are unprefixed; breakpoint utility
+ * entries use `sm:`/`md:`/`lg:`/`xl:`.
  */
-export function resolveStyleBinding(
-  binding: StyleBinding,
-  tokenMeta: TokenMeta[],
-): ResolvedStyle {
+export function resolveStyleBinding(binding: StyleBinding): ResolvedStyle {
   const byBreakpoint = new Map<Breakpoint | "base", StylePropertyEntry[]>();
   for (const entry of binding.properties) {
     const key: Breakpoint | "base" = entry.breakpoint ?? "base";
@@ -222,28 +223,20 @@ export function resolveStyleBinding(
     byBreakpoint.set(key, list);
   }
 
-  const classes = new Set<string>();
+  const target: ResolveTarget = { classes: new Set(), style: {} };
   const baseList = byBreakpoint.get("base");
   if (baseList?.length) {
-    for (const c of resolveStyleClassesForBreakpoint(
-      baseList,
-      tokenMeta,
-      null,
-    )) {
-      classes.add(c);
-    }
+    resolveStyleEntriesForBreakpoint(baseList, null, target);
   }
   for (const bp of BREAKPOINTS) {
     const list = byBreakpoint.get(bp);
     if (!list?.length) {
       continue;
     }
-    for (const c of resolveStyleClassesForBreakpoint(list, tokenMeta, bp)) {
-      classes.add(c);
-    }
+    resolveStyleEntriesForBreakpoint(list, bp, target);
   }
 
-  return { classes: [...classes].join(" ") };
+  return resolvedStyleFromTarget(target);
 }
 
 export type ResolveNodeStyleOptions = {
@@ -255,12 +248,11 @@ export type ResolveNodeStyleOptions = {
 };
 
 /**
- * Resolves style classes for one composition node (utilities only; no inline styles).
+ * Resolves style classes and token-bound inline styles for one composition node.
  */
 export function resolveNodeStyle(
   node: Pick<CompositionNode, "id" | "styleBindingId">,
   composition: Pick<PageComposition, "styleBindings">,
-  tokenMeta: TokenMeta[],
   options?: ResolveNodeStyleOptions,
 ): ResolvedNodeStyle {
   if (!node.styleBindingId) {
@@ -273,9 +265,10 @@ export function resolveNodeStyle(
   const flattenTo = options?.studioPreviewFlattenToBreakpoint;
   const resolved =
     flattenTo !== undefined
-      ? resolveStyleBindingAtBreakpoint(binding, tokenMeta, flattenTo)
-      : resolveStyleBinding(binding, tokenMeta);
+      ? resolveStyleBindingAtBreakpoint(binding, flattenTo)
+      : resolveStyleBinding(binding);
   return {
     className: resolved.classes || undefined,
+    style: Object.keys(resolved.style).length > 0 ? resolved.style : undefined,
   };
 }

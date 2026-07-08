@@ -198,6 +198,18 @@ function normalizeTokens(tokens: StudioDesignTokenEntry[]): DesignToken[] {
     .filter((token) => token.key.length > 0 && token.resolvedValue.length > 0);
 }
 
+/** Prefer the API's error text (e.g. which published keys are missing) over a generic fallback. */
+function persistErrorMessage(
+  e: unknown,
+  status: "draft" | "published",
+): string {
+  const fallback =
+    status === "published"
+      ? "Publish failed. Try again."
+      : "Save failed. Try again.";
+  return e instanceof Error && e.message.trim() !== "" ? e.message : fallback;
+}
+
 function stableTokenSnapshot(tokens: StudioDesignTokenEntry[]): string {
   return JSON.stringify(
     [...tokens]
@@ -645,13 +657,9 @@ export function DesignSystemEditor({
             ? "Published design system tokens."
             : "Saved draft design system tokens.",
         );
-      } catch {
+      } catch (e) {
         setSaveState("error");
-        setStatusMessage(
-          status === "published"
-            ? "Publish failed. Try again."
-            : "Save failed. Try again.",
-        );
+        setStatusMessage(persistErrorMessage(e, status));
       }
     },
     [activeMode, authoringClient, draftTokens, selectedSet, selectedSetId],

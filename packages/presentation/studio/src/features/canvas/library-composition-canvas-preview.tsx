@@ -1,6 +1,5 @@
 "use client";
 
-import type { TokenMeta } from "@repo/config-tailwind";
 import type {
   Breakpoint,
   CompositionNode,
@@ -98,13 +97,11 @@ export function LibraryCompositionCanvasPreview({
   className,
   style,
   stylePreviewFlattenToBreakpoint,
-  tokenMeta,
 }: {
   node: CompositionNode;
   className: string;
   style?: CSSProperties;
   stylePreviewFlattenToBreakpoint?: Breakpoint;
-  tokenMeta: TokenMeta[];
 }): ReactElement {
   const componentKey =
     typeof node.propValues?.componentKey === "string"
@@ -206,7 +203,6 @@ export function LibraryCompositionCanvasPreview({
       return renderComposition(
         composition,
         defaultPrimitiveRegistry,
-        tokenMeta,
         stylePreviewFlattenToBreakpoint !== undefined
           ? {
               studioPreviewFlattenToBreakpoint: stylePreviewFlattenToBreakpoint,
@@ -221,7 +217,6 @@ export function LibraryCompositionCanvasPreview({
     instanceFieldValues,
     phase,
     stylePreviewFlattenToBreakpoint,
-    tokenMeta,
     valuesForMerge,
   ]);
 

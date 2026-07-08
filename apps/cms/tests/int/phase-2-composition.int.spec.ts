@@ -48,7 +48,7 @@ describe("Phase 2 — composition model", () => {
     const inv = validatePageCompositionInvariants(parsed.data);
     expect(inv.ok).toBe(true);
 
-    render(renderComposition(parsed.data, defaultPrimitiveRegistry, []));
+    render(renderComposition(parsed.data, defaultPrimitiveRegistry));
     expect(screen.getByText("Hello")).toBeDefined();
   });
 

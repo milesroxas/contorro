@@ -5,7 +5,7 @@ import type {
 } from "payload";
 import { APIError } from "payload";
 import {
-  assertTokenKeyStability,
+  findRemovedPublishedTokenKeys,
   validateTokensForSave,
 } from "./design-token-set.js";
 import {
@@ -37,7 +37,7 @@ function validateAndNormalizeTokenRows(
     })),
   );
   if (!domainCheck.ok) {
-    throw new APIError("Design token validation failed", 400);
+    throw new APIError(domainCheck.error, 400);
   }
 }
 
@@ -90,12 +90,18 @@ export function createDesignTokenSetBeforeChangeHandler(): CollectionBeforeChang
     const next = toDesignTokenSetAggregate(merged);
     const prevAgg = prior ? toDesignTokenSetAggregate(prior) : null;
 
-    const stable = assertTokenKeyStability(prevAgg, next);
-    if (!stable.ok) {
-      throw new APIError(
-        "Token keys are immutable after the set has been published",
-        400,
-      );
+    // Additions are always allowed; removing/renaming previously-published keys is
+    // rejected only when publishing (draft saves stay unrestricted).
+    if (incoming._status === "published") {
+      const removedKeys = findRemovedPublishedTokenKeys(prevAgg, next);
+      if (removedKeys.length > 0) {
+        throw new APIError(
+          `Cannot publish: previously published token keys are missing: ${removedKeys.join(
+            ", ",
+          )}. Published keys may gain new values or new keys, but cannot be removed or renamed.`,
+          400,
+        );
+      }
     }
 
     const nextStatus =

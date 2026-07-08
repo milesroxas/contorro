@@ -159,7 +159,10 @@ export function createFetchStudioAuthoringClient(
         },
       );
       if (!res.ok) {
-        throw new Error(`patch token set failed: ${res.status}`);
+        // Payload REST reports hook APIErrors as `{ errors: [{ message }] }` —
+        // surface that text (e.g. which published keys are missing) to the editor.
+        const message = await payloadErrorMessage(res);
+        throw new Error(message ?? `patch token set failed: ${res.status}`);
       }
       return (await res.json()) as { doc?: StudioDesignTokenSetDoc };
     },
@@ -183,6 +186,20 @@ export function createFetchStudioAuthoringClient(
       }
     },
   };
+}
+
+async function payloadErrorMessage(res: Response): Promise<string | null> {
+  try {
+    const json = (await res.json()) as {
+      errors?: Array<{ message?: unknown }>;
+    };
+    const message = json.errors?.[0]?.message;
+    return typeof message === "string" && message.trim() !== ""
+      ? message
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 async function postPersist(

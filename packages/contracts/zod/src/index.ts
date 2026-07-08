@@ -44,16 +44,17 @@ export {
   normalizeEditorFieldsContract,
   parseEditorFieldsContract,
 } from "./normalize-editor-fields.js";
-export type {
-  StudioAuthoringClient,
-  StudioAuthoringCompositionPayload,
-  StudioDesignSystemSettingsDoc,
-  StudioDesignTokenEntry,
-  StudioDesignTokenSetDoc,
-  StudioPersistCompositionBody,
-  StudioRenameResult,
-  StudioSaveResult,
-  StudioTokenMeta,
+export {
+  STUDIO_CANVAS_MODE_ATTRIBUTE,
+  type StudioAuthoringClient,
+  type StudioAuthoringCompositionPayload,
+  type StudioDesignSystemSettingsDoc,
+  type StudioDesignTokenEntry,
+  type StudioDesignTokenSetDoc,
+  type StudioPersistCompositionBody,
+  type StudioRenameResult,
+  type StudioSaveResult,
+  type StudioTokenMeta,
 } from "./studio-authoring-client.js";
 export type {
   Breakpoint,

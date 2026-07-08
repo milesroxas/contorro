@@ -1,4 +1,3 @@
-import type { TokenMeta } from "@repo/config-tailwind";
 import type { CompositionNode, PageComposition } from "@repo/contracts-zod";
 import type { ReactElement, ReactNode } from "react";
 import type { RuntimeRegistry } from "./runtime-catalog.js";
@@ -23,7 +22,6 @@ function renderNode(
   nodeId: string,
   composition: PageComposition,
   registry: RuntimeRegistry,
-  tokenMeta: TokenMeta[],
   options: RenderCompositionOptions | undefined,
 ): ReactElement | null {
   const node = composition.nodes[nodeId];
@@ -39,7 +37,6 @@ function renderNode(
   const resolvedNodeStyle = resolveNodeStyle(
     node,
     composition,
-    tokenMeta,
     options?.studioPreviewFlattenToBreakpoint !== undefined
       ? {
           studioPreviewFlattenToBreakpoint:
@@ -48,19 +45,20 @@ function renderNode(
       : undefined,
   );
   const className = resolvedNodeStyle.className;
+  const style = resolvedNodeStyle.style;
 
   if (node.definitionKey === "primitive.slot") {
     const slotId = normalizedLayoutSlotId(node);
     const injected = options?.slotContent?.[slotId] ?? null;
     return (
-      <Cmp className={className} key={node.id} node={node}>
+      <Cmp className={className} key={node.id} node={node} style={style}>
         {injected}
       </Cmp>
     );
   }
 
   const childElements = node.childIds
-    .map((cid) => renderNode(cid, composition, registry, tokenMeta, options))
+    .map((cid) => renderNode(cid, composition, registry, options))
     .filter((x): x is ReactElement => x !== null);
 
   if (node.definitionKey === "primitive.collection") {
@@ -70,12 +68,13 @@ function renderNode(
         collectionTemplate={childElements}
         key={node.id}
         node={node}
+        style={style}
       />
     );
   }
 
   return (
-    <Cmp className={className} key={node.id} node={node}>
+    <Cmp className={className} key={node.id} node={node} style={style}>
       {childElements}
     </Cmp>
   );
@@ -84,16 +83,9 @@ function renderNode(
 export function renderComposition(
   composition: PageComposition,
   registry: RuntimeRegistry,
-  tokenMeta: TokenMeta[],
   options?: RenderCompositionOptions,
 ): ReactElement {
-  const root = renderNode(
-    composition.rootId,
-    composition,
-    registry,
-    tokenMeta,
-    options,
-  );
+  const root = renderNode(composition.rootId, composition, registry, options);
   if (!root) {
     throw new Error("Failed to render composition root");
   }

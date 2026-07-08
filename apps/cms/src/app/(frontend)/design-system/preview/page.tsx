@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Design token preview",
   description:
-    "Compiled @theme output from the published default (or first published) token set.",
+    "Compiled CSS variable output from the published default (or first published) token set.",
 };
 
 export default async function DesignSystemPreviewPage() {
@@ -91,10 +91,7 @@ export default async function DesignSystemPreviewPage() {
             If you use a{" "}
             <code className="text-foreground">color.surface.primary</code>{" "}
             token, the swatch uses{" "}
-            <code className="text-foreground">
-              var(--color-surface-primary)
-            </code>
-            .
+            <code className="text-foreground">var(--surface-primary)</code>.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -103,7 +100,7 @@ export default async function DesignSystemPreviewPage() {
               <div
                 className="size-16 rounded-lg border border-border"
                 style={{
-                  background: "var(--color-surface-primary)",
+                  background: "var(--surface-primary)",
                 }}
                 title="color.surface.primary"
               />
@@ -120,24 +117,11 @@ export default async function DesignSystemPreviewPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            Compiled variable layers (`@theme` / `:root` / `.dark`)
-          </CardTitle>
+          <CardTitle>Compiled variable layers (`:root` / `.dark`)</CardTitle>
         </CardHeader>
         <CardContent>
           <pre className="overflow-auto rounded-none bg-foreground p-4 text-xs text-background ring-1 ring-border">
             {compiled.cssVariables}
-          </pre>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Compiled token utilities (class rules)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <pre className="overflow-auto rounded-none bg-foreground p-4 text-xs text-background ring-1 ring-border">
-            {compiled.tokenUtilityCss || "—"}
           </pre>
         </CardContent>
       </Card>

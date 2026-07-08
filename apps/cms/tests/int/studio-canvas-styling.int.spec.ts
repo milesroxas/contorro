@@ -131,7 +131,7 @@ describe("Builder canvas styling safeguards", () => {
 
   it("renders publish output image with utility aspect classes", () => {
     const composition = imageComposition();
-    render(renderComposition(composition, defaultPrimitiveRegistry, []));
+    render(renderComposition(composition, defaultPrimitiveRegistry));
 
     const image = screen.getByRole("img", { name: "Preview image" });
     const imageClasses = (image.getAttribute("class") ?? "")
@@ -166,7 +166,6 @@ describe("Builder canvas styling safeguards", () => {
           studioResource: null,
           theme: "light",
           onToggleTheme: () => {},
-          tokenMeta: [],
         }),
       ),
     );

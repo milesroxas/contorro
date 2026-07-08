@@ -7,6 +7,12 @@ export type StudioTokenMeta = {
   category: string;
 };
 
+/**
+ * Canvas wrapper attribute scoping the injected token variables; hosts compile
+ * `cssVariables` against it (`[data-studio-canvas-mode]` base / `="dark"` overrides).
+ */
+export const STUDIO_CANVAS_MODE_ATTRIBUTE = "data-studio-canvas-mode";
+
 export type StudioAuthoringCompositionPayload = {
   name: string;
   composition: PageComposition;
@@ -16,10 +22,11 @@ export type StudioAuthoringCompositionPayload = {
   /** Payload drafts: whether the loaded revision is draft or published in CMS. */
   _status?: "draft" | "published" | null;
   tokenMetadata: StudioTokenMeta[];
-  /** Theme + `:root` / `.dark` variable layers from the published token set (see `mergeCompiledDesignSystemCss`). */
+  /**
+   * Token variable layers from the published token set, pre-scoped to
+   * {@link STUDIO_CANVAS_MODE_ATTRIBUTE} so the studio injects them verbatim.
+   */
   cssVariables: string;
-  /** Token→utility class rules (`.bg-*` …). Split so hosts can load like static CSS; pair with `cssVariables`. */
-  tokenUtilityCss: string;
 };
 
 export type StudioPersistCompositionBody = {

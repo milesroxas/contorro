@@ -1,8 +1,8 @@
 export {
-  assertTokenKeyStability,
   createDesignTokenSet,
   type DesignToken,
   type DesignTokenSet,
+  findRemovedPublishedTokenKeys,
   validateTokensForSave,
 } from "./design-token-set.js";
 export { isValidTokenKey } from "./token-key.js";

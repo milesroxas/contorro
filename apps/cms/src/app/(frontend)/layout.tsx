@@ -13,14 +13,22 @@ export const metadata = {
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props;
   const { runtime } = await loadFrontendDesignSystemBundle();
+  const tokenSetVersion = runtime.tokenSet?.updatedAt ?? "";
+  const compiledCssHref = tokenSetVersion
+    ? `/api/design-system/compiled-css?v=${encodeURIComponent(tokenSetVersion)}`
+    : "/api/design-system/compiled-css";
 
   return (
     <html
       className={runtime.activeColorMode === "dark" ? "dark" : undefined}
       lang="en"
     >
+      {/*
+       * Rendered in `<head>` after Next's built stylesheets (globals.css) so the
+       * published token variables win the cascade over theme.css defaults.
+       */}
       <head>
-        <link href="/api/design-system/compiled-css" rel="stylesheet" />
+        <link href={compiledCssHref} rel="stylesheet" />
       </head>
       <body>{children}</body>
     </html>

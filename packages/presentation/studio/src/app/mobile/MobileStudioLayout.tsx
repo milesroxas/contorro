@@ -271,7 +271,6 @@ export function MobileStudioLayout({
           studioResource={studioResource}
           templateReturn={templateReturn}
           theme={theme}
-          tokenMeta={tokenMetadata}
         />
         {stagedTapInsertion ? (
           <MobileStagingHud

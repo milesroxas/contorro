@@ -1,22 +1,14 @@
-import { mergeCompiledDesignSystemCss } from "@repo/config-tailwind";
-import { useLayoutEffect, useMemo } from "react";
-
-import { runtimeCssVariables } from "./runtime-css-variables.js";
+import { useLayoutEffect } from "react";
 
 const STYLE_ELEMENT_ID = "studio-design-system-sheet";
 
-export function useStudioDesignSystemStyleSheet(
-  cssVariables: string,
-  tokenUtilityCss: string,
-): void {
-  const sheet = useMemo(
-    () =>
-      mergeCompiledDesignSystemCss({
-        cssVariables: runtimeCssVariables(cssVariables),
-        tokenUtilityCss,
-      }),
-    [cssVariables, tokenUtilityCss],
-  );
+/**
+ * Injects the design-system token variables for the canvas. The API delivers them
+ * pre-scoped to `[data-studio-canvas-mode]` (see `STUDIO_CANVAS_MODE_ATTRIBUTE`), so
+ * the sheet is used verbatim and only affects the canvas subtree.
+ */
+export function useStudioDesignSystemStyleSheet(cssVariables: string): void {
+  const sheet = cssVariables.trim();
 
   useLayoutEffect(() => {
     if (!sheet) {

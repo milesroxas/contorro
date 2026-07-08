@@ -1,7 +1,6 @@
 "use client";
 
 import { useDndContext, useDraggable } from "@dnd-kit/core";
-import type { TokenMeta } from "@repo/config-tailwind";
 import {
   BREAKPOINT_MIN_WIDTH_PX,
   BREAKPOINTS,
@@ -254,7 +253,6 @@ function ContainerChildList({
   studioResource,
   stylePreviewFlattenToBreakpoint,
   templateReturn,
-  tokenMeta,
   onSelectNode,
   onRemoveNode,
   onWrapNode,
@@ -269,7 +267,6 @@ function ContainerChildList({
   studioResource: "pageTemplate" | "component" | null;
   stylePreviewFlattenToBreakpoint: Breakpoint | undefined;
   templateReturn: LibraryComponentTemplateReturnBase | null;
-  tokenMeta: TokenMeta[];
   onSelectNode: (id: string) => void;
   onRemoveNode: (id: string) => void;
   onWrapNode: (id: string) => void;
@@ -324,7 +321,6 @@ function ContainerChildList({
               studioResource={studioResource}
               stylePreviewFlattenToBreakpoint={stylePreviewFlattenToBreakpoint}
               templateReturn={templateReturn}
-              tokenMeta={tokenMeta}
             />
             <InsertionDropZone
               droppableScope="canvas"
@@ -361,7 +357,6 @@ function ContainerChildList({
             studioResource={studioResource}
             stylePreviewFlattenToBreakpoint={stylePreviewFlattenToBreakpoint}
             templateReturn={templateReturn}
-            tokenMeta={tokenMeta}
           />
           <InsertionDropZone
             droppableScope="canvas"
@@ -568,6 +563,7 @@ function CanvasPrimitiveCollectionBranch({
   onWrapNode,
   onCreateComponent,
   selected,
+  style,
 }: {
   childList: ReactNode;
   className: string | undefined;
@@ -580,6 +576,7 @@ function CanvasPrimitiveCollectionBranch({
   onWrapNode: (id: string) => void;
   onCreateComponent?: (id: string) => void;
   selected: boolean;
+  style: CSSProperties | undefined;
 }): ReactElement {
   return (
     <CanvasNodeFrame
@@ -598,6 +595,7 @@ function CanvasPrimitiveCollectionBranch({
           className={cn(className, "w-full")}
           collectionTemplate={childList}
           node={node}
+          style={style}
         />
         <div
           aria-hidden
@@ -616,7 +614,6 @@ function CanvasNode({
   registry,
   selectedNodeId,
   stylePreviewFlattenToBreakpoint,
-  tokenMeta,
   editStudioHrefByKey,
   studioResource,
   templateReturn,
@@ -630,7 +627,6 @@ function CanvasNode({
   registry: PrimitiveRegistry;
   selectedNodeId: string | null;
   stylePreviewFlattenToBreakpoint: Breakpoint | undefined;
-  tokenMeta: TokenMeta[];
   editStudioHrefByKey: Record<string, string>;
   studioResource: "pageTemplate" | "component" | null;
   templateReturn: LibraryComponentTemplateReturnBase | null;
@@ -660,12 +656,12 @@ function CanvasNode({
   const resolvedNodeStyle = resolveNodeStyle(
     node,
     composition,
-    tokenMeta,
     stylePreviewFlattenToBreakpoint !== undefined
       ? { studioPreviewFlattenToBreakpoint: stylePreviewFlattenToBreakpoint }
       : undefined,
   );
   const className = resolvedNodeStyle.className;
+  const nodeStyle = resolvedNodeStyle.style;
 
   const selected = selectedNodeId === node.id;
   const isContainer = isContainerNode(node);
@@ -697,8 +693,8 @@ function CanvasNode({
         <LibraryCompositionCanvasPreview
           className={className ?? ""}
           node={node}
+          style={nodeStyle}
           stylePreviewFlattenToBreakpoint={stylePreviewFlattenToBreakpoint}
-          tokenMeta={tokenMeta}
         />
       </CanvasNodeFrame>
     );
@@ -719,7 +715,6 @@ function CanvasNode({
       studioResource={studioResource}
       stylePreviewFlattenToBreakpoint={stylePreviewFlattenToBreakpoint}
       templateReturn={templateReturn}
-      tokenMeta={tokenMeta}
     />
   ) : null;
 
@@ -737,6 +732,7 @@ function CanvasNode({
         onSelectNode={onSelectNode}
         onWrapNode={onWrapNode}
         selected={selected}
+        style={nodeStyle}
       />
     );
   }
@@ -746,7 +742,7 @@ function CanvasNode({
     childList,
     className: className ?? "",
     node,
-    style: undefined,
+    style: nodeStyle,
   });
 
   if (node.definitionKey === "primitive.text") {
@@ -1095,7 +1091,8 @@ export function StudioCanvas({
   onCanvasFontSizePxChange,
   theme,
   onToggleTheme,
-  tokenMeta = [],
+  canvasColorMode = "light",
+  onToggleCanvasColorMode,
   studioResource,
   templateReturn = null,
 }: {
@@ -1116,7 +1113,9 @@ export function StudioCanvas({
   onCanvasFontSizePxChange: (fontSizePx: number) => void;
   theme: "light" | "dark";
   onToggleTheme: () => void;
-  tokenMeta?: TokenMeta[];
+  /** Token color mode for the canvas preview — independent of the chrome `theme`. */
+  canvasColorMode?: "light" | "dark";
+  onToggleCanvasColorMode?: () => void;
   studioResource: "pageTemplate" | "component" | null;
   /** When authoring a page template, library “Edit component” links include return context. */
   templateReturn?: LibraryComponentTemplateReturnBase | null;
@@ -1138,7 +1137,6 @@ export function StudioCanvas({
       studioResource={studioResource}
       stylePreviewFlattenToBreakpoint={activeBreakpoint ?? undefined}
       templateReturn={templateReturn}
-      tokenMeta={tokenMeta}
     />
   );
 
@@ -1321,6 +1319,24 @@ export function StudioCanvas({
             viewportWidthPx={viewportLogicalWidthPx}
             viewportZoomPercent={normalizedZoomPercent}
           />
+          {onToggleCanvasColorMode ? (
+            <Button
+              aria-label={`Canvas colors: switch to ${canvasColorMode === "dark" ? "light" : "dark"} mode`}
+              data-testid="studio-canvas-color-mode-toggle"
+              onClick={onToggleCanvasColorMode}
+              size="sm"
+              title={`Canvas colors: switch to ${canvasColorMode === "dark" ? "light" : "dark"} mode`}
+              type="button"
+              variant="ghost"
+            >
+              {canvasColorMode === "dark" ? (
+                <IconMoonStars className="size-4" />
+              ) : (
+                <IconSunHigh className="size-4" />
+              )}
+              <span className="hidden text-xs sm:inline">Canvas</span>
+            </Button>
+          ) : null}
           <Button
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
             onClick={onToggleTheme}
@@ -1352,6 +1368,8 @@ export function StudioCanvas({
             >
               <div
                 className="text-foreground"
+                // Scopes the injected token variables (see STUDIO_CANVAS_MODE_ATTRIBUTE).
+                data-studio-canvas-mode={canvasColorMode}
                 data-testid="studio-canvas-preview"
                 style={
                   {

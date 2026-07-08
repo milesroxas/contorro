@@ -1,6 +1,9 @@
 import { compileTokenSet, type TokenMeta } from "@repo/config-tailwind";
 import type { PageComposition } from "@repo/contracts-zod";
-import { PageCompositionSchema } from "@repo/contracts-zod";
+import {
+  PageCompositionSchema,
+  STUDIO_CANVAS_MODE_ATTRIBUTE,
+} from "@repo/contracts-zod";
 import {
   componentIdFromStudioRowId,
   defaultEmptyPageComposition,
@@ -26,12 +29,11 @@ import {
 async function designTokensForStudio(payload: Payload): Promise<{
   tokenMetadata: TokenMeta[];
   cssVariables: string;
-  tokenUtilityCss: string;
 }> {
   const runtime = await loadDesignSystemRuntimeForPreview(payload);
   const doc = runtime.tokenSet;
   if (!doc?.tokens?.length) {
-    return { tokenMetadata: [], cssVariables: "", tokenUtilityCss: "" };
+    return { tokenMetadata: [], cssVariables: "" };
   }
   const tokens = doc.tokens.map((t) => {
     const mode: "light" | "dark" = t.mode === "dark" ? "dark" : "light";
@@ -42,11 +44,18 @@ async function designTokensForStudio(payload: Payload): Promise<{
       resolvedValue: t.resolvedValue,
     };
   });
-  const compiled = compileTokenSet({ tokens });
+  // Scoped to the studio canvas wrapper so canvas token values follow the explicit
+  // canvas color mode, not the editor chrome theme or the host document.
+  const compiled = compileTokenSet(
+    { tokens },
+    {
+      rootSelector: `[${STUDIO_CANVAS_MODE_ATTRIBUTE}]`,
+      darkSelector: `[${STUDIO_CANVAS_MODE_ATTRIBUTE}="dark"]`,
+    },
+  );
   return {
     tokenMetadata: compiled.tokenMetadata,
     cssVariables: compiled.cssVariables,
-    tokenUtilityCss: compiled.tokenUtilityCss,
   };
 }
 
@@ -89,7 +98,6 @@ async function getNewSessionComposition(
       _status: null,
       tokenMetadata: designTokens.tokenMetadata,
       cssVariables: designTokens.cssVariables,
-      tokenUtilityCss: designTokens.tokenUtilityCss,
     },
   });
 }
@@ -162,7 +170,6 @@ async function getComponentComposition(
       _status: publicationStatusFromDoc(doc),
       tokenMetadata: designTokens.tokenMetadata,
       cssVariables: designTokens.cssVariables,
-      tokenUtilityCss: designTokens.tokenUtilityCss,
     },
   });
 }
@@ -226,7 +233,6 @@ async function getPageTemplateComposition(
       _status: publicationStatusFromDoc(doc),
       tokenMetadata: designTokens.tokenMetadata,
       cssVariables: designTokens.cssVariables,
-      tokenUtilityCss: designTokens.tokenUtilityCss,
     },
   });
 }

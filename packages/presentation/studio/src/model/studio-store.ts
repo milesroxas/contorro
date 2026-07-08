@@ -175,7 +175,6 @@ export type StudioStoreState = {
   historyFuture: PageComposition[];
   tokenMetadata: TokenMeta[];
   cssVariables: string;
-  tokenUtilityCss: string;
   updatedAt: string | null;
   /** Payload CMS publication state for the loaded composition revision. */
   cmsPublicationStatus: "draft" | "published" | null;
@@ -194,6 +193,9 @@ export type StudioStoreState = {
   canvasViewportWidthPx: number;
   canvasZoomPercent: number;
   canvasFontSizePx: number;
+  /** Explicit canvas token color mode — independent of the editor chrome theme. */
+  canvasColorMode: "light" | "dark";
+  setCanvasColorMode: (mode: "light" | "dark") => void;
   setActiveBreakpoint: (breakpoint: Breakpoint | null) => void;
   setCanvasViewportWidthPx: (widthPx: number) => void;
   setCanvasZoomPercent: (zoomPercent: number) => void;
@@ -370,7 +372,6 @@ export function createStudioStore(
     historyFuture: [],
     tokenMetadata: [],
     cssVariables: "",
-    tokenUtilityCss: "",
     updatedAt: null,
     cmsPublicationStatus: null,
     selectedNodeId: null,
@@ -386,6 +387,11 @@ export function createStudioStore(
     canvasViewportWidthPx: defaultCanvasViewportWidthPx(null),
     canvasZoomPercent: DEFAULT_CANVAS_ZOOM_PERCENT,
     canvasFontSizePx: DEFAULT_CANVAS_FONT_SIZE_PX,
+    canvasColorMode: "light",
+
+    setCanvasColorMode: (mode) => {
+      set({ canvasColorMode: mode });
+    },
 
     setActiveBreakpoint: (breakpoint) => {
       set({
@@ -463,7 +469,6 @@ export function createStudioStore(
           historyFuture: [],
           tokenMetadata: data.tokenMetadata as TokenMeta[],
           cssVariables: data.cssVariables,
-          tokenUtilityCss: data.tokenUtilityCss ?? "",
           updatedAt: data.updatedAt,
           cmsPublicationStatus: data._status ?? null,
           // New sessions are not persisted yet; keep save actions enabled.

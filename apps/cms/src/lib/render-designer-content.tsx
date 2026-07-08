@@ -1,4 +1,3 @@
-import type { TokenMeta } from "@repo/config-tailwind";
 import { PageCompositionSchema } from "@repo/contracts-zod";
 import {
   collectLayoutSlotIds,
@@ -115,7 +114,6 @@ function appendRenderedBlockToSlotBuckets(
 async function renderOneBlock(
   payload: Payload,
   block: DesignerBlock,
-  tokenMeta: TokenMeta[],
   blockIndex: number,
 ): Promise<ReactNode | null> {
   const defRef = block.componentDefinition;
@@ -167,7 +165,7 @@ async function renderOneBlock(
 
   return (
     <Fragment key={`designer-${defId}-${blockIndex}`}>
-      {renderComposition(merged, defaultPrimitiveRegistry, tokenMeta)}
+      {renderComposition(merged, defaultPrimitiveRegistry)}
     </Fragment>
   );
 }
@@ -183,7 +181,6 @@ export type RenderedDesignerBlocksBySlot = {
 export async function renderDesignerContentBlocksBySlot(
   payload: Payload,
   contentSlots: unknown,
-  tokenMeta: TokenMeta[],
   templateComposition: import("@repo/contracts-zod").PageComposition | null,
 ): Promise<RenderedDesignerBlocksBySlot> {
   const blocks = flattenPageContentSlotsToBlocks(contentSlots);
@@ -201,7 +198,7 @@ export async function renderDesignerContentBlocksBySlot(
 
   let blockIndex = 0;
   for (const block of blocks) {
-    const section = await renderOneBlock(payload, block, tokenMeta, blockIndex);
+    const section = await renderOneBlock(payload, block, blockIndex);
     blockIndex += 1;
     if (section === null) {
       continue;

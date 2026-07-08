@@ -18,7 +18,6 @@ import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import type { ReactNode } from "react";
-import { loadFrontendDesignSystemBundle } from "@/lib/load-frontend-design-system-bundle";
 
 import { renderDesignerContentBlocksBySlot } from "@/lib/render-designer-content";
 import { resolveImageEditorFieldValuesForRender } from "@/lib/resolve-editor-field-image-values";
@@ -46,7 +45,6 @@ function contentSlotsHasRenderableBlocks(contentSlots: unknown): boolean {
 async function slotContentAndDesignerSections(
   payload: Awaited<ReturnType<typeof getPayload>>,
   contentSlots: unknown,
-  tokenMeta: import("@repo/config-tailwind").TokenMeta[],
   templateTree: PageComposition | null,
   hasBlocks: boolean,
 ): Promise<{
@@ -59,7 +57,6 @@ async function slotContentAndDesignerSections(
   const r = await renderDesignerContentBlocksBySlot(
     payload,
     contentSlots,
-    tokenMeta,
     templateTree,
   );
   const uses =
@@ -80,7 +77,6 @@ async function renderCompositionWithLibraryAndEditorFields(
   },
   isEnabled: boolean,
   templateTree: PageComposition,
-  tokenMeta: import("@repo/config-tailwind").TokenMeta[],
   slotContent: Record<string, ReactNode> | undefined,
 ): Promise<ReactNode> {
   let tree = await expandLibraryComponentNodes(
@@ -128,7 +124,6 @@ async function renderCompositionWithLibraryAndEditorFields(
   return renderComposition(
     tree,
     defaultPrimitiveRegistry,
-    tokenMeta,
     slotContent !== undefined ? { slotContent } : undefined,
   );
 }
@@ -209,8 +204,6 @@ export default async function SitePage({ params }: Props) {
     notFound();
   }
 
-  const { compiled } = await loadFrontendDesignSystemBundle();
-
   const templateTree = templateTreeFromPageComposition(
     hasPageComposition,
     compositionDoc,
@@ -221,7 +214,6 @@ export default async function SitePage({ params }: Props) {
     await slotContentAndDesignerSections(
       payload,
       contentSlots,
-      compiled.tokenMetadata,
       templateTree,
       hasBlocks,
     );
@@ -233,7 +225,6 @@ export default async function SitePage({ params }: Props) {
       page as { templateEditorFields?: Record<string, unknown> },
       isEnabled,
       templateTree,
-      compiled.tokenMetadata,
       slotContent,
     );
   }
