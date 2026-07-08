@@ -1,110 +1,94 @@
 # Cursor agent instructions
 
-Treat this file as source of truth for repo boundaries and delivery rules. For a concrete implementation map, use `docs/app/README.md`.
+Treat this file as source of truth for repo boundaries and delivery rules. Refactor context: `docs/refactor-plan.md` (architecture) and `docs/audit-2026-07-08.md` (history).
 
 ## Product and stack
 
-Contorro is multi-surface authoring:
+Contorro is a website builder: designers author block **designs** and page **templates** in Studio; content editors compose pages from typed **blocks** in Payload `/admin`; published pages render for anonymous visitors.
 
-- **CMS app** (`apps/cms`, package **`@repo/cms`**): Next.js + Payload 3 admin/CMS/auth and HTTP APIs that back Studio.
-- **Studio (presentation)** (`@repo/presentation-studio`): visual authoring UI (composition tree, design system screens). Browser code uses **`StudioAuthoringClient`** (`@repo/contracts-zod`) + **`fetch-studio-authoring-client`** to call the CMS app over HTTP — **no** `packages/infrastructure/*` imports and **no** Payload/CMS SDK imports under `packages/presentation/studio/src/`.
-- **Gateway app**: Hono API mounted under `/api/gateway/*` (same-origin via CMS app route).
-- **Primary database**: Postgres (Neon in production, Docker locally).
+- **CMS app** (`apps/cms`, package `@repo/cms`): Next.js + Payload 3 admin/CMS/auth, the `/api/studio/*` HTTP API that backs Studio, and public page rendering (`(frontend)/[slug]`).
+- **Studio** (`@repo/presentation-studio`): browser-only visual editor mounted at `/studio`. Talks to the CMS via `StudioAuthoringClient` (`@repo/contracts-zod`) + `fetch-studio-authoring-client`. No Payload/CMS SDK imports under `packages/presentation/studio/src/`.
+- **Primary database**: Postgres (Neon in production, Docker locally, `contorro-db-1`).
 
-## Layer rules (non-negotiable)
+## Content model (core architecture — do not regress)
 
-- Domain rules live in `packages/domains/*` only.
-- Mutations must enter through the studio command modules (`apps/cms/src/lib/studio-commands`).
-- Presentation packages **must not** import `packages/infrastructure/*`. Authoring UI (`@repo/presentation-studio`) depends on contracts, domains, and runtime packages; **orchestration** (`apps/cms/src/lib/studio-commands`) runs in the **CMS app** route handlers, not inside the Studio package.
-- Infrastructure implements ports/adapters and Payload config.
-- Shared kernel utilities (`Result`, `ok`/`err`, `makeId`) live in `@repo/contracts-zod`. Keep runtime deps minimal.
+Content schema and visual design are split:
+
+- **Block catalog** (`packages/contracts/zod/src/block-catalog.ts`): code-defined block types (hero, feature, cta, content) with typed fields. Adding a block type is a code change + deploy. The catalog drives three surfaces: Payload block configs (`packages/infrastructure/payload-config/src/blocks-from-catalog.ts`), Studio binding UI, and render-time value injection.
+- **Designs** (`components` collection): Studio-authored composition trees. A component with `blockType` set implements that block's contract by binding nodes to catalog field names (`contentBinding: { source: "editor", editorField: { name } }`). Publish-time validation enforces required fields bound exactly once, no unknown/duplicate names. `blockType` empty = design-only library part (embeddable in templates, no CMS fields).
+- **Templates** (`page-compositions` collection): design-only page layouts with named regions (`primitive.slot`). Templates carry no CMS-editable fields.
+- **Pages**: `pageComposition` relationship + `contentSlots[]` array (one row per region) each holding a **native Payload blocks field** built from the catalog. Each block row = typed values + a `design` relationship filtered to published components of that blockType.
+- **Render** (`apps/cms/src/lib/render-designer-content.tsx`, `packages/runtime/renderer/src/inject-block-values.ts`): per block, load the design composition, inject the block's typed values at bound nodes (only when a value exists — never blank content from missing values), graft into the template's slot nodes. Image/link values arrive as populated Payload relations; there is NO id→URL resolver layer — do not reintroduce one.
+- Public reads use `overrideAccess: false`; `components`/`page-compositions` have anonymous read scoped to `_status: published`. Do not widen access or flip overrideAccess on public paths.
+
+## Layer rules
+
+- Composition tree model, mutations, and validation: `packages/domains/composition` only.
+- Studio mutations enter through `apps/cms/src/lib/studio-commands` + the repository adapter (`apps/cms/src/app/api/studio/_lib/payload-studio-mutation-repository.ts`). Saves are conditional single-operation updates (`ifMatchUpdatedAt`); renames update the title only — never resubmit the composition.
+- Presentation (`@repo/presentation-studio`) depends on contracts, domains, and renderer packages only.
+- Shared kernel utilities (`Result`, `ok`/`err`, `makeId`) live in `@repo/contracts-zod`.
 
 ## Source of truth by concern
 
-- Payload collections/globals: `packages/infrastructure/payload-config`.
-- CMS app assembly (`buildConfig`, secrets, import map, migrations): `apps/cms` (`@repo/cms`).
-- **Composition HTTP API** (canonical for Studio UI):
-  - `apps/cms/src/app/api/studio/compositions/[id]/route.ts` (GET/POST/PATCH)
-  - `apps/cms/src/app/api/studio/compositions/route.ts` (POST create)
-- Mutation orchestration: `packages/application/studio/*`.
-- Gateway API surface: `apps/gateway/src/app.ts` and `apps/gateway/src/routes/*`.
-- Shared contracts: `packages/contracts/zod` (includes **`StudioAuthoringClient`**); default fetch implementation: `packages/presentation/studio/src/lib/fetch-studio-authoring-client.ts`.
-- Component row-id mapping for Payload `cmp-` IDs: **`packages/domains/composition/src/studio-component-row-id.ts`** (re-exported from `packages/infrastructure/payload-config/src/studio-row-id.ts` for compatibility).
+- Payload collections/globals: `packages/infrastructure/payload-config` (incl. design tokens under `src/design-tokens/`).
+- CMS app assembly (`buildConfig`, secrets, import map, migrations): `apps/cms`.
+- Composition HTTP API (canonical for Studio): `apps/cms/src/app/api/studio/compositions/[id]/route.ts` (GET/POST/PATCH) and `.../compositions/route.ts` (POST create).
+- Shared contracts + block catalog: `packages/contracts/zod`.
+- Component row-id mapping for Payload `cmp-` IDs: `packages/domains/composition/src/studio-component-row-id.ts` only; do not duplicate parsers.
+- Design tokens: compiled to CSS variables bridged to the shadcn theme names (`color.primary` → `--primary`) by `packages/config/tailwind/src/compiler.ts`; served via `/api/design-system/compiled-css?v=<updatedAt>` (immutable-cached). Token-bound node styles render as inline `var(--…)` styles — there is no token utility-class generation; do not reintroduce it.
 
-## Image editor fields and `mergeEditorFieldValuesIntoComposition` (do not regress)
+## Drift prevention rules
 
-- **`mergeEditorFieldValuesIntoComposition`** (`packages/domains/composition/src/editor-field-values.ts`) applies CMS editor values onto bound nodes. For **`field.type === "image"`** it only copies **`src`** when the effective value is already a **URL string**. Payload often stores **media ids** (numbers or `{ id }`); those become **`src: ""`** if merged directly — images disappear in render/canvas.
-- **Server:** always resolve ids to URLs **before** merge using **`resolveImageEditorFieldValuesForRender`** (`apps/cms/src/lib/resolve-editor-field-image-values.ts`). When grafting embedded library trees, pass **`resolveEditorFieldImages`** into **`expandLibraryComponentNodes`** (see `apps/cms/src/app/(frontend)/[slug]/page.tsx`, `apps/cms/src/app/api/studio/library-components/preview/route.ts`, `apps/cms/src/lib/page-template-editor-fields.ts`). Block rendering: `apps/cms/src/lib/render-designer-content.tsx` resolves block `editorFieldValues` before merge.
-- **Studio (browser):** cannot call Payload; use **`resolveEditorFieldImageValuesForCanvas`** (`packages/presentation/studio/src/lib/resolve-editor-field-images-client.ts`) before merging instance **`editorFieldValues`** (e.g. library canvas preview in `library-composition-canvas-preview.tsx`). **`GET /api/studio/compositions/*`** returns **raw** compositions — any client-side preview that merges `editorFieldValues` must resolve image fields itself.
-- **Checklist for new features:** if you merge `editorFieldValues` or template image fields into a composition for display, add the matching **server or client** resolver; do not assume numeric ids work in `mergeEditorFieldValuesIntoComposition`.
-
-## Current API split (important)
-
-- Canonical **composition** API for Studio is the CMS app’s **`/api/studio/compositions/*`** routes.
-- Route handlers orchestrate only; mutation logic goes through `packages/application/studio` commands.
-- Gateway exposes health and contracts under `/api/gateway/*` (composition mutations use CMS `/api/studio/*` only).
-
-## Drift prevention rules (important)
-
-- Do not add direct `payload.create/update/delete` mutation logic in composition route handlers; use application commands + repository adapter.
-- Do not reintroduce a parallel composition store (e.g. mirrored SQL tables); state must come from Payload collections + the CMS composition API only.
-- When changing **`/api/studio/compositions`** behavior or paths, update both:
-  - `docs/app/README.md`
-  - `apps/cms/.cursor/rules/endpoints.md`
-- Keep `cmp-` logic centralized in `studio-component-row-id.ts` (domains) only; do not duplicate parsers elsewhere.
+- No direct `payload.create/update/delete` mutation logic in composition route handlers; use the studio-commands modules + repository adapter.
+- No parallel composition store (mirrored SQL tables, raw SQL against Payload tables); state comes from Payload collections + the CMS composition API only.
+- No new hand-rolled versioning/publishing machinery — Payload `versions: { drafts: true, maxPerDoc }` is the mechanism.
+- No json blobs for admin-editable content values; content values are native Payload block fields generated from the catalog.
+- Hooks doing nested Local API calls must thread `req` (transaction atomicity).
+- When changing `/api/studio/compositions` behavior or paths, update `docs/app/README.md` and `apps/cms/.cursor/rules/endpoints.md`.
 
 ## shadcn/ui (CLI source of truth)
 
 - **Add components only via the shadcn CLI** (e.g. `pnpm dlx shadcn@latest add …`) run from the package directory that owns the relevant `components.json` (Studio UI: `packages/presentation/studio`; CMS app UI: `apps/cms` when applicable). Do **not** paste or hand-rebuild shadcn component source from docs or other projects — that creates a second source of truth and makes upgrades drift.
-- **Customize in one place:** prefer extending **CVA variants** (or a small wrapper component) in the owning `components/ui/*` file. Keep diffs small and aligned with upstream patterns so future `add` / registry updates stay workable. **Avoid wholesale rewrites** of shadcn primitives unless there is a strong reason; replacing whole components bypasses the shared baseline and invites inconsistency across the codebase.
+- **Customize in one place:** prefer extending **CVA variants** (or a small wrapper component) in the owning `components/ui/*` file. Keep diffs small and aligned with upstream patterns so future `add` / registry updates stay workable. **Avoid wholesale rewrites** of shadcn primitives unless there is a strong reason.
 
 ### No ad-hoc visual overrides at call sites (design drift)
 
 Call-site `className` on shadcn primitives (`Button`, `Item`, `Card`, inputs, etc.) to change **radius, borders, background, shadow, or spacing** causes **inconsistent screens** and is **hard to maintain**. Treat this as **disallowed by default**.
 
 - **Allowed without asking:** use the component **as documented** — built-in **`variant` / `size`** (and any other props the primitive exposes). Prefer matching sibling screens by using the **same variant**, not a copy-pasted `className`.
-- **Overrides only when necessary:** add `className` (or one-off tweaks) **only** when there is a **clear, unavoidable** reason *or* the **user explicitly requested** that override for that change. If a new look is product-intended, do **not** leave it as a feature-local override.
-- **When the design needs a new look:** add or extend **CVA variants** on the primitive (or a shared wrapper) so the style has a **name** and **one definition**. Do **not** satisfy “slightly different dashboard rows” by sprinkling `className="rounded-lg bg-card/80 …"` across `features/*`.
-- **`cn()` / merges** belong **inside** the primitive or wrapper when defining variants — not scattered across call sites for visual differentiation.
+- **Overrides only when necessary:** add `className` (or one-off tweaks) **only** when there is a **clear, unavoidable** reason *or* the **user explicitly requested** that override for that change.
+- **When the design needs a new look:** add or extend **CVA variants** on the primitive (or a shared wrapper) so the style has a **name** and **one definition**.
+- **`cn()` / merges** belong **inside** the primitive or wrapper when defining variants — not scattered across call sites.
 
-This applies across **Studio** (`packages/presentation/studio`) and **CMS app UI** (`apps/cms`) wherever shadcn components are used.
+This applies across **Studio** and **CMS app UI** wherever shadcn components are used.
 
 ## Monorepo layout
 
-- Workspace packages follow `pnpm-workspace.yaml` (`apps/*`, `packages/*` groups).
-- Use `workspace:*` for internal deps.
-- `@payload-config` import is Next/CMS-app-only.
+7 packages + 1 app: `apps/cms`, `packages/contracts/zod`, `packages/domains/composition`, `packages/runtime/renderer`, `packages/presentation/studio`, `packages/infrastructure/payload-config`, `packages/config/env`, `packages/config/tailwind`. Use `workspace:*` for internal deps. `@payload-config` import is CMS-app-only. Do not add new workspace packages without a strong reason — prefer a module in an existing package.
 
 ## Tooling and checks
 
 - Lint/format: Biome only (`pnpm lint`, `pnpm format`; apply fixes with `pnpm lint:fix`).
 - Typecheck: `pnpm typecheck` (shortcut: `pnpm tc`).
-- Root dev: `pnpm dev` (CMS app + `@repo/presentation-studio` watch + `@repo/infrastructure-payload-config` watch). Single-package dev: `pnpm dev:cms`, `pnpm dev:studio`.
-- DB local: `pnpm db:up`.
-- Seeding: `pnpm seed`, `pnpm seed:design-system`; Payload CLI from root: `pnpm payload -- …`.
-- Command reference: `docs/app/README.md` (root commands table).
+- Root dev: `pnpm dev` (CMS app + studio watch + payload-config watch). Single-package dev: `pnpm dev:cms`, `pnpm dev:studio`.
+- DB local: `pnpm db:up`; reset: `pnpm db:reset`.
+- Seeding: `pnpm seed` (guarded against production envs; `SEED_ALLOW_PRODUCTION=true` + strong `SEED_PASSWORD` required to override).
+- After schema changes: `pnpm --filter @repo/cms generate:types` (and importmap when admin components change); migrations via `pnpm migrate:create` / `pnpm migrate`.
 
 ### Lint discipline (Biome)
 
-- Cognitive complexity is capped at **15** via `lint/complexity/noExcessiveCognitiveComplexity` in the repo root `biome.json`. Reduce complexity by extracting helpers or smaller components instead of raising the limit.
-- Do **not** add `biome-ignore`, `eslint-disable`, `@ts-ignore`, or other suppressions to silence lint or type errors. Address the root cause (refactor, typings, or control flow).
-- Large warning counts are not a reason to use ignores: fix violations incrementally until clean.
+- Cognitive complexity capped at **15** (`lint/complexity/noExcessiveCognitiveComplexity`). Extract helpers instead of raising the limit.
+- No `biome-ignore`, `eslint-disable`, `@ts-ignore`, or other suppressions. Address the root cause.
 
 ## Testing
 
-- **CI:** `.github/workflows/ci.yml` runs lint, typecheck, workspace build, gateway tests, and CMS integration tests (with Postgres). Env for the integration job is defined only in that workflow. See `docs/app/README.md` → *Continuous integration (GitHub Actions)*.
-- Integration tests: `pnpm test` or `pnpm test:int` (CMS app Vitest int suite, `@repo/cms`).
-- Coverage (CMS int suite): `pnpm test:cov` (V8; config in `apps/cms/vitest.config.mts`).
-- Watch mode: `pnpm test:watch`.
-- Gateway unit tests: `pnpm test:gw` (`apps/gateway`).
-- Combined int + gateway: `pnpm test:all`.
-- E2E: `pnpm e2e` (alias: `pnpm test:e2e`); UI mode: `pnpm e2e:ui` — not run in CI by default.
-- Persistence tests expect Postgres available.
-- Payload in tests: integration specs should use `getTestPayload()` and `closeTestPayload()` from `apps/cms/tests/helpers/getTestPayload.ts`, not ad hoc `getPayload({ config })` without teardown.
+- **CI:** `.github/workflows/ci.yml` runs lint, typecheck, workspace build, and CMS integration tests (with Postgres).
+- Integration tests: `pnpm test` / `pnpm test:int`; coverage `pnpm test:cov`; watch `pnpm test:watch`.
+- E2E: `pnpm e2e` (alias `pnpm test:e2e`); UI mode `pnpm e2e:ui` — not run in CI by default.
+- Payload in tests: use `getTestPayload()` / `closeTestPayload()` from `apps/cms/tests/helpers/getTestPayload.ts`, not ad hoc `getPayload({ config })` without teardown.
 
 ## Default workflow for agents
 
-1. Pick owning layer and keep changes inside it.
-2. For mutations use application → domain → infrastructure port flow.
-3. After schema/config changes run required generation/migrations in the CMS app.
-4. Run lint/typecheck/tests proportional to change before done.
+1. Pick the owning package/module and keep changes inside it.
+2. Content-model changes start from the block catalog; regenerate Payload types after schema changes.
+3. Run lint/typecheck/tests proportional to the change before done.
