@@ -16,6 +16,7 @@ import { notFound } from "next/navigation";
 import { getPayload, type Payload } from "payload";
 import type { ReactNode } from "react";
 
+import { LivePreviewRefresh } from "@/components/frontend/LivePreviewRefresh";
 import {
   expandDesignComposition,
   renderPageBlocksBySlot,
@@ -208,6 +209,7 @@ export default async function SitePage({ params }: Props) {
 
   return (
     <>
+      {isEnabled ? <LivePreviewRefresh /> : null}
       {compositionTree}
       {sectionsOutsideTree}
     </>

@@ -14,23 +14,28 @@ import {
 
 const beforeValidatePages = createPagesBeforeValidateHandler();
 
-function previewUrlForDoc(doc: unknown): string {
+/**
+ * Draft preview through the authenticated enter route — never exposes a
+ * preview secret in the URL (the route checks the admin session and role).
+ */
+function previewPathForDoc(doc: unknown): string {
   if (
     typeof doc !== "object" ||
     doc === null ||
-    !("slug" in doc) ||
-    typeof (doc as { slug?: unknown }).slug !== "string"
+    !("id" in doc) ||
+    (doc as { id?: unknown }).id === undefined ||
+    (doc as { id?: unknown }).id === null
   ) {
     return "";
   }
-  const slug = (doc as { slug: string }).slug;
-  const site = process.env.SITE_URL;
-  const secret = process.env.PREVIEW_SECRET;
-  if (!site || !secret) {
-    return "";
-  }
-  const base = site.replace(/\/$/, "");
-  return `${base}/api/preview?secret=${encodeURIComponent(secret)}&slug=${encodeURIComponent(slug)}`;
+  const id = String((doc as { id: string | number }).id);
+  return `/api/preview/enter?pageId=${encodeURIComponent(id)}`;
+}
+
+function livePreviewUrlForData(data: Record<string, unknown> | undefined) {
+  return typeof data?.slug === "string" && data.slug !== ""
+    ? `/${data.slug}`
+    : "/";
 }
 
 export const Pages: CollectionConfig = {
@@ -45,7 +50,15 @@ export const Pages: CollectionConfig = {
     defaultColumns: ["title", "slug", "_status", "updatedAt"],
     description:
       "Site page: choose a page template and place typed content blocks in its layout regions. Metadata fields in Page setup are for SEO and social metadata only—not page body content.",
-    preview: (doc) => previewUrlForDoc(doc),
+    preview: (doc) => previewPathForDoc(doc),
+    livePreview: {
+      url: ({ data }) => livePreviewUrlForData(data),
+      breakpoints: [
+        { name: "mobile", label: "Mobile", width: 390, height: 844 },
+        { name: "tablet", label: "Tablet", width: 834, height: 1194 },
+        { name: "desktop", label: "Desktop", width: 1440, height: 900 },
+      ],
+    },
   },
   access: {
     read: pagesReadAccess,
