@@ -29,9 +29,6 @@
       "path": "./packages/infrastructure/payload-config"
     },
     {
-      "path": "./packages/infrastructure/payload-media-client"
-    },
-    {
       "path": "./packages/presentation/admin-extensions"
     },
     {

@@ -1,13 +1,13 @@
 "use client";
 
 import type { EditorFieldSpec } from "@repo/contracts-zod";
-import type { MediaListItem } from "@repo/infrastructure-payload-media-client";
+import type { MediaListItem } from "@repo/presentation-studio";
 import {
   fetchMediaRecordById,
   fetchMediaRecords,
   parsePayloadMediaRefId,
   uploadMediaFile,
-} from "@repo/infrastructure-payload-media-client";
+} from "@repo/presentation-studio";
 import {
   IconPhoto,
   IconPhotoOff,

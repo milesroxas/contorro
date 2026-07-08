@@ -8,6 +8,14 @@ export {
   type FetchStudioAuthoringClientOptions,
   getDefaultStudioAuthoringClient,
 } from "./lib/fetch-studio-authoring-client.js";
+export {
+  fetchMediaRecordById,
+  fetchMediaRecords,
+  type MediaListItem,
+  type MediaRecord,
+  parsePayloadMediaRefId,
+  uploadMediaFile,
+} from "./lib/payload-media-client/index.js";
 export { prepareForSave } from "./lib/persist.js";
 export type { StudioDashboardProps } from "./shell/StudioDashboard.js";
 export { default as StudioDashboard } from "./shell/StudioDashboard.js";

@@ -14,9 +14,6 @@
   "include": ["src/**/*"],
   "references": [
     {
-      "path": "../../infrastructure/payload-media-client"
-    },
-    {
       "path": "../../contracts/zod"
     },
     {

@@ -8,10 +8,6 @@ import {
   type PageComposition,
 } from "@repo/contracts-zod";
 import { editorFieldSpecForPrimitiveButton } from "@repo/domains-composition";
-import {
-  fetchMediaRecords,
-  type MediaListItem,
-} from "@repo/infrastructure-payload-media-client";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "../../components/ui/button.js";
 import { Checkbox } from "../../components/ui/checkbox.js";
@@ -40,6 +36,10 @@ import {
   fetchPayloadCollectionDocs,
   type PayloadCollectionDocRef,
 } from "../../lib/fetch-payload-collection-docs.js";
+import {
+  fetchMediaRecords,
+  type MediaListItem,
+} from "../../lib/payload-media-client/index.js";
 import { CollectionFieldBindingSection } from "./collection-field-binding-controls.js";
 import {
   IMAGE_PRIMITIVE_MEDIA_KEYS,

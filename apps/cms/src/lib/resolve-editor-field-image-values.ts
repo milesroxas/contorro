@@ -1,5 +1,5 @@
 import type { EditorFieldSpec } from "@repo/contracts-zod";
-import { parsePayloadMediaRefId } from "@repo/infrastructure-payload-media-client";
+import { parsePayloadMediaRefId } from "@repo/presentation-studio";
 import type { Payload } from "payload";
 
 async function mediaUrlForId(payload: Payload, mid: number): Promise<string> {

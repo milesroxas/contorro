@@ -2,12 +2,6 @@
 
 import type { CompositionNode, EditorFieldSpec } from "@repo/contracts-zod";
 import { editorFieldSpecsFromComposition } from "@repo/domains-composition";
-import {
-  fetchMediaRecordById,
-  fetchMediaRecords,
-  type MediaListItem,
-  parsePayloadMediaRefId,
-} from "@repo/infrastructure-payload-media-client";
 import { IconArrowBackUp, IconPencil, IconRestore } from "@tabler/icons-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Button } from "../../components/ui/button.js";
@@ -17,6 +11,12 @@ import { Input } from "../../components/ui/input.js";
 import { Label } from "../../components/ui/label.js";
 import { cn } from "../../lib/cn.js";
 import { fetchExpandedLibraryComposition } from "../../lib/fetch-library-component-preview.js";
+import {
+  fetchMediaRecordById,
+  fetchMediaRecords,
+  type MediaListItem,
+  parsePayloadMediaRefId,
+} from "../../lib/payload-media-client/index.js";
 import { PayloadMediaPickerFields } from "./payload-media-picker-fields.js";
 
 type LibraryComponentInstanceSettingsProps = {

@@ -3,7 +3,7 @@ import { editorFieldSpecsFromComposition } from "@repo/domains-composition";
 import {
   fetchMediaRecordById,
   parsePayloadMediaRefId,
-} from "@repo/infrastructure-payload-media-client";
+} from "./payload-media-client/index.js";
 
 export function editorFieldImageValuesNeedMediaFetch(
   composition: PageComposition,

@@ -2,11 +2,6 @@
 
 import type { CompositionNode } from "@repo/contracts-zod";
 import {
-  fetchMediaRecords,
-  type MediaListItem,
-  parsePayloadMediaRefId,
-} from "@repo/infrastructure-payload-media-client";
-import {
   type Dispatch,
   type RefObject,
   type SetStateAction,
@@ -14,7 +9,6 @@ import {
   useRef,
   useState,
 } from "react";
-
 import { Input } from "../../components/ui/input.js";
 import {
   Select,
@@ -23,6 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select.js";
+import {
+  fetchMediaRecords,
+  type MediaListItem,
+  parsePayloadMediaRefId,
+} from "../../lib/payload-media-client/index.js";
 import { PayloadMediaPickerFields } from "./payload-media-picker-fields.js";
 import { SettingsFieldRow } from "./property-control-label.js";
 

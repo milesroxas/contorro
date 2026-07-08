@@ -1,8 +1,3 @@
-import type {
-  MediaListItem,
-  MediaRecord,
-} from "@repo/infrastructure-payload-media-client";
-import { uploadMediaFile } from "@repo/infrastructure-payload-media-client";
 import {
   type Icon,
   IconPhoto,
@@ -25,6 +20,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "../../components/ui/sheet.js";
+import type {
+  MediaListItem,
+  MediaRecord,
+} from "../../lib/payload-media-client/index.js";
+import { uploadMediaFile } from "../../lib/payload-media-client/index.js";
 
 export type PayloadMediaPickerVariant = "image" | "video";
 
