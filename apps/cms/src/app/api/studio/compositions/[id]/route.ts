@@ -1,8 +1,3 @@
-import {
-  createCompositionEntryCommand,
-  renameTemplateCommand,
-  saveCompositionCommand,
-} from "@repo/application-studio";
 import { compileTokenSet, type TokenMeta } from "@repo/config-tailwind";
 import type { PageComposition } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
@@ -22,6 +17,11 @@ import {
 } from "@/app/api/studio/_lib/payload-studio-mutation-repository";
 import { requireStudioDesigner } from "@/app/api/studio/_lib/studio-auth";
 import { loadDesignSystemRuntimeForPreview } from "@/lib/load-published-token-set";
+import {
+  createCompositionEntryCommand,
+  renameTemplateCommand,
+  saveCompositionCommand,
+} from "@/lib/studio-commands";
 
 async function designTokensForStudio(payload: Payload): Promise<{
   tokenMetadata: TokenMeta[];

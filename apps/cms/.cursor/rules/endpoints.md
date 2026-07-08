@@ -7,7 +7,7 @@
 - Payload REST for collections/globals (e.g. design token sets, globals) as used by **`StudioAuthoringClient`** (`resourceApiBase`, default `/api`).
 - `/api/gateway/*`: same-origin forwarding to the Hono gateway app with JWT bridging.
 
-**Rule:** composition route handlers orchestrate only; mutation logic goes through `@repo/application-studio` commands and the repository adapter.
+**Rule:** composition route handlers orchestrate only; mutation logic goes through `src/lib/studio-commands` commands and the repository adapter.
 
 ## Gateway-owned endpoints (behind forwarder)
 

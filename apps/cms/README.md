@@ -1,6 +1,6 @@
 # CMS app (`@repo/cms`)
 
-This app is the **Next.js + Payload** host: admin UI, auth, content API, and the **HTTP surface** consumed by `@repo/presentation-studio` via `StudioAuthoringClient`. Composition mutations are orchestrated with `@repo/application-studio` + Payload adapters in route handlers; design-token sets and design-system globals are served through Payload REST endpoints.
+This app is the **Next.js + Payload** host: admin UI, auth, content API, and the **HTTP surface** consumed by `@repo/presentation-studio` via `StudioAuthoringClient`. Composition mutations are orchestrated with `src/lib/studio-commands` + Payload adapters in route handlers; design-token sets and design-system globals are served through Payload REST endpoints.
 
 The workspace folder is `apps/cms`; the npm package name is **`@repo/cms`**.
 
@@ -11,7 +11,7 @@ The workspace folder is `apps/cms`; the npm package name is **`@repo/cms`**.
 - **Composition API** (canonical for `@repo/presentation-studio`):
   - `src/app/api/studio/compositions/[id]/route.ts` (GET/POST/PATCH)
   - `src/app/api/studio/compositions/route.ts` (POST create)
-- Route handlers orchestrate; mutations use **`@repo/application-studio`** commands and the Payload repository adapter.
+- Route handlers orchestrate; mutations use **`src/lib/studio-commands`** commands and the Payload repository adapter.
 - Same-origin gateway forwarding: `src/app/api/gateway/[[...route]]/route.ts`
 - Migrations: `src/migrations`
 - Seeds: `src/seeds`

@@ -1,4 +1,3 @@
-import type { StudioMutationRepository } from "@repo/application-studio";
 import { type AsyncResult, err, ok } from "@repo/contracts-zod";
 import {
   componentIdFromStudioRowId,
@@ -7,6 +6,7 @@ import {
   studioRowIdForComponent,
 } from "@repo/domains-composition";
 import type { Payload } from "payload";
+import type { StudioMutationRepository } from "@/lib/studio-commands";
 
 function normalizeUpdatedAt(value: unknown): string {
   if (typeof value === "string") {

@@ -14,9 +14,6 @@
       "path": "./packages/config/tailwind"
     },
     {
-      "path": "./packages/application/studio"
-    },
-    {
       "path": "./packages/runtime/renderer"
     },
     {

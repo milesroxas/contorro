@@ -10,7 +10,6 @@ const workspaceRoot = path.resolve(dirname, "../..");
 
 const nextConfig: NextConfig = {
   transpilePackages: [
-    "@repo/application-studio",
     "@repo/config-env",
     "@repo/config-tailwind",
     "@repo/contracts-zod",

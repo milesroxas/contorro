@@ -7,7 +7,7 @@ import {
 import type { CompositionActor } from "@repo/domains-composition";
 import { validatePageCompositionInvariants } from "@repo/domains-composition";
 
-import type { StudioMutationRepository } from "../ports/studio-mutation-repository.js";
+import type { StudioMutationRepository } from "./studio-mutation-repository.js";
 
 export type SaveCompositionError =
   | "COMPOSITION_NOT_FOUND"

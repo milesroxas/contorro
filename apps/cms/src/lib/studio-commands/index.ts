@@ -1,16 +1,16 @@
 export {
   type CreateCompositionEntryError,
   createCompositionEntryCommand,
-} from "./commands/create-composition-entry.js";
+} from "./create-composition-entry.js";
 export {
   type RenameTemplateError,
   renameTemplateCommand,
-} from "./commands/rename-template.js";
+} from "./rename-template.js";
 export {
   type SaveCompositionError,
   saveCompositionCommand,
-} from "./commands/save-composition.js";
+} from "./save-composition.js";
 export type {
   StudioCompositionRevision,
   StudioMutationRepository,
-} from "./ports/studio-mutation-repository.js";
+} from "./studio-mutation-repository.js";

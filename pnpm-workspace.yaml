@@ -1,7 +1,6 @@
 packages:
   - 'apps/*'
   - 'packages/domains/*'
-  - 'packages/application/*'
   - 'packages/presentation/*'
   - 'packages/infrastructure/*'
   - 'packages/contracts/*'

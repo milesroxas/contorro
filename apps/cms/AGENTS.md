@@ -15,7 +15,7 @@ Use this file for changes inside **`apps/cms`** (package **`@repo/cms`**). Root 
 - **Composition API** (HTTP routes called by `@repo/presentation-studio` via `StudioAuthoringClient`):
   - `apps/cms/src/app/api/studio/compositions/[id]/route.ts` (GET/POST/PATCH)
   - `apps/cms/src/app/api/studio/compositions/route.ts` (POST create)
-- Mutation commands: `packages/application/studio/src/commands/*`
+- Mutation commands: `apps/cms/src/lib/studio-commands/*`
 - Payload repository adapter: `apps/cms/src/app/api/studio/_lib/payload-studio-mutation-repository.ts`
 - Gateway forwarding endpoint: `apps/cms/src/app/api/gateway/[[...route]]/route.ts`
 - Studio UI: Next route **`/studio`** (`app/(studio)/studio/page.tsx`) — `payload.auth` + `StudioShell` from `@repo/presentation-studio` (hub, design system screen, editor) and `createFetchStudioAuthoringClient` (optional env: `NEXT_PUBLIC_STUDIO_COMPOSITION_API_BASE`, `NEXT_PUBLIC_STUDIO_RESOURCE_API_BASE`).
