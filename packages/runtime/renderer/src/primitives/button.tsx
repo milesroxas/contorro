@@ -1,7 +1,7 @@
 "use client";
 
 import { resolvePrimitiveButtonLabel } from "@repo/domains-composition";
-import type { RuntimePrimitiveProps } from "@repo/runtime-renderer";
+import type { RuntimePrimitiveProps } from "../runtime-catalog.js";
 
 import { useOptionalCollectionItemDoc } from "./collection-item-context.js";
 

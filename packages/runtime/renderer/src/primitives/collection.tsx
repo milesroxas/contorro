@@ -1,6 +1,5 @@
 "use client";
 
-import type { RuntimePrimitiveProps } from "@repo/runtime-renderer";
 import {
   Children,
   cloneElement,
@@ -9,6 +8,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import type { RuntimePrimitiveProps } from "../runtime-catalog.js";
 
 import { CollectionItemDocProvider } from "./collection-item-context.js";
 import { buildPayloadCollectionFindUrl } from "./payload-rest-query.js";

@@ -1,4 +1,4 @@
-import type { RuntimePrimitiveProps } from "@repo/runtime-renderer";
+import type { RuntimePrimitiveProps } from "../runtime-catalog.js";
 
 /** Semantic `<section>` — layout/spacing/visual styles via style binding (same contract as Box). */
 export function Section({ children, className, style }: RuntimePrimitiveProps) {

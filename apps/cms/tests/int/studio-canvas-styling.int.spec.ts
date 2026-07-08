@@ -5,8 +5,8 @@ import type { PageComposition } from "@repo/contracts-zod";
 import { utilityValuesForStyleProperty } from "@repo/contracts-zod";
 import { BOX_BACKGROUND_IMAGE_TAILWIND_SAFESET } from "@repo/domains-composition";
 import { StudioCanvas, StudioRoot } from "@repo/presentation-studio";
-import { defaultPrimitiveRegistry } from "@repo/runtime-primitives";
 import {
+  defaultPrimitiveRegistry,
   listCompositionUtilitySafelistClasses,
   renderComposition,
 } from "@repo/runtime-renderer";

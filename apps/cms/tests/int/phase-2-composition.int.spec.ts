@@ -1,7 +1,9 @@
 import { PageCompositionSchema, PropContractSchema } from "@repo/contracts-zod";
 import { validatePageCompositionInvariants } from "@repo/domains-composition";
-import { defaultPrimitiveRegistry } from "@repo/runtime-primitives";
-import { renderComposition } from "@repo/runtime-renderer";
+import {
+  defaultPrimitiveRegistry,
+  renderComposition,
+} from "@repo/runtime-renderer";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 

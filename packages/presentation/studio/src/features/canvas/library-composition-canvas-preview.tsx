@@ -10,8 +10,8 @@ import { mergeEditorFieldValuesIntoComposition } from "@repo/domains-composition
 import {
   defaultPrimitiveRegistry,
   LibraryComponent,
-} from "@repo/runtime-primitives";
-import { renderComposition } from "@repo/runtime-renderer";
+  renderComposition,
+} from "@repo/runtime-renderer";
 import type { CSSProperties, ReactElement } from "react";
 import { useEffect, useMemo, useState } from "react";
 

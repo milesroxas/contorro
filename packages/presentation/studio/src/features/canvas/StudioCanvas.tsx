@@ -17,9 +17,9 @@ import {
 import {
   Collection,
   defaultPrimitiveRegistry,
+  resolveNodeStyle,
   useOptionalCollectionItemDoc,
-} from "@repo/runtime-primitives";
-import { resolveNodeStyle } from "@repo/runtime-renderer";
+} from "@repo/runtime-renderer";
 import {
   IconAdjustments,
   IconMoonStars,

@@ -13,11 +13,20 @@
   },
   "include": ["src/**/*"],
   "references": [
-    { "path": "../../infrastructure/payload-media-client" },
-    { "path": "../../contracts/zod" },
-    { "path": "../../domains/composition" },
-    { "path": "../shared" },
-    { "path": "../../runtime/primitives" },
-    { "path": "../../runtime/renderer" }
+    {
+      "path": "../../infrastructure/payload-media-client"
+    },
+    {
+      "path": "../../contracts/zod"
+    },
+    {
+      "path": "../../domains/composition"
+    },
+    {
+      "path": "../shared"
+    },
+    {
+      "path": "../../runtime/renderer"
+    }
   ]
 }

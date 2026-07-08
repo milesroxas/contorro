@@ -4,8 +4,8 @@ import {
   imageTailwindUtilitiesFromPropValues,
   resolvePrimitiveImageSrcAlt,
 } from "@repo/domains-composition";
-import type { RuntimePrimitiveProps } from "@repo/runtime-renderer";
 import { twMerge } from "tailwind-merge";
+import type { RuntimePrimitiveProps } from "../runtime-catalog.js";
 
 import { useOptionalCollectionItemDoc } from "./collection-item-context.js";
 import { PrimitiveEmptyState } from "./primitive-empty-state.js";

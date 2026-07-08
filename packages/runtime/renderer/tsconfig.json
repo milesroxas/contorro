@@ -12,6 +12,9 @@
     },
     {
       "path": "../../contracts/zod"
+    },
+    {
+      "path": "../../domains/composition"
     }
   ]
 }

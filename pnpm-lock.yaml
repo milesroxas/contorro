@@ -85,9 +85,6 @@ importers:
       '@repo/presentation-studio':
         specifier: workspace:*
         version: link:../../packages/presentation/studio
-      '@repo/runtime-primitives':
-        specifier: workspace:*
-        version: link:../../packages/runtime/primitives
       '@repo/runtime-renderer':
         specifier: workspace:*
         version: link:../../packages/runtime/renderer
@@ -355,9 +352,6 @@ importers:
       '@repo/presentation-shared':
         specifier: workspace:*
         version: link:../shared
-      '@repo/runtime-primitives':
-        specifier: workspace:*
-        version: link:../../runtime/primitives
       '@repo/runtime-renderer':
         specifier: workspace:*
         version: link:../../runtime/renderer
@@ -405,28 +399,6 @@ importers:
         specifier: ^4.3.0
         version: 4.3.0(@types/node@25.6.0)(babel-plugin-macros@3.1.0)(typescript@6.0.2)
 
-  packages/runtime/primitives:
-    dependencies:
-      '@repo/domains-composition':
-        specifier: workspace:*
-        version: link:../../domains/composition
-      '@repo/runtime-renderer':
-        specifier: workspace:*
-        version: link:../renderer
-      react:
-        specifier: 19.2.5
-        version: 19.2.5
-      tailwind-merge:
-        specifier: ^3.5.0
-        version: 3.5.0
-    devDependencies:
-      '@types/react':
-        specifier: 19.2.14
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: 19.2.3
-        version: 19.2.3(@types/react@19.2.14)
-
   packages/runtime/renderer:
     dependencies:
       '@repo/config-tailwind':
@@ -435,9 +407,15 @@ importers:
       '@repo/contracts-zod':
         specifier: workspace:*
         version: link:../../contracts/zod
+      '@repo/domains-composition':
+        specifier: workspace:*
+        version: link:../../domains/composition
       react:
         specifier: 19.2.5
         version: 19.2.5
+      tailwind-merge:
+        specifier: ^3.5.0
+        version: 3.5.0
     devDependencies:
       '@types/react':
         specifier: 19.2.14

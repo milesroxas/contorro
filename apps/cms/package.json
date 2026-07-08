@@ -41,7 +41,6 @@
     "@repo/presentation-admin-extensions": "workspace:*",
     "@repo/presentation-shared": "workspace:*",
     "@repo/presentation-studio": "workspace:*",
-    "@repo/runtime-primitives": "workspace:*",
     "@repo/runtime-renderer": "workspace:*",
     "@tabler/icons-react": "^3.41.1",
     "@tailwindcss/postcss": "^4.2.2",

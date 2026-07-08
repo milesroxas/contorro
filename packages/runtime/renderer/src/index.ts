@@ -5,6 +5,24 @@ export {
   withBreakpointPrefix,
 } from "./composition-style-classes.js";
 export {
+  Box,
+  Button,
+  Collection,
+  CollectionItemDocProvider,
+  defaultPrimitiveRegistry,
+  Heading,
+  Image,
+  LibraryComponent,
+  PrimitiveEmptyState,
+  type PrimitiveEmptyStateProps,
+  type PrimitiveEmptyStateVariant,
+  Section,
+  Slot,
+  Text,
+  useOptionalCollectionItemDoc,
+  Video,
+} from "./primitives/index.js";
+export {
   type RenderCompositionOptions,
   renderComposition,
 } from "./render-composition.js";

@@ -1,4 +1,4 @@
-import type { RuntimePrimitiveProps } from "@repo/runtime-renderer";
+import type { RuntimePrimitiveProps } from "../runtime-catalog.js";
 
 /** Region where per-page designer blocks are injected at publish time (see `renderComposition` slot map). */
 export function Slot({ children, className, style }: RuntimePrimitiveProps) {

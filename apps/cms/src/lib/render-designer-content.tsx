@@ -5,8 +5,10 @@ import {
   mergeEditorFieldValuesIntoComposition,
   resolveEditorFieldsContractForDefinition,
 } from "@repo/domains-composition";
-import { defaultPrimitiveRegistry } from "@repo/runtime-primitives";
-import { renderComposition } from "@repo/runtime-renderer";
+import {
+  defaultPrimitiveRegistry,
+  renderComposition,
+} from "@repo/runtime-renderer";
 import type { Payload } from "payload";
 import { Fragment, type ReactNode } from "react";
 

@@ -22,7 +22,6 @@ const nextConfig: NextConfig = {
     "@repo/presentation-admin-extensions",
     "@repo/presentation-studio",
     "@repo/presentation-shared",
-    "@repo/runtime-primitives",
     "@repo/runtime-renderer",
   ],
   images: {

@@ -9,8 +9,10 @@ import {
   mergeEditorFieldValuesIntoComposition,
   normalizeTemplateShell,
 } from "@repo/domains-composition";
-import { defaultPrimitiveRegistry } from "@repo/runtime-primitives";
-import { renderComposition } from "@repo/runtime-renderer";
+import {
+  defaultPrimitiveRegistry,
+  renderComposition,
+} from "@repo/runtime-renderer";
 import type { Metadata } from "next";
 import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";

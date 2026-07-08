@@ -1,4 +1,4 @@
-import type { RuntimePrimitiveProps } from "@repo/runtime-renderer";
+import type { RuntimePrimitiveProps } from "../runtime-catalog.js";
 
 import { PrimitiveEmptyState } from "./primitive-empty-state.js";
 

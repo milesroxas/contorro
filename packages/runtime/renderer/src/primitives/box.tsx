@@ -1,5 +1,5 @@
 import { resolvedBoxBackgroundImagePresentation } from "@repo/domains-composition";
-import type { RuntimePrimitiveProps } from "@repo/runtime-renderer";
+import type { RuntimePrimitiveProps } from "../runtime-catalog.js";
 
 function mergeClassNames(a: string | undefined, b: string): string | undefined {
   const merged = [a, b].filter((part) => part && part.length > 0).join(" ");

@@ -1,4 +1,4 @@
-import type { RuntimeRegistry } from "@repo/runtime-renderer";
+import type { RuntimeRegistry } from "../runtime-catalog.js";
 
 import { Box } from "./box.js";
 import { Button } from "./button.js";
