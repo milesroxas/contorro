@@ -1,5 +1,4 @@
 import { type AsyncResult, err } from "@repo/contracts-zod";
-import type { CompositionActor } from "@repo/domains-composition";
 
 import type { StudioMutationRepository } from "./studio-mutation-repository.js";
 
@@ -14,7 +13,6 @@ export async function renameTemplateCommand(
   args: {
     compositionId: string;
     name: string;
-    actor: CompositionActor;
     intent: "draft" | "publish";
   },
 ): AsyncResult<
@@ -25,9 +23,9 @@ export async function renameTemplateCommand(
   if (name === "") {
     return err("VALIDATION_ERROR");
   }
-  const existing = await repo.loadRevision(args.compositionId, args.actor);
+  const existing = await repo.loadRevision(args.compositionId);
   if (!existing) {
     return err("COMPOSITION_NOT_FOUND");
   }
-  return repo.renameTemplate(args.compositionId, name, args.actor, args.intent);
+  return repo.renameTemplate(args.compositionId, name, args.intent);
 }

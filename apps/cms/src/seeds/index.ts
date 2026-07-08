@@ -63,7 +63,37 @@ const SEED_MEDIA_ASSETS = {
   },
 } as const;
 
-const seedPassword = process.env.SEED_PASSWORD ?? "test";
+/**
+ * Seeding is destructive (deletes and recreates seed-slug documents) and
+ * creates known-email users. Guard against accidental production runs.
+ */
+function resolveSeedPassword(): string {
+  const looksLikeProduction =
+    process.env.NODE_ENV === "production" ||
+    process.env.VERCEL_ENV === "production" ||
+    /neon\.tech|supabase\.co|amazonaws\.com/i.test(
+      process.env.DATABASE_URL ?? "",
+    );
+
+  if (looksLikeProduction && process.env.SEED_ALLOW_PRODUCTION !== "true") {
+    throw new Error(
+      "Refusing to seed: production environment detected. Set SEED_ALLOW_PRODUCTION=true and a strong SEED_PASSWORD to override.",
+    );
+  }
+
+  const password = process.env.SEED_PASSWORD;
+  if (looksLikeProduction) {
+    if (!password || password.length < 16) {
+      throw new Error(
+        "Refusing to seed production with a missing or weak SEED_PASSWORD (min 16 chars).",
+      );
+    }
+    return password;
+  }
+  return password ?? "test";
+}
+
+const seedPassword = resolveSeedPassword();
 
 export const SEED_USERS = {
   admin: {

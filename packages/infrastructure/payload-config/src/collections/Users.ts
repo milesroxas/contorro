@@ -19,7 +19,15 @@ export const Users: CollectionConfig = {
   auth: true,
   access: {
     create: ({ req }) => roleFromRequest(req) === "admin",
-    read: ({ req: { user } }) => Boolean(user),
+    read: ({ req }) => {
+      if (!req.user) {
+        return false;
+      }
+      if (roleFromRequest(req) === "admin") {
+        return true;
+      }
+      return { id: { equals: req.user.id } };
+    },
     update: ({ req, id }) => {
       if (!req.user) {
         return false;

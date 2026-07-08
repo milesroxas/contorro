@@ -1,4 +1,4 @@
-import { type AsyncResult, err, ok } from "@repo/contracts-zod";
+import { err, ok } from "@repo/contracts-zod";
 import {
   componentIdFromStudioRowId,
   defaultEmptyPageComposition,
@@ -28,146 +28,63 @@ export function publicationStatusFromDoc(doc: {
   return null;
 }
 
-type RenameTemplateOk = {
-  name: string;
-  updatedAt: string;
-  _status?: "draft" | "published" | null;
-};
+type CompositionCollection = "components" | "page-compositions";
 
-async function renameComponentDisplayName(
-  payload: Payload,
-  user: unknown,
-  componentId: string,
-  name: string,
-  isDraft: boolean,
-): AsyncResult<RenameTemplateOk, "PERSISTENCE_ERROR"> {
-  const existing = await payload.findByID({
-    collection: "components",
-    id: componentId,
-    depth: 0,
-    draft: true,
-    user,
-    overrideAccess: false,
-  });
-  if (!existing) {
-    return err("PERSISTENCE_ERROR");
-  }
-
-  const updated = await payload.update({
-    collection: "components",
-    id: componentId,
-    data: {
-      displayName: name,
-      composition: existing.composition ?? defaultEmptyPageComposition(),
-      ...(!isDraft ? { _status: "published" as const } : {}),
-    },
-    draft: isDraft,
-    user,
-    overrideAccess: false,
-  });
-  const value: RenameTemplateOk = {
-    name: String(updated.displayName ?? name),
-    updatedAt: normalizeUpdatedAt(updated.updatedAt),
-    _status: publicationStatusFromDoc(updated),
-  };
-  return ok(value);
-}
-
-async function renamePageCompositionTitle(
-  payload: Payload,
-  user: unknown,
-  compositionId: string,
-  name: string,
-  isDraft: boolean,
-): AsyncResult<RenameTemplateOk, "PERSISTENCE_ERROR"> {
-  const existing = await payload.findByID({
-    collection: "page-compositions",
-    id: compositionId,
-    depth: 0,
-    draft: true,
-    user,
-    overrideAccess: false,
-  });
-  if (!existing) {
-    return err("PERSISTENCE_ERROR");
-  }
-
-  const updated = await payload.update({
-    collection: "page-compositions",
-    id: compositionId,
-    data: {
-      title: name,
-      composition: existing.composition ?? defaultPageTemplateComposition(),
-      ...(!isDraft ? { _status: "published" as const } : {}),
-    },
-    draft: isDraft,
-    user,
-    overrideAccess: false,
-  });
-  const value: RenameTemplateOk = {
-    name: String(updated.title ?? name),
-    updatedAt: normalizeUpdatedAt(updated.updatedAt),
-    _status: publicationStatusFromDoc(updated),
-  };
-  return ok(value);
+function resolveTarget(compositionId: string): {
+  collection: CompositionCollection;
+  id: string;
+} {
+  const componentId = componentIdFromStudioRowId(compositionId);
+  return componentId
+    ? { collection: "components", id: componentId }
+    : { collection: "page-compositions", id: compositionId };
 }
 
 export function payloadStudioMutationRepository(
   payload: Payload,
   user: unknown,
 ): StudioMutationRepository {
-  return {
-    async loadRevision(compositionId, actor) {
-      void actor;
-      const componentId = componentIdFromStudioRowId(compositionId);
-      try {
-        if (componentId) {
-          const existing = await payload.findByID({
-            collection: "components",
-            id: componentId,
-            depth: 0,
-            draft: true,
-            user,
-            overrideAccess: false,
-          });
-          if (!existing) {
-            return null;
-          }
-          return {
-            updatedAt: normalizeUpdatedAt(existing.updatedAt),
-          };
-        }
-        const existing = await payload.findByID({
-          collection: "page-compositions",
-          id: compositionId,
-          depth: 0,
-          draft: true,
-          user,
-          overrideAccess: false,
-        });
-        if (!existing) {
-          return null;
-        }
-        return {
-          updatedAt: normalizeUpdatedAt(existing.updatedAt),
-        };
-      } catch {
+  async function findRevision(
+    collection: CompositionCollection,
+    id: string,
+  ): Promise<{ updatedAt: string } | null> {
+    try {
+      const existing = await payload.findByID({
+        collection,
+        id,
+        depth: 0,
+        draft: true,
+        user,
+        overrideAccess: false,
+      });
+      if (!existing) {
         return null;
       }
+      return { updatedAt: normalizeUpdatedAt(existing.updatedAt) };
+    } catch {
+      return null;
+    }
+  }
+
+  return {
+    async loadRevision(compositionId) {
+      const { collection, id } = resolveTarget(compositionId);
+      return findRevision(collection, id);
     },
 
-    async save(compositionId, composition, intent, actor) {
-      void actor;
-      const componentId = componentIdFromStudioRowId(compositionId);
+    async save(compositionId, composition, intent, ifMatchUpdatedAt) {
+      const { collection, id } = resolveTarget(compositionId);
+      const data =
+        intent === "publish"
+          ? { composition, _status: "published" as const }
+          : { composition };
+
       try {
-        if (componentId) {
+        if (ifMatchUpdatedAt === null || ifMatchUpdatedAt === "") {
           const updated = await payload.update({
-            collection: "components",
-            id: componentId,
-            data:
-              intent === "publish"
-                ? { composition, _status: "published" as const }
-                : { composition },
+            collection,
+            id,
+            data,
             draft: intent === "draft",
             user,
             overrideAccess: false,
@@ -178,17 +95,27 @@ export function payloadStudioMutationRepository(
           });
         }
 
-        const updated = await payload.update({
-          collection: "page-compositions",
-          id: compositionId,
-          data:
-            intent === "publish"
-              ? { composition, _status: "published" as const }
-              : { composition },
+        // Conditional write: check and update in one operation so two
+        // concurrent saves cannot both pass a separate pre-read check.
+        const result = await payload.update({
+          collection,
+          where: {
+            and: [
+              { id: { equals: id } },
+              { updatedAt: { equals: ifMatchUpdatedAt } },
+            ],
+          },
+          data,
           draft: intent === "draft",
           user,
           overrideAccess: false,
         });
+
+        const updated = result.docs[0];
+        if (!updated) {
+          const exists = await findRevision(collection, id);
+          return err(exists ? "COMPOSITION_CONFLICT" : "COMPOSITION_NOT_FOUND");
+        }
         return ok({
           updatedAt: normalizeUpdatedAt(updated.updatedAt),
           _status: publicationStatusFromDoc(updated),
@@ -198,34 +125,35 @@ export function payloadStudioMutationRepository(
       }
     },
 
-    async renameTemplate(compositionId, name, actor, intent) {
-      void actor;
-      const componentId = componentIdFromStudioRowId(compositionId);
+    async renameTemplate(compositionId, name, intent) {
+      const { collection, id } = resolveTarget(compositionId);
       const isDraft = intent === "draft";
+      const titleField = collection === "components" ? "displayName" : "title";
+
       try {
-        if (componentId) {
-          return await renameComponentDisplayName(
-            payload,
-            user,
-            componentId,
-            name,
-            isDraft,
-          );
-        }
-        return await renamePageCompositionTitle(
-          payload,
+        const updated = await payload.update({
+          collection,
+          id,
+          data: {
+            [titleField]: name,
+            ...(!isDraft ? { _status: "published" as const } : {}),
+          },
+          draft: isDraft,
           user,
-          compositionId,
-          name,
-          isDraft,
-        );
+          overrideAccess: false,
+        });
+        const value = updated as unknown as Record<string, unknown>;
+        return ok({
+          name: String(value[titleField] ?? name),
+          updatedAt: normalizeUpdatedAt(updated.updatedAt),
+          _status: publicationStatusFromDoc(updated),
+        });
       } catch {
         return err("PERSISTENCE_ERROR");
       }
     },
 
-    async createTemplate(title, actor) {
-      void actor;
+    async createTemplate(title) {
       const slug = `template-${crypto.randomUUID().slice(0, 12)}`;
       try {
         const created = await payload.create({
@@ -245,8 +173,7 @@ export function payloadStudioMutationRepository(
       }
     },
 
-    async createComponent(title, actor) {
-      void actor;
+    async createComponent(title) {
       try {
         const created = await payload.create({
           collection: "components",

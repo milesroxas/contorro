@@ -273,7 +273,6 @@ async function createAndSaveNewSessionComposition(
       (newSession.kind === "component"
         ? "Untitled component"
         : "Untitled page template"),
-    actor: user,
   });
   if (!created.ok) {
     const status = created.error === "VALIDATION_ERROR" ? 400 : 500;
@@ -295,7 +294,6 @@ async function createAndSaveNewSessionComposition(
     composition,
     ifMatchUpdatedAt: null,
     intent,
-    actor: user,
   });
   if (!saved.ok) {
     if (saved.error === "VALIDATION_ERROR") {
@@ -468,7 +466,6 @@ export async function POST(
     composition,
     ifMatchUpdatedAt,
     intent,
-    actor: user,
   });
   return responseForSaveExisting(saved);
 }
@@ -527,7 +524,6 @@ export async function PATCH(
   const renamed = await renameTemplateCommand(repo, {
     compositionId: id,
     name: nextName,
-    actor: user,
     intent,
   });
   if (!renamed.ok) {

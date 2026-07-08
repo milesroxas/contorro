@@ -1,8 +1,8 @@
 import type { CollectionConfig } from "payload";
 import {
-  authenticatedAccess,
   composerAuthoringAccess,
   designerOrAdminAccess,
+  publishedOrAuthenticatedReadAccess,
 } from "../access/rbac.js";
 import { createPageCompositionBeforeValidateHandler } from "../collection-hooks/page-and-component-validation.js";
 
@@ -16,6 +16,7 @@ export const PageCompositions: CollectionConfig = {
   },
   versions: {
     drafts: true,
+    maxPerDoc: 25,
   },
   admin: {
     group: "Layout & library",
@@ -25,7 +26,7 @@ export const PageCompositions: CollectionConfig = {
       "Full-page layouts from the builder. Choose one when you create a page (Pages → Page template).",
   },
   access: {
-    read: authenticatedAccess,
+    read: publishedOrAuthenticatedReadAccess,
     create: composerAuthoringAccess,
     update: composerAuthoringAccess,
     delete: designerOrAdminAccess,

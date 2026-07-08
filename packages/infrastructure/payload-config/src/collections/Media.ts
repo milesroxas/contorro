@@ -10,7 +10,7 @@ export const Media: CollectionConfig = {
   access: {
     read: () => true,
     create: authenticatedAccess,
-    update: authenticatedAccess,
+    update: designerOrAdminAccess,
     delete: designerOrAdminAccess,
   },
   fields: [
@@ -20,5 +20,14 @@ export const Media: CollectionConfig = {
       required: true,
     },
   ],
-  upload: true,
+  upload: {
+    // No SVG/HTML: scriptable content would be served from the media endpoint.
+    mimeTypes: [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+      "image/avif",
+    ],
+  },
 };

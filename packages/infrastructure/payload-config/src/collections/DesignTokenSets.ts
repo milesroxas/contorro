@@ -13,6 +13,7 @@ export const DesignTokenSets: CollectionConfig = {
   slug: "design-token-sets",
   versions: {
     drafts: true,
+    maxPerDoc: 25,
   },
   admin: {
     group: "Layout & library",

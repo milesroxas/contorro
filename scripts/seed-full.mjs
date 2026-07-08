@@ -55,6 +55,16 @@ function runWithEnvFile(relPath) {
 
 const target = process.argv[2];
 
+if (target === "prod" || target === "production") {
+  if (process.env.SEED_ALLOW_PRODUCTION !== "true") {
+    console.error(
+      "Refusing to seed production. Seeding DELETES seed-slug documents and creates known-email users.\n" +
+        "If you really mean it: SEED_ALLOW_PRODUCTION=true SEED_PASSWORD=<strong password> pnpm seed:full prod",
+    );
+    process.exit(1);
+  }
+}
+
 if (!target) {
   runDefault();
 } else if (envFiles[target]) {

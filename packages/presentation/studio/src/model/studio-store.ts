@@ -275,8 +275,8 @@ async function saveOrPublishComposition(args: {
   mode: "draft" | "publish";
 }): Promise<void> {
   const { get, set, client, mode } = args;
-  const { composition, updatedAt, compositionId: id, saving } = get();
-  if (!composition || saving) {
+  const { composition, updatedAt, compositionId: id, saving, renaming } = get();
+  if (!composition || saving || renaming) {
     return;
   }
   const prep = prepareForSave(composition);
@@ -295,10 +295,13 @@ async function saveOrPublishComposition(args: {
       mode === "draft"
         ? await client.postDraft(id, payload)
         : await client.postPublish(id, payload);
+    // Edits made while the request was in flight must keep the doc dirty —
+    // compare against the snapshot that was actually persisted.
+    const stillDirty = get().composition !== composition;
     set({
       compositionId: saved.id,
       updatedAt: saved.updatedAt,
-      dirty: false,
+      dirty: stillDirty,
       cmsPublicationStatus:
         saved._status !== undefined
           ? saved._status
@@ -327,8 +330,8 @@ async function applyCompositionRename(args: {
 }): Promise<void> {
   const { get, set, client } = args;
   const trimmed = args.nextName.trim();
-  const { compositionId: id, renaming, name } = get();
-  if (!trimmed || renaming || trimmed === name) {
+  const { compositionId: id, renaming, saving, name } = get();
+  if (!trimmed || renaming || saving || trimmed === name) {
     return;
   }
   if (isStudioNewCompositionSessionId(id)) {

@@ -1,7 +1,7 @@
 import type { CollectionConfig } from "payload";
 import {
-  authenticatedAccess,
   componentAuthoringAccess,
+  publishedOrAuthenticatedReadAccess,
 } from "../access/rbac.js";
 import { createComponentsBeforeValidateHandler } from "../collection-hooks/page-and-component-validation.js";
 import { enrichComponentsEditorFieldsAfterRead } from "../hooks/enrich-components-editor-fields.js";
@@ -17,6 +17,7 @@ export const Components: CollectionConfig = {
   },
   versions: {
     drafts: true,
+    maxPerDoc: 25,
   },
   admin: {
     group: "Layout & library",
@@ -27,7 +28,7 @@ export const Components: CollectionConfig = {
     listSearchableFields: ["displayName", "key"],
   },
   access: {
-    read: authenticatedAccess,
+    read: publishedOrAuthenticatedReadAccess,
     create: componentAuthoringAccess,
     update: componentAuthoringAccess,
     delete: componentAuthoringAccess,
