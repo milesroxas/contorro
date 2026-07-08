@@ -1,4 +1,8 @@
-import type { PageComposition } from "@repo/contracts-zod";
+import type {
+  CompositionNode,
+  PageComposition,
+  StyleBinding,
+} from "@repo/contracts-zod";
 import {
   err,
   ok,
@@ -6,32 +10,153 @@ import {
   type Result,
 } from "@repo/contracts-zod";
 
-import { mergeEditorFieldValuesIntoComposition } from "../editor-field-values.js";
 import { validatePageCompositionInvariants } from "../validation/page-composition.js";
 import { clonePageCompositionWithNewIds } from "./clone-composition.js";
 
 const REF_KEY = "primitive.libraryComponent";
 
 export type ExpandLibraryComponentNodesOptions = {
-  /**
-   * Map media IDs in `propValues.editorFieldValues` on the ref node to URLs before merging
-   * into the embedded composition (matches `renderDesignerContent` / block rendering).
-   */
-  resolveEditorFieldImages?: (
-    embedded: PageComposition,
-    editorFieldValues: Record<string, unknown>,
-  ) => Promise<Record<string, unknown>>;
+  /** Called for every ref that could not be expanded (missing definition, graft failure). */
+  onSkip?: (refId: string, componentKey: string, reason: string) => void;
 };
 
-function libraryRefEditorFieldValues(
-  refNode: PageComposition["nodes"][string],
-): Record<string, unknown> | null {
-  const raw = refNode.propValues?.editorFieldValues;
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-    return null;
+function stylePropertyMergeKey(
+  entry: StyleBinding["properties"][number],
+): string {
+  return `${entry.property}|${entry.breakpoint ?? "base"}`;
+}
+
+/**
+ * Transfers the ref node's style binding onto the grafted root so styled
+ * instances keep their instance styling (audit §1.2a — previously the orphaned
+ * binding failed invariants and the whole instance was skipped).
+ * Instance properties win over same-property root entries.
+ */
+function transferRefStyleBindingToRoot(
+  refBinding: StyleBinding,
+  root: CompositionNode,
+  rootBinding: StyleBinding | undefined,
+  newRootId: string,
+): { root: CompositionNode; binding: StyleBinding } {
+  if (!rootBinding) {
+    const binding: StyleBinding = { ...refBinding, nodeId: newRootId };
+    return {
+      root: { ...root, styleBindingId: binding.id },
+      binding,
+    };
   }
-  const values = raw as Record<string, unknown>;
-  return Object.keys(values).length > 0 ? values : null;
+  const overridden = new Set(refBinding.properties.map(stylePropertyMergeKey));
+  const mergedProperties = [
+    ...rootBinding.properties.filter(
+      (entry) => !overridden.has(stylePropertyMergeKey(entry)),
+    ),
+    ...refBinding.properties,
+  ];
+  return {
+    root,
+    binding: { ...rootBinding, properties: mergedProperties },
+  };
+}
+
+/**
+ * Embedded library refs are design-only: grafted nodes keep their authored
+ * `propValues`, but editor content bindings are stripped so the same component
+ * embedded twice never collides on binding names (audit §1.2b) and page-level
+ * block values never leak into embedded designs.
+ */
+function withoutEditorContentBinding(node: CompositionNode): CompositionNode {
+  if (node.contentBinding?.source !== "editor") {
+    return node;
+  }
+  const { contentBinding: _dropped, ...rest } = node;
+  return rest;
+}
+
+function graftEmbeddedAtRef(
+  template: PageComposition,
+  refId: string,
+  embedded: PageComposition,
+): Result<PageComposition, string> {
+  const refNode = template.nodes[refId];
+  if (!refNode) {
+    return err(`missing ref node "${refId}"`);
+  }
+  if (refNode.parentId === null) {
+    return err("library component reference cannot be the composition root");
+  }
+  const parentId = refNode.parentId;
+  const parent = template.nodes[parentId];
+  if (!parent) {
+    return err(`missing parent "${parentId}"`);
+  }
+
+  const cloned = clonePageCompositionWithNewIds(embedded);
+  const newRootId = cloned.rootId;
+  const clonedRoot = cloned.nodes[newRootId];
+  if (!clonedRoot) {
+    return err("embedded composition missing root after clone");
+  }
+
+  const mergedNodes: PageComposition["nodes"] = { ...template.nodes };
+  for (const [k, v] of Object.entries(cloned.nodes)) {
+    mergedNodes[k] = withoutEditorContentBinding(v);
+  }
+  delete mergedNodes[refId];
+
+  const mergedStyleBindings: PageComposition["styleBindings"] = {
+    ...template.styleBindings,
+    ...cloned.styleBindings,
+  };
+
+  let newRoot: CompositionNode = {
+    ...withoutEditorContentBinding(clonedRoot),
+    parentId: parentId,
+  };
+
+  // The ref node is removed; its style binding must move with the instance.
+  if (refNode.styleBindingId) {
+    const refBinding = template.styleBindings[refNode.styleBindingId];
+    delete mergedStyleBindings[refNode.styleBindingId];
+    if (refBinding) {
+      const rootBinding = newRoot.styleBindingId
+        ? mergedStyleBindings[newRoot.styleBindingId]
+        : undefined;
+      const transferred = transferRefStyleBindingToRoot(
+        refBinding,
+        newRoot,
+        rootBinding,
+        newRootId,
+      );
+      newRoot = transferred.root;
+      mergedStyleBindings[transferred.binding.id] = transferred.binding;
+    }
+  }
+
+  mergedNodes[newRootId] = newRoot;
+
+  const newChildIds = parent.childIds.map((cid) =>
+    cid === refId ? newRootId : cid,
+  );
+  mergedNodes[parentId] = {
+    ...parent,
+    childIds: newChildIds,
+  };
+
+  const assembled: PageComposition = {
+    rootId: template.rootId,
+    nodes: mergedNodes,
+    styleBindings: mergedStyleBindings,
+  };
+
+  const parsed = PageCompositionSchema.safeParse(assembled);
+  if (!parsed.success) {
+    return err("graft produced invalid composition");
+  }
+  const inv = validatePageCompositionInvariants(parsed.data);
+  if (!inv.ok) {
+    return err(inv.error);
+  }
+  return ok(parsed.data);
 }
 
 function findFirstExpandableLibraryRefId(
@@ -52,92 +177,11 @@ function findFirstExpandableLibraryRefId(
   return null;
 }
 
-async function graftEmbeddedAtRef(
-  template: PageComposition,
-  refId: string,
-  embedded: PageComposition,
-  options?: ExpandLibraryComponentNodesOptions,
-): Promise<Result<PageComposition, string>> {
-  const refNode = template.nodes[refId];
-  if (!refNode) {
-    return err(`missing ref node "${refId}"`);
-  }
-  if (refNode.parentId === null) {
-    return err("library component reference cannot be the composition root");
-  }
-  const parentId = refNode.parentId;
-  const parent = template.nodes[parentId];
-  if (!parent) {
-    return err(`missing parent "${parentId}"`);
-  }
-
-  const editorFieldValues = libraryRefEditorFieldValues(refNode);
-  let valuesToMerge: Record<string, unknown> | null = editorFieldValues;
-  if (
-    editorFieldValues !== null &&
-    options?.resolveEditorFieldImages !== undefined
-  ) {
-    valuesToMerge = await options.resolveEditorFieldImages(
-      embedded,
-      editorFieldValues,
-    );
-  }
-  const embeddedWithInstanceValues =
-    valuesToMerge === null
-      ? embedded
-      : mergeEditorFieldValuesIntoComposition(embedded, valuesToMerge);
-
-  const cloned = clonePageCompositionWithNewIds(embeddedWithInstanceValues);
-  const newRootId = cloned.rootId;
-  const newRoot = cloned.nodes[newRootId];
-  if (!newRoot) {
-    return err("embedded composition missing root after clone");
-  }
-
-  const mergedNodes: PageComposition["nodes"] = { ...template.nodes };
-  for (const [k, v] of Object.entries(cloned.nodes)) {
-    mergedNodes[k] = v;
-  }
-  delete mergedNodes[refId];
-
-  mergedNodes[newRootId] = {
-    ...newRoot,
-    parentId: parentId,
-  };
-
-  const newChildIds = parent.childIds.map((cid) =>
-    cid === refId ? newRootId : cid,
-  );
-  mergedNodes[parentId] = {
-    ...parent,
-    childIds: newChildIds,
-  };
-
-  const mergedStyleBindings: PageComposition["styleBindings"] = {
-    ...template.styleBindings,
-    ...cloned.styleBindings,
-  };
-
-  const assembled: PageComposition = {
-    rootId: template.rootId,
-    nodes: mergedNodes,
-    styleBindings: mergedStyleBindings,
-  };
-
-  const parsed = PageCompositionSchema.safeParse(assembled);
-  if (!parsed.success) {
-    return err("graft produced invalid composition");
-  }
-  const inv = validatePageCompositionInvariants(parsed.data);
-  if (!inv.ok) {
-    return err(inv.error);
-  }
-  return ok(parsed.data);
-}
-
 /**
  * Replaces each `primitive.libraryComponent` node with the cloned subtree of the
- * referenced library definition (by `propValues.componentKey`).
+ * referenced library definition (by `propValues.componentKey`). Embedded refs
+ * are design-only: authored `propValues` render as-is, editor bindings are
+ * stripped, and instance styling transfers to the grafted root.
  */
 export async function expandLibraryComponentNodes(
   composition: PageComposition,
@@ -159,12 +203,18 @@ export async function expandLibraryComponentNodes(
     const embedded = await resolve(key);
     if (!embedded) {
       skippedRefIds.add(refId);
+      options?.onSkip?.(
+        refId,
+        key,
+        "definition not found or has no composition",
+      );
       continue;
     }
 
-    const next = await graftEmbeddedAtRef(current, refId, embedded, options);
+    const next = graftEmbeddedAtRef(current, refId, embedded);
     if (!next.ok) {
       skippedRefIds.add(refId);
+      options?.onSkip?.(refId, key, next.error);
       continue;
     }
     current = next.value;

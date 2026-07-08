@@ -3,10 +3,11 @@ import type { RuntimePrimitiveProps } from "../runtime-catalog.js";
 import { PrimitiveEmptyState } from "./primitive-empty-state.js";
 
 /**
- * Fallback when a `primitive.libraryComponent` node was not expanded at render
- * (e.g. missing definition). Expanded trees never hit this component.
+ * Debug placeholder for a `primitive.libraryComponent` node that was not
+ * expanded (missing definition, graft failure). Studio canvas paths render
+ * this explicitly; the public registry component below hides it in production.
  */
-export function LibraryComponent({
+export function LibraryComponentPlaceholder({
   node,
   className,
   style,
@@ -27,4 +28,36 @@ export function LibraryComponent({
       )}
     </PrimitiveEmptyState>
   );
+}
+
+// Renderer stays browser-safe (no node types); bundlers inline these env reads.
+declare const process:
+  | {
+      env?: {
+        NODE_ENV?: string;
+        NEXT_PUBLIC_COMPOSITION_DEBUG?: string;
+      };
+    }
+  | undefined;
+
+function unexpandedRefDebugEnabled(): boolean {
+  if (typeof process === "undefined") {
+    return false;
+  }
+  return (
+    process.env?.NODE_ENV !== "production" ||
+    process.env?.NEXT_PUBLIC_COMPOSITION_DEBUG === "true"
+  );
+}
+
+/**
+ * Fallback when a `primitive.libraryComponent` node was not expanded at render.
+ * Production renders nothing (call sites log the skip via `payload.logger`);
+ * development — or `NEXT_PUBLIC_COMPOSITION_DEBUG=true` — keeps the placeholder.
+ */
+export function LibraryComponent(props: RuntimePrimitiveProps) {
+  if (!unexpandedRefDebugEnabled()) {
+    return null;
+  }
+  return <LibraryComponentPlaceholder {...props} />;
 }

@@ -5,10 +5,9 @@ import type {
   CompositionNode,
   PageComposition,
 } from "@repo/contracts-zod";
-import { mergeEditorFieldValuesIntoComposition } from "@repo/domains-composition";
 import {
   defaultPrimitiveRegistry,
-  LibraryComponent,
+  LibraryComponentPlaceholder,
   renderComposition,
 } from "@repo/runtime-renderer";
 import type { CSSProperties, ReactElement } from "react";
@@ -16,10 +15,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import { cn } from "../../lib/cn.js";
 import { fetchExpandedLibraryComposition } from "../../lib/fetch-library-component-preview.js";
-import {
-  editorFieldImageValuesNeedMediaFetch,
-  resolveEditorFieldImageValuesForCanvas,
-} from "../../lib/resolve-editor-field-images-client.js";
 
 function LibraryCompositionPreviewSkeleton({
   className,
@@ -81,17 +76,11 @@ function LibraryCompositionPreviewSkeleton({
   );
 }
 
-function libraryInstanceEditorFieldValues(
-  node: CompositionNode,
-): Record<string, unknown> | null {
-  const raw = node.propValues?.editorFieldValues;
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-    return null;
-  }
-  const values = raw as Record<string, unknown>;
-  return Object.keys(values).length > 0 ? values : null;
-}
-
+/**
+ * Canvas preview of an embedded library component. Embedded refs are
+ * design-only in the blocks content model: the expanded design renders its
+ * authored `propValues` as-is (no instance value merging).
+ */
 export function LibraryCompositionCanvasPreview({
   node,
   className,
@@ -107,56 +96,11 @@ export function LibraryCompositionCanvasPreview({
     typeof node.propValues?.componentKey === "string"
       ? node.propValues.componentKey.trim()
       : "";
-  const instanceFieldValues = useMemo(
-    () => libraryInstanceEditorFieldValues(node),
-    [node],
-  );
 
   const [expanded, setExpanded] = useState<PageComposition | null>(null);
   const [phase, setPhase] = useState<"loading" | "ready" | "fallback">(
     "loading",
   );
-  const syncMergeValues = useMemo(() => {
-    if (!expanded || instanceFieldValues === null) {
-      return null;
-    }
-    if (editorFieldImageValuesNeedMediaFetch(expanded, instanceFieldValues)) {
-      return null;
-    }
-    return instanceFieldValues;
-  }, [expanded, instanceFieldValues]);
-
-  const [asyncMergeValues, setAsyncMergeValues] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
-
-  useEffect(() => {
-    if (!expanded || instanceFieldValues === null) {
-      setAsyncMergeValues(null);
-      return;
-    }
-    if (!editorFieldImageValuesNeedMediaFetch(expanded, instanceFieldValues)) {
-      setAsyncMergeValues(null);
-      return;
-    }
-    let cancelled = false;
-    setAsyncMergeValues(null);
-    void resolveEditorFieldImageValuesForCanvas(
-      expanded,
-      instanceFieldValues,
-    ).then((resolved) => {
-      if (!cancelled) {
-        setAsyncMergeValues(resolved);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [expanded, instanceFieldValues]);
-
-  const valuesForMerge =
-    instanceFieldValues === null ? null : (syncMergeValues ?? asyncMergeValues);
 
   useEffect(() => {
     if (!componentKey) {
@@ -191,17 +135,9 @@ export function LibraryCompositionCanvasPreview({
     if (phase !== "ready" || !expanded) {
       return null;
     }
-    if (instanceFieldValues !== null && valuesForMerge === null) {
-      return null;
-    }
     try {
-      const toMerge = instanceFieldValues === null ? null : valuesForMerge;
-      const composition =
-        toMerge === null
-          ? expanded
-          : mergeEditorFieldValuesIntoComposition(expanded, toMerge);
       return renderComposition(
-        composition,
+        expanded,
         defaultPrimitiveRegistry,
         stylePreviewFlattenToBreakpoint !== undefined
           ? {
@@ -212,28 +148,22 @@ export function LibraryCompositionCanvasPreview({
     } catch {
       return null;
     }
-  }, [
-    expanded,
-    instanceFieldValues,
-    phase,
-    stylePreviewFlattenToBreakpoint,
-    valuesForMerge,
-  ]);
+  }, [expanded, phase, stylePreviewFlattenToBreakpoint]);
 
-  if (
-    phase === "loading" ||
-    (phase === "ready" &&
-      expanded &&
-      instanceFieldValues !== null &&
-      valuesForMerge === null)
-  ) {
+  if (phase === "loading") {
     return (
       <LibraryCompositionPreviewSkeleton className={className} style={style} />
     );
   }
 
   if (phase === "fallback" || !expanded || expandedTree === null) {
-    return <LibraryComponent className={className} node={node} style={style} />;
+    return (
+      <LibraryComponentPlaceholder
+        className={className}
+        node={node}
+        style={style}
+      />
+    );
   }
 
   return (

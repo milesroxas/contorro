@@ -1,221 +1,276 @@
-import { PageCompositionSchema } from "@repo/contracts-zod";
+import {
+  type BlockCatalogEntry,
+  blockCatalogEntry,
+  type PageComposition,
+  PageCompositionSchema,
+} from "@repo/contracts-zod";
 import {
   collectLayoutSlotIds,
-  mergeEditorFieldValuesIntoComposition,
-  resolveEditorFieldsContractForDefinition,
+  expandLibraryComponentNodes,
 } from "@repo/domains-composition";
 import {
   defaultPrimitiveRegistry,
+  injectBlockValues,
   renderComposition,
 } from "@repo/runtime-renderer";
 import type { Payload } from "payload";
 import { Fragment, type ReactNode } from "react";
 
-import { resolveImageEditorFieldValuesForRender } from "@/lib/resolve-editor-field-image-values";
+export type PageBlockRow = {
+  id?: string | null;
+  blockType?: string | null;
+  design?: number | { id?: number; composition?: unknown } | null;
+} & Record<string, unknown>;
 
-type DesignerBlock = {
-  componentDefinition?: number | { id: number } | null;
-  editorFieldValues?: Record<string, unknown> | null;
-  layoutSlotId?: string | null;
-};
-
-type ContentSlotDoc = {
+export type ContentSlotRow = {
   slotId?: string | null;
-  blocks?: DesignerBlock[] | null;
+  blocks?: PageBlockRow[] | null;
 };
 
-function isNestedContentSlots(raw: unknown): raw is ContentSlotDoc[] {
-  if (!Array.isArray(raw) || raw.length === 0) {
-    return false;
+export type RenderPageBlocksOptions = {
+  /** Draft mode: block designs are re-fetched with `draft: true` (audit M3/M8). */
+  draft?: boolean;
+};
+
+function contentSlotRows(contentSlots: unknown): ContentSlotRow[] {
+  if (!Array.isArray(contentSlots)) {
+    return [];
   }
-  const first = raw[0];
-  return (
-    first !== null &&
-    typeof first === "object" &&
-    !Array.isArray(first) &&
-    Array.isArray((first as ContentSlotDoc).blocks)
+  return contentSlots.filter(
+    (row): row is ContentSlotRow =>
+      row !== null && typeof row === "object" && !Array.isArray(row),
   );
 }
 
-/** Unnests `contentSlots` into flat blocks tagged with `layoutSlotId` for slot injection. */
-export function flattenPageContentSlotsToBlocks(
-  contentSlots: unknown,
-): DesignerBlock[] {
-  if (!isNestedContentSlots(contentSlots)) {
-    return Array.isArray(contentSlots) ? (contentSlots as DesignerBlock[]) : [];
-  }
-  const out: DesignerBlock[] = [];
-  for (const row of contentSlots) {
-    const slotId =
-      typeof row.slotId === "string" && row.slotId.trim() !== ""
-        ? row.slotId.trim()
-        : "main";
-    const blocks = row.blocks;
-    if (!Array.isArray(blocks)) {
-      continue;
-    }
-    for (const b of blocks) {
-      if (!b || typeof b !== "object") {
-        continue;
-      }
-      out.push({
-        ...(b as DesignerBlock),
-        layoutSlotId: slotId,
-      });
-    }
-  }
-  return out;
+function rowSlotId(row: ContentSlotRow): string {
+  return typeof row.slotId === "string" && row.slotId.trim() !== ""
+    ? row.slotId.trim()
+    : "main";
 }
 
-function blockSlotId(block: DesignerBlock): string {
-  const raw = block.layoutSlotId;
-  if (typeof raw === "string" && raw.trim() !== "") {
-    return raw.trim();
+async function resolveEmbeddedDesign(
+  payload: Payload,
+  key: string,
+  draft: boolean,
+): Promise<PageComposition | null> {
+  const found = await payload.find({
+    collection: "components",
+    where: { key: { equals: key } },
+    depth: 0,
+    draft,
+    limit: 1,
+    overrideAccess: true,
+  });
+  const doc = found.docs[0] as { composition?: unknown } | undefined;
+  if (!doc?.composition) {
+    return null;
   }
-  return "main";
+  const parsed = PageCompositionSchema.safeParse(doc.composition);
+  return parsed.success ? parsed.data : null;
 }
 
-function targetSlotIdForBlock(
-  blockSid: string,
-  templateSlotIds: Set<string>,
-): string | null {
-  if (templateSlotIds.has(blockSid)) {
-    return blockSid;
+/** Expands embedded library refs (design-only) with skip logging. */
+export async function expandDesignComposition(
+  payload: Payload,
+  composition: PageComposition,
+  draft: boolean,
+  context: string,
+): Promise<PageComposition> {
+  return expandLibraryComponentNodes(
+    composition,
+    (key) => resolveEmbeddedDesign(payload, key, draft),
+    {
+      onSkip: (refId, componentKey, reason) => {
+        payload.logger.error(
+          `render: skipped library ref "${refId}" (component "${componentKey}") in ${context}: ${reason}`,
+        );
+      },
+    },
+  );
+}
+
+function blockDesignId(rel: PageBlockRow["design"]): number | null {
+  if (typeof rel === "number") {
+    return rel;
   }
-  if (templateSlotIds.has("main")) {
-    return "main";
+  if (typeof rel === "object" && rel !== null && typeof rel.id === "number") {
+    return rel.id;
   }
   return null;
 }
 
-function appendRenderedBlockToSlotBuckets(
-  section: ReactNode,
-  templateSlotIds: Set<string> | null,
-  block: DesignerBlock,
-  slotLists: Record<string, ReactNode[]>,
-  orphanSections: ReactNode[],
-): void {
-  if (templateSlotIds === null || templateSlotIds.size === 0) {
-    orphanSections.push(section);
-    return;
+/** Preview renders the latest draft of the design explicitly (audit M3/M8). */
+async function draftDesignComposition(
+  payload: Payload,
+  designId: number,
+): Promise<{ composition: unknown; designId: number } | null> {
+  try {
+    const doc = await payload.findByID({
+      collection: "components",
+      id: designId,
+      depth: 0,
+      draft: true,
+      overrideAccess: true,
+    });
+    return doc?.composition !== undefined && doc.composition !== null
+      ? { composition: doc.composition, designId }
+      : null;
+  } catch {
+    return null;
   }
-  const sid = blockSlotId(block);
-  const target = targetSlotIdForBlock(sid, templateSlotIds);
-  if (target === null) {
-    orphanSections.push(section);
-    return;
+}
+
+async function designCompositionForBlock(
+  payload: Payload,
+  block: PageBlockRow,
+  draft: boolean,
+): Promise<{ composition: unknown; designId: number } | null> {
+  const rel = block.design;
+  const designId = blockDesignId(rel);
+  if (designId === null) {
+    return null;
   }
-  if (!slotLists[target]) {
-    slotLists[target] = [];
+  if (draft) {
+    return draftDesignComposition(payload, designId);
   }
-  slotLists[target].push(section);
+  if (
+    typeof rel === "object" &&
+    rel !== null &&
+    "composition" in rel &&
+    rel.composition !== undefined &&
+    rel.composition !== null
+  ) {
+    return { composition: rel.composition, designId };
+  }
+  return null;
 }
 
 async function renderOneBlock(
   payload: Payload,
-  block: DesignerBlock,
+  block: PageBlockRow,
   blockIndex: number,
+  options: RenderPageBlocksOptions,
 ): Promise<ReactNode | null> {
-  const defRef = block.componentDefinition;
-  const defId =
-    typeof defRef === "object" &&
-    defRef !== null &&
-    "id" in defRef &&
-    typeof (defRef as { id: unknown }).id === "number"
-      ? (defRef as { id: number }).id
-      : typeof defRef === "number"
-        ? defRef
-        : undefined;
-  if (defId === undefined) {
+  const slug = typeof block.blockType === "string" ? block.blockType : "";
+  const entry: BlockCatalogEntry | null =
+    slug !== "" ? blockCatalogEntry(slug) : null;
+  if (!entry) {
+    payload.logger.error(
+      `render: skipped block #${blockIndex}: unknown block type "${slug}"`,
+    );
     return null;
   }
 
-  const def = await payload.findByID({
-    collection: "components",
-    id: defId,
-    depth: 0,
-  });
-  if (!def || def.composition === undefined || def.composition === null) {
+  const draft = options.draft === true;
+  const resolved = await designCompositionForBlock(payload, block, draft);
+  if (!resolved) {
+    payload.logger.error(
+      `render: skipped "${slug}" block #${blockIndex}: design not populated (unpublished or access-denied design?)`,
+    );
     return null;
   }
 
-  const parsed = PageCompositionSchema.safeParse(def.composition);
+  const parsed = PageCompositionSchema.safeParse(resolved.composition);
   if (!parsed.success) {
-    return null;
-  }
-  const resolved = resolveEditorFieldsContractForDefinition({
-    composition: def.composition,
-    editorFields: (def as { editorFields?: unknown }).editorFields,
-  });
-  if (!resolved.ok) {
+    payload.logger.error(
+      `render: skipped "${slug}" block #${blockIndex}: design ${resolved.designId} composition failed to parse`,
+    );
     return null;
   }
 
-  const rawValues = (block.editorFieldValues ?? {}) as Record<string, unknown>;
-  const imageResolved = await resolveImageEditorFieldValuesForRender(
+  const expanded = await expandDesignComposition(
     payload,
-    resolved.contract.editorFields,
-    rawValues,
+    parsed.data,
+    draft,
+    `"${slug}" block design ${resolved.designId}`,
   );
 
-  const merged = mergeEditorFieldValuesIntoComposition(
-    parsed.data,
-    imageResolved,
-  );
+  const injected = injectBlockValues(expanded, block, entry);
 
   return (
-    <Fragment key={`designer-${defId}-${blockIndex}`}>
-      {renderComposition(merged, defaultPrimitiveRegistry)}
+    <Fragment key={`block-${slug}-${resolved.designId}-${blockIndex}`}>
+      {renderComposition(injected, defaultPrimitiveRegistry)}
     </Fragment>
   );
 }
 
-export type RenderedDesignerBlocksBySlot = {
+export type RenderedPageBlocksBySlot = {
   /** React nodes grouped by layout slot id (for `renderComposition` `slotContent`). */
   slotContent: Record<string, ReactNode>;
-  /** Blocks whose slot id does not match the template (or no matching slot); render outside the tree. */
+  /** Blocks with no matching template slot at all; render outside the tree. */
   orphanSections: ReactNode[];
 };
 
-/** Renders page `content` blocks, grouped for layout slot injection and orphan fallback. */
-export async function renderDesignerContentBlocksBySlot(
+function targetSlotId(
+  sid: string,
+  templateSlotIds: Set<string> | null,
+): string | null {
+  if (templateSlotIds === null || templateSlotIds.size === 0) {
+    return null;
+  }
+  if (templateSlotIds.has(sid)) {
+    return sid;
+  }
+  // Unknown slot ids render into main when the template has one.
+  return templateSlotIds.has("main") ? "main" : null;
+}
+
+type SlotBuckets = {
+  slotLists: Record<string, ReactNode[]>;
+  orphanSections: ReactNode[];
+};
+
+function appendToSlotBuckets(
+  buckets: SlotBuckets,
+  section: ReactNode,
+  sid: string,
+  templateSlotIds: Set<string> | null,
+): void {
+  const target = targetSlotId(sid, templateSlotIds);
+  if (target === null) {
+    buckets.orphanSections.push(section);
+    return;
+  }
+  const list = buckets.slotLists[target] ?? [];
+  list.push(section);
+  buckets.slotLists[target] = list;
+}
+
+/** Renders page `contentSlots` blocks, grouped for layout slot injection. */
+export async function renderPageBlocksBySlot(
   payload: Payload,
   contentSlots: unknown,
-  templateComposition: import("@repo/contracts-zod").PageComposition | null,
-): Promise<RenderedDesignerBlocksBySlot> {
-  const blocks = flattenPageContentSlotsToBlocks(contentSlots);
-  if (blocks.length === 0) {
-    return { slotContent: {}, orphanSections: [] };
-  }
-
+  templateComposition: PageComposition | null,
+  options: RenderPageBlocksOptions = {},
+): Promise<RenderedPageBlocksBySlot> {
+  const rows = contentSlotRows(contentSlots);
   const templateSlotIds =
     templateComposition === null
       ? null
       : collectLayoutSlotIds(templateComposition);
 
-  const slotLists: Record<string, ReactNode[]> = {};
-  const orphanSections: ReactNode[] = [];
+  const buckets: SlotBuckets = { slotLists: {}, orphanSections: [] };
 
   let blockIndex = 0;
-  for (const block of blocks) {
-    const section = await renderOneBlock(payload, block, blockIndex);
-    blockIndex += 1;
-    if (section === null) {
-      continue;
+  for (const row of rows) {
+    const sid = rowSlotId(row);
+    const blocks = Array.isArray(row.blocks) ? row.blocks : [];
+    for (const block of blocks) {
+      if (!block || typeof block !== "object") {
+        continue;
+      }
+      const section = await renderOneBlock(payload, block, blockIndex, options);
+      blockIndex += 1;
+      if (section !== null) {
+        appendToSlotBuckets(buckets, section, sid, templateSlotIds);
+      }
     }
-    appendRenderedBlockToSlotBuckets(
-      section,
-      templateSlotIds,
-      block,
-      slotLists,
-      orphanSections,
-    );
   }
 
   const slotContent: Record<string, ReactNode> = {};
-  for (const [k, list] of Object.entries(slotLists)) {
+  for (const [k, list] of Object.entries(buckets.slotLists)) {
     slotContent[k] = list;
   }
 
-  return { slotContent, orphanSections };
+  return { slotContent, orphanSections: buckets.orphanSections };
 }

@@ -4,9 +4,6 @@ import {
 } from "@repo/contracts-zod";
 import {
   compositionUsesLayoutSlots,
-  editorFieldSpecsFromComposition,
-  expandLibraryComponentNodes,
-  mergeEditorFieldValuesIntoComposition,
   normalizeTemplateShell,
 } from "@repo/domains-composition";
 import {
@@ -16,11 +13,13 @@ import {
 import type { Metadata } from "next";
 import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
-import { getPayload } from "payload";
+import { getPayload, type Payload } from "payload";
 import type { ReactNode } from "react";
 
-import { renderDesignerContentBlocksBySlot } from "@/lib/render-designer-content";
-import { resolveImageEditorFieldValuesForRender } from "@/lib/resolve-editor-field-image-values";
+import {
+  expandDesignComposition,
+  renderPageBlocksBySlot,
+} from "@/lib/render-designer-content";
 import config from "@/payload.config";
 
 export const dynamic = "force-dynamic";
@@ -42,109 +41,80 @@ function contentSlotsHasRenderableBlocks(contentSlots: unknown): boolean {
   );
 }
 
-async function slotContentAndDesignerSections(
-  payload: Awaited<ReturnType<typeof getPayload>>,
-  contentSlots: unknown,
-  templateTree: PageComposition | null,
-  hasBlocks: boolean,
-): Promise<{
-  slotContent: Record<string, ReactNode> | undefined;
-  designerSections: ReactNode[];
-}> {
-  if (!hasBlocks) {
-    return { slotContent: undefined, designerSections: [] };
+function relationId(rel: unknown): number | null {
+  if (typeof rel === "number") {
+    return rel;
   }
-  const r = await renderDesignerContentBlocksBySlot(
-    payload,
-    contentSlots,
-    templateTree,
-  );
-  const uses =
-    templateTree !== null && compositionUsesLayoutSlots(templateTree);
-  if (uses) {
-    return { slotContent: r.slotContent, designerSections: r.orphanSections };
+  if (
+    typeof rel === "object" &&
+    rel !== null &&
+    "id" in rel &&
+    typeof (rel as { id: unknown }).id === "number"
+  ) {
+    return (rel as { id: number }).id;
   }
-  return {
-    slotContent: undefined,
-    designerSections: [...Object.values(r.slotContent), ...r.orphanSections],
-  };
+  return null;
 }
 
-async function renderCompositionWithLibraryAndEditorFields(
-  payload: Awaited<ReturnType<typeof getPayload>>,
-  page: {
-    templateEditorFields?: Record<string, unknown>;
-  },
-  isEnabled: boolean,
-  templateTree: PageComposition,
-  slotContent: Record<string, ReactNode> | undefined,
-): Promise<ReactNode> {
-  let tree = await expandLibraryComponentNodes(
-    templateTree,
-    async (key) => {
-      const found = await payload.find({
-        collection: "components",
-        where: { key: { equals: key } },
+/**
+ * Template composition for the page. Outside preview the populated
+ * relationship is used as-is (access control already scoped it to published);
+ * in preview the template is re-fetched with `draft: true` (audit M3/M8).
+ */
+async function templateTreeForPage(
+  payload: Payload,
+  pageComposition: unknown,
+  isPreview: boolean,
+  slug: string,
+): Promise<PageComposition | null> {
+  let raw: unknown;
+
+  if (isPreview) {
+    const id = relationId(pageComposition);
+    if (id === null) {
+      return null;
+    }
+    try {
+      const doc = await payload.findByID({
+        collection: "page-compositions",
+        id,
         depth: 0,
-        draft: isEnabled,
-        limit: 1,
+        draft: true,
         overrideAccess: true,
       });
-      const doc = found.docs[0] as { composition?: unknown } | undefined;
-      if (!doc?.composition) {
-        return null;
-      }
-      const parsed = PageCompositionSchema.safeParse(doc.composition);
-      return parsed.success ? parsed.data : null;
-    },
-    {
-      resolveEditorFieldImages: async (embedded, editorFieldValues) =>
-        resolveImageEditorFieldValuesForRender(
-          payload,
-          editorFieldSpecsFromComposition(embedded),
-          editorFieldValues,
-        ),
-    },
-  );
-  const tmpl = page.templateEditorFields;
-  if (
-    tmpl &&
-    typeof tmpl === "object" &&
-    !Array.isArray(tmpl) &&
-    Object.keys(tmpl).length > 0
-  ) {
-    const fieldSpecs = editorFieldSpecsFromComposition(tree);
-    const resolved = await resolveImageEditorFieldValuesForRender(
-      payload,
-      fieldSpecs,
-      tmpl,
-    );
-    tree = mergeEditorFieldValuesIntoComposition(tree, resolved);
-  }
-  return renderComposition(
-    tree,
-    defaultPrimitiveRegistry,
-    slotContent !== undefined ? { slotContent } : undefined,
-  );
-}
-
-function templateTreeFromPageComposition(
-  hasPageComposition: boolean,
-  compositionDoc: { composition?: unknown } | null,
-  hasBlocks: boolean,
-): PageComposition | null {
-  let templateTree: PageComposition | null = null;
-  if (hasPageComposition && compositionDoc) {
-    const parsed = PageCompositionSchema.safeParse(compositionDoc.composition);
-    if (parsed.success) {
-      templateTree = normalizeTemplateShell(parsed.data);
-    } else if (!hasBlocks) {
-      notFound();
+      raw = doc?.composition;
+    } catch {
+      payload.logger.error(
+        `render: page "${slug}": failed to load draft template ${id}`,
+      );
+      return null;
     }
-  } else if (!hasBlocks) {
-    notFound();
+  } else if (
+    typeof pageComposition === "object" &&
+    pageComposition !== null &&
+    "composition" in pageComposition
+  ) {
+    raw = (pageComposition as { composition?: unknown }).composition;
+  } else {
+    if (pageComposition !== null && pageComposition !== undefined) {
+      payload.logger.error(
+        `render: page "${slug}": template relationship not populated (unpublished template?)`,
+      );
+    }
+    return null;
   }
-  return templateTree;
+
+  if (raw === undefined || raw === null) {
+    return null;
+  }
+  const parsed = PageCompositionSchema.safeParse(raw);
+  if (!parsed.success) {
+    payload.logger.error(
+      `render: page "${slug}": template composition failed to parse`,
+    );
+    return null;
+  }
+  return normalizeTemplateShell(parsed.data);
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -175,10 +145,13 @@ export default async function SitePage({ params }: Props) {
   const payloadConfig = await config;
   const payload = await getPayload({ config: payloadConfig });
 
+  // depth 2 populates each block's `design` (components doc) and `image`
+  // uploads; anonymous requests run through access control so only published
+  // relations arrive populated.
   const found = await payload.find({
     collection: "pages",
     where: { slug: { equals: slug } },
-    depth: 1,
+    depth: 2,
     limit: 1,
     draft: isEnabled,
     overrideAccess: isEnabled,
@@ -192,49 +165,51 @@ export default async function SitePage({ params }: Props) {
   const contentSlots = (page as { contentSlots?: unknown }).contentSlots;
   const hasBlocks = contentSlotsHasRenderableBlocks(contentSlots);
 
-  const rel = page.pageComposition;
-  const compositionDoc =
-    typeof rel === "object" && rel !== null && "composition" in rel
-      ? rel
-      : null;
-  const hasPageComposition =
-    compositionDoc !== null && compositionDoc.composition !== undefined;
+  const templateTree = await templateTreeForPage(
+    payload,
+    page.pageComposition,
+    isEnabled,
+    slug,
+  );
 
-  if (!hasBlocks && !hasPageComposition) {
+  if (!hasBlocks && templateTree === null) {
     notFound();
   }
 
-  const templateTree = templateTreeFromPageComposition(
-    hasPageComposition,
-    compositionDoc,
-    hasBlocks,
-  );
-
-  const { slotContent, designerSections } =
-    await slotContentAndDesignerSections(
-      payload,
-      contentSlots,
-      templateTree,
-      hasBlocks,
-    );
+  const { slotContent, orphanSections } = hasBlocks
+    ? await renderPageBlocksBySlot(payload, contentSlots, templateTree, {
+        draft: isEnabled,
+      })
+    : { slotContent: {}, orphanSections: [] as ReactNode[] };
 
   let compositionTree: ReactNode = null;
-  if (hasPageComposition && compositionDoc && templateTree) {
-    compositionTree = await renderCompositionWithLibraryAndEditorFields(
+  let sectionsOutsideTree: ReactNode[] = orphanSections;
+
+  if (templateTree !== null) {
+    const expanded = await expandDesignComposition(
       payload,
-      page as { templateEditorFields?: Record<string, unknown> },
-      isEnabled,
       templateTree,
-      slotContent,
+      isEnabled,
+      `page "${slug}" template`,
     );
+    const usesSlots = compositionUsesLayoutSlots(expanded);
+    if (!usesSlots) {
+      // No slot nodes: render every block after the template output.
+      sectionsOutsideTree = [...Object.values(slotContent), ...orphanSections];
+    }
+    compositionTree = renderComposition(
+      expanded,
+      defaultPrimitiveRegistry,
+      usesSlots ? { slotContent } : undefined,
+    );
+  } else {
+    sectionsOutsideTree = [...Object.values(slotContent), ...orphanSections];
   }
 
-  return hasBlocks ? (
+  return (
     <>
-      {designerSections}
       {compositionTree}
+      {sectionsOutsideTree}
     </>
-  ) : (
-    compositionTree
   );
 }

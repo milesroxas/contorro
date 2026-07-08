@@ -38,14 +38,6 @@ export type { CompositionActor } from "./composition-actor.js";
 export { defaultEmptyPageComposition } from "./default-empty-page-composition.js";
 export { defaultPageTemplateComposition } from "./default-page-template-composition.js";
 export {
-  mergeEditorFieldValuesIntoComposition,
-  validateEditorFieldValues,
-} from "./editor-field-values.js";
-export {
-  type EditorFieldsContractBreakingReason,
-  editorFieldsContractBreakingChanges,
-} from "./editor-fields-contract-diff.js";
-export {
   editorFieldSpecsFromComposition,
   editorFieldsContractFromComposition,
   resolveEditorFieldsContractForDefinition,

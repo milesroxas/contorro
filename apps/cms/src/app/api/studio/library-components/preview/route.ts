@@ -1,13 +1,9 @@
 import type { PageComposition } from "@repo/contracts-zod";
 import { PageCompositionSchema } from "@repo/contracts-zod";
-import {
-  editorFieldSpecsFromComposition,
-  expandLibraryComponentNodes,
-} from "@repo/domains-composition";
+import { expandLibraryComponentNodes } from "@repo/domains-composition";
 import type { Payload } from "payload";
 
 import { requireStudioDesigner } from "@/app/api/studio/_lib/studio-auth";
-import { resolveImageEditorFieldValuesForRender } from "@/lib/resolve-editor-field-image-values";
 
 async function loadComponentComposition(
   payload: Payload,
@@ -63,12 +59,11 @@ export async function GET(request: Request) {
     base,
     (nestedKey) => loadComponentComposition(payload, user, nestedKey),
     {
-      resolveEditorFieldImages: async (embedded, editorFieldValues) =>
-        resolveImageEditorFieldValuesForRender(
-          payload,
-          editorFieldSpecsFromComposition(embedded),
-          editorFieldValues,
-        ),
+      onSkip: (refId, componentKey, reason) => {
+        payload.logger.error(
+          `studio preview: skipped library ref "${refId}" (component "${componentKey}"): ${reason}`,
+        );
+      },
     },
   );
 

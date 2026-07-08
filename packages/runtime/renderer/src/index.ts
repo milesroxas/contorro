@@ -5,6 +5,10 @@ export {
   withBreakpointPrefix,
 } from "./composition-style-classes.js";
 export {
+  injectBlockValues,
+  plainTextFromLexical,
+} from "./inject-block-values.js";
+export {
   Box,
   Button,
   Collection,
@@ -13,6 +17,7 @@ export {
   Heading,
   Image,
   LibraryComponent,
+  LibraryComponentPlaceholder,
   PrimitiveEmptyState,
   type PrimitiveEmptyStateProps,
   type PrimitiveEmptyStateVariant,

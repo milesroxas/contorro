@@ -5,7 +5,10 @@ import { Button } from "./button.js";
 import { Collection } from "./collection.js";
 import { Heading } from "./heading.js";
 import { Image } from "./image.js";
-import { LibraryComponent } from "./library-component.js";
+import {
+  LibraryComponent,
+  LibraryComponentPlaceholder,
+} from "./library-component.js";
 import { PrimitiveEmptyState } from "./primitive-empty-state.js";
 import { Section } from "./section.js";
 import { Slot } from "./slot.js";
@@ -27,6 +30,7 @@ export {
   Heading,
   Image,
   LibraryComponent,
+  LibraryComponentPlaceholder,
   PrimitiveEmptyState,
   Section,
   Slot,
