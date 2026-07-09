@@ -38,7 +38,10 @@ import type { PageTemplateListFilter } from "../../features/page-templates/page-
 import { PageTemplateListFilterSelect } from "../../features/page-templates/page-template-list-filter.js";
 import { LibraryComponentCatalog } from "../../features/primitive-catalog/LibraryComponentCatalog.js";
 import { PrimitiveCatalog } from "../../features/primitive-catalog/PrimitiveCatalog.js";
-import { PropertyInspector } from "../../features/property-inspector/PropertyInspector.js";
+import {
+  type BlockTypeSettings,
+  PropertyInspector,
+} from "../../features/property-inspector/PropertyInspector.js";
 import { cn } from "../../lib/cn.js";
 import type { StudioInspectorTab } from "../../lib/inspector-tab-shortcuts.js";
 import type { LeftSidebarPanelId } from "../../lib/left-sidebar-panels.js";
@@ -85,6 +88,7 @@ function stagedInsertionDisplayLabel(
 export function MobileStudioLayout({
   activeBreakpoint,
   activeInspectorTab,
+  blockTypeSettings,
   canvasFontSizePx,
   canvasViewportWidthPx,
   canvasZoomPercent,
@@ -131,6 +135,7 @@ export function MobileStudioLayout({
 }: {
   activeBreakpoint: Breakpoint | null;
   activeInspectorTab: StudioInspectorTab;
+  blockTypeSettings: BlockTypeSettings | null;
   canvasFontSizePx: number;
   canvasViewportWidthPx: number;
   canvasZoomPercent: number;
@@ -364,6 +369,7 @@ export function MobileStudioLayout({
               <MobileInspectSheet
                 activeBreakpoint={activeBreakpoint}
                 activeInspectorTab={activeInspectorTab}
+                blockTypeSettings={blockTypeSettings}
                 clearNodeStyles={clearNodeStyles}
                 componentsHref={componentsHref}
                 composition={composition}
@@ -644,6 +650,7 @@ function MobileLayersSheet({
 function MobileInspectSheet({
   activeBreakpoint,
   activeInspectorTab,
+  blockTypeSettings,
   clearNodeStyles,
   componentsHref,
   composition,
@@ -659,6 +666,7 @@ function MobileInspectSheet({
 }: {
   activeBreakpoint: Breakpoint | null;
   activeInspectorTab: StudioInspectorTab;
+  blockTypeSettings: BlockTypeSettings | null;
   clearNodeStyles: () => void;
   componentsHref: string;
   composition: PageComposition;
@@ -679,6 +687,7 @@ function MobileInspectSheet({
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-2 pb-4">
       <PropertyInspector
         activeBreakpoint={activeBreakpoint}
+        blockTypeSettings={blockTypeSettings}
         clearNodeStyles={clearNodeStyles}
         componentsHref={componentsHref}
         composition={composition}

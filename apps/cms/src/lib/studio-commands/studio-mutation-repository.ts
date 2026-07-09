@@ -4,6 +4,12 @@ export type StudioCompositionRevision = {
   updatedAt: string;
 };
 
+/** Metadata fields the studio may PATCH without resubmitting the tree. */
+export type UpdateCompositionMetaPatch = {
+  name?: string;
+  blockType?: string | null;
+};
+
 export interface StudioMutationRepository {
   loadRevision(
     compositionId: string,
@@ -27,15 +33,19 @@ export interface StudioMutationRepository {
     | "COMPOSITION_NOT_FOUND"
   >;
 
-  /** Updates the title/displayName only — never resubmits the composition. */
-  renameTemplate(
+  /**
+   * Updates title/displayName and/or blockType — never resubmits the
+   * composition. `blockType` applies to components only (`null` clears it).
+   */
+  updateMeta(
     compositionId: string,
-    name: string,
+    patch: UpdateCompositionMetaPatch,
     intent: "draft" | "publish",
   ): AsyncResult<
     {
       name: string;
       updatedAt: string;
+      blockType?: string | null;
       _status?: "draft" | "published" | null;
     },
     "PERSISTENCE_ERROR" | "FORBIDDEN"

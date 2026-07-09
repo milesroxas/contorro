@@ -1,6 +1,7 @@
 import { compileTokenSet, type TokenMeta } from "@repo/config-tailwind";
 import type { PageComposition } from "@repo/contracts-zod";
 import {
+  blockCatalogEntry,
   PageCompositionSchema,
   STUDIO_CANVAS_MODE_ATTRIBUTE,
 } from "@repo/contracts-zod";
@@ -22,8 +23,8 @@ import { requireStudioDesigner } from "@/app/api/studio/_lib/studio-auth";
 import { loadDesignSystemRuntimeForPreview } from "@/lib/load-published-token-set";
 import {
   createCompositionEntryCommand,
-  renameTemplateCommand,
   saveCompositionCommand,
+  updateCompositionMetaCommand,
 } from "@/lib/studio-commands";
 
 async function designTokensForStudio(payload: Payload): Promise<{
@@ -94,6 +95,7 @@ async function getNewSessionComposition(
           : defaultPageTemplateComposition(),
       studioResource:
         newSession.kind === "component" ? "component" : "pageTemplate",
+      blockType: null,
       updatedAt: "",
       _status: null,
       tokenMetadata: designTokens.tokenMetadata,
@@ -122,6 +124,7 @@ async function getComponentComposition(
     composition?: unknown;
     updatedAt?: unknown;
     displayName?: unknown;
+    blockType?: unknown;
     _status?: unknown;
   };
   try {
@@ -166,6 +169,7 @@ async function getComponentComposition(
       name: String(doc.displayName ?? "Untitled component"),
       composition,
       studioResource: "component",
+      blockType: typeof doc.blockType === "string" ? doc.blockType : null,
       updatedAt: responseUpdatedAt(doc.updatedAt),
       _status: publicationStatusFromDoc(doc),
       tokenMetadata: designTokens.tokenMetadata,
@@ -229,6 +233,7 @@ async function getPageTemplateComposition(
       name: String(doc.title ?? "Untitled page template"),
       composition: normalizeTemplateShell(parsed.data),
       studioResource: "pageTemplate",
+      blockType: null,
       updatedAt: responseUpdatedAt(doc.updatedAt),
       _status: publicationStatusFromDoc(doc),
       tokenMetadata: designTokens.tokenMetadata,
@@ -476,18 +481,83 @@ export async function POST(
   return responseForSaveExisting(saved);
 }
 
-function responseForRenameSuccess(value: {
+function responseForMetaSuccess(value: {
   name: string;
   updatedAt: string;
+  blockType?: string | null;
   _status?: "draft" | "published" | null;
 }): Response {
   return Response.json({
     data: {
       name: value.name,
       updatedAt: responseUpdatedAt(value.updatedAt),
+      ...(value.blockType !== undefined ? { blockType: value.blockType } : {}),
       ...(value._status != null ? { _status: value._status } : {}),
     },
   });
+}
+
+type ParsedMetaPatch = {
+  name?: string;
+  blockType?: string | null;
+  intent: "draft" | "publish";
+};
+
+/** `blockType` must be a `BLOCK_CATALOG` slug or `null` (components only). */
+function parseMetaPatchBlockType(
+  body: { blockType?: unknown },
+  compositionId: string,
+): { ok: true; blockType?: string | null } | { ok: false; error: string } {
+  if (!("blockType" in body)) {
+    return { ok: true };
+  }
+  if (!isStudioComponentRowId(compositionId)) {
+    return { ok: false, error: "blockType applies to components only" };
+  }
+  if (body.blockType === null) {
+    return { ok: true, blockType: null };
+  }
+  if (typeof body.blockType !== "string") {
+    return { ok: false, error: "blockType must be a catalog slug or null" };
+  }
+  if (blockCatalogEntry(body.blockType) === null) {
+    return { ok: false, error: `Unknown block type "${body.blockType}"` };
+  }
+  return { ok: true, blockType: body.blockType };
+}
+
+/** PATCH body: `{ name?, blockType?, intent }` — at least one of name/blockType. */
+function parseMetaPatchBody(
+  raw: unknown,
+  compositionId: string,
+): ParsedMetaPatch | { error: string } {
+  const body =
+    raw && typeof raw === "object" && !Array.isArray(raw)
+      ? (raw as { name?: unknown; blockType?: unknown; intent?: unknown })
+      : null;
+  if (!body) {
+    return { error: "Request body must be an object" };
+  }
+  const name = typeof body.name === "string" ? body.name.trim() : undefined;
+  if (name === "") {
+    return { error: "Name must not be empty" };
+  }
+
+  const blockTypeParsed = parseMetaPatchBlockType(body, compositionId);
+  if (!blockTypeParsed.ok) {
+    return { error: blockTypeParsed.error };
+  }
+  const blockType = blockTypeParsed.blockType;
+
+  if (name === undefined && blockType === undefined) {
+    return { error: "Provide name and/or blockType" };
+  }
+
+  return {
+    ...(name !== undefined ? { name } : {}),
+    ...(blockType !== undefined ? { blockType } : {}),
+    intent: body.intent === "publish" ? "publish" : "draft",
+  };
 }
 
 export async function PATCH(
@@ -512,34 +582,29 @@ export async function PATCH(
     );
   }
 
-  const body =
-    raw && typeof raw === "object" && !Array.isArray(raw)
-      ? (raw as { name?: unknown; intent?: unknown })
-      : null;
-  const nextName = typeof body?.name === "string" ? body.name.trim() : "";
-  if (!nextName) {
+  const parsed = parseMetaPatchBody(raw, id);
+  if ("error" in parsed) {
     return Response.json(
-      { error: { code: "VALIDATION_ERROR" as const } },
+      { error: { code: "VALIDATION_ERROR" as const, message: parsed.error } },
       { status: 400 },
     );
   }
-  const intentRaw = body?.intent;
-  const intent = intentRaw === "publish" ? "publish" : "draft";
+  const { intent, ...patch } = parsed;
 
   const repo = payloadStudioMutationRepository(payload, user);
-  const renamed = await renameTemplateCommand(repo, {
+  const updated = await updateCompositionMetaCommand(repo, {
     compositionId: id,
-    name: nextName,
+    patch,
     intent,
   });
-  if (!renamed.ok) {
-    if (renamed.error === "COMPOSITION_NOT_FOUND") {
+  if (!updated.ok) {
+    if (updated.error === "COMPOSITION_NOT_FOUND") {
       return Response.json(
         { error: { code: "NOT_FOUND" as const } },
         { status: 404 },
       );
     }
-    if (renamed.error === "VALIDATION_ERROR") {
+    if (updated.error === "VALIDATION_ERROR") {
       return Response.json(
         { error: { code: "VALIDATION_ERROR" as const } },
         { status: 400 },
@@ -551,5 +616,5 @@ export async function PATCH(
     );
   }
 
-  return responseForRenameSuccess(renamed.value);
+  return responseForMetaSuccess(updated.value);
 }

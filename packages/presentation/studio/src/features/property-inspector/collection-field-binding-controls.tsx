@@ -148,7 +148,7 @@ export function CollectionFieldBindingSection({
       </div>
       {disabled ? (
         <p className="text-xs text-muted-foreground">
-          Clear &quot;Expose to CMS editors&quot; to bind collection data.
+          Clear the content field binding to bind collection data.
         </p>
       ) : null}
       {incompatibleBinding ? (

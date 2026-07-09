@@ -2,11 +2,12 @@ import type {
   PageComposition,
   StudioAuthoringClient,
   StudioAuthoringCompositionPayload,
+  StudioCompositionMetaResult,
   StudioDesignSystemSettingsDoc,
   StudioDesignTokenEntry,
   StudioDesignTokenSetDoc,
+  StudioPatchCompositionMetaBody,
   StudioPersistCompositionBody,
-  StudioRenameResult,
   StudioSaveResult,
 } from "@repo/contracts-zod";
 
@@ -79,12 +80,10 @@ export function createFetchStudioAuthoringClient(
       });
     },
 
-    async patchCompositionName(
+    async patchCompositionMeta(
       compositionId: string,
-      name: string,
-      options?: { intent?: "draft" | "publish" },
-    ): Promise<StudioRenameResult> {
-      const intent = options?.intent ?? "draft";
+      body: StudioPatchCompositionMetaBody,
+    ): Promise<StudioCompositionMetaResult> {
       const res = await fetch(
         joinBase(
           compositionBase,
@@ -94,13 +93,13 @@ export function createFetchStudioAuthoringClient(
           method: "PATCH",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, intent }),
+          body: JSON.stringify({ intent: body.intent ?? "draft", ...body }),
         },
       );
       if (!res.ok) {
-        throw new Error(`rename failed: ${res.status}`);
+        throw new Error(`update failed: ${res.status}`);
       }
-      const json = (await res.json()) as { data: StudioRenameResult };
+      const json = (await res.json()) as { data: StudioCompositionMetaResult };
       return json.data;
     },
 

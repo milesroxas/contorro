@@ -71,40 +71,15 @@ export function lexicalRichText(text: string): {
   };
 }
 
-/** Catalog-aligned editor field specs used in seed design bindings. */
+/** Catalog field bindings used in seed designs (names only — the catalog owns types/labels). */
 const heroBindings = {
-  heading: {
-    name: "heading",
-    type: "text" as const,
-    required: true,
-    label: "Heading",
-  },
-  body: {
-    name: "body",
-    type: "richText" as const,
-    required: false,
-    label: "Body",
-  },
-  image: {
-    name: "image",
-    type: "image" as const,
-    required: false,
-    label: "Image",
-  },
-  cta: {
-    name: "cta",
-    type: "button" as const,
-    required: false,
-    label: "CTA",
-  },
+  heading: { name: "heading" },
+  body: { name: "body" },
+  image: { name: "image" },
+  cta: { name: "cta" },
 } as const;
 
-const ctaButtonBinding = {
-  name: "button",
-  type: "button" as const,
-  required: true,
-  label: "Button",
-} as const;
+const ctaButtonBinding = { name: "button" } as const;
 
 /** Hero block design: binds heading / body / image / cta per the catalog. */
 export const seedHeroDesignComposition = {
@@ -300,12 +275,7 @@ export const seedFeatureDesignComposition = {
       contentBinding: {
         source: "editor" as const,
         key: "heading",
-        editorField: {
-          name: "heading",
-          type: "text" as const,
-          required: true,
-          label: "Heading",
-        },
+        editorField: { name: "heading" },
       },
     },
     "feature-body": {
@@ -321,12 +291,7 @@ export const seedFeatureDesignComposition = {
       contentBinding: {
         source: "editor" as const,
         key: "body",
-        editorField: {
-          name: "body",
-          type: "richText" as const,
-          required: false,
-          label: "Body",
-        },
+        editorField: { name: "body" },
       },
     },
   },
@@ -389,12 +354,7 @@ export const seedCtaDesignComposition = {
       contentBinding: {
         source: "editor" as const,
         key: "heading",
-        editorField: {
-          name: "heading",
-          type: "text" as const,
-          required: true,
-          label: "Heading",
-        },
+        editorField: { name: "heading" },
       },
     },
     "cta-body": {
@@ -411,12 +371,7 @@ export const seedCtaDesignComposition = {
       contentBinding: {
         source: "editor" as const,
         key: "body",
-        editorField: {
-          name: "body",
-          type: "richText" as const,
-          required: false,
-          label: "Body",
-        },
+        editorField: { name: "body" },
       },
     },
     "cta-actions": {
@@ -567,12 +522,7 @@ export const seedContentDesignComposition = {
       contentBinding: {
         source: "editor" as const,
         key: "body",
-        editorField: {
-          name: "body",
-          type: "richText" as const,
-          required: true,
-          label: "Body",
-        },
+        editorField: { name: "body" },
       },
     },
   },

@@ -30,6 +30,18 @@ export function publicationStatusFromDoc(doc: {
 
 type CompositionCollection = "components" | "page-compositions";
 
+function metaUpdateData(
+  titleField: "displayName" | "title",
+  patch: { name?: string; blockType?: string | null },
+  isDraft: boolean,
+): Record<string, unknown> {
+  return {
+    ...(patch.name !== undefined ? { [titleField]: patch.name } : {}),
+    ...(patch.blockType !== undefined ? { blockType: patch.blockType } : {}),
+    ...(!isDraft ? { _status: "published" as const } : {}),
+  };
+}
+
 function resolveTarget(compositionId: string): {
   collection: CompositionCollection;
   id: string;
@@ -125,7 +137,7 @@ export function payloadStudioMutationRepository(
       }
     },
 
-    async renameTemplate(compositionId, name, intent) {
+    async updateMeta(compositionId, patch, intent) {
       const { collection, id } = resolveTarget(compositionId);
       const isDraft = intent === "draft";
       const titleField = collection === "components" ? "displayName" : "title";
@@ -134,18 +146,19 @@ export function payloadStudioMutationRepository(
         const updated = await payload.update({
           collection,
           id,
-          data: {
-            [titleField]: name,
-            ...(!isDraft ? { _status: "published" as const } : {}),
-          },
+          data: metaUpdateData(titleField, patch, isDraft),
           draft: isDraft,
           user,
           overrideAccess: false,
         });
         const value = updated as unknown as Record<string, unknown>;
+        const blockType = value.blockType;
         return ok({
-          name: String(value[titleField] ?? name),
+          name: String(value[titleField] ?? patch.name ?? ""),
           updatedAt: normalizeUpdatedAt(updated.updatedAt),
+          ...(collection === "components"
+            ? { blockType: typeof blockType === "string" ? blockType : null }
+            : {}),
           _status: publicationStatusFromDoc(updated),
         });
       } catch {

@@ -13,10 +13,14 @@ import type { StyleSectionId } from "@repo/domains-composition";
 import { useState } from "react";
 
 import type { StudioInspectorTab } from "../../lib/inspector-tab-shortcuts.js";
+import type { BlockTypeSettings } from "./block-type-picker.js";
 import { PropertyInspectorActive } from "./property-inspector-active.js";
+
+export type { BlockTypeSettings } from "./block-type-picker.js";
 
 export function PropertyInspector({
   activeBreakpoint,
+  blockTypeSettings = null,
   clearNodeStyles,
   componentsHref = "",
   composition,
@@ -32,6 +36,8 @@ export function PropertyInspector({
   tokenMetadata,
 }: {
   activeBreakpoint: Breakpoint | null;
+  /** Component compositions only; `null` hides block type + binding controls. */
+  blockTypeSettings?: BlockTypeSettings | null;
   clearNodeStyles: () => void;
   componentsHref?: string;
   composition: PageComposition | null;
@@ -64,6 +70,7 @@ export function PropertyInspector({
   return (
     <PropertyInspectorActive
       activeBreakpoint={activeBreakpoint}
+      blockTypeSettings={blockTypeSettings}
       clearNodeStyles={clearNodeStyles}
       componentsHref={componentsHref}
       composition={composition}

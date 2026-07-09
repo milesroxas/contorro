@@ -60,16 +60,7 @@ function textContentFallbackWithoutCollection(node: CompositionNode): string {
     typeof node.propValues?.content === "string"
       ? node.propValues.content
       : undefined;
-  let fallback = "";
-  if (cb?.source === "editor" && cb.editorField) {
-    fallback =
-      typeof cb.editorField.defaultValue === "string"
-        ? cb.editorField.defaultValue
-        : `[${cb.key}]`;
-  } else if (cb) {
-    fallback = `[${cb.key}]`;
-  }
-  return fromProps ?? fallback;
+  return fromProps ?? (cb ? `[${cb.key}]` : "");
 }
 
 /**

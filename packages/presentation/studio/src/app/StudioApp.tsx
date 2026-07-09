@@ -21,6 +21,7 @@ import type {
   StyleProperty,
   StylePropertyEntry,
 } from "@repo/contracts-zod";
+import { isStudioNewCompositionSessionId } from "@repo/domains-composition";
 import { useSearchParams } from "next/navigation";
 import {
   type CSSProperties,
@@ -39,13 +40,17 @@ import { Card, CardContent } from "../components/ui/card.js";
 import { Separator } from "../components/ui/separator.js";
 import { StudioCanvas } from "../features/canvas/StudioCanvas.js";
 import { ComponentEditReturnBar } from "../features/component-edit/ComponentEditReturnBar.js";
+import { CreateComponentNameDialog } from "../features/component-edit/CreateComponentNameDialog.js";
 import type { InsertDropData } from "../features/dnd/InsertionDropZone.js";
 import { DraftSaveBar } from "../features/draft-save/DraftSaveBar.js";
 import {
   type PageTemplateListFilter,
   PageTemplateListFilterSelect,
 } from "../features/page-templates/page-template-list-filter.js";
-import { PropertyInspector } from "../features/property-inspector/PropertyInspector.js";
+import {
+  type BlockTypeSettings,
+  PropertyInspector,
+} from "../features/property-inspector/PropertyInspector.js";
 import { KeyboardShortcutsDrawer } from "../features/shortcuts/KeyboardShortcutsDrawer.js";
 import { StudioUnsavedChangesGuard } from "../features/unsaved-changes/StudioUnsavedChangesGuard.js";
 import { cn } from "../lib/cn.js";
@@ -492,6 +497,9 @@ export function StudioApp({
   const setCanvasColorMode = useStudioStore((s) => s.setCanvasColorMode);
   const storeResetNodePropKey = useStudioStore((s) => s.resetNodePropKey);
   const storeClearNodeStyles = useStudioStore((s) => s.clearNodeStyles);
+  const blockType = useStudioStore((s) => s.blockType);
+  const setBlockType = useStudioStore((s) => s.setBlockType);
+  const storeCompositionId = useStudioStore((s) => s.compositionId);
   const setNodeEditorFieldBinding = useStudioStore(
     (s) => s.setNodeEditorFieldBinding,
   );
@@ -512,15 +520,35 @@ export function StudioApp({
     (s) => s.createComponentFromNode,
   );
 
-  const onCreateComponent = useCallback(
-    (nodeId: string) => {
-      const title = window.prompt("Component name", "New component")?.trim();
-      if (!title) {
-        return;
-      }
-      void createComponentFromNode(nodeId, title);
-    },
-    [createComponentFromNode],
+  const [createComponentNodeId, setCreateComponentNodeId] = useState<
+    string | null
+  >(null);
+  const onCreateComponent = useCallback((nodeId: string) => {
+    setCreateComponentNodeId(nodeId);
+  }, []);
+
+  const blockTypeSettings = useMemo<BlockTypeSettings | null>(
+    () =>
+      studioResource === "component"
+        ? {
+            value: blockType,
+            disabled:
+              isStudioNewCompositionSessionId(storeCompositionId) ||
+              saving ||
+              renaming,
+            onChange: (next: string | null) => {
+              void setBlockType(next);
+            },
+          }
+        : null,
+    [
+      blockType,
+      renaming,
+      saving,
+      setBlockType,
+      storeCompositionId,
+      studioResource,
+    ],
   );
 
   const searchParams = useSearchParams();
@@ -891,10 +919,19 @@ export function StudioApp({
             saving={saving}
             trySaveDraft={trySaveDraft}
           />
+          <CreateComponentNameDialog
+            nodeId={createComponentNodeId}
+            onCancel={() => setCreateComponentNodeId(null)}
+            onSubmit={(nodeId, name) => {
+              setCreateComponentNodeId(null);
+              void createComponentFromNode(nodeId, name);
+            }}
+          />
           {isMobile ? (
             <MobileStudioLayout
               activeBreakpoint={activeBreakpoint}
               activeInspectorTab={activeInspectorTab}
+              blockTypeSettings={blockTypeSettings}
               canRedo={canRedo}
               canUndo={canUndo}
               canvasFontSizePx={canvasFontSizePx}
@@ -1074,6 +1111,7 @@ export function StudioApp({
             >
               <PropertyInspector
                 activeBreakpoint={activeBreakpoint}
+                blockTypeSettings={blockTypeSettings}
                 clearNodeStyles={() => {
                   if (selectedNodeId) {
                     storeClearNodeStyles(selectedNodeId);

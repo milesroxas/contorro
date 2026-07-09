@@ -1,18 +1,9 @@
 "use client";
 
-import {
-  type CompositionNode,
-  EDITOR_FIELD_TYPES,
-  type EditorFieldSpec,
-  EditorFieldSpecSchema,
-  type PageComposition,
-} from "@repo/contracts-zod";
-import { editorFieldSpecForPrimitiveButton } from "@repo/domains-composition";
+import type { CompositionNode, PageComposition } from "@repo/contracts-zod";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "../../components/ui/button.js";
-import { Checkbox } from "../../components/ui/checkbox.js";
 import { Input } from "../../components/ui/input.js";
-import { Label } from "../../components/ui/label.js";
 import { ScrollArea } from "../../components/ui/scroll-area.js";
 import {
   Select,
@@ -44,7 +35,6 @@ import { CollectionFieldBindingSection } from "./collection-field-binding-contro
 import {
   IMAGE_PRIMITIVE_MEDIA_KEYS,
   ImageSourcePayloadInspectorFields,
-  parseMediaIdFromPropValues,
 } from "./image-source-payload-inspector.js";
 import { PayloadMediaPickerFields } from "./payload-media-picker-fields.js";
 import {
@@ -60,81 +50,40 @@ async function fetchCollectionEntries(
   return docs.filter((doc) => doc.slug.length > 0);
 }
 
+function isEditorFieldBound(node: CompositionNode): boolean {
+  return node.contentBinding?.source === "editor";
+}
+
 export function TextPrimitiveInspector({
   composition,
   node,
   content,
-  fieldBound,
-  exposeToEditors,
   onTextChange,
   resetNodePropKey,
   setNodeCollectionFieldBinding,
-  setNodeEditorFieldBinding,
 }: {
   composition: PageComposition;
   node: CompositionNode;
   content: string;
-  fieldBound: EditorFieldSpec | undefined;
-  exposeToEditors: boolean;
   onTextChange: (content: string) => void;
   resetNodePropKey: (propKey: string) => void;
   setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
-  setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
   const baseId = useId();
-  const contentId = `${baseId}-content`;
-  const exposeId = `${baseId}-expose`;
-  const slotNameId = `${baseId}-slot-name`;
-  const slotLabelId = `${baseId}-slot-label`;
-  const slotDefaultId = `${baseId}-slot-default`;
-  const slotTypeId = `${baseId}-slot-type`;
-
-  const [nameDraft, setNameDraft] = useState(() => fieldBound?.name ?? "");
-  const [labelDraft, setLabelDraft] = useState(() => fieldBound?.label ?? "");
-  const [fieldError, setFieldError] = useState<string | null>(null);
-  const committedName = fieldBound?.name;
-  const committedLabel = fieldBound?.label;
-
-  useEffect(() => {
-    if (!exposeToEditors) {
-      setNameDraft("");
-      setLabelDraft("");
-      setFieldError(null);
-      return;
-    }
-    if (committedName === undefined || committedLabel === undefined) {
-      return;
-    }
-    setNameDraft(committedName);
-    setLabelDraft(committedLabel);
-    setFieldError(null);
-  }, [committedLabel, committedName, exposeToEditors]);
-
-  function applyEditorField(next: EditorFieldSpec) {
-    const parsed = EditorFieldSpecSchema.safeParse(next);
-    if (!parsed.success) {
-      const msg = parsed.error.issues[0]?.message ?? "Invalid editor field";
-      setFieldError(msg);
-      return;
-    }
-    setFieldError(null);
-    setNodeEditorFieldBinding(parsed.data);
-  }
-
   const collectionMapped = isNodeCollectionFieldMapped(node);
 
   return (
     <>
       <CollectionFieldBindingSection
         composition={composition}
-        editorFieldBindingActive={exposeToEditors}
+        editorFieldBindingActive={isEditorFieldBound(node)}
         node={node}
         setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
       />
       {collectionMapped ? null : (
         <SettingsFieldRow
           definitionKey={node.definitionKey}
-          htmlFor={contentId}
+          htmlFor={`${baseId}-content`}
           label="Content"
           onResetProp={resetNodePropKey}
           propKey="content"
@@ -142,186 +91,13 @@ export function TextPrimitiveInspector({
         >
           <Input
             data-testid="inspector-text-content"
-            id={contentId}
+            id={`${baseId}-content`}
             onChange={(e) => onTextChange(e.target.value)}
             type="text"
             value={content}
           />
         </SettingsFieldRow>
       )}
-      {collectionMapped ? null : (
-        <div className="flex items-center gap-2">
-          <Checkbox
-            checked={exposeToEditors}
-            disabled={node.contentBinding?.source === "collection"}
-            id={exposeId}
-            onCheckedChange={(v) => {
-              if (v === true) {
-                applyEditorField({
-                  name: "content",
-                  type: "text",
-                  required: false,
-                  label: "Content",
-                  defaultValue: content,
-                });
-              } else {
-                setFieldError(null);
-                setNodeEditorFieldBinding(null);
-              }
-            }}
-          />
-          <Label className="text-sm font-normal" htmlFor={exposeId}>
-            Expose to CMS editors
-          </Label>
-        </div>
-      )}
-      {collectionMapped ? null : exposeToEditors && fieldBound ? (
-        <div className="space-y-4 rounded-md border border-border/60 p-4">
-          <div className="space-y-3">
-            <Label
-              className="text-sm text-muted-foreground"
-              htmlFor={slotNameId}
-            >
-              Field name (kebab-case)
-            </Label>
-            <Input
-              aria-invalid={Boolean(fieldError)}
-              className="h-8"
-              data-testid="inspector-slot-name"
-              id={slotNameId}
-              onBlur={() => {
-                if (!fieldBound) {
-                  return;
-                }
-                const trimmed = nameDraft.trim();
-                applyEditorField({
-                  ...fieldBound,
-                  name: trimmed,
-                });
-              }}
-              onChange={(e) => {
-                setNameDraft(e.target.value);
-                setFieldError(null);
-              }}
-              placeholder="hero-title"
-              spellCheck={false}
-              type="text"
-              value={nameDraft}
-            />
-          </div>
-          <div className="space-y-3">
-            <Label
-              className="text-sm text-muted-foreground"
-              htmlFor={slotLabelId}
-            >
-              Label
-            </Label>
-            <Input
-              className="h-8"
-              id={slotLabelId}
-              onBlur={() => {
-                if (!fieldBound) {
-                  return;
-                }
-                const label = labelDraft.trim() || "Content";
-                applyEditorField({
-                  ...fieldBound,
-                  label,
-                });
-                setLabelDraft(label);
-              }}
-              onChange={(e) => {
-                setLabelDraft(e.target.value);
-                setFieldError(null);
-              }}
-              type="text"
-              value={labelDraft}
-            />
-          </div>
-          <div className="space-y-3">
-            <Label
-              className="text-sm text-muted-foreground"
-              htmlFor={slotTypeId}
-            >
-              Editor field type
-            </Label>
-            <Select
-              onValueChange={(value) => {
-                const type = value as EditorFieldSpec["type"];
-                if (!fieldBound) {
-                  return;
-                }
-                applyEditorField({
-                  ...fieldBound,
-                  type,
-                });
-              }}
-              value={fieldBound.type}
-            >
-              <SelectTrigger data-testid="inspector-slot-type" id={slotTypeId}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {EDITOR_FIELD_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <Checkbox
-              checked={fieldBound.required}
-              id={`${baseId}-req`}
-              onCheckedChange={(v) => {
-                if (!fieldBound) {
-                  return;
-                }
-                applyEditorField({
-                  ...fieldBound,
-                  required: v === true,
-                });
-              }}
-            />
-            <Label className="text-sm font-normal" htmlFor={`${baseId}-req`}>
-              Required
-            </Label>
-          </div>
-          <div className="space-y-3">
-            <Label
-              className="text-sm text-muted-foreground"
-              htmlFor={slotDefaultId}
-            >
-              Default value
-            </Label>
-            <Input
-              className="h-8"
-              id={slotDefaultId}
-              onChange={(e) => {
-                if (!fieldBound) {
-                  return;
-                }
-                applyEditorField({
-                  ...fieldBound,
-                  defaultValue: e.target.value,
-                });
-              }}
-              type="text"
-              value={
-                typeof fieldBound.defaultValue === "string"
-                  ? fieldBound.defaultValue
-                  : ""
-              }
-            />
-          </div>
-          {fieldError ? (
-            <p className="text-sm text-destructive" role="alert">
-              {fieldError}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
     </>
   );
 }
@@ -330,20 +106,14 @@ export function HeadingPrimitiveInspector({
   composition,
   node,
   patchNodeProps,
-  fieldBound,
-  exposeToEditors,
   resetNodePropKey,
   setNodeCollectionFieldBinding,
-  setNodeEditorFieldBinding,
 }: {
   composition: PageComposition;
   node: CompositionNode;
   patchNodeProps: (patch: Record<string, unknown>) => void;
-  fieldBound: EditorFieldSpec | undefined;
-  exposeToEditors: boolean;
   resetNodePropKey: (propKey: string) => void;
   setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
-  setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
   const baseId = useId();
   const content =
@@ -353,45 +123,13 @@ export function HeadingPrimitiveInspector({
     ["h1", "h2", "h3", "h4", "h5", "h6"].includes(node.propValues.level)
       ? node.propValues.level
       : "h2";
-  const [nameDraft, setNameDraft] = useState(() => fieldBound?.name ?? "");
-  const [labelDraft, setLabelDraft] = useState(() => fieldBound?.label ?? "");
-  const [fieldError, setFieldError] = useState<string | null>(null);
-  const committedName = fieldBound?.name;
-  const committedLabel = fieldBound?.label;
-
-  useEffect(() => {
-    if (!exposeToEditors) {
-      setNameDraft("");
-      setLabelDraft("");
-      setFieldError(null);
-      return;
-    }
-    if (committedName === undefined || committedLabel === undefined) {
-      return;
-    }
-    setNameDraft(committedName);
-    setLabelDraft(committedLabel);
-    setFieldError(null);
-  }, [committedLabel, committedName, exposeToEditors]);
-
-  function applyEditorField(next: EditorFieldSpec) {
-    const parsed = EditorFieldSpecSchema.safeParse(next);
-    if (!parsed.success) {
-      const msg = parsed.error.issues[0]?.message ?? "Invalid editor field";
-      setFieldError(msg);
-      return;
-    }
-    setFieldError(null);
-    setNodeEditorFieldBinding(parsed.data);
-  }
-
   const collectionMapped = isNodeCollectionFieldMapped(node);
 
   return (
     <div className="space-y-5">
       <CollectionFieldBindingSection
         composition={composition}
-        editorFieldBindingActive={exposeToEditors}
+        editorFieldBindingActive={isEditorFieldBound(node)}
         node={node}
         setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
       />
@@ -437,172 +175,6 @@ export function HeadingPrimitiveInspector({
           </SelectContent>
         </Select>
       </SettingsFieldRow>
-      {collectionMapped ? null : (
-        <div className="flex items-center gap-2">
-          <Checkbox
-            checked={exposeToEditors}
-            disabled={node.contentBinding?.source === "collection"}
-            id={`${baseId}-heading-expose`}
-            onCheckedChange={(v) => {
-              if (v === true) {
-                applyEditorField({
-                  name: "heading",
-                  type: "text",
-                  required: false,
-                  label: "Heading",
-                  defaultValue: content,
-                });
-                return;
-              }
-              setFieldError(null);
-              setNodeEditorFieldBinding(null);
-            }}
-          />
-          <Label
-            className="text-sm font-normal"
-            htmlFor={`${baseId}-heading-expose`}
-          >
-            Expose to CMS editors
-          </Label>
-        </div>
-      )}
-      {collectionMapped ? null : exposeToEditors && fieldBound ? (
-        <div className="space-y-4 rounded-md border border-border/60 p-4">
-          <div className="space-y-3">
-            <Label
-              className="text-sm text-muted-foreground"
-              htmlFor={`${baseId}-heading-slot-name`}
-            >
-              Field name (kebab-case)
-            </Label>
-            <Input
-              aria-invalid={Boolean(fieldError)}
-              className="h-8"
-              id={`${baseId}-heading-slot-name`}
-              onBlur={() => {
-                const trimmed = nameDraft.trim();
-                applyEditorField({
-                  ...fieldBound,
-                  name: trimmed,
-                });
-              }}
-              onChange={(e) => {
-                setNameDraft(e.target.value);
-                setFieldError(null);
-              }}
-              placeholder="hero-heading"
-              spellCheck={false}
-              type="text"
-              value={nameDraft}
-            />
-          </div>
-          <div className="space-y-3">
-            <Label
-              className="text-sm text-muted-foreground"
-              htmlFor={`${baseId}-heading-slot-label`}
-            >
-              Label
-            </Label>
-            <Input
-              className="h-8"
-              id={`${baseId}-heading-slot-label`}
-              onBlur={() => {
-                const label = labelDraft.trim() || "Heading";
-                applyEditorField({
-                  ...fieldBound,
-                  label,
-                });
-                setLabelDraft(label);
-              }}
-              onChange={(e) => {
-                setLabelDraft(e.target.value);
-                setFieldError(null);
-              }}
-              type="text"
-              value={labelDraft}
-            />
-          </div>
-          <div className="space-y-3">
-            <Label
-              className="text-sm text-muted-foreground"
-              htmlFor={`${baseId}-heading-slot-type`}
-            >
-              Editor field type
-            </Label>
-            <Select
-              onValueChange={(value) => {
-                const type = value as EditorFieldSpec["type"];
-                applyEditorField({
-                  ...fieldBound,
-                  type,
-                });
-              }}
-              value={fieldBound.type}
-            >
-              <SelectTrigger
-                data-testid="inspector-heading-slot-type"
-                id={`${baseId}-heading-slot-type`}
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {EDITOR_FIELD_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <Checkbox
-              checked={fieldBound.required}
-              id={`${baseId}-heading-req`}
-              onCheckedChange={(v) => {
-                applyEditorField({
-                  ...fieldBound,
-                  required: v === true,
-                });
-              }}
-            />
-            <Label
-              className="text-sm font-normal"
-              htmlFor={`${baseId}-heading-req`}
-            >
-              Required
-            </Label>
-          </div>
-          <div className="space-y-3">
-            <Label
-              className="text-sm text-muted-foreground"
-              htmlFor={`${baseId}-heading-slot-default`}
-            >
-              Default value
-            </Label>
-            <Input
-              className="h-8"
-              id={`${baseId}-heading-slot-default`}
-              onChange={(e) => {
-                applyEditorField({
-                  ...fieldBound,
-                  defaultValue: e.target.value,
-                });
-              }}
-              type="text"
-              value={
-                typeof fieldBound.defaultValue === "string"
-                  ? fieldBound.defaultValue
-                  : ""
-              }
-            />
-          </div>
-          {fieldError ? (
-            <p className="text-sm text-destructive" role="alert">
-              {fieldError}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -754,18 +326,12 @@ export function ButtonPrimitiveInspector({
   patchNodeProps,
   resetNodePropKey,
   setNodeCollectionFieldBinding,
-  setNodeEditorFieldBinding,
-  fieldBound,
-  exposeToEditors,
 }: {
   composition: PageComposition;
   node: CompositionNode;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   resetNodePropKey: (propKey: string) => void;
   setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
-  setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
-  fieldBound: EditorFieldSpec | undefined;
-  exposeToEditors: boolean;
 }) {
   const baseId = useId();
   const label =
@@ -789,13 +355,6 @@ export function ButtonPrimitiveInspector({
   const [entryLoading, setEntryLoading] = useState(false);
   const [entryLoadError, setEntryLoadError] = useState<string | null>(null);
   const [entries, setEntries] = useState<PayloadCollectionDocRef[]>([]);
-  const [nameDraft, setNameDraft] = useState(() => fieldBound?.name ?? "");
-  const [cmsLabelDraft, setCmsLabelDraft] = useState(
-    () => fieldBound?.label ?? "",
-  );
-  const [fieldError, setFieldError] = useState<string | null>(null);
-  const committedName = fieldBound?.name;
-  const committedCmsLabel = fieldBound?.label;
 
   useEffect(() => {
     if (!entryPickerOpen || !collectionSlug.trim()) {
@@ -819,85 +378,11 @@ export function ButtonPrimitiveInspector({
 
   const collectionMapped = isNodeCollectionFieldMapped(node);
 
-  useEffect(() => {
-    if (isNodeCollectionFieldMapped(node)) {
-      return;
-    }
-    const cb = node.contentBinding;
-    if (cb?.source === "editor" && cb.editorField?.type === "button") {
-      return;
-    }
-    setNodeEditorFieldBinding(
-      editorFieldSpecForPrimitiveButton(node.id, node.propValues),
-    );
-  }, [node, setNodeEditorFieldBinding]);
-
-  useEffect(() => {
-    if (!exposeToEditors) {
-      setNameDraft("");
-      setCmsLabelDraft("");
-      setFieldError(null);
-      return;
-    }
-    if (committedName === undefined || committedCmsLabel === undefined) {
-      return;
-    }
-    setNameDraft(committedName);
-    setCmsLabelDraft(committedCmsLabel);
-    setFieldError(null);
-  }, [committedCmsLabel, committedName, exposeToEditors]);
-
-  useEffect(() => {
-    if (collectionMapped) {
-      return;
-    }
-    if (!fieldBound || fieldBound.type !== "button") {
-      return;
-    }
-    const nextDefault = { label, href, openInNewTab };
-    const cur = fieldBound.defaultValue;
-    if (
-      cur &&
-      typeof cur === "object" &&
-      !Array.isArray(cur) &&
-      typeof (cur as Record<string, unknown>).label === "string" &&
-      typeof (cur as Record<string, unknown>).href === "string" &&
-      Boolean((cur as Record<string, unknown>).openInNewTab) ===
-        nextDefault.openInNewTab &&
-      (cur as { label: string }).label === nextDefault.label &&
-      (cur as { href: string }).href === nextDefault.href
-    ) {
-      return;
-    }
-    setNodeEditorFieldBinding({
-      ...fieldBound,
-      defaultValue: nextDefault,
-    });
-  }, [
-    collectionMapped,
-    fieldBound,
-    href,
-    label,
-    openInNewTab,
-    setNodeEditorFieldBinding,
-  ]);
-
-  function applyEditorField(next: EditorFieldSpec) {
-    const parsed = EditorFieldSpecSchema.safeParse(next);
-    if (!parsed.success) {
-      const msg = parsed.error.issues[0]?.message ?? "Invalid editor field";
-      setFieldError(msg);
-      return;
-    }
-    setFieldError(null);
-    setNodeEditorFieldBinding(parsed.data);
-  }
-
   return (
     <div className="space-y-4">
       <CollectionFieldBindingSection
         composition={composition}
-        editorFieldBindingActive={exposeToEditors}
+        editorFieldBindingActive={isEditorFieldBound(node)}
         node={node}
         setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
       />
@@ -988,243 +473,7 @@ export function ButtonPrimitiveInspector({
         propKey="openInNewTab"
         propValues={node.propValues}
       />
-      {collectionMapped ? null : exposeToEditors && fieldBound ? (
-        <div className="space-y-4 rounded-md border border-border/60 p-4">
-          <div className="space-y-3">
-            <Label
-              className="text-sm text-muted-foreground"
-              htmlFor={`${baseId}-btn-cms-name`}
-            >
-              Field name (kebab-case)
-            </Label>
-            <Input
-              aria-invalid={Boolean(fieldError)}
-              className="h-8"
-              id={`${baseId}-btn-cms-name`}
-              onBlur={() => {
-                if (!fieldBound) {
-                  return;
-                }
-                const trimmed = nameDraft.trim();
-                applyEditorField({
-                  ...fieldBound,
-                  name: trimmed,
-                });
-              }}
-              onChange={(e) => {
-                setNameDraft(e.target.value);
-                setFieldError(null);
-              }}
-              placeholder="hero-cta"
-              spellCheck={false}
-              type="text"
-              value={nameDraft}
-            />
-          </div>
-          <div className="space-y-3">
-            <Label
-              className="text-sm text-muted-foreground"
-              htmlFor={`${baseId}-btn-cms-label`}
-            >
-              CMS field label
-            </Label>
-            <Input
-              className="h-8"
-              id={`${baseId}-btn-cms-label`}
-              onBlur={() => {
-                if (!fieldBound) {
-                  return;
-                }
-                const nextLabel = cmsLabelDraft.trim() || "Button";
-                applyEditorField({
-                  ...fieldBound,
-                  label: nextLabel,
-                });
-                setCmsLabelDraft(nextLabel);
-              }}
-              onChange={(e) => {
-                setCmsLabelDraft(e.target.value);
-                setFieldError(null);
-              }}
-              type="text"
-              value={cmsLabelDraft}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Checkbox
-              checked={fieldBound.required}
-              id={`${baseId}-btn-cms-req`}
-              onCheckedChange={(v) => {
-                if (!fieldBound) {
-                  return;
-                }
-                applyEditorField({
-                  ...fieldBound,
-                  required: v === true,
-                });
-              }}
-            />
-            <Label
-              className="text-sm font-normal"
-              htmlFor={`${baseId}-btn-cms-req`}
-            >
-              Required
-            </Label>
-          </div>
-          {fieldError ? (
-            <p className="text-sm text-destructive" role="alert">
-              {fieldError}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
     </div>
-  );
-}
-
-function ImagePrimitiveInspectorAltAndBindingFields({
-  applyEditorField,
-  baseId,
-  error,
-  exposeToEditors,
-  fieldBound,
-  labelDraft,
-  mediaId,
-  nameDraft,
-  node,
-  patchNodeProps,
-  resetNodePropKey,
-  setLabelDraft,
-  setNameDraft,
-  setNodeEditorFieldBinding,
-  alt,
-}: {
-  alt: string;
-  applyEditorField: (next: EditorFieldSpec) => void;
-  baseId: string;
-  error: string | null;
-  exposeToEditors: boolean;
-  fieldBound: EditorFieldSpec | undefined;
-  labelDraft: string;
-  mediaId: number | "";
-  nameDraft: string;
-  node: CompositionNode;
-  patchNodeProps: (patch: Record<string, unknown>) => void;
-  resetNodePropKey: (propKey: string) => void;
-  setLabelDraft: (value: string) => void;
-  setNameDraft: (value: string) => void;
-  setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
-}) {
-  return (
-    <>
-      <div className="border-t border-border/60 pt-5">
-        <SettingsFieldRow
-          definitionKey={node.definitionKey}
-          htmlFor={`${baseId}-image-alt`}
-          label="Alt text"
-          onResetProp={resetNodePropKey}
-          propKey="alt"
-          propValues={node.propValues}
-        >
-          <Input
-            id={`${baseId}-image-alt`}
-            onChange={(e) => patchNodeProps({ alt: e.target.value })}
-            type="text"
-            value={alt}
-          />
-        </SettingsFieldRow>
-      </div>
-      <div className="flex items-center gap-2.5 border-t border-border/60 pt-5">
-        <Checkbox
-          checked={exposeToEditors}
-          disabled={node.contentBinding?.source === "collection"}
-          id={`${baseId}-image-expose`}
-          onCheckedChange={(v) => {
-            if (v === true) {
-              applyEditorField({
-                name: "image",
-                type: "image",
-                required: false,
-                label: "Image",
-                defaultValue: mediaId === "" ? "" : mediaId,
-              });
-              return;
-            }
-            setNodeEditorFieldBinding(null);
-          }}
-        />
-        <Label
-          className="text-sm font-normal"
-          htmlFor={`${baseId}-image-expose`}
-        >
-          Expose to CMS editors
-        </Label>
-      </div>
-      {exposeToEditors && fieldBound ? (
-        <div className="space-y-4 rounded-md border border-border/60 p-4">
-          <div className="space-y-3">
-            <Label htmlFor={`${baseId}-image-slot-name`}>
-              Field name (kebab-case)
-            </Label>
-            <Input
-              id={`${baseId}-image-slot-name`}
-              onBlur={() => {
-                applyEditorField({
-                  ...fieldBound,
-                  type: "image",
-                  name: nameDraft.trim(),
-                });
-              }}
-              onChange={(e) => setNameDraft(e.target.value)}
-              type="text"
-              value={nameDraft}
-            />
-          </div>
-          <div className="space-y-3">
-            <Label htmlFor={`${baseId}-image-slot-label`}>Label</Label>
-            <Input
-              id={`${baseId}-image-slot-label`}
-              onBlur={() => {
-                const label = labelDraft.trim() || "Image";
-                applyEditorField({
-                  ...fieldBound,
-                  type: "image",
-                  label,
-                });
-                setLabelDraft(label);
-              }}
-              onChange={(e) => setLabelDraft(e.target.value)}
-              type="text"
-              value={labelDraft}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <Checkbox
-              checked={fieldBound.required}
-              id={`${baseId}-image-required`}
-              onCheckedChange={(v) => {
-                applyEditorField({
-                  ...fieldBound,
-                  type: "image",
-                  required: v === true,
-                });
-              }}
-            />
-            <Label
-              className="text-sm font-normal"
-              htmlFor={`${baseId}-image-required`}
-            >
-              Required
-            </Label>
-          </div>
-        </div>
-      ) : null}
-      {error ? (
-        <p className="text-sm text-destructive" role="alert">
-          {error}
-        </p>
-      ) : null}
-    </>
   );
 }
 
@@ -1273,62 +522,27 @@ export function ImagePrimitiveTailwindUtilitiesField({
 export function ImagePrimitiveInspector({
   composition,
   node,
-  fieldBound,
-  exposeToEditors,
   patchNodeProps,
   resetNodePropKey,
   setNodeCollectionFieldBinding,
-  setNodeEditorFieldBinding,
 }: {
   composition: PageComposition;
   node: CompositionNode;
-  fieldBound: EditorFieldSpec | undefined;
-  exposeToEditors: boolean;
   patchNodeProps: (patch: Record<string, unknown>) => void;
   resetNodePropKey: (propKey: string) => void;
   setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
-  setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
   const baseId = useId();
   const alt =
     typeof node.propValues?.alt === "string" ? node.propValues.alt : "";
-  const mediaId = parseMediaIdFromPropValues(node.propValues, "mediaId");
   const [error, setError] = useState<string | null>(null);
-  const [nameDraft, setNameDraft] = useState(() => fieldBound?.name ?? "");
-  const [labelDraft, setLabelDraft] = useState(() => fieldBound?.label ?? "");
-  const committedName = fieldBound?.name;
-  const committedLabel = fieldBound?.label;
-
-  useEffect(() => {
-    if (!exposeToEditors) {
-      setNameDraft("");
-      setLabelDraft("");
-      return;
-    }
-    if (committedName === undefined || committedLabel === undefined) {
-      return;
-    }
-    setNameDraft(committedName);
-    setLabelDraft(committedLabel);
-  }, [committedLabel, committedName, exposeToEditors]);
-
-  function applyEditorField(next: EditorFieldSpec) {
-    const parsed = EditorFieldSpecSchema.safeParse(next);
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Invalid editor field");
-      return;
-    }
-    setError(null);
-    setNodeEditorFieldBinding(parsed.data);
-  }
-
   const collectionMapped = isNodeCollectionFieldMapped(node);
 
   return (
     <div className="space-y-6">
       <CollectionFieldBindingSection
         composition={composition}
-        editorFieldBindingActive={exposeToEditors}
+        editorFieldBindingActive={isEditorFieldBound(node)}
         node={node}
         setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
       />
@@ -1346,23 +560,28 @@ export function ImagePrimitiveInspector({
             setError={setError}
             urlFieldLabel="Image URL"
           />
-          <ImagePrimitiveInspectorAltAndBindingFields
-            alt={alt}
-            applyEditorField={applyEditorField}
-            baseId={baseId}
-            error={error}
-            exposeToEditors={exposeToEditors}
-            fieldBound={fieldBound}
-            labelDraft={labelDraft}
-            mediaId={mediaId}
-            nameDraft={nameDraft}
-            node={node}
-            patchNodeProps={patchNodeProps}
-            resetNodePropKey={resetNodePropKey}
-            setLabelDraft={setLabelDraft}
-            setNameDraft={setNameDraft}
-            setNodeEditorFieldBinding={setNodeEditorFieldBinding}
-          />
+          <div className="border-t border-border/60 pt-5">
+            <SettingsFieldRow
+              definitionKey={node.definitionKey}
+              htmlFor={`${baseId}-image-alt`}
+              label="Alt text"
+              onResetProp={resetNodePropKey}
+              propKey="alt"
+              propValues={node.propValues}
+            >
+              <Input
+                id={`${baseId}-image-alt`}
+                onChange={(e) => patchNodeProps({ alt: e.target.value })}
+                type="text"
+                value={alt}
+              />
+            </SettingsFieldRow>
+          </div>
+          {error ? (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          ) : null}
         </>
       )}
     </div>

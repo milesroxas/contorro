@@ -19,6 +19,11 @@ export type StudioAuthoringCompositionPayload = {
   updatedAt: string;
   /** Which CMS resource this session maps to; prefer over inferring from `compositionId`. */
   studioResource: "pageTemplate" | "component";
+  /**
+   * Block type this component design implements (`BLOCK_CATALOG` slug);
+   * `null` = design-only. Always `null` for page templates.
+   */
+  blockType?: string | null;
   /** Payload drafts: whether the loaded revision is draft or published in CMS. */
   _status?: "draft" | "published" | null;
   tokenMetadata: StudioTokenMeta[];
@@ -43,9 +48,18 @@ export type StudioSaveResult = {
   componentKey?: string;
 };
 
-export type StudioRenameResult = {
+/** Body for `PATCH …/compositions/:id` — at least one of `name`/`blockType`. */
+export type StudioPatchCompositionMetaBody = {
+  name?: string;
+  /** Components only; `null` clears back to design-only. */
+  blockType?: string | null;
+  intent?: "draft" | "publish";
+};
+
+export type StudioCompositionMetaResult = {
   name: string;
   updatedAt: string;
+  blockType?: string | null;
   _status?: "draft" | "published" | null;
 };
 
@@ -91,11 +105,10 @@ export interface StudioAuthoringClient {
     body: StudioPersistCompositionBody,
   ): Promise<StudioSaveResult>;
 
-  patchCompositionName(
+  patchCompositionMeta(
     compositionId: string,
-    name: string,
-    options?: { intent?: "draft" | "publish" },
-  ): Promise<StudioRenameResult>;
+    body: StudioPatchCompositionMetaBody,
+  ): Promise<StudioCompositionMetaResult>;
 
   listDesignTokenSets(signal?: AbortSignal): Promise<StudioDesignTokenSetDoc[]>;
 

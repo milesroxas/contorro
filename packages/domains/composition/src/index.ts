@@ -16,7 +16,6 @@ export {
   type ResolvedBoxBackgroundImagePresentation,
   resolvedBoxBackgroundImagePresentation,
 } from "./box-background-image-style.js";
-export { editorFieldSpecForPrimitiveButton } from "./button-editor-binding.js";
 export { findNearestCollectionAncestorNodeId } from "./collection-ancestor.js";
 export {
   mediaUrlFromCollectionValue,
@@ -37,11 +36,6 @@ export {
 export type { CompositionActor } from "./composition-actor.js";
 export { defaultEmptyPageComposition } from "./default-empty-page-composition.js";
 export { defaultPageTemplateComposition } from "./default-page-template-composition.js";
-export {
-  editorFieldSpecsFromComposition,
-  editorFieldsContractFromComposition,
-  resolveEditorFieldsContractForDefinition,
-} from "./editor-fields-from-composition.js";
 export { clonePageCompositionWithNewIds } from "./graph/clone-composition.js";
 export {
   type ExpandLibraryComponentNodesOptions,

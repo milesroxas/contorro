@@ -33,11 +33,8 @@ export {
   TokenReferenceSchema,
 } from "./design-system.js";
 export {
-  EDITOR_FIELD_TYPES,
   type EditorFieldSpec,
   EditorFieldSpecSchema,
-  type EditorFieldsContract,
-  EditorFieldsContractSchema,
 } from "./editor-fields.js";
 export {
   type AsyncResult,
@@ -49,18 +46,15 @@ export {
   type Result,
 } from "./kernel.js";
 export {
-  normalizeEditorFieldsContract,
-  parseEditorFieldsContract,
-} from "./normalize-editor-fields.js";
-export {
   STUDIO_CANVAS_MODE_ATTRIBUTE,
   type StudioAuthoringClient,
   type StudioAuthoringCompositionPayload,
+  type StudioCompositionMetaResult,
   type StudioDesignSystemSettingsDoc,
   type StudioDesignTokenEntry,
   type StudioDesignTokenSetDoc,
+  type StudioPatchCompositionMetaBody,
   type StudioPersistCompositionBody,
-  type StudioRenameResult,
   type StudioSaveResult,
   type StudioTokenMeta,
 } from "./studio-authoring-client.js";

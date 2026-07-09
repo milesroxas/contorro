@@ -13,6 +13,7 @@ import {
   type StyleSectionId,
   stylePropertiesBySectionForDefinitionKey,
 } from "@repo/domains-composition";
+import { IconPencil } from "@tabler/icons-react";
 import { type Dispatch, type SetStateAction, useMemo } from "react";
 
 import { StudioBulkCollapseButton } from "../../components/studio-panel.js";
@@ -32,10 +33,14 @@ import {
   libraryDisplayNameForKey,
   useLibraryComponentLabels,
 } from "../../lib/use-library-component-labels.js";
+import { BlockFieldBindingSection } from "./block-field-binding-section.js";
+import {
+  BlockTypePickerSection,
+  type BlockTypeSettings,
+} from "./block-type-picker.js";
 import { CollectionPrimitiveInspector } from "./collection-primitive-inspector.js";
 import { SettingsFieldRow } from "./property-control-label.js";
 import { BoxPrimitiveInspector } from "./property-inspector-box-primitive.js";
-import { LibraryComponentInstanceSettings } from "./property-inspector-library-component-settings.js";
 import { semanticShellTagForNode } from "./property-inspector-node-meta.js";
 import {
   ButtonPrimitiveInspector,
@@ -52,12 +57,90 @@ import {
 } from "./property-inspector-style-model.js";
 import { InspectorOrderedStyleSectionItem } from "./property-inspector-style-sections.js";
 
+function PrimitiveSettingsInspectors({
+  composition,
+  content,
+  isButton,
+  isHeading,
+  isImage,
+  isVideo,
+  isText,
+  node,
+  onTextChange,
+  patchNodeProps,
+  resetNodePropKey,
+  setNodeCollectionFieldBinding,
+}: {
+  composition: PageComposition;
+  content: string;
+  isButton: boolean;
+  isHeading: boolean;
+  isImage: boolean;
+  isVideo: boolean;
+  isText: boolean;
+  node: CompositionNode;
+  onTextChange: (content: string) => void;
+  patchNodeProps: (patch: Record<string, unknown>) => void;
+  resetNodePropKey: (propKey: string) => void;
+  setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
+}) {
+  return (
+    <>
+      {isText ? (
+        <TextPrimitiveInspector
+          composition={composition}
+          content={content}
+          node={node}
+          onTextChange={onTextChange}
+          resetNodePropKey={resetNodePropKey}
+          setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
+        />
+      ) : null}
+      {isHeading ? (
+        <HeadingPrimitiveInspector
+          composition={composition}
+          node={node}
+          patchNodeProps={patchNodeProps}
+          resetNodePropKey={resetNodePropKey}
+          setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
+        />
+      ) : null}
+      {isButton ? (
+        <ButtonPrimitiveInspector
+          composition={composition}
+          node={node}
+          patchNodeProps={patchNodeProps}
+          resetNodePropKey={resetNodePropKey}
+          setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
+        />
+      ) : null}
+      {isImage ? (
+        <ImagePrimitiveInspector
+          composition={composition}
+          node={node}
+          patchNodeProps={patchNodeProps}
+          resetNodePropKey={resetNodePropKey}
+          setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
+        />
+      ) : null}
+      {isVideo ? (
+        <VideoPrimitiveInspector
+          composition={composition}
+          node={node}
+          patchNodeProps={patchNodeProps}
+          resetNodePropKey={resetNodePropKey}
+          setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
+        />
+      ) : null}
+    </>
+  );
+}
+
 function PropertyInspectorSettingsTab({
+  blockTypeSettings,
   componentsHref,
   composition,
   content,
-  exposeToEditors,
-  fieldBound,
   isButton,
   isHeading,
   isImage,
@@ -72,11 +155,10 @@ function PropertyInspectorSettingsTab({
   setNodeCollectionFieldBinding,
   setNodeEditorFieldBinding,
 }: {
+  blockTypeSettings: BlockTypeSettings | null;
   componentsHref: string;
   composition: PageComposition;
   content: string;
-  exposeToEditors: boolean;
-  fieldBound: EditorFieldSpec | undefined;
   isButton: boolean;
   isHeading: boolean;
   isImage: boolean;
@@ -91,66 +173,35 @@ function PropertyInspectorSettingsTab({
   setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
 }) {
+  const isRoot = node.id === composition.rootId;
+  const activeBlockType = blockTypeSettings?.value ?? null;
   return (
     <>
-      {isText ? (
-        <TextPrimitiveInspector
+      {isRoot && blockTypeSettings ? (
+        <BlockTypePickerSection settings={blockTypeSettings} />
+      ) : null}
+      {!isRoot && activeBlockType !== null ? (
+        <BlockFieldBindingSection
+          blockType={activeBlockType}
           composition={composition}
-          content={content}
-          exposeToEditors={exposeToEditors}
-          fieldBound={fieldBound}
           node={node}
-          onTextChange={onTextChange}
-          resetNodePropKey={resetNodePropKey}
-          setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
           setNodeEditorFieldBinding={setNodeEditorFieldBinding}
         />
       ) : null}
-      {isHeading ? (
-        <HeadingPrimitiveInspector
-          composition={composition}
-          exposeToEditors={exposeToEditors}
-          fieldBound={fieldBound}
-          node={node}
-          patchNodeProps={patchNodeProps}
-          resetNodePropKey={resetNodePropKey}
-          setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
-          setNodeEditorFieldBinding={setNodeEditorFieldBinding}
-        />
-      ) : null}
-      {isButton ? (
-        <ButtonPrimitiveInspector
-          composition={composition}
-          exposeToEditors={exposeToEditors}
-          fieldBound={fieldBound}
-          node={node}
-          patchNodeProps={patchNodeProps}
-          resetNodePropKey={resetNodePropKey}
-          setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
-          setNodeEditorFieldBinding={setNodeEditorFieldBinding}
-        />
-      ) : null}
-      {isImage ? (
-        <ImagePrimitiveInspector
-          composition={composition}
-          exposeToEditors={exposeToEditors}
-          fieldBound={fieldBound}
-          node={node}
-          patchNodeProps={patchNodeProps}
-          resetNodePropKey={resetNodePropKey}
-          setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
-          setNodeEditorFieldBinding={setNodeEditorFieldBinding}
-        />
-      ) : null}
-      {isVideo ? (
-        <VideoPrimitiveInspector
-          composition={composition}
-          node={node}
-          patchNodeProps={patchNodeProps}
-          resetNodePropKey={resetNodePropKey}
-          setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
-        />
-      ) : null}
+      <PrimitiveSettingsInspectors
+        composition={composition}
+        content={content}
+        isButton={isButton}
+        isHeading={isHeading}
+        isImage={isImage}
+        isVideo={isVideo}
+        isText={isText}
+        node={node}
+        onTextChange={onTextChange}
+        patchNodeProps={patchNodeProps}
+        resetNodePropKey={resetNodePropKey}
+        setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
+      />
       {isSlot ? (
         <div className="border-t border-border/60 pt-4">
           <SettingsFieldRow
@@ -176,12 +227,15 @@ function PropertyInspectorSettingsTab({
           </SettingsFieldRow>
         </div>
       ) : null}
-      {isLibraryComponent ? (
-        <LibraryComponentInstanceSettings
-          componentsHref={componentsHref}
-          node={node}
-          patchNodeProps={patchNodeProps}
-        />
+      {isLibraryComponent && componentsHref.trim() !== "" ? (
+        <div className="border-t border-border/60 pt-4">
+          <Button asChild className="w-full" size="sm" variant="secondary">
+            <a href={componentsHref}>
+              <IconPencil className="size-3.5" aria-hidden />
+              Edit component
+            </a>
+          </Button>
+        </div>
       ) : null}
       {node.definitionKey === "primitive.box" ? (
         <BoxPrimitiveInspector
@@ -203,6 +257,7 @@ function PropertyInspectorSettingsTab({
 
 export function PropertyInspectorActive({
   activeBreakpoint,
+  blockTypeSettings,
   clearNodeStyles,
   componentsHref,
   composition,
@@ -220,6 +275,7 @@ export function PropertyInspectorActive({
   tokenMetadata,
 }: {
   activeBreakpoint: Breakpoint | null;
+  blockTypeSettings: BlockTypeSettings | null;
   clearNodeStyles: () => void;
   componentsHref: string;
   composition: PageComposition;
@@ -258,10 +314,6 @@ export function PropertyInspectorActive({
 
   const content =
     typeof node.propValues?.content === "string" ? node.propValues.content : "";
-  const fieldBound =
-    node.contentBinding?.source === "editor"
-      ? node.contentBinding.editorField
-      : undefined;
   const semanticShellTag = semanticShellTagForNode(node);
   const nodeLabel = useMemo(() => {
     if (isLibraryComponent) {
@@ -285,7 +337,6 @@ export function PropertyInspectorActive({
     node.propValues?.tag,
     semanticShellTag,
   ]);
-  const exposeToEditors = Boolean(fieldBound);
   const stylePropertiesBySection = stylePropertiesBySectionForDefinitionKey(
     node.definitionKey,
   );
@@ -428,11 +479,10 @@ export function PropertyInspectorActive({
           </TabsContent>
           <TabsContent className="mt-4 min-w-0 space-y-4" value="settings">
             <PropertyInspectorSettingsTab
+              blockTypeSettings={blockTypeSettings}
               componentsHref={componentsHref}
               composition={composition}
               content={content}
-              exposeToEditors={exposeToEditors}
-              fieldBound={fieldBound}
               isButton={isButton}
               isHeading={isHeading}
               isImage={isImage}

@@ -13,7 +13,6 @@ import {
   PageCompositionSchema,
   type Result,
 } from "@repo/contracts-zod";
-import { editorFieldSpecForPrimitiveButton } from "../button-editor-binding.js";
 import {
   defaultPrimitivePropValues,
   isStudioCreatablePrimitiveKey,
@@ -141,7 +140,7 @@ export function addChildNode(
 
   const newId = makeId();
   const kind = primitiveKindForDefinitionKey(definitionKey);
-  let newNode: CompositionNode = {
+  const newNode: CompositionNode = {
     id: newId,
     kind,
     definitionKey,
@@ -152,21 +151,6 @@ export function addChildNode(
         ? { componentKey: options?.libraryComponentKey?.trim() ?? "" }
         : defaultPrimitivePropValues(definitionKey),
   };
-
-  if (definitionKey === "primitive.button") {
-    const editorField = editorFieldSpecForPrimitiveButton(
-      newId,
-      newNode.propValues,
-    );
-    newNode = {
-      ...newNode,
-      contentBinding: {
-        source: "editor",
-        key: editorField.name,
-        editorField,
-      },
-    };
-  }
 
   const siblings = [...parent.childIds];
   const at =
@@ -388,6 +372,40 @@ function idMapsForDuplicateSubtree(
   return { nodeIdMap, sbIdMap };
 }
 
+/** Slot copies get a fresh `slotId` so layout slot ids stay unique. */
+function clonedNodePropValues(
+  node: CompositionNode,
+): CompositionNode["propValues"] {
+  if (node.definitionKey === "primitive.slot") {
+    return { ...(node.propValues ?? {}), slotId: makeId() };
+  }
+  return node.propValues;
+}
+
+/** Editor bindings are cleared on copies to avoid duplicate field bindings. */
+function clonedContentBinding(
+  node: CompositionNode,
+): CompositionNode["contentBinding"] {
+  return node.contentBinding?.source === "editor"
+    ? undefined
+    : node.contentBinding;
+}
+
+function mappedChildIds(
+  childIds: readonly string[],
+  nodeIdMap: Map<string, string>,
+): Result<string[], "INVALID_NODE"> {
+  const out: string[] = [];
+  for (const cid of childIds) {
+    const mapped = nodeIdMap.get(cid);
+    if (!mapped) {
+      return err("INVALID_NODE");
+    }
+    out.push(mapped);
+  }
+  return ok(out);
+}
+
 function newParentIdForDuplicatedNode(
   oldId: string,
   duplicateRootId: string,
@@ -431,30 +449,6 @@ function cloneOneDuplicatedNode(
     return err("INVALID_NODE");
   }
 
-  let propValues = oldNode.propValues;
-  if (oldNode.definitionKey === "primitive.slot") {
-    propValues = {
-      ...(propValues ?? {}),
-      slotId: makeId(),
-    };
-  }
-
-  let contentBinding: CompositionNode["contentBinding"];
-  if (oldNode.contentBinding?.source === "collection") {
-    contentBinding = oldNode.contentBinding;
-  } else if (oldNode.definitionKey === "primitive.button") {
-    const editorField = editorFieldSpecForPrimitiveButton(newId, propValues);
-    contentBinding = {
-      source: "editor",
-      key: editorField.name,
-      editorField,
-    };
-  } else if (oldNode.contentBinding?.source === "editor") {
-    contentBinding = undefined;
-  } else {
-    contentBinding = oldNode.contentBinding;
-  }
-
   const newStyleBindingId = oldNode.styleBindingId
     ? sbIdMap.get(oldNode.styleBindingId)
     : undefined;
@@ -462,22 +456,18 @@ function cloneOneDuplicatedNode(
     return err("INVALID_NODE");
   }
 
-  const newChildIds: string[] = [];
-  for (const cid of oldNode.childIds) {
-    const mapped = nodeIdMap.get(cid);
-    if (!mapped) {
-      return err("INVALID_NODE");
-    }
-    newChildIds.push(mapped);
+  const newChildIds = mappedChildIds(oldNode.childIds, nodeIdMap);
+  if (!newChildIds.ok) {
+    return newChildIds;
   }
 
   const cloned: CompositionNode = {
     ...oldNode,
     id: newId,
     parentId: newParentId,
-    childIds: newChildIds,
-    propValues,
-    contentBinding,
+    childIds: newChildIds.value,
+    propValues: clonedNodePropValues(oldNode),
+    contentBinding: clonedContentBinding(oldNode),
   };
   if (newStyleBindingId !== undefined) {
     cloned.styleBindingId = newStyleBindingId;
@@ -623,30 +613,6 @@ function cloneOneExtractedNode(
     return err("INVALID_NODE");
   }
 
-  let propValues = oldNode.propValues;
-  if (oldNode.definitionKey === "primitive.slot") {
-    propValues = {
-      ...(propValues ?? {}),
-      slotId: makeId(),
-    };
-  }
-
-  let contentBinding: CompositionNode["contentBinding"];
-  if (oldNode.contentBinding?.source === "collection") {
-    contentBinding = oldNode.contentBinding;
-  } else if (oldNode.definitionKey === "primitive.button") {
-    const editorField = editorFieldSpecForPrimitiveButton(newId, propValues);
-    contentBinding = {
-      source: "editor",
-      key: editorField.name,
-      editorField,
-    };
-  } else if (oldNode.contentBinding?.source === "editor") {
-    contentBinding = undefined;
-  } else {
-    contentBinding = oldNode.contentBinding;
-  }
-
   const newStyleBindingId = oldNode.styleBindingId
     ? sbIdMap.get(oldNode.styleBindingId)
     : undefined;
@@ -654,22 +620,18 @@ function cloneOneExtractedNode(
     return err("INVALID_NODE");
   }
 
-  const newChildIds: string[] = [];
-  for (const cid of oldNode.childIds) {
-    const mapped = nodeIdMap.get(cid);
-    if (!mapped) {
-      return err("INVALID_NODE");
-    }
-    newChildIds.push(mapped);
+  const newChildIds = mappedChildIds(oldNode.childIds, nodeIdMap);
+  if (!newChildIds.ok) {
+    return newChildIds;
   }
 
   const cloned: CompositionNode = {
     ...oldNode,
     id: newId,
     parentId: newParentId,
-    childIds: newChildIds,
-    propValues,
-    contentBinding,
+    childIds: newChildIds.value,
+    propValues: clonedNodePropValues(oldNode),
+    contentBinding: clonedContentBinding(oldNode),
   };
   if (newStyleBindingId !== undefined) {
     cloned.styleBindingId = newStyleBindingId;

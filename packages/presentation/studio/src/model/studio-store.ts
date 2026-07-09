@@ -128,6 +128,84 @@ function resolvePasteInsertPosition(
   return { parentId: parent.id, index: targetIndex + 1 };
 }
 
+type StudioStepResult<T> =
+  | { ok: true; value: T }
+  | { ok: false; error: string };
+
+/** Extracts `nodeId`'s subtree as a standalone, save-ready composition. */
+function prepareComponentDraftFromNode(
+  composition: PageComposition,
+  nodeId: string,
+): StudioStepResult<PageComposition> {
+  const extracted = extractNodeSubtreeToNewPageComposition(composition, nodeId);
+  if (!extracted.ok) {
+    return { ok: false, error: "Could not build component from this layer" };
+  }
+  const ready = prepareForSave(extracted.value);
+  if (!ready.ok) {
+    return { ok: false, error: "Invalid composition" };
+  }
+  return { ok: true, value: ready.data };
+}
+
+/** Swaps the extracted subtree for a library ref pointing at the saved component. */
+function applyLibraryComponentReplacement(
+  composition: PageComposition,
+  nodeId: string,
+  componentKey: string | undefined,
+): StudioStepResult<{
+  composition: PageComposition;
+  selectedNodeId: string | null;
+}> {
+  const key = componentKey?.trim() ?? "";
+  if (key === "") {
+    return {
+      ok: false,
+      error: "Save succeeded but component key was not returned",
+    };
+  }
+  const replaced = replaceNodeWithLibraryComponent(composition, nodeId, key);
+  if (!replaced.ok) {
+    return { ok: false, error: "Could not insert library component" };
+  }
+  return {
+    ok: true,
+    value: {
+      composition: replaced.value,
+      selectedNodeId: firstAddedNodeId(composition.nodes, replaced.value.nodes),
+    },
+  };
+}
+
+/** Applies the library-ref swap to the store after a successful component save. */
+function commitLibraryComponentReplacement(args: {
+  get: () => StudioStoreState;
+  set: StudioStoreSet;
+  composition: PageComposition;
+  nodeId: string;
+  componentKey: string | undefined;
+}): void {
+  const { get, set, composition, nodeId, componentKey } = args;
+  const applied = applyLibraryComponentReplacement(
+    composition,
+    nodeId,
+    componentKey,
+  );
+  if (!applied.ok) {
+    set({ error: applied.error });
+    return;
+  }
+  set({
+    composition: applied.value.composition,
+    historyPast: [...get().historyPast, composition],
+    historyFuture: [],
+    dirty: true,
+    canUndo: true,
+    canRedo: false,
+    selectedNodeId: applied.value.selectedNodeId ?? get().selectedNodeId,
+  });
+}
+
 function wrapNodeWithBoxComposition(
   composition: PageComposition,
   nodeId: string,
@@ -171,6 +249,11 @@ export type StudioStoreState = {
   compositionId: string;
   composition: PageComposition | null;
   name: string;
+  /**
+   * Block type this component design implements (`BLOCK_CATALOG` slug);
+   * `null` = design-only. Always `null` for page templates.
+   */
+  blockType: string | null;
   historyPast: PageComposition[];
   historyFuture: PageComposition[];
   tokenMetadata: TokenMeta[];
@@ -242,6 +325,8 @@ export type StudioStoreState = {
   saveDraft: () => Promise<void>;
   publish: () => Promise<void>;
   rename: (name: string) => Promise<void>;
+  /** Persists the component's block type (draft-level; publish revalidates bindings). */
+  setBlockType: (blockType: string | null) => Promise<void>;
 };
 
 function inferStudioResourceFromId(
@@ -320,13 +405,15 @@ async function saveOrPublishComposition(args: {
   }
 }
 
+type StudioStoreSet = (
+  partial:
+    | Partial<StudioStoreState>
+    | ((state: StudioStoreState) => Partial<StudioStoreState>),
+) => void;
+
 async function applyCompositionRename(args: {
   get: () => StudioStoreState;
-  set: (
-    partial:
-      | Partial<StudioStoreState>
-      | ((state: StudioStoreState) => Partial<StudioStoreState>),
-  ) => void;
+  set: StudioStoreSet;
   client: StudioAuthoringClient;
   nextName: string;
 }): Promise<void> {
@@ -342,7 +429,10 @@ async function applyCompositionRename(args: {
   }
   set({ error: null, renaming: true });
   try {
-    const data = await client.patchCompositionName(id, trimmed);
+    const data = await client.patchCompositionMeta(id, {
+      name: trimmed,
+      intent: "draft",
+    });
     const cmsPublicationStatus =
       data._status !== undefined ? data._status : get().cmsPublicationStatus;
     set({
@@ -358,6 +448,46 @@ async function applyCompositionRename(args: {
   }
 }
 
+async function applyBlockTypeChange(args: {
+  get: () => StudioStoreState;
+  set: StudioStoreSet;
+  client: StudioAuthoringClient;
+  blockType: string | null;
+}): Promise<void> {
+  const { get, set, client, blockType } = args;
+  const { compositionId: id, renaming, saving, studioResource } = get();
+  if (renaming || saving || studioResource !== "component") {
+    return;
+  }
+  if (blockType === get().blockType) {
+    return;
+  }
+  // New sessions are not persisted yet — the picker is disabled until the
+  // first save, so a PATCH here would have nothing to target.
+  if (isStudioNewCompositionSessionId(id)) {
+    return;
+  }
+  set({ error: null, renaming: true });
+  try {
+    const data = await client.patchCompositionMeta(id, {
+      blockType,
+      intent: "draft",
+    });
+    set({
+      blockType: data.blockType !== undefined ? data.blockType : blockType,
+      updatedAt: data.updatedAt,
+      cmsPublicationStatus:
+        data._status !== undefined ? data._status : get().cmsPublicationStatus,
+    });
+  } catch (e) {
+    set({
+      error: e instanceof Error ? e.message : "block type update failed",
+    });
+  } finally {
+    set({ renaming: false });
+  }
+}
+
 export function createStudioStore(
   compositionId: string,
   options?: { client?: StudioAuthoringClient },
@@ -368,6 +498,7 @@ export function createStudioStore(
     compositionId,
     composition: null,
     name: "",
+    blockType: null,
     historyPast: [],
     historyFuture: [],
     tokenMetadata: [],
@@ -462,6 +593,7 @@ export function createStudioStore(
         set({
           composition: data.composition,
           name: data.name,
+          blockType: data.blockType ?? null,
           studioResource:
             data.studioResource ??
             inferStudioResourceFromId(get().compositionId),
@@ -672,60 +804,31 @@ export function createStudioStore(
 
     createComponentFromNode: async (nodeId, displayName) => {
       const { composition, saving } = get();
-      if (!composition || saving) {
-        return;
-      }
       const name = displayName.trim();
-      if (name === "") {
+      if (!composition || saving || name === "") {
         return;
       }
-      const extracted = extractNodeSubtreeToNewPageComposition(
-        composition,
-        nodeId,
-      );
-      if (!extracted.ok) {
-        set({ error: "Could not build component from this layer" });
+      const prepared = prepareComponentDraftFromNode(composition, nodeId);
+      if (!prepared.ok) {
+        set({ error: prepared.error });
         return;
       }
-      const ready = prepareForSave(extracted.value);
-      if (!ready.ok) {
-        set({ error: "Invalid composition" });
-        return;
-      }
-      const newSessionId = studioNewCompositionSessionId("component");
       set({ error: null, saving: true });
       try {
-        const saved = await client.postDraft(newSessionId, {
-          composition: ready.data,
-          ifMatchUpdatedAt: null,
-          name,
-        });
-        const key = saved.componentKey?.trim() ?? "";
-        if (key === "") {
-          set({ error: "Save succeeded but component key was not returned" });
-          return;
-        }
-        const replaced = replaceNodeWithLibraryComponent(
+        const saved = await client.postDraft(
+          studioNewCompositionSessionId("component"),
+          {
+            composition: prepared.value,
+            ifMatchUpdatedAt: null,
+            name,
+          },
+        );
+        commitLibraryComponentReplacement({
+          get,
+          set,
           composition,
           nodeId,
-          key,
-        );
-        if (!replaced.ok) {
-          set({ error: "Could not insert library component" });
-          return;
-        }
-        const before = firstAddedNodeId(
-          composition.nodes,
-          replaced.value.nodes,
-        );
-        set({
-          composition: replaced.value,
-          historyPast: [...get().historyPast, composition],
-          historyFuture: [],
-          dirty: true,
-          canUndo: true,
-          canRedo: false,
-          selectedNodeId: before ?? get().selectedNodeId,
+          componentKey: saved.componentKey,
         });
       } catch (e) {
         set({
@@ -909,6 +1012,10 @@ export function createStudioStore(
 
     rename: async (nextName) => {
       await applyCompositionRename({ get, set, client, nextName });
+    },
+
+    setBlockType: async (blockType) => {
+      await applyBlockTypeChange({ get, set, client, blockType });
     },
   }));
 }
