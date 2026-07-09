@@ -126,7 +126,7 @@ export function HeadingPrimitiveInspector({
   const collectionMapped = isNodeCollectionFieldMapped(node);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <CollectionFieldBindingSection
         composition={composition}
         editorFieldBindingActive={isEditorFieldBound(node)}
@@ -236,7 +236,7 @@ function ButtonPrimitivePayloadCollectionFields({
         propKey="entrySlug"
         propValues={nodePropValues}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <Input
             id={`${baseId}-button-entry`}
             onChange={(e) =>
@@ -270,13 +270,13 @@ function ButtonPrimitivePayloadCollectionFields({
               </SheetHeader>
               <SheetBody>
                 <ScrollArea className="min-h-0 flex-1">
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {entryLoading ? (
-                      <p className="text-sm text-muted-foreground">Loading…</p>
+                      <p className="text-xs text-muted-foreground">Loading…</p>
                     ) : entryLoadError ? (
-                      <p className="text-sm text-red-500">{entryLoadError}</p>
+                      <p className="text-xs text-red-500">{entryLoadError}</p>
                     ) : entries.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         No entries found.
                       </p>
                     ) : (
@@ -293,10 +293,10 @@ function ButtonPrimitivePayloadCollectionFields({
                           }}
                           type="button"
                         >
-                          <div className="text-sm font-medium">
+                          <div className="text-xs font-medium">
                             {entry.label}
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-[11px] text-muted-foreground">
                             {entry.slug}
                           </div>
                         </button>
@@ -304,7 +304,7 @@ function ButtonPrimitivePayloadCollectionFields({
                     )}
                   </div>
                 </ScrollArea>
-                <div className="flex shrink-0 justify-end border-t border-border pt-3">
+                <div className="flex shrink-0 justify-end border-t border-border pt-2">
                   <SheetClose asChild>
                     <Button size="sm" type="button" variant="ghost">
                       Close
@@ -379,7 +379,7 @@ export function ButtonPrimitiveInspector({
   const collectionMapped = isNodeCollectionFieldMapped(node);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <CollectionFieldBindingSection
         composition={composition}
         editorFieldBindingActive={isEditorFieldBound(node)}
@@ -492,7 +492,7 @@ export function ImagePrimitiveTailwindUtilitiesField({
       ? node.propValues.imageUtilities
       : "";
   return (
-    <div className="border-t border-border/60 pt-4">
+    <div className="border-t border-border/60 pt-3">
       <SettingsFieldRow
         definitionKey={node.definitionKey}
         htmlFor={`${baseId}-image-utilities`}
@@ -503,7 +503,7 @@ export function ImagePrimitiveTailwindUtilitiesField({
       >
         <textarea
           className={cn(
-            "flex min-h-[4.5rem] w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-[color,box-shadow] outline-none",
+            "flex min-h-[4.5rem] w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-xs shadow-sm transition-[color,box-shadow] outline-none",
             "placeholder:text-muted-foreground",
             "focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50",
             "disabled:opacity-50",
@@ -539,7 +539,7 @@ export function ImagePrimitiveInspector({
   const collectionMapped = isNodeCollectionFieldMapped(node);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <CollectionFieldBindingSection
         composition={composition}
         editorFieldBindingActive={isEditorFieldBound(node)}
@@ -560,7 +560,7 @@ export function ImagePrimitiveInspector({
             setError={setError}
             urlFieldLabel="Image URL"
           />
-          <div className="border-t border-border/60 pt-5">
+          <div className="border-t border-border/60 pt-4">
             <SettingsFieldRow
               definitionKey={node.definitionKey}
               htmlFor={`${baseId}-image-alt`}
@@ -578,7 +578,7 @@ export function ImagePrimitiveInspector({
             </SettingsFieldRow>
           </div>
           {error ? (
-            <p className="text-sm text-destructive" role="alert">
+            <p className="text-xs text-destructive" role="alert">
               {error}
             </p>
           ) : null}
@@ -602,7 +602,7 @@ function VideoPrimitiveInspectorUrlFields({
   src: string;
 }) {
   return (
-    <div className="min-w-0 space-y-3 border-t border-border/60 pt-5">
+    <div className="min-w-0 space-y-2 border-t border-border/60 pt-4">
       <SettingsFieldRow
         definitionKey={node.definitionKey}
         htmlFor={`${baseId}-video-url`}
@@ -658,7 +658,7 @@ function VideoPrimitivePlaybackFields({
   const controls = node.propValues?.controls !== false;
 
   return (
-    <div className="min-w-0 space-y-5 border-t border-border/60 pt-5">
+    <div className="min-w-0 space-y-4 border-t border-border/60 pt-4">
       <SettingsFieldRow
         definitionKey={node.definitionKey}
         htmlFor={`${baseId}-video-poster`}
@@ -829,7 +829,7 @@ export function VideoPrimitiveInspector({
   const collectionMapped = isNodeCollectionFieldMapped(node);
 
   return (
-    <div className="min-w-0 space-y-6">
+    <div className="min-w-0 space-y-4">
       <CollectionFieldBindingSection
         composition={composition}
         editorFieldBindingActive={false}
@@ -914,7 +914,7 @@ export function VideoPrimitiveInspector({
         resetNodePropKey={resetNodePropKey}
       />
       {error ? (
-        <p className="text-sm text-destructive" role="alert">
+        <p className="text-xs text-destructive" role="alert">
           {error}
         </p>
       ) : null}

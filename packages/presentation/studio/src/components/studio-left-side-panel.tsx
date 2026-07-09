@@ -18,7 +18,7 @@ const studioLeftSidePanelHeaderVariants = cva(
         default: "",
         /** Title plus non-scrolling toolbar (e.g. template list filter). */
         toolbar:
-          "flex flex-col items-stretch gap-2.5 pb-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground/95",
+          "flex flex-col items-stretch gap-2 pb-2.5 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground/95",
       },
     },
     defaultVariants: {

@@ -31,10 +31,10 @@ export function BoxPrimitiveBackgroundImageSection({
       : "";
 
   return (
-    <div className="space-y-4 border-t border-border/60 pt-4">
-      <div className="flex items-center justify-between gap-3">
+    <div className="space-y-3 border-t border-border/60 pt-3">
+      <div className="flex items-center justify-between gap-2">
         <Label
-          className="text-xs font-medium text-muted-foreground"
+          className="text-[11px] font-medium text-muted-foreground"
           htmlFor={`${baseId}-bg-img-enabled`}
         >
           Background image
@@ -50,12 +50,12 @@ export function BoxPrimitiveBackgroundImageSection({
         />
       </div>
       {enabled ? (
-        <div className="space-y-4">
-          <div className="rounded-lg border border-border/50 bg-muted/15 p-3">
-            <p className="mb-3 text-[11px] font-medium text-foreground">
+        <div className="space-y-3">
+          <div className="rounded-lg border border-border/50 bg-muted/15 p-2.5">
+            <p className="mb-2 text-[11px] font-medium text-foreground">
               Image source
             </p>
-            <div className="space-y-5">
+            <div className="space-y-4">
               <ImageSourcePayloadInspectorFields
                 altForUpload={alt}
                 altValueKey="backgroundImageAlt"
@@ -95,7 +95,7 @@ export function BoxPrimitiveBackgroundImageSection({
             resetNodePropKey={resetNodePropKey}
           />
           {uploadError ? (
-            <p className="text-sm text-destructive" role="alert">
+            <p className="text-xs text-destructive" role="alert">
               {uploadError}
             </p>
           ) : null}

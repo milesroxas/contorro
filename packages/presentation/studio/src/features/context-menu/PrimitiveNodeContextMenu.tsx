@@ -51,13 +51,13 @@ export function PrimitiveNodeContextMenu({
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuLabel className="max-w-[240px] pr-2">
-          <span className="flex min-w-0 items-center gap-2">
+          <span className="flex min-w-0 items-center gap-1.5">
             <LayerIcon
               aria-hidden
               className="size-3.5 shrink-0 text-muted-foreground"
               stroke={1.7}
             />
-            <span className="min-w-0 truncate text-sm font-semibold text-foreground">
+            <span className="min-w-0 truncate text-xs font-semibold text-foreground">
               {layerLabel}
             </span>
           </span>

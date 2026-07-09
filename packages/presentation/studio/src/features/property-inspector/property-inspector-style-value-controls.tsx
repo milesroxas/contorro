@@ -75,7 +75,7 @@ function StylePropertyTokenUtilityPicker({
       }}
       value={currentValue}
     >
-      <SelectTrigger id={`style-${property}`}>
+      <SelectTrigger className="w-full" id={`style-${property}`}>
         <SelectValue placeholder={stylePropertyDefaultOptionLabel(property)} />
       </SelectTrigger>
       <SelectContent
@@ -200,32 +200,54 @@ export function StyleValueSelect({
   const currentValue = entrySelectValue(effectiveEntry);
   const showModified = Boolean(valueEntry);
   const isInherited = !valueEntry && Boolean(inheritedEntry);
+  // Chip-row editors (display, flex icon groups) keep the stacked layout;
+  // select-based fields use a Figma-style label-left row for density.
+  const isChipRow = property === "display" || isFlexIconProperty(property);
+  const editor = stylePropertyValueEditor({
+    currentValue,
+    onNodeStyleEntry,
+    property,
+    utilityValues,
+    valueEntry: effectiveEntry,
+    visibleTokens,
+  });
+  const inheritedBadge = isInherited ? (
+    <span className="inline-flex items-center gap-1 rounded-sm border border-border/60 bg-muted/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+      Inherited from base
+    </span>
+  ) : null;
+  const controlLabel = (
+    <PropertyControlLabel
+      htmlFor={`style-${property}`}
+      label={stylePropertyLabel(property)}
+      onReset={
+        showModified
+          ? () => {
+              onNodeStyleEntry(property, null);
+            }
+          : undefined
+      }
+      showModified={showModified}
+    />
+  );
+  if (isChipRow) {
+    return (
+      <div className="block space-y-1" key={property}>
+        {controlLabel}
+        {editor}
+        {inheritedBadge}
+      </div>
+    );
+  }
   return (
-    <div className="block space-y-2" key={property}>
-      <PropertyControlLabel
-        htmlFor={`style-${property}`}
-        label={stylePropertyLabel(property)}
-        onReset={
-          showModified
-            ? () => {
-                onNodeStyleEntry(property, null);
-              }
-            : undefined
-        }
-        showModified={showModified}
-      />
-      {stylePropertyValueEditor({
-        currentValue,
-        onNodeStyleEntry,
-        property,
-        utilityValues,
-        valueEntry: effectiveEntry,
-        visibleTokens,
-      })}
-      {isInherited ? (
-        <span className="inline-flex items-center gap-1 rounded-sm border border-border/60 bg-muted/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-          Inherited from base
-        </span>
+    <div
+      className="grid min-w-0 grid-cols-[minmax(0,5.25rem)_minmax(0,1fr)] items-center gap-x-1.5 gap-y-1"
+      key={property}
+    >
+      {controlLabel}
+      <div className="min-w-0">{editor}</div>
+      {inheritedBadge ? (
+        <div className="col-start-2">{inheritedBadge}</div>
       ) : null}
     </div>
   );

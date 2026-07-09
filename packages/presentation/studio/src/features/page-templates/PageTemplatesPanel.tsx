@@ -215,7 +215,7 @@ function GroupedTemplateLists({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {sections.map((section) => (
         <div className="flex flex-col gap-2" key={section.key}>
           <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">

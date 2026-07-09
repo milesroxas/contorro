@@ -202,37 +202,37 @@ export default function StudioCollectionView({
   const isError = loadState === "error";
 
   return (
-    <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto px-4 py-4 md:px-6 md:py-5 xl:px-8">
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+    <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3 md:px-4 md:py-4 xl:px-6">
+      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
             {title}
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Browse and open {screenDescription} without leaving Studio.
           </p>
         </div>
         <Button onClick={openNewResource} size="sm" type="button">
-          <IconPlus className="size-4" aria-hidden />
+          <IconPlus className="size-3.5" aria-hidden />
           {newResourceLabel}
         </Button>
       </header>
 
       {isError ? (
-        <p className="mt-4 rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <p className="mt-3 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
           Could not load {screen}. Try returning to the dashboard and reopening
           this view.
         </p>
       ) : null}
 
-      <Card className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-card ring-0">
-        <CardHeader className="gap-3">
-          <div className="flex items-center justify-between gap-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+      <Card className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-card ring-0">
+        <CardHeader className="gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               {screen === "templates" ? (
-                <IconLayout className="size-4" aria-hidden />
+                <IconLayout className="size-3.5" aria-hidden />
               ) : (
-                <IconPuzzle className="size-4" aria-hidden />
+                <IconPuzzle className="size-3.5" aria-hidden />
               )}
               {title}
             </CardTitle>
@@ -246,11 +246,11 @@ export default function StudioCollectionView({
           </CardDescription>
           <div className="relative">
             <IconSearch
-              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+              className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground"
               aria-hidden
             />
             <Input
-              className="h-9 border-input bg-background pl-9 shadow-none"
+              className="h-7 border-input bg-background pl-9 shadow-none"
               placeholder={searchPlaceholder}
               type="search"
               value={searchValue}
@@ -262,11 +262,11 @@ export default function StudioCollectionView({
           <ScrollArea className="h-full">
             <div className="space-y-2 pr-3">
               {isLoading ? (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   Loading {screen}…
                 </p>
               ) : filteredRows.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {emptyStateMessage(screen, hasSearch)}
                 </p>
               ) : (
@@ -275,7 +275,7 @@ export default function StudioCollectionView({
                     <li key={`${screen}-${row.id}`}>
                       <Item size="sm" variant="outline">
                         <ItemContent>
-                          <ItemTitle className="text-sm font-semibold text-foreground md:text-base">
+                          <ItemTitle className="text-xs font-semibold text-foreground md:text-sm">
                             {row.title}
                           </ItemTitle>
                           <ItemDescription>{row.meta}</ItemDescription>

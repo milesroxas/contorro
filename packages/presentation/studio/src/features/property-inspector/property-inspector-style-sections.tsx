@@ -48,7 +48,7 @@ function InspectorStyleValueGrid({
   tokenMetadata: TokenMeta[];
 }) {
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-x-3 gap-y-1.5">
       {properties.map((property) => {
         const cascade = readStyleEntryCascade(
           composition,
@@ -97,7 +97,7 @@ function InspectorStyleMoreOptionsBlock({
     <Collapsible>
       <CollapsibleTrigger asChild>
         <Button
-          className="h-8 w-full justify-between px-2 text-xs"
+          className="h-6 w-full justify-between px-2 text-xs"
           type="button"
           variant="ghost"
         >
@@ -107,7 +107,7 @@ function InspectorStyleMoreOptionsBlock({
           </span>
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent className="pt-3">
+      <CollapsibleContent className="pt-2">
         <div className={moreOptionsGridClassName(sectionId)}>
           {groupedSecondaryProperties.map((property) => {
             const cascade = readStyleEntryCascade(
@@ -162,7 +162,7 @@ function InspectorSpacingStyleSection({
   const showMoreOptions =
     model.secondaryProperties.length > 0 && model.primaryProperties.length > 0;
   return (
-    <div className={`${inspectorStyleSectionTopClass(sectionIndex)}space-y-4`}>
+    <div className={`${inspectorStyleSectionTopClass(sectionIndex)}space-y-3`}>
       <Collapsible
         onOpenChange={(open) => setStyleSectionOpen(section.id, open)}
         open={isStyleSectionOpen(section.id)}
@@ -189,7 +189,7 @@ function InspectorSpacingStyleSection({
             />
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-4 pt-3">
+        <CollapsibleContent className="space-y-2 pt-1.5">
           <SpacingBoxControl
             activeBreakpoint={activeBreakpoint}
             availableProperties={new Set(model.sectionProperties)}
@@ -252,7 +252,7 @@ function InspectorBorderStyleSection({
   tokenMetadata: TokenMeta[];
 }) {
   return (
-    <div className={`${inspectorStyleSectionTopClass(sectionIndex)}space-y-4`}>
+    <div className={`${inspectorStyleSectionTopClass(sectionIndex)}space-y-3`}>
       <Collapsible
         onOpenChange={(open) => setStyleSectionOpen(section.id, open)}
         open={isStyleSectionOpen(section.id)}
@@ -279,7 +279,7 @@ function InspectorBorderStyleSection({
             />
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-4 pt-3">
+        <CollapsibleContent className="space-y-2 pt-1.5">
           <BorderControl
             activeBreakpoint={activeBreakpoint}
             availableProperties={new Set(model.filteredSectionProperties)}
@@ -354,7 +354,7 @@ function InspectorDefaultStyleSection({
             />
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-2 pt-3">
+        <CollapsibleContent className="space-y-1.5 pt-1.5">
           <InspectorStyleValueGrid
             activeBreakpoint={activeBreakpoint}
             composition={composition}

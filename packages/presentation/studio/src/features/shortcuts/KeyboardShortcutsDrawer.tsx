@@ -115,7 +115,7 @@ function ShortcutKey({ children }: { children: ReactNode }) {
   return (
     <kbd
       className={cn(
-        "inline-flex h-7 min-w-7 items-center justify-center rounded-md border border-border/75 bg-muted/70 px-2 font-mono text-[11px] font-semibold leading-none text-foreground",
+        "inline-flex h-6 min-w-6 items-center justify-center rounded-md border border-border/75 bg-muted/70 px-2 font-mono text-[11px] font-semibold leading-none text-foreground",
         "shadow-[inset_0_-1px_0_rgba(0,0,0,0.16)] dark:shadow-[inset_0_-1px_0_rgba(0,0,0,0.38)]",
       )}
     >
@@ -152,10 +152,10 @@ function ShortcutRow({
   combos: readonly (readonly string[])[];
 }) {
   return (
-    <div className="grid gap-3 py-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+    <div className="grid gap-2 py-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
       <div className="min-w-0">
-        <p className="text-sm font-medium text-foreground">{action}</p>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+        <p className="text-xs font-medium text-foreground">{action}</p>
+        <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
           {detail}
         </p>
       </div>
@@ -192,7 +192,7 @@ export function KeyboardShortcutsDrawer({
           aria-keyshortcuts="`"
           aria-label="Keyboard shortcuts"
           className={cn(
-            "flex size-10 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors",
+            "flex size-8 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors",
             "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           )}
           title="Keyboard shortcuts (`)"
@@ -203,8 +203,8 @@ export function KeyboardShortcutsDrawer({
       </DrawerTrigger>
       <DrawerContent>
         <div className="flex min-h-0 w-full flex-1 flex-col">
-          <DrawerHeader className="border-b border-border/70 pb-3">
-            <div className="flex items-start justify-between gap-3">
+          <DrawerHeader className="border-b border-border/70 pb-2">
+            <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <DrawerTitle className="flex items-center gap-2">
                   <IconKeyboard
@@ -221,21 +221,21 @@ export function KeyboardShortcutsDrawer({
               <DrawerClose asChild>
                 <Button
                   aria-label="Close keyboard shortcuts"
-                  className="size-8 shrink-0"
+                  className="size-6 shrink-0"
                   size="sm"
                   type="button"
                   variant="ghost"
                 >
-                  <IconX aria-hidden className="size-4" />
+                  <IconX aria-hidden className="size-3.5" />
                 </Button>
               </DrawerClose>
             </div>
           </DrawerHeader>
           <ScrollArea className="min-h-0 flex-1">
-            <div className="p-4">
-              <div className="grid gap-6 lg:grid-cols-2">
+            <div className="p-3">
+              <div className="grid gap-4 lg:grid-cols-2">
                 {SHORTCUT_SECTIONS.map((section) => (
-                  <section className="space-y-2.5" key={section.title}>
+                  <section className="space-y-2" key={section.title}>
                     <div>
                       <h3 className="text-xs font-semibold tracking-wide text-foreground uppercase">
                         {section.title}

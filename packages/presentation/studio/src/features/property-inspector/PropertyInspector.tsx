@@ -61,7 +61,7 @@ export function PropertyInspector({
 
   if (!node || !composition) {
     return (
-      <div className="text-sm text-muted-foreground">
+      <div className="text-xs text-muted-foreground">
         Select an element on the canvas or in layers.
       </div>
     );

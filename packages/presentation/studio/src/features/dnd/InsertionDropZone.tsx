@@ -35,7 +35,7 @@ function betweenDropCueClass(
 function emptyDropSurfaceClass(isLayersScope: boolean): string {
   return isLayersScope
     ? "min-h-[2.625rem] rounded-sm px-2.5 py-1.5 text-xs"
-    : "min-h-[4rem] rounded-sm px-3.5 py-4 text-sm";
+    : "min-h-[4rem] rounded-sm px-3.5 py-4 text-xs";
 }
 
 function emptyDropStateClass(isOver: boolean): string {

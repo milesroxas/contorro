@@ -85,7 +85,7 @@ function BorderSideSelector({
       <button
         aria-label={label}
         aria-pressed={isOn}
-        className={`inline-flex size-9 items-center justify-center rounded-md border transition-colors ${
+        className={`inline-flex size-7 items-center justify-center rounded-md border transition-colors ${
           isOn
             ? "border-primary bg-primary/15 text-primary"
             : "border-border/70 bg-background text-muted-foreground hover:bg-accent/40"
@@ -114,7 +114,7 @@ function BorderSideSelector({
 function borderStyleSegmentIcon(utility: string) {
   switch (utility) {
     case "none":
-      return <IconX aria-hidden className="size-4" stroke={2} />;
+      return <IconX aria-hidden className="size-3.5" stroke={2} />;
     case "solid":
       return <span aria-hidden className="block h-0.5 w-5 bg-current" />;
     case "dashed":
@@ -182,7 +182,7 @@ function BorderStyleUtilityChips({
           <button
             aria-label={utilityValueLabel(property, value)}
             aria-pressed={pressed}
-            className={`inline-flex size-9 items-center justify-center rounded-md border transition-colors ${
+            className={`inline-flex size-7 items-center justify-center rounded-md border transition-colors ${
               pressed
                 ? "border-primary bg-primary/12 text-primary"
                 : "border-border/60 bg-background text-muted-foreground hover:bg-accent/40"
@@ -234,7 +234,7 @@ function BorderWidthUtilityPopover({
     <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger asChild>
         <button
-          className="inline-flex h-9 min-w-0 max-w-full flex-1 items-center justify-center rounded-md border border-border/60 bg-background px-2 font-mono text-xs font-medium tabular-nums hover:bg-accent/30"
+          className="inline-flex h-7 min-w-0 max-w-full flex-1 items-center justify-center rounded-md border border-border/60 bg-background px-2 font-mono text-xs font-medium tabular-nums hover:bg-accent/30"
           title={stylePropertyLabel(property)}
           type="button"
         >
@@ -377,15 +377,15 @@ function BorderColorField({
     <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger asChild>
         <button
-          className="flex min-h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border/60 bg-background px-2 py-1.5 text-left text-sm hover:bg-accent/30"
+          className="flex min-h-7 min-w-0 flex-1 items-center gap-1.5 rounded-md border border-border/60 bg-background px-2 py-1.5 text-left text-xs hover:bg-accent/30"
           type="button"
         >
           <span
             aria-hidden
-            className="size-6 shrink-0 rounded border border-border/70"
+            className="size-5 shrink-0 rounded border border-border/70"
             style={swatchStyle}
           />
-          <span className="min-w-0 flex-1 truncate text-sm">
+          <span className="min-w-0 flex-1 truncate text-xs">
             {displayLabel}
           </span>
           <IconChevronDown
@@ -637,12 +637,12 @@ export function BorderControl({
     : undefined;
 
   return (
-    <div className="rounded-md border border-border/70 bg-background/50 p-3">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+    <div className="rounded-md border border-border/70 bg-background/50 p-2.5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         <BorderSideSelector onSelect={setActiveSide} selected={activeSide} />
-        <div className="min-w-0 flex-1 space-y-3">
+        <div className="min-w-0 flex-1 space-y-2">
           {hasStyle ? (
-            <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1">
+            <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1">
               <BorderPropertyRowLabel
                 onReset={() => onNodeStyleEntry("borderStyle", null)}
                 showModified={Boolean(styleEntry)}
@@ -658,7 +658,7 @@ export function BorderControl({
             </div>
           ) : null}
           {hasWidth ? (
-            <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1">
+            <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1">
               <BorderPropertyRowLabel
                 onReset={() => onNodeStyleEntry("borderWidth", null)}
                 showModified={Boolean(widthEntry)}
@@ -673,7 +673,7 @@ export function BorderControl({
             </div>
           ) : null}
           {hasColor ? (
-            <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1">
+            <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1">
               <BorderPropertyRowLabel
                 onReset={() => onNodeStyleEntry("borderColor", null)}
                 showModified={Boolean(colorEntry)}
@@ -688,7 +688,7 @@ export function BorderControl({
             </div>
           ) : null}
           {radiusProperty ? (
-            <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-1">
+            <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-2 gap-y-1">
               <BorderPropertyRowLabel
                 onReset={() => onNodeStyleEntry("borderRadius", null)}
                 showModified={Boolean(radiusEntry)}

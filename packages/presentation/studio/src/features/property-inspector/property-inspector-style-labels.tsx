@@ -131,10 +131,10 @@ export function ColorOptionLabel({
   style: { backgroundColor: string; opacity?: number };
 }) {
   return (
-    <span className="inline-flex items-center gap-2 leading-none">
+    <span className="inline-flex items-center gap-1.5 leading-none">
       <span
         aria-hidden
-        className="size-5 shrink-0 rounded-sm border border-border/70"
+        className="size-4 shrink-0 rounded-sm border border-border/70"
         style={style}
       />
       <span className="leading-none">{label}</span>
@@ -232,10 +232,10 @@ export function controlOptionButtonClass({
   iconOnly: boolean;
 }): string {
   return cn(
-    "inline-flex h-10 items-center justify-center rounded-md transition-colors",
+    "inline-flex h-7 items-center justify-center rounded-md transition-colors",
     iconOnly
-      ? "size-10 p-0"
-      : "min-w-10 whitespace-nowrap px-2 text-xs font-medium",
+      ? "size-7 p-0"
+      : "min-w-7 whitespace-nowrap px-2 text-xs font-medium",
     selected
       ? "bg-primary/12 text-primary"
       : "bg-background hover:bg-accent/40",

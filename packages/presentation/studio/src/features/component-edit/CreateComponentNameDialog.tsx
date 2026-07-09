@@ -67,7 +67,7 @@ export function CreateComponentNameDialog({
             reusable reference.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor={inputId}>Component name</Label>
           <Input
             autoFocus

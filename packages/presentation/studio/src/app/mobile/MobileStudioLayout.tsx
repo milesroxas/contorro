@@ -427,7 +427,7 @@ function MobileMenuSheet({
   saving: boolean;
 }) {
   return (
-    <div className="flex min-h-0 flex-col gap-3 overflow-y-auto px-4 pt-2 pb-4">
+    <div className="flex min-h-0 flex-col gap-2 overflow-y-auto px-3 pt-2 pb-3">
       <div className="flex items-center gap-2">
         <Button
           aria-label="Undo"
@@ -456,7 +456,7 @@ function MobileMenuSheet({
       </div>
       <div className="flex flex-col gap-2">
         <Button
-          className="h-12 justify-start gap-2 text-base"
+          className="h-10 justify-start gap-2 text-sm"
           disabled={!dirty || saving}
           onClick={onSaveDraft}
           type="button"
@@ -466,7 +466,7 @@ function MobileMenuSheet({
           Save draft
         </Button>
         <Button
-          className="h-12 justify-start gap-2 text-base"
+          className="h-10 justify-start gap-2 text-sm"
           disabled={saving}
           onClick={onPublish}
           type="button"
@@ -478,7 +478,7 @@ function MobileMenuSheet({
       {hideStudioHubNavigation ? null : (
         <>
           <Separator className="my-2" />
-          <div className="flex flex-col gap-1 text-sm">
+          <div className="flex flex-col gap-1 text-xs">
             {STUDIO_NAV_ITEMS.map(({ id, href, Icon, label }) => {
               const isActive = activeNavScreen === id;
               return (
@@ -512,7 +512,7 @@ function MobileAddSheet({
   onCatalogChange: (value: MobileAddCatalog) => void;
 }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pt-2 pb-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pt-2 pb-3">
       <p className="text-xs leading-snug text-muted-foreground">
         Tap an item to arm it, then tap a spot on the canvas to place it.
         Long-press to drag instead.
@@ -531,13 +531,13 @@ function MobileAddSheet({
           <TabsTrigger value="components">Components</TabsTrigger>
         </TabsList>
         <TabsContent
-          className="mt-3 min-h-0 overflow-y-auto"
+          className="mt-2 min-h-0 overflow-y-auto"
           value="primitives"
         >
           <PrimitiveCatalog />
         </TabsContent>
         <TabsContent
-          className="mt-3 min-h-0 overflow-y-auto"
+          className="mt-2 min-h-0 overflow-y-auto"
           value="components"
         >
           <LibraryComponentCatalog />
@@ -580,8 +580,8 @@ function MobileLayersSheet({
 }) {
   if (componentEditFromTemplate) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pt-2 pb-4">
-        <p className="text-sm font-medium text-foreground">Layers</p>
+      <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pt-2 pb-3">
+        <p className="text-xs font-medium text-foreground">Layers</p>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <NodeTree
             composition={composition}
@@ -599,7 +599,7 @@ function MobileLayersSheet({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pt-2 pb-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pt-2 pb-3">
       <Tabs
         className="flex min-h-0 flex-1 flex-col"
         onValueChange={(value) => {
@@ -626,7 +626,7 @@ function MobileLayersSheet({
           />
         </TabsContent>
         <TabsContent
-          className="mt-3 flex min-h-0 flex-col gap-2 overflow-y-auto"
+          className="mt-2 flex min-h-0 flex-col gap-2 overflow-y-auto"
           value="pageTemplates"
         >
           <div className="flex items-center justify-end">
@@ -684,7 +684,7 @@ function MobileInspectSheet({
   tokenMetadata: TokenMeta[];
 }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-2 pb-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-3 pt-2 pb-3">
       <PropertyInspector
         activeBreakpoint={activeBreakpoint}
         blockTypeSettings={blockTypeSettings}

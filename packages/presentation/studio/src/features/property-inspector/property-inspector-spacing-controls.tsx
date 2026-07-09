@@ -201,7 +201,7 @@ function SpacingGroupPopover({
       <PopoverTrigger asChild>
         <button
           className={cn(
-            "inline-flex h-8 min-w-[72px] shrink-0 items-center justify-center rounded-sm border bg-background px-2 text-[11px] font-semibold leading-none hover:bg-accent/40 disabled:opacity-50",
+            "inline-flex h-6 min-w-[72px] shrink-0 items-center justify-center rounded-sm border bg-background px-2 text-[11px] font-semibold leading-none hover:bg-accent/40 disabled:opacity-50",
             hasOverride
               ? "border-primary/45 ring-1 ring-primary/25"
               : "border-border/70",
@@ -296,7 +296,7 @@ function SpacingSidePopover({
     <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger asChild>
         <button
-          className={`inline-flex h-8 min-w-[72px] shrink-0 items-center justify-center rounded-sm border bg-background px-2 text-[11px] font-semibold leading-none hover:bg-accent/40 disabled:opacity-50 ${
+          className={`inline-flex h-6 min-w-[72px] shrink-0 items-center justify-center rounded-sm border bg-background px-2 text-[11px] font-semibold leading-none hover:bg-accent/40 disabled:opacity-50 ${
             hasOverride
               ? "border-primary/45 ring-1 ring-primary/25"
               : "border-border/70"
@@ -421,8 +421,8 @@ function SpacingPropertyPanel({
   );
 
   return (
-    <div className="space-y-3 rounded-md border border-border/70 bg-background/50 p-3">
-      <div className="flex items-center justify-between gap-2">
+    <div className="space-y-2 rounded-md border border-border/70 bg-background/50 p-2.5">
+      <div className="flex items-center justify-between gap-1.5">
         <Select
           onValueChange={(value) => {
             if (value === "sides" || value === "axis" || value === "all") {
@@ -433,7 +433,7 @@ function SpacingPropertyPanel({
         >
           <SelectTrigger
             aria-label={`${baseLabel} value target`}
-            className="h-8 w-[80px] text-xs font-medium"
+            className="h-6 w-[80px] text-xs font-medium"
           >
             <SelectValue />
           </SelectTrigger>
@@ -452,7 +452,7 @@ function SpacingPropertyPanel({
             />
             <Button
               aria-label={`Reset ${baseLabel.toLowerCase()} spacing`}
-              className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+              className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
               onClick={() => {
                 for (const property of allTargetProperties) {
                   onNodeStyleEntry(property, null);
@@ -484,7 +484,7 @@ function SpacingPropertyPanel({
           valueProperty={shorthandProperty}
         />
       ) : targetMode === "axis" ? (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-1.5">
           <SpacingGroupPopover
             disabled={horizontalDisabled}
             fallbackEntry={shorthandEntry}
@@ -509,8 +509,8 @@ function SpacingPropertyPanel({
           />
         </div>
       ) : (
-        <div className="mx-auto grid w-[252px] grid-cols-3 grid-rows-3 gap-2">
-          <div className="col-start-2 row-start-2 flex h-8 items-center justify-center rounded-md border border-dashed border-border/70 bg-muted/20 text-[10px] font-semibold uppercase text-muted-foreground">
+        <div className="mx-auto grid w-[252px] grid-cols-3 grid-rows-3 gap-1.5">
+          <div className="col-start-2 row-start-2 flex h-6 items-center justify-center rounded-md border border-dashed border-border/70 bg-muted/20 text-[10px] font-semibold uppercase text-muted-foreground">
             {basePrefix}
           </div>
           {SPACING_SIDE_KEYS.map((side) => {
@@ -574,7 +574,7 @@ export function SpacingBoxControl({
         <TabsTrigger value="padding">Padding</TabsTrigger>
         <TabsTrigger value="margin">Margin</TabsTrigger>
       </TabsList>
-      <TabsContent className="mt-3" value="margin">
+      <TabsContent className="mt-2" value="margin">
         <SpacingPropertyPanel
           activeBreakpoint={activeBreakpoint}
           availableProperties={availableProperties}
@@ -584,7 +584,7 @@ export function SpacingBoxControl({
           shorthandProperty="margin"
         />
       </TabsContent>
-      <TabsContent className="mt-3" value="padding">
+      <TabsContent className="mt-2" value="padding">
         <SpacingPropertyPanel
           activeBreakpoint={activeBreakpoint}
           availableProperties={availableProperties}

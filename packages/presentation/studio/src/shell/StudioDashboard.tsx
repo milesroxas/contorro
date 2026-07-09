@@ -178,17 +178,17 @@ function QuickActionCard({
   const hasSecondaryAction = Boolean(secondaryAction);
 
   return (
-    <Card className="h-full flex-1 flex-col justify-between gap-3 rounded-lg border border-border bg-card py-0 ring-0">
-      <CardHeader className="space-y-3 pb-0">
-        <div className="inline-flex size-9 items-center justify-center rounded-md bg-muted/60">
-          <Icon className="size-4" aria-hidden />
+    <Card className="h-full flex-1 flex-col justify-between gap-2 rounded-lg border border-border bg-card py-0 ring-0">
+      <CardHeader className="space-y-2 pb-0">
+        <div className="inline-flex size-7 items-center justify-center rounded-md bg-muted/60">
+          <Icon className="size-3.5" aria-hidden />
         </div>
         <div className="space-y-1">
           <CardTitle className="font-semibold">{title}</CardTitle>
-          <CardDescription className="text-sm">{description}</CardDescription>
+          <CardDescription className="text-xs">{description}</CardDescription>
         </div>
       </CardHeader>
-      <CardContent className="pb-4 pt-3">
+      <CardContent className="pb-3 pt-2">
         <div
           className={cn(
             "grid w-full gap-2 [&>[data-slot=button]]:w-full [&>[data-slot=button]]:justify-center",
@@ -264,10 +264,10 @@ function ResourceListCard({
 }: ResourceListCardProps) {
   return (
     <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-card ring-0">
-      <CardHeader className="gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Icon className="size-4" aria-hidden />
+      <CardHeader className="gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Icon className="size-3.5" aria-hidden />
             {title}
           </CardTitle>
           <span className="inline-flex min-w-7 items-center justify-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
@@ -276,11 +276,11 @@ function ResourceListCard({
         </div>
         <div className="relative">
           <IconSearch
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground"
             aria-hidden
           />
           <Input
-            className="h-9 border-input bg-background pl-9 shadow-none"
+            className="h-7 border-input bg-background pl-9 shadow-none"
             placeholder={searchPlaceholder}
             type="search"
             value={searchValue}
@@ -292,12 +292,12 @@ function ResourceListCard({
         <ScrollArea className="h-full">
           <div className="w-full space-y-2 pr-3">
             {showBlockingLoading ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Loading {title.toLowerCase()}...
               </p>
             ) : rows.length === 0 ? (
               <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+                <p className="text-xs text-muted-foreground">{emptyMessage}</p>
                 <Button asChild size="sm" variant="link">
                   <Link href={emptyHref} prefetch={false}>
                     {emptyCtaLabel}
@@ -310,7 +310,7 @@ function ResourceListCard({
                   <li key={`${row.resourceType}-${row.id}`}>
                     <Item size="sm" variant="outline">
                       <ItemContent>
-                        <ItemTitle className="text-sm font-semibold text-foreground md:text-base">
+                        <ItemTitle className="text-xs font-semibold text-foreground md:text-sm">
                           {renderItemTitle ? renderItemTitle(row) : row.title}
                         </ItemTitle>
                         <ItemDescription>{row.meta}</ItemDescription>
@@ -659,13 +659,13 @@ export default function StudioDashboard() {
     !isError;
 
   return (
-    <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto px-4 py-4 md:px-6 md:py-5 xl:px-8 lg:overflow-hidden">
-      <header className="shrink-0 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-y-auto px-3 py-3 md:px-4 md:py-4 xl:px-6 lg:overflow-hidden">
+      <header className="shrink-0 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
             Studio
           </h1>
-          <p className="text-sm text-muted-foreground md:text-base">
+          <p className="text-xs text-muted-foreground md:text-sm">
             Create, iterate, and publish templates, components, and design
             tokens from one dashboard.
           </p>
@@ -677,39 +677,39 @@ export default function StudioDashboard() {
                 ? "Switch to light mode"
                 : "Switch to dark mode"
             }
-            className="size-9 shrink-0 p-0"
+            className="size-7 shrink-0 p-0"
             onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
             size="sm"
             type="button"
             variant="secondary"
           >
             {currentTheme === "dark" ? (
-              <IconSun className="size-4" aria-hidden />
+              <IconSun className="size-3.5" aria-hidden />
             ) : (
-              <IconMoon className="size-4" aria-hidden />
+              <IconMoon className="size-3.5" aria-hidden />
             )}
           </Button>
           <Button onClick={refreshDashboard} type="button" variant="secondary">
-            <IconRefresh className="size-4" aria-hidden />
+            <IconRefresh className="size-3.5" aria-hidden />
             Refresh
           </Button>
         </div>
       </header>
       {isError ? (
-        <p className="mt-4 shrink-0 rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <p className="mt-3 shrink-0 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
           Could not load dashboard data. Click refresh and try again.
         </p>
       ) : null}
-      <div className="grid gap-4 pt-4 md:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] lg:min-h-0 lg:flex-1">
-        <div className="flex flex-col gap-4 lg:min-h-0 lg:overflow-hidden">
+      <div className="grid gap-3 pt-3 md:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] lg:min-h-0 lg:flex-1">
+        <div className="flex flex-col gap-3 lg:min-h-0 lg:overflow-hidden">
           <Card className="shrink-0 rounded-lg border border-border bg-card ring-0">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-lg">Quick actions</CardTitle>
+              <CardTitle className="text-base">Quick actions</CardTitle>
               <CardDescription>
                 Clear entry points for your three core workflows.
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <CardContent className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
               {quickActions.map((action) => (
                 <QuickActionCard
                   description={action.description}
@@ -723,7 +723,7 @@ export default function StudioDashboard() {
             </CardContent>
           </Card>
 
-          <section className="flex flex-col gap-4 md:flex-row md:items-stretch lg:min-h-0 lg:flex-1">
+          <section className="flex flex-col gap-3 md:flex-row md:items-stretch lg:min-h-0 lg:flex-1">
             <ResourceListCard
               emptyCtaLabel="View templates"
               emptyHref={templateCollectionHref}
@@ -789,15 +789,15 @@ export default function StudioDashboard() {
           </section>
         </div>
 
-        <div className="flex flex-col gap-4 lg:min-h-0 lg:overflow-hidden">
+        <div className="flex flex-col gap-3 lg:min-h-0 lg:overflow-hidden">
           <Card className="shrink-0 rounded-lg bg-card ring-0">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-lg">Workspace health</CardTitle>
+              <CardTitle className="text-base">Workspace health</CardTitle>
               <CardDescription>
                 Keep a quick pulse on content volume and publication readiness.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <dl className="grid grid-cols-2 gap-2">
                 {overviewStats.map((item) => (
                   <div
@@ -807,7 +807,7 @@ export default function StudioDashboard() {
                     <dt className="text-[11px] text-muted-foreground">
                       {item.label}
                     </dt>
-                    <dd className="text-base font-medium text-foreground">
+                    <dd className="text-sm font-medium text-foreground">
                       {item.value}
                     </dd>
                   </div>
@@ -841,8 +841,8 @@ export default function StudioDashboard() {
 
           <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-card ring-0">
             <CardHeader className="space-y-1">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <IconClock className="size-4" aria-hidden />
+              <CardTitle className="flex items-center gap-2 text-base">
+                <IconClock className="size-3.5" aria-hidden />
                 Continue where you left off
               </CardTitle>
               <CardDescription>
@@ -854,18 +854,18 @@ export default function StudioDashboard() {
               <ScrollArea className="h-full">
                 <div className="pr-3">
                   {dashboardBlockingLoading ? (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       Loading recent work...
                     </p>
                   ) : recentRows.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       No recent items yet. Start from quick actions above.
                     </p>
                   ) : (
                     <ul className="grid gap-2">
                       {recentRows.map((row) => (
                         <li
-                          className="flex h-full flex-col justify-between gap-3 rounded-md bg-muted/15 p-3 [&>[data-slot=button]]:w-full [&>[data-slot=button]]:justify-start"
+                          className="flex h-full flex-col justify-between gap-2 rounded-md bg-muted/15 p-2.5 [&>[data-slot=button]]:w-full [&>[data-slot=button]]:justify-start"
                           key={`recent-${row.resourceType}-${row.id}`}
                         >
                           <div className="space-y-1">
@@ -878,7 +878,7 @@ export default function StudioDashboard() {
                                 onApplied={(r) => {
                                   applyTemplateRename(row.id, r);
                                 }}
-                                readOnlyNameClassName="truncate text-sm font-medium text-foreground"
+                                readOnlyNameClassName="truncate text-xs font-medium text-foreground"
                                 resourceLabel="Page template"
                               />
                             ) : (
@@ -890,7 +890,7 @@ export default function StudioDashboard() {
                                 onApplied={(r) => {
                                   applyComponentRename(row.id, r);
                                 }}
-                                readOnlyNameClassName="truncate text-sm font-medium text-foreground"
+                                readOnlyNameClassName="truncate text-xs font-medium text-foreground"
                                 resourceLabel="Component"
                               />
                             )}

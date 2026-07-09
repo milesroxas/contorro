@@ -42,7 +42,7 @@ export function ComponentEditReturnBar({
 
   return (
     <div
-      className="flex min-h-0 shrink-0 flex-col items-center justify-center border-b border-border/70 bg-muted/30 px-3 py-3 dark:bg-muted/15"
+      className="flex min-h-0 shrink-0 flex-col items-center justify-center border-b border-border/70 bg-muted/30 px-3 py-2 dark:bg-muted/15"
       data-testid="component-edit-return-bar"
     >
       <Button asChild size="default" variant="secondary">

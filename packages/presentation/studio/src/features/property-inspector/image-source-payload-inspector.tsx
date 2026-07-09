@@ -128,7 +128,7 @@ function ImageSourceUrlFieldRow({
   urlFieldLabel: string;
 }) {
   return (
-    <div className="space-y-3 border-t border-border/60 pt-5">
+    <div className="space-y-2 border-t border-border/60 pt-4">
       <SettingsFieldRow
         definitionKey={definitionKey}
         htmlFor={`${baseId}-image-url`}

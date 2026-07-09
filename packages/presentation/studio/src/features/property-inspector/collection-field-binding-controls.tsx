@@ -113,15 +113,15 @@ export function CollectionFieldBindingSection({
 
   if (fieldsError) {
     return (
-      <div className="space-y-2 rounded-md border border-border/60 bg-muted/15 p-3">
+      <div className="space-y-1.5 rounded-md border border-border/60 bg-muted/15 p-2.5">
         <div className="space-y-1">
           <Label
-            className="text-sm font-medium"
+            className="text-xs font-medium"
             htmlFor={`${baseId}-coll-field`}
           >
             Collection field
           </Label>
-          <p className="text-xs leading-snug text-muted-foreground">
+          <p className="text-[11px] leading-snug text-muted-foreground">
             Map this element to a field from the parent Collection&apos;s CMS
             schema. Values resolve at preview and on the live site.
           </p>
@@ -136,18 +136,18 @@ export function CollectionFieldBindingSection({
   }
 
   return (
-    <div className="space-y-2 rounded-md border border-border/60 bg-muted/15 p-3">
+    <div className="space-y-1.5 rounded-md border border-border/60 bg-muted/15 p-2.5">
       <div className="space-y-1">
-        <Label className="text-sm font-medium" htmlFor={`${baseId}-coll-field`}>
+        <Label className="text-xs font-medium" htmlFor={`${baseId}-coll-field`}>
           Collection field
         </Label>
-        <p className="text-xs leading-snug text-muted-foreground">
+        <p className="text-[11px] leading-snug text-muted-foreground">
           Map this element to a field from the parent Collection&apos;s CMS
           schema. Values resolve at preview and on the live site.
         </p>
       </div>
       {disabled ? (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[11px] text-muted-foreground">
           Clear the content field binding to bind collection data.
         </p>
       ) : null}
@@ -168,7 +168,7 @@ export function CollectionFieldBindingSection({
         }}
         value={boundPath === "" ? "__none__" : boundPath}
       >
-        <SelectTrigger className="h-9" id={`${baseId}-coll-field`}>
+        <SelectTrigger className="h-7" id={`${baseId}-coll-field`}>
           <SelectValue placeholder="Select a field" />
         </SelectTrigger>
         <SelectContent>

@@ -28,7 +28,7 @@ export function PageTemplateListFilterSelect({
     >
       <SelectTrigger
         aria-label="Filter page templates"
-        className="h-8 w-full border-border/80 bg-background/80 text-left text-xs normal-case"
+        className="h-6 w-full border-border/80 bg-background/80 text-left text-xs normal-case"
       >
         <SelectValue placeholder="Filter" />
       </SelectTrigger>

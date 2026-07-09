@@ -27,7 +27,7 @@ function draftSavePublicationPill(args: {
   cmsPublicationStatus: "draft" | "published" | null;
 }): { label: string; className: string; dotClassName: string } {
   const basePill =
-    "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium";
+    "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium";
   if (args.saving) {
     return {
       label: "Saving...",
@@ -124,12 +124,12 @@ export function DraftSaveBar({
   });
 
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-muted/20 px-4 py-3 dark:bg-muted/10">
+    <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border bg-muted/20 px-3 py-2 dark:bg-muted/10">
       {editingName && canEditName ? (
         <>
           <input
             aria-label={`${resourceLabel} name`}
-            className="h-8 min-w-[220px] max-w-[38vw] rounded-md border border-border bg-background px-2.5 text-sm text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-6 min-w-[220px] max-w-[38vw] rounded-md border border-border bg-background px-2 text-xs text-foreground shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onChange={(e) => setDraftName(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -172,7 +172,7 @@ export function DraftSaveBar({
         </>
       ) : (
         <>
-          <p className="max-w-[32vw] truncate text-sm font-medium text-foreground">
+          <p className="max-w-[32vw] truncate text-xs font-medium text-foreground">
             {resourceLabel}: {displayName}
           </p>
           {canEditName ? (
@@ -184,7 +184,7 @@ export function DraftSaveBar({
               type="button"
               variant="ghost"
             >
-              <IconPencil className="size-4" />
+              <IconPencil className="size-3.5" />
               <span className="sr-only">{renameLabel}</span>
             </Button>
           ) : null}
@@ -205,7 +205,7 @@ export function DraftSaveBar({
         type="button"
         variant="ghost"
       >
-        <IconArrowBackUp className="size-4" />
+        <IconArrowBackUp className="size-3.5" />
       </Button>
       <Button
         aria-label="Redo"
@@ -217,7 +217,7 @@ export function DraftSaveBar({
         type="button"
         variant="ghost"
       >
-        <IconArrowForwardUp className="size-4" />
+        <IconArrowForwardUp className="size-3.5" />
       </Button>
       <Separator
         aria-hidden
@@ -235,7 +235,7 @@ export function DraftSaveBar({
             variant="outline"
           >
             Save changes
-            <IconChevronDown aria-hidden className="size-4 opacity-70" />
+            <IconChevronDown aria-hidden className="size-3.5 opacity-70" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
@@ -244,34 +244,34 @@ export function DraftSaveBar({
           </DropdownMenuLabel>
           <DropdownMenuGroup>
             <DropdownMenuItem
-              className="flex cursor-pointer flex-col items-start gap-0.5 py-2.5"
+              className="flex cursor-pointer flex-col items-start gap-0.5 py-2"
               data-testid="save-draft"
               disabled={!dirty}
               onSelect={() => {
                 onSaveDraft();
               }}
             >
-              <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <IconDeviceFloppy aria-hidden className="size-4 shrink-0" />
+              <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                <IconDeviceFloppy aria-hidden className="size-3.5 shrink-0" />
                 Save draft
               </span>
-              <span className="pl-6 text-[11px] leading-snug text-muted-foreground">
+              <span className="pl-5 text-[11px] leading-snug text-muted-foreground">
                 Store your layout as a draft. Does not update the published
                 version.
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="flex cursor-pointer flex-col items-start gap-0.5 py-2.5"
+              className="flex cursor-pointer flex-col items-start gap-0.5 py-2"
               data-testid="publish-studio"
               onSelect={() => {
                 onPublish();
               }}
             >
-              <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <IconRocket aria-hidden className="size-4 shrink-0" />
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                <IconRocket aria-hidden className="size-3.5 shrink-0" />
                 Publish
               </span>
-              <span className="pl-6 text-[11px] leading-snug text-muted-foreground">
+              <span className="pl-5 text-[11px] leading-snug text-muted-foreground">
                 Update the published version used on the site and in the
                 component library.
               </span>

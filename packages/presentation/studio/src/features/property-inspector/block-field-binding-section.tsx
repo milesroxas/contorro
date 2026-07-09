@@ -89,15 +89,15 @@ export function BlockFieldBindingSection({
     bound !== null ? otherNodeBoundToField(composition, node.id, bound) : null;
 
   return (
-    <div className="space-y-2 rounded-md border border-border/60 bg-muted/15 p-3">
+    <div className="space-y-1.5 rounded-md border border-border/60 bg-muted/15 p-2.5">
       <div className="space-y-1">
         <Label
-          className="text-sm font-medium"
+          className="text-xs font-medium"
           htmlFor={`${baseId}-block-field`}
         >
           Content field
         </Label>
-        <p className="text-xs leading-snug text-muted-foreground">
+        <p className="text-[11px] leading-snug text-muted-foreground">
           Editors fill this {entry.label} field on each page; its value replaces
           this element&apos;s content.
         </p>

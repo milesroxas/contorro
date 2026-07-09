@@ -70,7 +70,7 @@ function BackgroundImageStyleSelectRow({
         <SelectContent>
           {options.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>
-              <span className="flex w-full min-w-0 items-baseline justify-between gap-3">
+              <span className="flex w-full min-w-0 items-baseline justify-between gap-2">
                 <span>{opt.label}</span>
                 <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
                   {opt.tailwind}
@@ -94,14 +94,14 @@ function StyleFieldGroup({
   title: string;
 }) {
   return (
-    <div className="rounded-lg border border-border/50 bg-muted/15 p-3">
-      <div className="mb-3 space-y-0.5">
+    <div className="rounded-lg border border-border/50 bg-muted/15 p-2.5">
+      <div className="mb-2 space-y-0.5">
         <p className="text-[11px] font-medium text-foreground">{title}</p>
         <p className="text-[10px] leading-snug text-muted-foreground">
           {description}
         </p>
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{children}</div>
     </div>
   );
 }
@@ -120,7 +120,7 @@ export function BoxBackgroundImageStyleFields({
   resetNodePropKey: (propKey: string) => void;
 }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <StyleFieldGroup
         description="Size and focal point. Same tokens as Tailwind bg-size and bg-position."
         title="Fit and position"

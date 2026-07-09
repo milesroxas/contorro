@@ -203,7 +203,7 @@ function PropertyInspectorSettingsTab({
         setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
       />
       {isSlot ? (
-        <div className="border-t border-border/60 pt-4">
+        <div className="border-t border-border/60 pt-3">
           <SettingsFieldRow
             definitionKey={node.definitionKey}
             htmlFor="inspector-slot-id"
@@ -228,7 +228,7 @@ function PropertyInspectorSettingsTab({
         </div>
       ) : null}
       {isLibraryComponent && componentsHref.trim() !== "" ? (
-        <div className="border-t border-border/60 pt-4">
+        <div className="border-t border-border/60 pt-3">
           <Button asChild className="w-full" size="sm" variant="secondary">
             <a href={componentsHref}>
               <IconPencil className="size-3.5" aria-hidden />
@@ -374,7 +374,7 @@ export function PropertyInspectorActive({
 
   return (
     <TooltipProvider>
-      <div className="min-w-0 space-y-4 text-sm">
+      <div className="min-w-0 space-y-2 text-xs">
         <Tabs
           className="min-h-0 w-full min-w-0"
           onValueChange={(value) => {
@@ -386,7 +386,7 @@ export function PropertyInspectorActive({
         >
           <div
             className={cn(
-              "text-base font-semibold text-foreground",
+              "text-xs font-semibold text-foreground",
               isLibraryComponent
                 ? "normal-case tracking-tight"
                 : "uppercase tracking-[0.1em]",
@@ -394,7 +394,7 @@ export function PropertyInspectorActive({
           >
             {nodeLabel}
           </div>
-          <div className="mt-3 space-y-2">
+          <div className="mt-2 space-y-1.5">
             <TabsList className="grid w-fit shrink-0 grid-cols-2">
               <TabsTrigger
                 aria-keyshortcuts="4"
@@ -412,7 +412,7 @@ export function PropertyInspectorActive({
               </TabsTrigger>
             </TabsList>
             {showStyleToolbarActions ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 {hasStyleOverrides ? (
                   <Button
                     className="shrink-0"
@@ -443,9 +443,9 @@ export function PropertyInspectorActive({
               </div>
             ) : null}
           </div>
-          <TabsContent className="mt-4 min-w-0" value="styles">
+          <TabsContent className="mt-2 min-w-0" value="styles">
             {hasStyleControls ? (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {orderedStyleSections.map((section, sectionIndex) => (
                   <InspectorOrderedStyleSectionItem
                     key={section.id}
@@ -472,12 +472,12 @@ export function PropertyInspectorActive({
                 ) : null}
               </div>
             ) : (
-              <div className="rounded-md border border-border/70 bg-muted/20 p-2.5 text-xs leading-snug text-muted-foreground">
+              <div className="rounded-md border border-border/70 bg-muted/20 p-2 text-xs leading-snug text-muted-foreground">
                 No style controls available for this element.
               </div>
             )}
           </TabsContent>
-          <TabsContent className="mt-4 min-w-0 space-y-4" value="settings">
+          <TabsContent className="mt-2 min-w-0 space-y-2" value="settings">
             <PropertyInspectorSettingsTab
               blockTypeSettings={blockTypeSettings}
               componentsHref={componentsHref}

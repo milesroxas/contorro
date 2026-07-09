@@ -43,9 +43,9 @@ export function StudioPaletteTile({
   tileRef: Ref<HTMLButtonElement | null>;
 }) {
   const baseClassName = cn(
-    "flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition-colors",
+    "flex flex-col items-center justify-center gap-1.5 rounded-lg border p-2 text-center transition-colors",
     "focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-    "min-h-[5.5rem]",
+    "min-h-16",
     armed
       ? "border-primary bg-primary/10 shadow-[0_0_0_1px_hsl(var(--primary)/0.55)]"
       : "border-border bg-card hover:border-primary/30 hover:bg-accent/50",
@@ -121,14 +121,14 @@ export function StudioPaletteTile({
       <Icon
         aria-hidden
         className={cn(
-          "size-6.5",
+          "size-5",
           armed ? "text-primary" : "text-muted-foreground",
         )}
         stroke={1.25}
       />
       <span
         className={cn(
-          "line-clamp-2 text-[13px] leading-tight font-medium",
+          "line-clamp-2 text-xs leading-tight font-medium",
           armed ? "text-primary" : "text-foreground",
           labelCapitalize ? "capitalize" : "normal-case",
         )}

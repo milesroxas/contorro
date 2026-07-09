@@ -97,8 +97,8 @@ function CollectionFilterRowEditor({
   };
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border border-border/60 p-3">
-      <div className="grid gap-2 sm:grid-cols-2">
+    <div className="flex flex-col gap-1.5 rounded-md border border-border/60 p-2.5">
+      <div className="grid gap-1.5 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Field</Label>
           <Select
@@ -116,7 +116,7 @@ function CollectionFilterRowEditor({
             }}
             value={filter.field || undefined}
           >
-            <SelectTrigger className="h-8" id={`${baseId}-field`}>
+            <SelectTrigger className="h-6" id={`${baseId}-field`}>
               <SelectValue placeholder="Field" />
             </SelectTrigger>
             <SelectContent>
@@ -134,7 +134,7 @@ function CollectionFilterRowEditor({
             onValueChange={(v) => onChange({ ...filter, op: v })}
             value={filter.op || undefined}
           >
-            <SelectTrigger className="h-8" id={`${baseId}-op`}>
+            <SelectTrigger className="h-6" id={`${baseId}-op`}>
               <SelectValue placeholder="Operator" />
             </SelectTrigger>
             <SelectContent>
@@ -159,7 +159,7 @@ function CollectionFilterRowEditor({
             onValueChange={(v) => onChange({ ...filter, value: v })}
             value={filter.value || "true"}
           >
-            <SelectTrigger className="h-8" id={`${baseId}-val`}>
+            <SelectTrigger className="h-6" id={`${baseId}-val`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -169,7 +169,7 @@ function CollectionFilterRowEditor({
           </Select>
         ) : (
           <Input
-            className="h-8"
+            className="h-6"
             id={`${baseId}-val`}
             onChange={(e) => onChange({ ...filter, value: e.target.value })}
             type={filter.fieldKind === "number" ? "number" : "text"}
@@ -229,7 +229,7 @@ function CollectionInspectorDynamicListSection({
         propValues={node.propValues}
       >
         <Input
-          className="h-8"
+          className="h-6"
           id={`${baseId}-sort`}
           onChange={(e) => patchNodeProps({ collectionSort: e.target.value })}
           placeholder="-updatedAt"
@@ -237,11 +237,11 @@ function CollectionInspectorDynamicListSection({
         />
       </SettingsFieldRow>
       {fieldsError ? (
-        <p className="text-sm text-destructive">{fieldsError}</p>
+        <p className="text-xs text-destructive">{fieldsError}</p>
       ) : null}
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <Label className="text-sm">Filters</Label>
+          <Label className="text-xs">Filters</Label>
           <Button
             disabled={!collectionSlug.trim() || fields.length === 0}
             onClick={addFilter}
@@ -253,13 +253,15 @@ function CollectionInspectorDynamicListSection({
           </Button>
         </div>
         {filters.length === 0 ? (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             No filters — all published documents (subject to access) are
             considered.
           </p>
         ) : null}
         {!filtersReady ? (
-          <p className="text-xs text-muted-foreground">Preparing filters…</p>
+          <p className="text-[11px] text-muted-foreground">
+            Preparing filters…
+          </p>
         ) : (
           filters.map((f, i) => (
             <CollectionFilterRowEditor
@@ -294,27 +296,27 @@ function CollectionInspectorManualEntriesSection({
 }) {
   return (
     <div className="space-y-2">
-      <Label className="text-sm">Entries</Label>
+      <Label className="text-xs">Entries</Label>
       {manualDocsError ? (
-        <p className="text-sm text-destructive">{manualDocsError}</p>
+        <p className="text-xs text-destructive">{manualDocsError}</p>
       ) : null}
       {!collectionSlug.trim() ? (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[11px] text-muted-foreground">
           Choose a collection first.
         </p>
       ) : manualDocs === null ? (
-        <p className="text-xs text-muted-foreground">Loading…</p>
+        <p className="text-[11px] text-muted-foreground">Loading…</p>
       ) : manualDocs.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No entries found.</p>
+        <p className="text-[11px] text-muted-foreground">No entries found.</p>
       ) : (
         <ScrollArea className="max-h-48 rounded-md border border-border/60">
-          <div className="space-y-2 p-2">
+          <div className="space-y-1.5 p-2">
             {manualDocs.map((doc) => {
               const checked = manualEntryIds.includes(doc.id);
               const checkboxId = `${baseId}-manual-${doc.id}`;
               return (
                 <label
-                  className="flex cursor-pointer items-start gap-2 rounded-sm px-1 py-0.5 hover:bg-accent/40"
+                  className="flex cursor-pointer items-start gap-1.5 rounded-sm px-1 py-0.5 hover:bg-accent/40"
                   htmlFor={checkboxId}
                   key={doc.id}
                 >
@@ -323,10 +325,10 @@ function CollectionInspectorManualEntriesSection({
                     id={checkboxId}
                     onCheckedChange={(v) => toggleManualId(doc.id, v === true)}
                   />
-                  <span className="text-sm leading-tight">
+                  <span className="text-xs leading-tight">
                     <span className="font-medium">{doc.label}</span>
                     {doc.slug ? (
-                      <span className="ml-1 text-xs text-muted-foreground">
+                      <span className="ml-1 text-[11px] text-muted-foreground">
                         ({doc.slug})
                       </span>
                     ) : null}
@@ -493,7 +495,7 @@ export function CollectionPrimitiveInspector({
   }
 
   return (
-    <div className="space-y-4 border-t border-border/60 pt-4">
+    <div className="space-y-3 border-t border-border/60 pt-3">
       <SettingsFieldRow
         definitionKey={node.definitionKey}
         htmlFor={`${baseId}-coll`}
@@ -503,7 +505,7 @@ export function CollectionPrimitiveInspector({
         propValues={node.propValues}
       >
         {collectionsError ? (
-          <p className="text-sm text-destructive" role="alert">
+          <p className="text-xs text-destructive" role="alert">
             {collectionsError}
           </p>
         ) : (
@@ -511,7 +513,7 @@ export function CollectionPrimitiveInspector({
             onValueChange={(v) => patchNodeProps({ collectionSlug: v })}
             value={collectionSlug.trim() || undefined}
           >
-            <SelectTrigger className="h-8" id={`${baseId}-coll`}>
+            <SelectTrigger className="h-6" id={`${baseId}-coll`}>
               <SelectValue placeholder="Choose collection" />
             </SelectTrigger>
             <SelectContent>
@@ -525,12 +527,12 @@ export function CollectionPrimitiveInspector({
         )}
       </SettingsFieldRow>
 
-      <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 px-3 py-2">
+      <div className="flex items-center justify-between gap-2 rounded-md border border-border/60 px-3 py-2">
         <div className="space-y-0.5">
-          <Label className="text-sm" htmlFor={`${baseId}-dyn`}>
+          <Label className="text-xs" htmlFor={`${baseId}-dyn`}>
             Dynamic list
           </Label>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             Off: pick entries. On: query with filters + sort.
           </p>
         </div>

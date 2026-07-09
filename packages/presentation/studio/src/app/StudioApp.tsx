@@ -394,7 +394,7 @@ function LeftRailPanelButtons({
         aria-label={label}
         aria-pressed={isActive}
         className={cn(
-          "flex size-10 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors",
+          "flex size-8 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors",
           "hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           isActive && "border-border bg-background text-foreground",
         )}
@@ -405,7 +405,7 @@ function LeftRailPanelButtons({
         title={`${label} (${shortcutDigit})`}
         type="button"
       >
-        <Icon aria-hidden className="size-5.5" stroke={1.7} />
+        <Icon aria-hidden className="size-4.5" stroke={1.7} />
       </button>
     );
   });
@@ -449,8 +449,8 @@ export function StudioApp({
     useState<PageTemplateListFilter>("all");
   const [activeInspectorTab, setActiveInspectorTab] =
     useState<StudioInspectorTab>("styles");
-  const [leftPanelWidth, setLeftPanelWidth] = useState(300);
-  const [rightPanelWidth, setRightPanelWidth] = useState(360);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(260);
+  const [rightPanelWidth, setRightPanelWidth] = useState(320);
   const [isResizingPanels, setIsResizingPanels] = useState(false);
   const [keyboardShortcutsOpen, setKeyboardShortcutsOpen] = useState(false);
   const [stagedTapInsertion, setStagedTapInsertion] =
@@ -858,7 +858,7 @@ export function StudioApp({
 
   if (!composition) {
     return (
-      <StudioRoot className="flex min-h-0 flex-1 flex-col items-center justify-center p-4 text-sm text-muted-foreground">
+      <StudioRoot className="flex min-h-0 flex-1 flex-col items-center justify-center p-4 text-xs text-muted-foreground">
         {error ?? "Loading…"}
       </StudioRoot>
     );

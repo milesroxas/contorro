@@ -28,7 +28,7 @@ export function PropertyControlLabel({
   return (
     <div className="flex min-w-0 items-center gap-1">
       <Label
-        className="mb-0 flex min-w-0 flex-1 items-center gap-2 text-xs font-medium text-muted-foreground"
+        className="mb-0 flex min-w-0 flex-1 items-center gap-1.5 text-[11px] font-medium text-muted-foreground"
         htmlFor={htmlFor}
       >
         <span className="min-w-0 truncate">{label}</span>
@@ -45,7 +45,7 @@ export function PropertyControlLabel({
           <TooltipTrigger asChild>
             <Button
               aria-label="Reset to default"
-              className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+              className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
               onClick={(e) => {
                 e.preventDefault();
                 onReset();
@@ -73,7 +73,7 @@ export function BorderPropertyRowLabel({
   onReset?: () => void;
 }) {
   return (
-    <div className="flex min-h-9 items-center gap-1">
+    <div className="flex min-h-7 items-center gap-1">
       <span className="inline-flex w-[52px] shrink-0 items-center justify-center rounded border border-primary/35 bg-primary/12 px-1.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
         {children}
       </span>
@@ -89,7 +89,7 @@ export function BorderPropertyRowLabel({
           <TooltipTrigger asChild>
             <Button
               aria-label="Reset to default"
-              className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+              className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
               onClick={(e) => {
                 e.preventDefault();
                 onReset();
@@ -130,7 +130,7 @@ export function SettingsFieldRow({
     propValues,
   );
   return (
-    <div className="min-w-0 space-y-3">
+    <div className="min-w-0 space-y-1">
       <PropertyControlLabel
         htmlFor={htmlFor}
         label={label}
@@ -174,14 +174,14 @@ export function SettingsCheckboxFieldRow({
       propKey={propKey}
       propValues={propValues}
     >
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 items-center gap-1.5">
         <Checkbox
           checked={checked}
           disabled={disabled}
           id={checkboxId}
           onCheckedChange={(v) => onCheckedChange(v === true)}
         />
-        <Label className="min-w-0 text-sm font-normal" htmlFor={checkboxId}>
+        <Label className="min-w-0 text-xs font-normal" htmlFor={checkboxId}>
           {checkboxLabel}
         </Label>
       </div>

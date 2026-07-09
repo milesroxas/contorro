@@ -230,7 +230,7 @@ function ColorSwatch({ value }: { value: string }) {
   return (
     <span
       className={cn(
-        "size-7 shrink-0 rounded-md border border-border",
+        "size-6 shrink-0 rounded-md border border-border",
         !isColor && "bg-muted",
       )}
       style={isColor ? { backgroundColor: value.trim() } : undefined}
@@ -253,7 +253,7 @@ function DesignSystemEditorColorsTab({
   setTokenValue: (key: string, value: string) => void;
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="relative">
         <Input
           onChange={(event) => setColorSearch(event.target.value)}
@@ -268,15 +268,15 @@ function DesignSystemEditorColorsTab({
           key={section.id}
           open
         >
-          <summary className="cursor-pointer text-sm font-semibold tracking-[0.08em] text-muted-foreground uppercase">
+          <summary className="cursor-pointer text-xs font-semibold tracking-[0.08em] text-muted-foreground uppercase">
             {section.label}
           </summary>
-          <div className="mt-3 space-y-3">
+          <div className="mt-3 space-y-2">
             {section.fields.map((field) => {
               const value = getTokenValue(field.key);
               return (
                 <div
-                  className="grid grid-cols-[auto_1fr] items-center gap-2"
+                  className="grid grid-cols-[auto_1fr] items-center gap-1.5"
                   key={field.key}
                 >
                   <ColorSwatch value={value} />
@@ -310,9 +310,9 @@ function DesignSystemEditorTypographyTab({
   setTokenValue: (key: string, value: string) => void;
 }) {
   return (
-    <div className="space-y-3">
-      <p className="flex items-center gap-2 text-sm text-muted-foreground">
-        <IconTypography className="size-4" aria-hidden />
+    <div className="space-y-2">
+      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <IconTypography className="size-3.5" aria-hidden />
         Typography tokens
       </p>
       {TYPOGRAPHY_FIELDS.map((field) => (
@@ -339,7 +339,7 @@ function DesignSystemEditorOtherTab({
   setTokenValue: (key: string, value: string) => void;
 }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {OTHER_FIELDS.map((field) => (
         <div className="space-y-1" key={field.key}>
           <span className="text-xs text-muted-foreground">{field.label}</span>
@@ -376,11 +376,11 @@ function DesignSystemEditorTokenScrollBody({
   tokenSets: StudioDesignTokenSetDoc[];
 }) {
   if (loadState === "loading") {
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
+    return <p className="text-xs text-muted-foreground">Loading…</p>;
   }
   if (tokenSets.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-xs text-muted-foreground">
         No token set found. Create one in collection:{" "}
         <code>design-token-sets</code>.
       </p>
@@ -435,17 +435,17 @@ function DesignSystemEditorPreviewCard({
 }) {
   return (
     <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <CardHeader className="space-y-3 border-b border-border/70 pb-4">
+      <CardHeader className="space-y-2 border-b border-border/70 pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <IconDeviceDesktop className="size-4" aria-hidden />
+          <CardTitle className="flex items-center gap-1.5 text-sm">
+            <IconDeviceDesktop className="size-3.5" aria-hidden />
             Preview
           </CardTitle>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             Uses live page route in iframe.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           <Input
             className="min-w-[220px] flex-1"
             onChange={(event) => setPreviewPath(event.target.value)}
@@ -453,17 +453,17 @@ function DesignSystemEditorPreviewCard({
             value={previewPath}
           />
           <Button
-            className="gap-2"
+            className="gap-1.5"
             onClick={() => setPreviewKey((value) => value + 1)}
             type="button"
             variant="outline"
           >
-            <IconRefresh className="size-4" aria-hidden />
+            <IconRefresh className="size-3.5" aria-hidden />
             Reload
           </Button>
         </div>
         <Separator />
-        <div className="text-xs text-muted-foreground">
+        <div className="text-[11px] text-muted-foreground">
           Active set:{" "}
           <span className="font-medium text-foreground">
             {selectedSetTitle}
@@ -695,12 +695,12 @@ export function DesignSystemEditor({
   return (
     <StudioRoot className="flex min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-3 p-3 xl:grid-cols-[minmax(340px,420px)_1fr]">
+        <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-2 p-2.5 xl:grid-cols-[minmax(340px,420px)_1fr]">
           <Card className="min-h-0 overflow-hidden">
-            <CardHeader className="gap-4 border-b border-border/70 pb-4">
+            <CardHeader className="gap-3 border-b border-border/70 pb-3">
               <div className="space-y-1">
                 <CardTitle className="text-xl">Design system editor</CardTitle>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   Visual token editing for designers. Layout mirrors builder
                   tooling patterns.
                 </p>
@@ -710,7 +710,7 @@ export function DesignSystemEditor({
                   Token set
                 </p>
                 <select
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="flex h-8 w-full rounded-md border border-input bg-background px-3 py-2 text-xs"
                   disabled={loadState === "loading" || tokenSets.length === 0}
                   value={selectedSetId}
                   onChange={(event) => {
@@ -751,9 +751,9 @@ export function DesignSystemEditor({
                   ))}
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 <Button
-                  className="gap-2"
+                  className="gap-1.5"
                   disabled={
                     saveState === "saving" || !selectedSetId || !isDirty
                   }
@@ -775,7 +775,7 @@ export function DesignSystemEditor({
                   Publish
                 </Button>
                 <Button
-                  className="gap-2"
+                  className="gap-1.5"
                   type="button"
                   variant="outline"
                   onClick={() => {
@@ -783,7 +783,7 @@ export function DesignSystemEditor({
                     void fetchTokenSets(ac.signal);
                   }}
                 >
-                  <IconRefresh className="size-4" aria-hidden />
+                  <IconRefresh className="size-3.5" aria-hidden />
                   Refresh
                 </Button>
               </div>
@@ -825,7 +825,7 @@ export function DesignSystemEditor({
                     </button>
                   ))}
                 </div>
-                <ScrollArea className="min-h-0 flex-1 px-4 py-4">
+                <ScrollArea className="min-h-0 flex-1 px-3 py-3">
                   <DesignSystemEditorTokenScrollBody
                     activeTab={activeTab}
                     colorSearch={colorSearch}

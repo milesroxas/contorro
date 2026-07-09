@@ -113,18 +113,18 @@ function MediaDocPickerList({
   onPick: (media: MediaListItem) => void;
 }) {
   if (mediaLoading) {
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
+    return <p className="text-xs text-muted-foreground">Loading…</p>;
   }
   if (mediaLoadError) {
-    return <p className="text-sm text-red-500">{mediaLoadError}</p>;
+    return <p className="text-xs text-red-500">{mediaLoadError}</p>;
   }
   if (mediaDocs.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">No media entries found.</p>
+      <p className="text-xs text-muted-foreground">No media entries found.</p>
     );
   }
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
       {mediaDocs.map((media) => (
         <button
           className="group w-full overflow-hidden rounded-lg border border-border/70 bg-background text-left transition-colors hover:border-border hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -135,11 +135,11 @@ function MediaDocPickerList({
           <div className="aspect-4/3 overflow-hidden border-b border-border/60 bg-muted/20">
             {mediaPickerThumb(variant, media.url)}
           </div>
-          <div className="space-y-1.5 p-3">
-            <div className="line-clamp-2 text-sm font-medium leading-snug">
+          <div className="space-y-1.5 p-2.5">
+            <div className="line-clamp-2 text-xs font-medium leading-snug">
               {media.alt || media.filename || media.url}
             </div>
-            <div className="truncate text-xs text-muted-foreground">
+            <div className="truncate text-[11px] text-muted-foreground">
               {media.filename || "Payload media"}
             </div>
             <div className="text-[11px] text-muted-foreground/90">
@@ -171,16 +171,16 @@ function MediaSelectionPreview({
 }) {
   if (!src) {
     return (
-      <div className="flex aspect-4/3 flex-col items-center justify-center gap-2 p-4 text-center text-muted-foreground">
-        <EmptyIcon aria-hidden className="size-8" />
-        <p className="text-sm font-medium">{copy.emptyTitle}</p>
-        <p className="text-xs">{copy.emptyHint}</p>
+      <div className="flex aspect-4/3 flex-col items-center justify-center gap-2 p-3 text-center text-muted-foreground">
+        <EmptyIcon aria-hidden className="size-7" />
+        <p className="text-xs font-medium">{copy.emptyTitle}</p>
+        <p className="text-[11px]">{copy.emptyHint}</p>
       </div>
     );
   }
   const caption = altForUpload || `Media ${mediaId || "selected"}`;
   return (
-    <div className="space-y-2 p-2">
+    <div className="space-y-1.5 p-2">
       <div className="aspect-4/3 overflow-hidden rounded-sm border border-border/70 bg-background">
         {selectedPreview(
           variant,
@@ -188,7 +188,7 @@ function MediaSelectionPreview({
           variant === "image" ? altForUpload : "Selected video",
         )}
       </div>
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
         <RowIcon aria-hidden className="size-3.5" />
         <span className="truncate">{caption}</span>
       </div>
@@ -238,9 +238,9 @@ export function PayloadMediaPickerFields({
   const RowIcon = variant === "image" ? IconPhoto : IconVideo;
 
   return (
-    <div className="space-y-5 border-t border-border/60 pt-5">
-      <div className="space-y-3">
-        <div className="flex min-w-0 items-center justify-between gap-2">
+    <div className="space-y-4 border-t border-border/60 pt-4">
+      <div className="space-y-2">
+        <div className="flex min-w-0 items-center justify-between gap-1.5">
           <Label className="min-w-0 truncate">{copy.selected}</Label>
           <Sheet onOpenChange={setMediaPickerOpen} open={mediaPickerOpen}>
             <SheetTrigger asChild>
@@ -250,7 +250,7 @@ export function PayloadMediaPickerFields({
                 type="button"
                 variant="ghost"
               >
-                <IconSearch aria-hidden className="mr-1.5 size-4" />
+                <IconSearch aria-hidden className="mr-1.5 size-3.5" />
                 Browse
               </Button>
             </SheetTrigger>
@@ -288,7 +288,7 @@ export function PayloadMediaPickerFields({
           />
         </div>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-2">
         <Label className="text-xs" htmlFor={`${baseId}-media-upload`}>
           {copy.uploadLabel}
         </Label>
@@ -323,9 +323,9 @@ export function PayloadMediaPickerFields({
           ref={uploadInputRef}
           type="file"
         />
-        <div className="rounded-md border border-dashed border-border/70 bg-muted/10 p-3">
-          <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-            <div className="flex min-w-0 flex-1 items-center gap-1.5 text-xs text-muted-foreground">
+        <div className="rounded-md border border-dashed border-border/70 bg-muted/10 p-2.5">
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-1.5">
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 text-[11px] text-muted-foreground">
               <IconUpload aria-hidden className="size-3.5 shrink-0" />
               <span className="truncate">
                 {busy ? "Uploading…" : copy.uploadHint}

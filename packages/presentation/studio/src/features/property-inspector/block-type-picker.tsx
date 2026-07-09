@@ -33,12 +33,12 @@ export function BlockTypePickerSection({
 }) {
   const baseId = useId();
   return (
-    <div className="space-y-2 rounded-md border border-border/60 bg-muted/15 p-3">
+    <div className="space-y-1.5 rounded-md border border-border/60 bg-muted/15 p-2.5">
       <div className="space-y-1">
-        <Label className="text-sm font-medium" htmlFor={`${baseId}-block-type`}>
+        <Label className="text-xs font-medium" htmlFor={`${baseId}-block-type`}>
           Block type
         </Label>
-        <p className="text-xs leading-snug text-muted-foreground">
+        <p className="text-[11px] leading-snug text-muted-foreground">
           Content contract this design implements. Pick a type to make it
           selectable as a page block; leave design-only for library parts.
         </p>
@@ -66,7 +66,7 @@ export function BlockTypePickerSection({
         </SelectContent>
       </Select>
       {settings.disabled ? (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[11px] text-muted-foreground">
           Save the component draft first to set a block type.
         </p>
       ) : null}

@@ -208,7 +208,7 @@ export function DashboardResourceName({
           <Input
             aria-invalid={Boolean(error)}
             aria-label={`${resourceLabel} name`}
-            className="h-8 min-w-0 flex-1 text-sm font-semibold md:text-base"
+            className="h-6 min-w-0 flex-1 text-xs font-semibold md:text-sm"
             disabled={saving}
             id={inputId}
             onChange={(event) => {
@@ -239,7 +239,10 @@ export function DashboardResourceName({
                   variant="outline"
                 >
                   Save changes
-                  <IconChevronDown aria-hidden className="size-4 opacity-70" />
+                  <IconChevronDown
+                    aria-hidden
+                    className="size-3.5 opacity-70"
+                  />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
@@ -254,10 +257,10 @@ export function DashboardResourceName({
                       void commit("draft");
                     }}
                   >
-                    <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <span className="flex items-center gap-2 text-xs font-medium text-foreground">
                       <IconDeviceFloppy
                         aria-hidden
-                        className="size-4 shrink-0"
+                        className="size-3.5 shrink-0"
                       />
                       Save draft
                     </span>
@@ -272,8 +275,8 @@ export function DashboardResourceName({
                       void commit("publish");
                     }}
                   >
-                    <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                      <IconRocket aria-hidden className="size-4 shrink-0" />
+                    <span className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                      <IconRocket aria-hidden className="size-3.5 shrink-0" />
                       Publish
                     </span>
                     <span className="pl-6 text-[11px] leading-snug text-muted-foreground">
@@ -300,7 +303,7 @@ export function DashboardResourceName({
       <button
         className={cn(
           "min-w-0 flex-1 truncate text-left text-foreground",
-          readOnlyNameClassName ?? "text-sm font-semibold md:text-base",
+          readOnlyNameClassName ?? "text-xs font-semibold md:text-sm",
           "rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         )}
         onClick={() => {

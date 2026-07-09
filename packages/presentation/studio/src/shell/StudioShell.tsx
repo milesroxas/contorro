@@ -41,7 +41,7 @@ function StudioShellFrame({
       {hidePrimaryNav ? null : (
         <div
           className={cn(
-            "shrink-0 border-b border-border/70 bg-muted/20 px-4 py-2 dark:bg-muted/10",
+            "shrink-0 border-b border-border/70 bg-muted/20 px-3 py-2 dark:bg-muted/10",
             hideNavUntilDesktop && "hidden lg:block",
           )}
         >
@@ -73,7 +73,7 @@ function StudioShellInner({ userRole }: StudioShellProps) {
 
   if (userRole === "contentEditor") {
     return (
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-6 text-center text-muted-foreground">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-4 text-center text-muted-foreground">
         <p className="max-w-md text-pretty">
           Studio is limited to admin and designer roles. Use{" "}
           <strong className="text-foreground">Composer</strong> to edit page
@@ -149,7 +149,7 @@ export function StudioShell({ userRole }: StudioShellProps) {
       <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col lg:overflow-hidden">
         <Suspense
           fallback={
-            <div className="flex min-h-0 flex-1 items-center justify-center p-6 text-muted-foreground">
+            <div className="flex min-h-0 flex-1 items-center justify-center p-4 text-muted-foreground">
               Loading…
             </div>
           }

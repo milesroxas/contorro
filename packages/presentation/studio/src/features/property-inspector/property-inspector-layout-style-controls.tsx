@@ -74,7 +74,7 @@ export function FlexIconStyleValueControl({
               title={meta.label}
               type="button"
             >
-              <meta.Icon aria-hidden className="size-5" stroke={1.8} />
+              <meta.Icon aria-hidden className="size-4" stroke={1.8} />
             </button>
           );
         })}
@@ -122,7 +122,7 @@ export function DisplayStyleValueControl({
           return (
             <button
               aria-pressed={selected}
-              className={`inline-flex h-10 items-center justify-center rounded-md px-3 text-xs font-medium transition-colors ${
+              className={`inline-flex h-7 items-center justify-center rounded-md px-2.5 text-xs font-medium transition-colors ${
                 selected
                   ? "bg-primary/12 text-primary"
                   : "bg-background hover:bg-accent/40"
@@ -146,7 +146,7 @@ export function DisplayStyleValueControl({
           <PopoverTrigger asChild>
             <button
               aria-label="More display options"
-              className="inline-flex size-10 items-center justify-center rounded-md bg-background text-sm font-semibold hover:bg-accent/40"
+              className="inline-flex size-7 items-center justify-center rounded-md bg-background text-xs font-semibold hover:bg-accent/40"
               title="More display options"
               type="button"
             >

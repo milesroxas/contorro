@@ -850,7 +850,7 @@ function CanvasDropRoot({
           </div>
           <div className="-mx-1 my-1 h-px bg-border" />
           <button
-            className="relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-left text-sm outline-none focus:bg-accent focus:text-accent-foreground"
+            className="relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-left text-xs outline-none focus:bg-accent focus:text-accent-foreground"
             type="button"
             onClick={() => {
               onSelectNode(composition.rootId);
@@ -1004,7 +1004,7 @@ function CanvasViewportControlPopover({
     <Popover>
       <PopoverTrigger asChild>
         <Button size="sm" type="button" variant="outline">
-          <IconAdjustments aria-hidden className="size-4" />
+          <IconAdjustments aria-hidden className="size-3.5" />
           <span className="hidden text-xs sm:inline">
             {viewportWidthPx}px / {viewportZoomPercent}% / {viewportFontSizePx}
             px
@@ -1015,7 +1015,7 @@ function CanvasViewportControlPopover({
         <PopoverHeader>
           <PopoverTitle>Canvas preview controls</PopoverTitle>
         </PopoverHeader>
-        <div className="mt-3 grid gap-3">
+        <div className="mt-3 grid gap-2">
           <div className="grid gap-1.5">
             <Label
               className="text-xs text-muted-foreground"
@@ -1024,7 +1024,7 @@ function CanvasViewportControlPopover({
               Viewport width (px)
             </Label>
             <Input
-              className="h-8 text-sm"
+              className="h-6 text-xs"
               id={widthInputId}
               inputMode="numeric"
               onBlur={commitWidth}
@@ -1041,7 +1041,7 @@ function CanvasViewportControlPopover({
               Browser zoom (%)
             </Label>
             <Input
-              className="h-8 text-sm"
+              className="h-6 text-xs"
               id={zoomInputId}
               inputMode="numeric"
               onBlur={commitZoom}
@@ -1058,7 +1058,7 @@ function CanvasViewportControlPopover({
               Default font size (px)
             </Label>
             <Input
-              className="h-8 text-sm"
+              className="h-6 text-xs"
               id={fontSizeInputId}
               inputMode="numeric"
               onBlur={commitFontSize}
@@ -1268,8 +1268,8 @@ export function StudioCanvas({
         isViewportResizing && "select-none",
       )}
     >
-      <div className="flex h-11 shrink-0 items-center justify-between gap-3 border-b border-border/70 bg-muted/10 px-3">
-        <div className="flex min-w-0 items-center gap-2">
+      <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b border-border/70 bg-muted/10 px-3">
+        <div className="flex min-w-0 items-center gap-1.5">
           <span className="hidden text-[10px] font-medium tracking-[0.12em] text-muted-foreground uppercase sm:inline">
             Viewport
           </span>
@@ -1330,9 +1330,9 @@ export function StudioCanvas({
               variant="ghost"
             >
               {canvasColorMode === "dark" ? (
-                <IconMoonStars className="size-4" />
+                <IconMoonStars className="size-3.5" />
               ) : (
-                <IconSunHigh className="size-4" />
+                <IconSunHigh className="size-3.5" />
               )}
               <span className="hidden text-xs sm:inline">Canvas</span>
             </Button>
@@ -1346,9 +1346,9 @@ export function StudioCanvas({
             variant="ghost"
           >
             {theme === "dark" ? (
-              <IconSunHigh className="size-4" />
+              <IconSunHigh className="size-3.5" />
             ) : (
-              <IconMoonStars className="size-4" />
+              <IconMoonStars className="size-3.5" />
             )}
           </Button>
         </div>

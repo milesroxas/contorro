@@ -223,8 +223,8 @@ export function groupedMoreOptionsProperties(
 
 export function moreOptionsGridClassName(sectionId: StyleSectionId): string {
   return GROUPED_MORE_OPTIONS_SECTIONS.has(sectionId)
-    ? "grid grid-cols-2 gap-3"
-    : "grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4";
+    ? "grid grid-cols-2 gap-x-2 gap-y-1.5"
+    : "grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-x-3 gap-y-1.5";
 }
 
 export type InspectorOrderedStyleSection = ReturnType<

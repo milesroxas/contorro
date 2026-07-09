@@ -33,7 +33,7 @@ export function BoxPrimitiveInspector({
   const element = rawTag === "section" ? "section" : "div";
 
   return (
-    <div className="space-y-3 border-t border-border/60 pt-4">
+    <div className="space-y-2 border-t border-border/60 pt-3">
       <SettingsFieldRow
         definitionKey={node.definitionKey}
         htmlFor={`${baseId}-box-element`}

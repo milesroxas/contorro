@@ -34,7 +34,7 @@ export function StudioPrimaryNav({
               href={href}
               prefetch={false}
             >
-              <Icon aria-hidden className="size-4" />
+              <Icon aria-hidden className="size-3.5" />
               {label}
             </Link>
           </Button>

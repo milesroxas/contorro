@@ -481,7 +481,7 @@ function RootLayerHeading({
       >
         <button
           className={cn(
-            "flex min-h-6 min-w-0 flex-1 items-center gap-2 rounded-sm px-0 py-px text-left outline-none transition-colors",
+            "flex min-h-6 min-w-0 flex-1 items-center gap-1.5 rounded-sm px-0 py-px text-left outline-none transition-colors",
             "hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             selected ? "text-foreground" : "text-muted-foreground",
           )}
@@ -862,7 +862,7 @@ function LayerSubtree({
   );
   const topLevelSectionSpacingClass =
     typeof topLevelSectionIndex === "number" && topLevelSectionIndex > 0
-      ? "mt-4 border-t border-border/60 pt-4"
+      ? "mt-3 border-t border-border/60 pt-3"
       : "";
 
   return (
