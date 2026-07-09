@@ -1,11 +1,21 @@
-import type { PageComposition } from "./composition.js";
+import { z } from "zod";
+
+import { blockCatalogEntry } from "./block-catalog.js";
+import { type PageComposition, PageCompositionSchema } from "./composition.js";
+
+/** Payload drafts publication status as it travels over the wire. */
+export const StudioPublicationStatusSchema = z
+  .enum(["draft", "published"])
+  .nullable();
 
 /** Token metadata returned with a loaded composition (matches runtime compiler output shape). */
-export type StudioTokenMeta = {
-  key: string;
-  cssVar: string;
-  category: string;
-};
+export const StudioTokenMetaSchema = z.object({
+  key: z.string(),
+  cssVar: z.string(),
+  category: z.string(),
+});
+
+export type StudioTokenMeta = z.infer<typeof StudioTokenMetaSchema>;
 
 /**
  * Canvas wrapper attribute scoping the injected token variables; hosts compile
@@ -13,32 +23,56 @@ export type StudioTokenMeta = {
  */
 export const STUDIO_CANVAS_MODE_ATTRIBUTE = "data-studio-canvas-mode";
 
-export type StudioAuthoringCompositionPayload = {
-  name: string;
-  composition: PageComposition;
-  updatedAt: string;
-  /** Which CMS resource this session maps to; prefer over inferring from `compositionId`. */
-  studioResource: "pageTemplate" | "component";
-  /**
-   * Block type this component design implements (`BLOCK_CATALOG` slug);
-   * `null` = design-only. Always `null` for page templates.
-   */
-  blockType?: string | null;
-  /** Payload drafts: whether the loaded revision is draft or published in CMS. */
-  _status?: "draft" | "published" | null;
-  tokenMetadata: StudioTokenMeta[];
-  /**
-   * Token variable layers from the published token set, pre-scoped to
-   * {@link STUDIO_CANVAS_MODE_ATTRIBUTE} so the studio injects them verbatim.
-   */
-  cssVariables: string;
-};
+/**
+ * `GET …/compositions/:id` response `data`:
+ * - `studioResource` — which CMS resource this session maps to; prefer over
+ *   inferring from `compositionId`.
+ * - `blockType` — block type a component design implements (`BLOCK_CATALOG`
+ *   slug); `null` = design-only. Always `null` for page templates.
+ * - `cssVariables` — token variable layers from the published token set,
+ *   pre-scoped to {@link STUDIO_CANVAS_MODE_ATTRIBUTE}.
+ */
+export const StudioAuthoringCompositionPayloadSchema = z.object({
+  name: z.string(),
+  composition: PageCompositionSchema,
+  updatedAt: z.string(),
+  studioResource: z.enum(["pageTemplate", "component"]),
+  blockType: z.string().nullable().optional(),
+  _status: StudioPublicationStatusSchema.optional(),
+  tokenMetadata: z.array(StudioTokenMetaSchema),
+  cssVariables: z.string(),
+});
 
+export type StudioAuthoringCompositionPayload = z.infer<
+  typeof StudioAuthoringCompositionPayloadSchema
+>;
+
+/** Client-side save body; the transport adds `intent` (draft vs publish). */
 export type StudioPersistCompositionBody = {
   composition: PageComposition;
   ifMatchUpdatedAt?: string | null;
   name?: string;
 };
+
+/** `POST …/compositions/:id` request body (save draft / publish). */
+export const StudioPersistCompositionRequestSchema = z.object({
+  composition: PageCompositionSchema,
+  ifMatchUpdatedAt: z.string().nullable().optional(),
+  intent: z.enum(["draft", "publish"]),
+  name: z.string().optional(),
+});
+
+export type StudioPersistCompositionRequest = z.infer<
+  typeof StudioPersistCompositionRequestSchema
+>;
+
+/** `POST …/compositions/:id` response `data` (`id` omitted for existing docs). */
+export const StudioSaveResultSchema = z.object({
+  id: z.string().optional(),
+  updatedAt: z.string(),
+  _status: StudioPublicationStatusSchema.optional(),
+  componentKey: z.string().optional(),
+});
 
 export type StudioSaveResult = {
   id: string;
@@ -48,6 +82,16 @@ export type StudioSaveResult = {
   componentKey?: string;
 };
 
+/** `POST …/compositions` request body (new studio session). */
+export const StudioCreateCompositionRequestSchema = z.object({
+  kind: z.enum(["template", "component"]).optional(),
+});
+
+/** `POST …/compositions` response `data`. */
+export const StudioCreateCompositionResultSchema = z.object({
+  id: z.string(),
+});
+
 /** Body for `PATCH …/compositions/:id` — at least one of `name`/`blockType`. */
 export type StudioPatchCompositionMetaBody = {
   name?: string;
@@ -56,12 +100,38 @@ export type StudioPatchCompositionMetaBody = {
   intent?: "draft" | "publish";
 };
 
-export type StudioCompositionMetaResult = {
-  name: string;
-  updatedAt: string;
-  blockType?: string | null;
-  _status?: "draft" | "published" | null;
-};
+/**
+ * `PATCH …/compositions/:id` request body. `blockType` must be a
+ * `BLOCK_CATALOG` slug or `null`; the route additionally rejects `blockType`
+ * for page compositions (id-dependent, so not expressible here).
+ */
+export const StudioPatchCompositionMetaRequestSchema = z
+  .object({
+    name: z.string().trim().min(1).optional(),
+    blockType: z
+      .string()
+      .refine((slug) => blockCatalogEntry(slug) !== null, {
+        message: "unknown block type",
+      })
+      .nullable()
+      .optional(),
+    intent: z.enum(["draft", "publish"]).optional(),
+  })
+  .refine((body) => body.name !== undefined || body.blockType !== undefined, {
+    message: "provide name and/or blockType",
+  });
+
+/** `PATCH …/compositions/:id` response `data`. */
+export const StudioCompositionMetaResultSchema = z.object({
+  name: z.string(),
+  updatedAt: z.string(),
+  blockType: z.string().nullable().optional(),
+  _status: StudioPublicationStatusSchema.optional(),
+});
+
+export type StudioCompositionMetaResult = z.infer<
+  typeof StudioCompositionMetaResultSchema
+>;
 
 /** Design token entry in a set (Studio editor; persisted shape is CMS-specific but mapped here). */
 export type StudioDesignTokenEntry = {

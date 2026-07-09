@@ -10,6 +10,11 @@ import type {
   StudioPersistCompositionBody,
   StudioSaveResult,
 } from "@repo/contracts-zod";
+import {
+  StudioAuthoringCompositionPayloadSchema,
+  StudioCompositionMetaResultSchema,
+  StudioSaveResultSchema,
+} from "@repo/contracts-zod";
 
 function joinBase(base: string, path: string): string {
   const b = base.endsWith("/") ? base.slice(0, -1) : base;
@@ -54,10 +59,14 @@ export function createFetchStudioAuthoringClient(
       if (!res.ok) {
         throw new Error(`load failed: ${res.status}`);
       }
-      const json = (await res.json()) as {
-        data: StudioAuthoringCompositionPayload;
-      };
-      return json.data;
+      const json = (await res.json()) as { data?: unknown };
+      const parsed = StudioAuthoringCompositionPayloadSchema.safeParse(
+        json.data,
+      );
+      if (!parsed.success) {
+        throw new Error("load failed: unexpected response shape");
+      }
+      return parsed.data;
     },
 
     async postDraft(
@@ -97,10 +106,15 @@ export function createFetchStudioAuthoringClient(
         },
       );
       if (!res.ok) {
-        throw new Error(`update failed: ${res.status}`);
+        const failure = await studioRouteFailure(res);
+        throw new Error(failure.message ?? `update failed: ${res.status}`);
       }
-      const json = (await res.json()) as { data: StudioCompositionMetaResult };
-      return json.data;
+      const json = (await res.json()) as { data?: unknown };
+      const parsed = StudioCompositionMetaResultSchema.safeParse(json.data);
+      if (!parsed.success) {
+        throw new Error("update failed: unexpected response shape");
+      }
+      return parsed.data;
     },
 
     async listDesignTokenSets(
@@ -201,6 +215,30 @@ async function payloadErrorMessage(res: Response): Promise<string | null> {
   }
 }
 
+/**
+ * Studio route error body: `{ error: { code, message? } }`. `message` carries
+ * actionable server detail (invariant text, invalid tokens, publish-gate
+ * failures) to render verbatim in the studio error UI.
+ */
+async function studioRouteFailure(
+  res: Response,
+): Promise<{ code: string | null; message: string | null }> {
+  try {
+    const json = (await res.json()) as {
+      error?: { code?: unknown; message?: unknown };
+    };
+    const code = json.error?.code;
+    const message = json.error?.message;
+    return {
+      code: typeof code === "string" ? code : null,
+      message:
+        typeof message === "string" && message.trim() !== "" ? message : null,
+    };
+  } catch {
+    return { code: null, message: null };
+  }
+}
+
 async function postPersist(
   compositionBase: string,
   compositionId: string,
@@ -224,28 +262,22 @@ async function postPersist(
     },
   );
   if (!res.ok) {
-    let code: string | undefined;
-    try {
-      const j = (await res.json()) as { error?: { code?: string } };
-      code = j.error?.code;
-    } catch {
-      code = undefined;
-    }
-    if (res.status === 409 || code === "COMPOSITION_CONFLICT") {
+    const failure = await studioRouteFailure(res);
+    if (res.status === 409 || failure.code === "COMPOSITION_CONFLICT") {
       throw new Error(
         "This template was saved elsewhere. Reload the builder and try again.",
       );
     }
-    throw new Error(`save failed: ${res.status}`);
+    throw new Error(failure.message ?? `save failed: ${res.status}`);
   }
-  const json = (await res.json()) as { data: StudioSaveResult };
+  const json = (await res.json()) as { data?: unknown };
+  const parsed = StudioSaveResultSchema.safeParse(json.data);
+  if (!parsed.success) {
+    throw new Error("save failed: unexpected response shape");
+  }
   return {
-    id: json.data.id ?? compositionId,
-    updatedAt: json.data.updatedAt,
-    ...(json.data._status !== undefined ? { _status: json.data._status } : {}),
-    ...(json.data.componentKey !== undefined
-      ? { componentKey: json.data.componentKey }
-      : {}),
+    ...parsed.data,
+    id: parsed.data.id ?? compositionId,
   };
 }
 

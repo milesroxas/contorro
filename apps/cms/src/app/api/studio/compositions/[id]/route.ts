@@ -1,9 +1,10 @@
 import { compileTokenSet, type TokenMeta } from "@repo/config-tailwind";
 import type { PageComposition } from "@repo/contracts-zod";
 import {
-  blockCatalogEntry,
   PageCompositionSchema,
   STUDIO_CANVAS_MODE_ATTRIBUTE,
+  StudioPatchCompositionMetaRequestSchema,
+  StudioPersistCompositionRequestSchema,
 } from "@repo/contracts-zod";
 import {
   componentIdFromStudioRowId,
@@ -13,6 +14,7 @@ import {
   isStudioComponentRowId,
   normalizeTemplateShell,
   parseStudioNewCompositionSessionId,
+  validatePageCompositionInvariants,
 } from "@repo/domains-composition";
 import type { Payload } from "payload";
 import {
@@ -23,7 +25,7 @@ import { requireStudioDesigner } from "@/app/api/studio/_lib/studio-auth";
 import { loadDesignSystemRuntimeForPreview } from "@/lib/load-published-token-set";
 import {
   createCompositionEntryCommand,
-  saveCompositionCommand,
+  type StudioSaveFailure,
   updateCompositionMetaCommand,
 } from "@/lib/studio-commands";
 
@@ -266,6 +268,62 @@ export async function GET(
   return getPageTemplateComposition(payload, user, id);
 }
 
+async function componentKeyForCreated(
+  payload: Payload,
+  user: unknown,
+  compositionRowId: string,
+): Promise<string | undefined> {
+  const cid = componentIdFromStudioRowId(compositionRowId);
+  if (!cid) {
+    return undefined;
+  }
+  try {
+    const compDoc = await payload.findByID({
+      collection: "components",
+      id: cid,
+      depth: 0,
+      draft: true,
+      user,
+      overrideAccess: false,
+    });
+    const k = (compDoc as { key?: unknown } | null)?.key;
+    return typeof k === "string" && k.trim() !== "" ? k.trim() : undefined;
+  } catch {
+    // omit componentKey; client may resolve key from listing if needed
+    return undefined;
+  }
+}
+
+function responseForSaveFailure(error: StudioSaveFailure): Response {
+  if (error.code === "COMPOSITION_NOT_FOUND") {
+    return Response.json(
+      { error: { code: "NOT_FOUND" as const } },
+      { status: 404 },
+    );
+  }
+  if (error.code === "COMPOSITION_CONFLICT") {
+    return Response.json(
+      { error: { code: "COMPOSITION_CONFLICT" as const } },
+      { status: 409 },
+    );
+  }
+  if (error.code === "VALIDATION_ERROR") {
+    return Response.json(
+      {
+        error: {
+          code: "VALIDATION_ERROR" as const,
+          ...(error.message !== undefined ? { message: error.message } : {}),
+        },
+      },
+      { status: 400 },
+    );
+  }
+  return Response.json(
+    { error: { code: "UPDATE_FAILED" as const } },
+    { status: 500 },
+  );
+}
+
 async function createAndSaveNewSessionComposition(
   payload: Payload,
   user: unknown,
@@ -300,47 +358,20 @@ async function createAndSaveNewSessionComposition(
     );
   }
 
-  const saved = await saveCompositionCommand(repo, {
-    compositionId: created.value.compositionId,
+  const saved = await repo.save(
+    created.value.compositionId,
     composition,
-    ifMatchUpdatedAt: null,
     intent,
-  });
+    null,
+  );
   if (!saved.ok) {
-    if (saved.error === "VALIDATION_ERROR") {
-      return Response.json(
-        { error: { code: "VALIDATION_ERROR" as const } },
-        { status: 400 },
-      );
-    }
-    return Response.json(
-      { error: { code: "UPDATE_FAILED" as const } },
-      { status: 500 },
-    );
+    return responseForSaveFailure(saved.error);
   }
 
-  let componentKey: string | undefined;
-  if (newSession.kind === "component") {
-    const cid = componentIdFromStudioRowId(created.value.compositionId);
-    if (cid) {
-      try {
-        const compDoc = await payload.findByID({
-          collection: "components",
-          id: cid,
-          depth: 0,
-          draft: true,
-          user,
-          overrideAccess: false,
-        });
-        const k = (compDoc as { key?: unknown } | null)?.key;
-        if (typeof k === "string" && k.trim() !== "") {
-          componentKey = k.trim();
-        }
-      } catch {
-        // omit componentKey; client may resolve key from listing if needed
-      }
-    }
-  }
+  const componentKey =
+    newSession.kind === "component"
+      ? await componentKeyForCreated(payload, user, created.value.compositionId)
+      : undefined;
 
   return Response.json({
     data: {
@@ -352,38 +383,24 @@ async function createAndSaveNewSessionComposition(
   });
 }
 
-function responseForSaveExisting(
-  saved: Awaited<ReturnType<typeof saveCompositionCommand>>,
+/**
+ * Server-side validation for the save path (single source of truth): wire
+ * shape (Zod), graph invariants, and design-token existence. Client-side
+ * `prepareCompositionForSave` only mirrors this for fast feedback.
+ */
+function validationErrorResponse(
+  message: string,
+  issues?: unknown[],
 ): Response {
-  if (saved.ok) {
-    return Response.json({
-      data: {
-        updatedAt: saved.value.updatedAt,
-        _status: saved.value._status,
-      },
-    });
-  }
-  if (saved.error === "COMPOSITION_NOT_FOUND") {
-    return Response.json(
-      { error: { code: "NOT_FOUND" as const } },
-      { status: 404 },
-    );
-  }
-  if (saved.error === "COMPOSITION_CONFLICT") {
-    return Response.json(
-      { error: { code: "COMPOSITION_CONFLICT" as const } },
-      { status: 409 },
-    );
-  }
-  if (saved.error === "VALIDATION_ERROR") {
-    return Response.json(
-      { error: { code: "VALIDATION_ERROR" as const } },
-      { status: 400 },
-    );
-  }
   return Response.json(
-    { error: { code: "UPDATE_FAILED" as const } },
-    { status: 500 },
+    {
+      error: {
+        code: "VALIDATION_ERROR" as const,
+        message,
+        ...(issues !== undefined ? { issues } : {}),
+      },
+    },
+    { status: 400 },
   );
 }
 
@@ -408,56 +425,37 @@ export async function POST(
     );
   }
 
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-    return Response.json(
-      { error: { code: "VALIDATION_ERROR" as const } },
-      { status: 400 },
+  const parsed = StudioPersistCompositionRequestSchema.safeParse(raw);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return validationErrorResponse(
+      issue
+        ? `Invalid save request at "${issue.path.join(".")}": ${issue.message}`
+        : "Invalid save request",
     );
   }
-  const body = raw as {
-    composition?: unknown;
-    ifMatchUpdatedAt?: unknown;
-    intent?: unknown;
-    name?: unknown;
-  };
-  const intent = body.intent;
-  if (intent !== "draft" && intent !== "publish") {
-    return Response.json(
-      { error: { code: "VALIDATION_ERROR" as const } },
-      { status: 400 },
-    );
+  const { composition, intent, ifMatchUpdatedAt } = parsed.data;
+
+  const invariants = validatePageCompositionInvariants(composition);
+  if (!invariants.ok) {
+    return validationErrorResponse(invariants.error);
   }
-  const compParsed = PageCompositionSchema.safeParse(body.composition);
-  if (!compParsed.success) {
-    return Response.json(
-      { error: { code: "VALIDATION_ERROR" as const } },
-      { status: 400 },
-    );
-  }
-  const composition = compParsed.data;
+
   const designTokens = await designTokensForStudio(payload);
   const allowedTokenKeys = new Set(
     designTokens.tokenMetadata.map((token) => token.key),
   );
-  if (findInvalidStyleTokens(composition, allowedTokenKeys).length > 0) {
-    return Response.json(
-      { error: { code: "VALIDATION_ERROR" as const } },
-      { status: 400 },
+  const invalidTokens = findInvalidStyleTokens(composition, allowedTokenKeys);
+  if (invalidTokens.length > 0) {
+    const tokens = [...new Set(invalidTokens.map((issue) => issue.token))];
+    return validationErrorResponse(
+      `Unknown design tokens: ${tokens.join(", ")}`,
+      invalidTokens,
     );
   }
-  const matchRaw = body.ifMatchUpdatedAt;
-  if (
-    matchRaw !== undefined &&
-    matchRaw !== null &&
-    typeof matchRaw !== "string"
-  ) {
-    return Response.json(
-      { error: { code: "VALIDATION_ERROR" as const } },
-      { status: 400 },
-    );
-  }
-  const ifMatchUpdatedAt = matchRaw as string | null | undefined;
-  const nextName = typeof body.name === "string" ? body.name.trim() : "";
+
+  const nextName =
+    typeof parsed.data.name === "string" ? parsed.data.name.trim() : "";
 
   const newSession = parseStudioNewCompositionSessionId(id);
   if (newSession) {
@@ -472,13 +470,21 @@ export async function POST(
   }
 
   const repo = payloadStudioMutationRepository(payload, user);
-  const saved = await saveCompositionCommand(repo, {
-    compositionId: id,
+  const saved = await repo.save(
+    id,
     composition,
-    ifMatchUpdatedAt,
     intent,
+    ifMatchUpdatedAt ?? null,
+  );
+  if (!saved.ok) {
+    return responseForSaveFailure(saved.error);
+  }
+  return Response.json({
+    data: {
+      updatedAt: saved.value.updatedAt,
+      _status: saved.value._status,
+    },
   });
-  return responseForSaveExisting(saved);
 }
 
 function responseForMetaSuccess(value: {
@@ -503,60 +509,32 @@ type ParsedMetaPatch = {
   intent: "draft" | "publish";
 };
 
-/** `blockType` must be a `BLOCK_CATALOG` slug or `null` (components only). */
-function parseMetaPatchBlockType(
-  body: { blockType?: unknown },
-  compositionId: string,
-): { ok: true; blockType?: string | null } | { ok: false; error: string } {
-  if (!("blockType" in body)) {
-    return { ok: true };
-  }
-  if (!isStudioComponentRowId(compositionId)) {
-    return { ok: false, error: "blockType applies to components only" };
-  }
-  if (body.blockType === null) {
-    return { ok: true, blockType: null };
-  }
-  if (typeof body.blockType !== "string") {
-    return { ok: false, error: "blockType must be a catalog slug or null" };
-  }
-  if (blockCatalogEntry(body.blockType) === null) {
-    return { ok: false, error: `Unknown block type "${body.blockType}"` };
-  }
-  return { ok: true, blockType: body.blockType };
-}
-
-/** PATCH body: `{ name?, blockType?, intent }` — at least one of name/blockType. */
+/**
+ * PATCH body — wire shape via the contract schema (at least one of
+ * `name`/`blockType`, blockType a catalog slug or null), plus the
+ * id-dependent rule that only components carry a blockType.
+ */
 function parseMetaPatchBody(
   raw: unknown,
   compositionId: string,
 ): ParsedMetaPatch | { error: string } {
-  const body =
-    raw && typeof raw === "object" && !Array.isArray(raw)
-      ? (raw as { name?: unknown; blockType?: unknown; intent?: unknown })
-      : null;
-  if (!body) {
-    return { error: "Request body must be an object" };
+  const parsed = StudioPatchCompositionMetaRequestSchema.safeParse(raw);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return {
+      error: issue
+        ? `Invalid request${issue.path.length > 0 ? ` at "${issue.path.join(".")}"` : ""}: ${issue.message}`
+        : "Invalid request",
+    };
   }
-  const name = typeof body.name === "string" ? body.name.trim() : undefined;
-  if (name === "") {
-    return { error: "Name must not be empty" };
+  const { name, blockType } = parsed.data;
+  if (blockType !== undefined && !isStudioComponentRowId(compositionId)) {
+    return { error: "blockType applies to components only" };
   }
-
-  const blockTypeParsed = parseMetaPatchBlockType(body, compositionId);
-  if (!blockTypeParsed.ok) {
-    return { error: blockTypeParsed.error };
-  }
-  const blockType = blockTypeParsed.blockType;
-
-  if (name === undefined && blockType === undefined) {
-    return { error: "Provide name and/or blockType" };
-  }
-
   return {
     ...(name !== undefined ? { name } : {}),
     ...(blockType !== undefined ? { blockType } : {}),
-    intent: body.intent === "publish" ? "publish" : "draft",
+    intent: parsed.data.intent ?? "draft",
   };
 }
 

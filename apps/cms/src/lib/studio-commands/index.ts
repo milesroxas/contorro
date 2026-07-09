@@ -2,13 +2,10 @@ export {
   type CreateCompositionEntryError,
   createCompositionEntryCommand,
 } from "./create-composition-entry.js";
-export {
-  type SaveCompositionError,
-  saveCompositionCommand,
-} from "./save-composition.js";
 export type {
   StudioCompositionRevision,
   StudioMutationRepository,
+  StudioSaveFailure,
   UpdateCompositionMetaPatch,
 } from "./studio-mutation-repository.js";
 export {

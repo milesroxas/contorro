@@ -10,6 +10,20 @@ export type UpdateCompositionMetaPatch = {
   blockType?: string | null;
 };
 
+/**
+ * Save failure. `VALIDATION_ERROR` carries the Payload hook/validation
+ * message (e.g. the blockType binding publish gate) so routes can surface it.
+ */
+export type StudioSaveFailure = {
+  code:
+    | "PERSISTENCE_ERROR"
+    | "FORBIDDEN"
+    | "COMPOSITION_CONFLICT"
+    | "COMPOSITION_NOT_FOUND"
+    | "VALIDATION_ERROR";
+  message?: string;
+};
+
 export interface StudioMutationRepository {
   loadRevision(
     compositionId: string,
@@ -27,10 +41,7 @@ export interface StudioMutationRepository {
     ifMatchUpdatedAt: string | null,
   ): AsyncResult<
     { updatedAt: string; _status: "draft" | "published" | null },
-    | "PERSISTENCE_ERROR"
-    | "FORBIDDEN"
-    | "COMPOSITION_CONFLICT"
-    | "COMPOSITION_NOT_FOUND"
+    StudioSaveFailure
   >;
 
   /**

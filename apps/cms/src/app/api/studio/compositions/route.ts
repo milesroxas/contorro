@@ -1,10 +1,7 @@
+import { StudioCreateCompositionRequestSchema } from "@repo/contracts-zod";
 import { studioNewCompositionSessionId } from "@repo/domains-composition";
 
 import { requireStudioDesigner } from "@/app/api/studio/_lib/studio-auth";
-
-type CreateBody = {
-  kind?: unknown;
-};
 
 export async function POST(request: Request) {
   const auth = await requireStudioDesigner(request);
@@ -16,7 +13,7 @@ export async function POST(request: Request) {
   const text = await request.text();
   if (text.trim() !== "") {
     try {
-      raw = JSON.parse(text) as CreateBody;
+      raw = JSON.parse(text) as unknown;
     } catch {
       return Response.json(
         { error: { code: "INVALID_JSON" as const } },
@@ -24,9 +21,19 @@ export async function POST(request: Request) {
       );
     }
   }
-  const body = raw && typeof raw === "object" ? (raw as CreateBody) : {};
-  const unsafeKind = typeof body.kind === "string" ? body.kind.trim() : "";
-  const kind = unsafeKind === "component" ? "component" : "template";
+  const parsed = StudioCreateCompositionRequestSchema.safeParse(raw);
+  if (!parsed.success) {
+    return Response.json(
+      {
+        error: {
+          code: "VALIDATION_ERROR" as const,
+          message: 'kind must be "template" or "component"',
+        },
+      },
+      { status: 400 },
+    );
+  }
+  const kind = parsed.data.kind ?? "template";
   const tempId = studioNewCompositionSessionId(kind);
 
   return Response.json({

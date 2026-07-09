@@ -5,8 +5,31 @@ import {
   defaultPageTemplateComposition,
   studioRowIdForComponent,
 } from "@repo/domains-composition";
-import type { Payload } from "payload";
+import { APIError, type Payload } from "payload";
 import type { StudioMutationRepository } from "@/lib/studio-commands";
+
+/**
+ * Payload hook/validation failures (e.g. the components publish gate for
+ * blockType bindings) are 4xx `APIError`s — surface their message instead of
+ * collapsing everything to PERSISTENCE_ERROR.
+ */
+function saveFailureFromThrown(e: unknown): {
+  code: "VALIDATION_ERROR" | "PERSISTENCE_ERROR";
+  message?: string;
+} {
+  if (e instanceof APIError && e.status < 500) {
+    return { code: "VALIDATION_ERROR", message: e.message };
+  }
+  return { code: "PERSISTENCE_ERROR" };
+}
+
+/** Bulk (`where`) updates report per-doc hook errors instead of throwing. */
+function firstBulkUpdateErrorMessage(result: {
+  errors?: Array<{ message?: unknown }>;
+}): string | null {
+  const message = result.errors?.[0]?.message;
+  return typeof message === "string" && message.trim() !== "" ? message : null;
+}
 
 function normalizeUpdatedAt(value: unknown): string {
   if (typeof value === "string") {
@@ -125,15 +148,28 @@ export function payloadStudioMutationRepository(
 
         const updated = result.docs[0];
         if (!updated) {
+          // Hook/validation failures surface in `errors` for bulk updates —
+          // distinguish them from a genuine revision conflict.
+          const hookMessage = firstBulkUpdateErrorMessage(result);
+          if (hookMessage !== null) {
+            return err({
+              code: "VALIDATION_ERROR" as const,
+              message: hookMessage,
+            });
+          }
           const exists = await findRevision(collection, id);
-          return err(exists ? "COMPOSITION_CONFLICT" : "COMPOSITION_NOT_FOUND");
+          return err({
+            code: exists
+              ? ("COMPOSITION_CONFLICT" as const)
+              : ("COMPOSITION_NOT_FOUND" as const),
+          });
         }
         return ok({
           updatedAt: normalizeUpdatedAt(updated.updatedAt),
           _status: publicationStatusFromDoc(updated),
         });
-      } catch {
-        return err("PERSISTENCE_ERROR");
+      } catch (e) {
+        return err(saveFailureFromThrown(e));
       }
     },
 
