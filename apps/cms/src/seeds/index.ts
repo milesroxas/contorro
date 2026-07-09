@@ -29,8 +29,7 @@ import {
 /** Stable identifiers — re-run deletes and recreates these documents. */
 const SEED_PAGE_COMPOSITION_SLUG = "seed-composition";
 /** Template that embeds design-only library parts via `primitive.libraryComponent`. */
-const SEED_PAGE_COMPOSITION_WITH_LIBRARY_SLUG =
-  "seed-composition-with-library";
+const SEED_PAGE_COMPOSITION_WITH_LIBRARY_SLUG = "seed-composition-with-library";
 const SEED_PAGE_SLUG = "seed-page";
 const SEED_PAGE_WITH_LIBRARY_SLUG = "seed-page-with-library-template";
 

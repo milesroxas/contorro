@@ -40,8 +40,11 @@ test.describe("Pages admin — native block fields in regions", () => {
       new RegExp(`/admin/collections/pages/${pageId}`),
     );
 
+    // Layout regions live on the Content tab; the edit view opens on Page setup.
+    await page.getByRole("button", { name: "Content" }).click();
+
     await expect(
-      page.getByRole("heading", { name: /layout regions/i }),
+      page.getByText("Layout regions", { exact: false }).first(),
     ).toBeVisible({ timeout: 30_000 });
 
     // Native blocks field: the hero block row exposes its typed Heading input.
