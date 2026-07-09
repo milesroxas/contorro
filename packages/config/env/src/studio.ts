@@ -11,7 +11,6 @@ export const studioEnvSchema = z.object({
   PAYLOAD_SECRET: z.string().min(32),
   BLOB_READ_WRITE_TOKEN: z.string().min(1),
   SITE_URL: z.string().url(),
-  PREVIEW_SECRET: z.string().min(32),
   /** When set, Payload uses the Resend adapter (`payload.config` `email`). */
   RESEND_API_KEY: z.string().min(1).optional(),
   RESEND_FROM_EMAIL: z.string().min(1).optional(),
@@ -51,7 +50,6 @@ export function parseStudioEnv(env: NodeJS.ProcessEnv): StudioEnv {
     PAYLOAD_SECRET: env.PAYLOAD_SECRET,
     BLOB_READ_WRITE_TOKEN: env.BLOB_READ_WRITE_TOKEN,
     SITE_URL: resolveSiteUrl(env),
-    PREVIEW_SECRET: env.PREVIEW_SECRET,
     RESEND_API_KEY: env.RESEND_API_KEY,
     RESEND_FROM_EMAIL: env.RESEND_FROM_EMAIL,
     RESEND_FROM_NAME: env.RESEND_FROM_NAME,

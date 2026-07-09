@@ -27,16 +27,16 @@ import {
 } from "./seed-content-fixtures.js";
 
 /** Stable identifiers — re-run deletes and recreates these documents. */
-export const SEED_PAGE_COMPOSITION_SLUG = "seed-composition";
+const SEED_PAGE_COMPOSITION_SLUG = "seed-composition";
 /** Template that embeds design-only library parts via `primitive.libraryComponent`. */
-export const SEED_PAGE_COMPOSITION_WITH_LIBRARY_SLUG =
+const SEED_PAGE_COMPOSITION_WITH_LIBRARY_SLUG =
   "seed-composition-with-library";
-export const SEED_PAGE_SLUG = "seed-page";
-export const SEED_PAGE_WITH_LIBRARY_SLUG = "seed-page-with-library-template";
+const SEED_PAGE_SLUG = "seed-page";
+const SEED_PAGE_WITH_LIBRARY_SLUG = "seed-page-with-library-template";
 
 export { SEED_TOKEN_SCOPE_KEY } from "./design-system-seed-shared.js";
 
-export const SEED_PAGE_DESIGNER_SLUG = "seed-designer-page";
+const SEED_PAGE_DESIGNER_SLUG = "seed-designer-page";
 
 const SEED_COMPONENT_KEYS = [
   "primitive.box",
@@ -101,7 +101,7 @@ function resolveSeedPassword(): string {
 
 const seedPassword = resolveSeedPassword();
 
-export const SEED_USERS = {
+const SEED_USERS = {
   admin: {
     email: "seed-admin@local.test",
     password: seedPassword,

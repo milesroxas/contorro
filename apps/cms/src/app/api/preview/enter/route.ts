@@ -6,7 +6,7 @@ import config from "@/payload.config";
 
 /**
  * Draft preview entry for authenticated compose-pages roles (§13.2, §5.2).
- * Avoids exposing PREVIEW_SECRET to the client; enables Next.js draft mode then redirects to the public slug route.
+ * Enables Next.js draft mode then redirects to the public slug route.
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

@@ -81,7 +81,6 @@ jobs:
       NODE_ENV: test
       POSTGRES_URL: postgresql://app:app@localhost:5432/builder
       PAYLOAD_SECRET: ci-local-payload-secret-do-not-use-in-production-env
-      PREVIEW_SECRET: ci-local-preview-secret-do-not-use-in-production-env
       BLOB_READ_WRITE_TOKEN: "0"
       SITE_URL: http://127.0.0.1:3000
     steps:
