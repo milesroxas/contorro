@@ -8,6 +8,7 @@ import { twMerge } from "tailwind-merge";
 import type { RuntimePrimitiveProps } from "../runtime-catalog.js";
 
 import { useOptionalCollectionItemDoc } from "./collection-item-context.js";
+import { LinkWrapper } from "./link-wrapper.js";
 import { PrimitiveEmptyState } from "./primitive-empty-state.js";
 
 /** Image: src, alt; sizing from style binding; img-specific Tailwind via `imageUtilities`. */
@@ -34,11 +35,13 @@ export function Image({ node, className, style }: RuntimePrimitiveProps) {
   }
 
   return (
-    <img
-      alt={alt}
-      className={mergedClassName}
-      src={src || undefined}
-      style={style}
-    />
+    <LinkWrapper node={node}>
+      <img
+        alt={alt}
+        className={mergedClassName}
+        src={src || undefined}
+        style={style}
+      />
+    </LinkWrapper>
   );
 }

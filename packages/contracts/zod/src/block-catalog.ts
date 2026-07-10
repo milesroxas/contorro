@@ -14,6 +14,8 @@ export type BlockFieldType =
   | "richText"
   | "image"
   | "button"
+  | "link"
+  | "slot"
   | "number"
   | "checkbox";
 
@@ -23,6 +25,10 @@ export type BlockFieldSpec = {
   type: BlockFieldType;
   label: string;
   required: boolean;
+  /** For `type: "slot"` — block slugs allowed inside. Defaults to leaf blocks (nesting is one level deep). */
+  allowedBlocks?: string[];
+  /** For `type: "checkbox"` — admin default. Visibility toggles set `true` (visible unless unticked). */
+  defaultValue?: boolean;
 };
 
 export type BlockCatalogEntry = {
@@ -40,16 +46,71 @@ export const BLOCK_CATALOG: readonly BlockCatalogEntry[] = [
       { name: "heading", type: "text", label: "Heading", required: true },
       { name: "body", type: "richText", label: "Body", required: false },
       { name: "image", type: "image", label: "Image", required: false },
-      { name: "cta", type: "button", label: "CTA", required: false },
+      {
+        name: "primaryButton",
+        type: "button",
+        label: "Primary button",
+        required: false,
+      },
+      {
+        name: "secondaryButton",
+        type: "button",
+        label: "Secondary button",
+        required: false,
+      },
+      { name: "slot", type: "slot", label: "Content slot", required: false },
     ],
   },
   {
-    slug: "feature",
-    label: "Feature",
+    slug: "section",
+    label: "Section",
     fields: [
+      { name: "eyebrow", type: "text", label: "Eyebrow", required: false },
       { name: "heading", type: "text", label: "Heading", required: true },
-      { name: "body", type: "richText", label: "Body", required: false },
+      {
+        name: "primaryButton",
+        type: "button",
+        label: "Primary button",
+        required: false,
+      },
+      {
+        name: "secondaryButton",
+        type: "button",
+        label: "Secondary button",
+        required: false,
+      },
+      { name: "slot", type: "slot", label: "Content slot", required: false },
+    ],
+  },
+  {
+    slug: "card",
+    label: "Card",
+    fields: [
       { name: "image", type: "image", label: "Image", required: false },
+      { name: "body", type: "richText", label: "Body", required: false },
+      { name: "link", type: "link", label: "Card link", required: false },
+      { name: "button", type: "button", label: "Button", required: false },
+      {
+        name: "imageVisible",
+        type: "checkbox",
+        label: "Show image",
+        required: false,
+        defaultValue: true,
+      },
+      {
+        name: "bodyVisible",
+        type: "checkbox",
+        label: "Show body",
+        required: false,
+        defaultValue: true,
+      },
+      {
+        name: "buttonVisible",
+        type: "checkbox",
+        label: "Show button",
+        required: false,
+        defaultValue: true,
+      },
     ],
   },
   {
@@ -74,6 +135,16 @@ export function blockCatalogEntry(slug: string): BlockCatalogEntry | null {
 }
 
 /**
+ * Fields of `entry` usable as visibility toggles (`node.visibilityBinding`):
+ * checkbox fields, interpreted as "visible when truthy or unset."
+ */
+export function visibilityBindableFields(
+  entry: BlockCatalogEntry,
+): BlockFieldSpec[] {
+  return entry.fields.filter((field) => field.type === "checkbox");
+}
+
+/**
  * Studio node kinds (composition `definitionKey`s) allowed to bind each block
  * field type. `richText` renders as plain text today (`primitive.text` carries
  * string `content`); number/checkbox render through text content as well.
@@ -85,6 +156,10 @@ export const BLOCK_FIELD_BINDABLE_DEFINITION_KEYS: Readonly<
   richText: ["primitive.text"],
   image: ["primitive.image"],
   button: ["primitive.button"],
+  // A link wraps a container/media element (clickable card). `primitive.button`
+  // is excluded — it carries its own link target.
+  link: ["primitive.box", "primitive.section", "primitive.image"],
+  slot: ["primitive.slot"],
   number: ["primitive.text"],
   checkbox: ["primitive.text"],
 };

@@ -29,6 +29,11 @@ function renderNode(
     return null;
   }
 
+  // Static designer hide + editor toggles (injection maps visibilityBinding here).
+  if (node.visibility?.hidden === true) {
+    return null;
+  }
+
   const Cmp = registry[node.definitionKey];
   if (!Cmp) {
     return null;

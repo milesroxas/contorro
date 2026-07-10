@@ -1,6 +1,8 @@
 import { resolvedBoxBackgroundImagePresentation } from "@repo/domains-composition";
 import type { RuntimePrimitiveProps } from "../runtime-catalog.js";
 
+import { LinkWrapper } from "./link-wrapper.js";
+
 function mergeClassNames(a: string | undefined, b: string): string | undefined {
   const merged = [a, b].filter((part) => part && part.length > 0).join(" ");
   return merged.length > 0 ? merged : undefined;
@@ -16,7 +18,7 @@ export function Box({
   const rawTag = node.propValues?.tag;
 
   if (rawTag === "fragment") {
-    return <>{children}</>;
+    return <LinkWrapper node={node}>{children}</LinkWrapper>;
   }
 
   const tag =
@@ -37,11 +39,13 @@ export function Box({
   );
 
   return (
-    <Tag
-      className={mergeClassNames(className, backgroundImage.className)}
-      style={{ ...backgroundImage.style, ...style }}
-    >
-      {children}
-    </Tag>
+    <LinkWrapper node={node}>
+      <Tag
+        className={mergeClassNames(className, backgroundImage.className)}
+        style={{ ...backgroundImage.style, ...style }}
+      >
+        {children}
+      </Tag>
+    </LinkWrapper>
   );
 }

@@ -145,11 +145,89 @@ async function designCompositionForBlock(
   return null;
 }
 
+function nestedBlockRows(value: unknown): PageBlockRow[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter(
+    (row): row is PageBlockRow =>
+      row !== null && typeof row === "object" && !Array.isArray(row),
+  );
+}
+
+/** `slotId` of the design's `primitive.slot` node bound to `fieldName`, or `null` when unbound. */
+function boundSlotIdForField(
+  composition: PageComposition,
+  fieldName: string,
+): string | null {
+  for (const node of Object.values(composition.nodes)) {
+    if (node.definitionKey !== "primitive.slot") {
+      continue;
+    }
+    const cb = node.contentBinding;
+    if (cb?.source !== "editor") {
+      continue;
+    }
+    if ((cb.editorField?.name ?? cb.key) !== fieldName) {
+      continue;
+    }
+    const raw = node.propValues?.slotId;
+    return typeof raw === "string" && raw.trim() !== "" ? raw.trim() : "main";
+  }
+  return null;
+}
+
+/**
+ * Renders a block instance's nested child blocks (catalog `slot` fields) into
+ * a `slotContent` map keyed by the bound slot node's `slotId`. Nesting is one
+ * level deep — child blocks render with `depth: 1`, which skips their slots.
+ */
+async function slotContentForBlock(
+  payload: Payload,
+  block: PageBlockRow,
+  entry: BlockCatalogEntry,
+  composition: PageComposition,
+  blockIndex: number | string,
+  options: RenderPageBlocksOptions,
+): Promise<Record<string, ReactNode> | undefined> {
+  const slotFields = entry.fields.filter((field) => field.type === "slot");
+  if (slotFields.length === 0) {
+    return undefined;
+  }
+  const slotContent: Record<string, ReactNode> = {};
+  for (const field of slotFields) {
+    const slotId = boundSlotIdForField(composition, field.name);
+    if (slotId === null) {
+      continue;
+    }
+    const children: ReactNode[] = [];
+    let childIndex = 0;
+    for (const row of nestedBlockRows(block[field.name])) {
+      const child = await renderOneBlock(
+        payload,
+        row,
+        `${blockIndex}.${childIndex}`,
+        options,
+        1,
+      );
+      childIndex += 1;
+      if (child !== null) {
+        children.push(child);
+      }
+    }
+    if (children.length > 0) {
+      slotContent[slotId] = children;
+    }
+  }
+  return Object.keys(slotContent).length > 0 ? slotContent : undefined;
+}
+
 async function renderOneBlock(
   payload: Payload,
   block: PageBlockRow,
-  blockIndex: number,
+  blockIndex: number | string,
   options: RenderPageBlocksOptions,
+  depth = 0,
 ): Promise<ReactNode | null> {
   const slug = typeof block.blockType === "string" ? block.blockType : "";
   const entry: BlockCatalogEntry | null =
@@ -187,9 +265,27 @@ async function renderOneBlock(
 
   const injected = injectBlockValues(expanded, block, entry);
 
+  // Depth cap = 1: nested blocks cannot render their own slots (matches the
+  // Payload config guard in blocks-from-catalog).
+  const slotContent =
+    depth === 0
+      ? await slotContentForBlock(
+          payload,
+          block,
+          entry,
+          injected,
+          blockIndex,
+          options,
+        )
+      : undefined;
+
   return (
     <Fragment key={`block-${slug}-${resolved.designId}-${blockIndex}`}>
-      {renderComposition(injected, defaultPrimitiveRegistry)}
+      {renderComposition(
+        injected,
+        defaultPrimitiveRegistry,
+        slotContent !== undefined ? { slotContent } : undefined,
+      )}
     </Fragment>
   );
 }

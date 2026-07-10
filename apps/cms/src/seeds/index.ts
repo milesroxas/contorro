@@ -12,18 +12,20 @@ import {
   buildSeedPageTemplateComposition,
   buildSeedPageTemplateWithLibraryComposition,
   lexicalRichText,
+  SEED_CARD_DESIGN_COMPONENT_KEY,
   SEED_CONTENT_DESIGN_COMPONENT_KEY,
   SEED_CONTENT_HIGHLIGHT_COMPONENT_KEY,
   SEED_CTA_DESIGN_COMPONENT_KEY,
-  SEED_FEATURE_DESIGN_COMPONENT_KEY,
   SEED_HERO_DESIGN_COMPONENT_KEY,
   SEED_PRIMARY_BUTTON_COMPONENT_KEY,
+  SEED_SECTION_DESIGN_COMPONENT_KEY,
+  seedCardDesignComposition,
   seedContentDesignComposition,
   seedContentHighlightComposition,
   seedCtaDesignComposition,
-  seedFeatureDesignComposition,
   seedHeroDesignComposition,
   seedPrimaryButtonComposition,
+  seedSectionDesignComposition,
 } from "./seed-content-fixtures.js";
 
 /** Stable identifiers — re-run deletes and recreates these documents. */
@@ -46,7 +48,8 @@ const SEED_COMPONENT_KEYS = [
   "primitive.button",
   "primitive.image",
   SEED_HERO_DESIGN_COMPONENT_KEY,
-  SEED_FEATURE_DESIGN_COMPONENT_KEY,
+  SEED_SECTION_DESIGN_COMPONENT_KEY,
+  SEED_CARD_DESIGN_COMPONENT_KEY,
   SEED_CTA_DESIGN_COMPONENT_KEY,
   SEED_CONTENT_DESIGN_COMPONENT_KEY,
   SEED_CONTENT_HIGHLIGHT_COMPONENT_KEY,
@@ -292,11 +295,17 @@ async function seed(): Promise<void> {
       blockType: "hero",
       composition: seedHeroDesignComposition,
     });
-    const featureDesign = await createAndPublishSeedComponent(payload, {
-      displayName: "Seed feature design",
-      key: SEED_FEATURE_DESIGN_COMPONENT_KEY,
-      blockType: "feature",
-      composition: seedFeatureDesignComposition,
+    const sectionDesign = await createAndPublishSeedComponent(payload, {
+      displayName: "Seed section design",
+      key: SEED_SECTION_DESIGN_COMPONENT_KEY,
+      blockType: "section",
+      composition: seedSectionDesignComposition,
+    });
+    const cardDesign = await createAndPublishSeedComponent(payload, {
+      displayName: "Seed card design",
+      key: SEED_CARD_DESIGN_COMPONENT_KEY,
+      blockType: "card",
+      composition: seedCardDesignComposition,
     });
     const ctaDesign = await createAndPublishSeedComponent(payload, {
       displayName: "Seed CTA design",
@@ -353,20 +362,69 @@ async function seed(): Promise<void> {
                 "Typed block content authored in /admin, rendered through the Studio-built design.",
               ),
               image: seedMediaIds.landscape,
-              cta: {
+              primaryButton: {
                 label: "Start designing",
                 linkType: "url",
                 url: "/studio",
                 openInNewTab: false,
               },
+              secondaryButton: {
+                label: "View pricing",
+                linkType: "url",
+                url: "/pricing",
+                openInNewTab: false,
+              },
+              slot: [
+                {
+                  blockType: "card",
+                  design: cardDesign.id,
+                  image: seedMediaIds.square,
+                  body: lexicalRichText(
+                    "Card block nested inside the hero's content slot — a clickable card with its own button.",
+                  ),
+                  link: {
+                    linkType: "url",
+                    url: "/features",
+                    openInNewTab: false,
+                  },
+                  button: {
+                    label: "Learn more",
+                    linkType: "url",
+                    url: "/contact",
+                    openInNewTab: false,
+                  },
+                  imageVisible: true,
+                  bodyVisible: true,
+                  buttonVisible: true,
+                },
+              ],
             },
             {
-              blockType: "feature",
-              design: featureDesign.id,
+              blockType: "section",
+              design: sectionDesign.id,
+              eyebrow: "Capabilities",
               heading: "Everything your website launch needs",
-              body: lexicalRichText(
-                "Feature block seeded with typed values; the image field stays empty (optional).",
-              ),
+              primaryButton: {
+                label: "Explore features",
+                linkType: "url",
+                url: "/features",
+                openInNewTab: false,
+              },
+              secondaryButton: {
+                label: "Talk to us",
+                linkType: "url",
+                url: "/contact",
+                openInNewTab: false,
+              },
+              slot: [
+                {
+                  blockType: "content",
+                  design: contentDesign.id,
+                  body: lexicalRichText(
+                    "Content block nested inside the section's slot region.",
+                  ),
+                },
+              ],
             },
             {
               blockType: "cta",
@@ -442,7 +500,7 @@ async function seed(): Promise<void> {
       `  Page template:   ${SEED_PAGE_COMPOSITION_WITH_LIBRARY_SLUG} (id: ${compositionWithLibraryId}) — embeds ${SEED_CONTENT_HIGHLIGHT_COMPONENT_KEY}, ${SEED_PRIMARY_BUTTON_COMPONENT_KEY}`,
     );
     console.log(
-      `  Seed page:       ${SEED_PAGE_SLUG} (hero + feature + CTA blocks in main region)`,
+      `  Seed page:       ${SEED_PAGE_SLUG} (hero + section + CTA blocks in main region; card + content nested in slots)`,
     );
     console.log(
       `  Seed page:       ${SEED_PAGE_WITH_LIBRARY_SLUG} (template embeds design-only parts; content block in main)`,
@@ -458,7 +516,7 @@ async function seed(): Promise<void> {
       "  Media:           seeded placeholder uploads (16:9 + 1:1) for hero image",
     );
     console.log(
-      `  Block designs:   hero (${heroDesign.id}), feature (${featureDesign.id}), cta (${ctaDesign.id}), content (${contentDesign.id})`,
+      `  Block designs:   hero (${heroDesign.id}), section (${sectionDesign.id}), card (${cardDesign.id}), cta (${ctaDesign.id}), content (${contentDesign.id})`,
     );
     console.log(`\n  Log in (all use password: ${seedPassword}):`);
     for (const [label, u] of Object.entries(SEED_USERS)) {

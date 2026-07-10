@@ -19,7 +19,8 @@ import { defaultPageTemplateComposition } from "@repo/domains-composition";
  */
 
 export const SEED_HERO_DESIGN_COMPONENT_KEY = "seed-hero-design";
-export const SEED_FEATURE_DESIGN_COMPONENT_KEY = "seed-feature-design";
+export const SEED_SECTION_DESIGN_COMPONENT_KEY = "seed-section-design";
+export const SEED_CARD_DESIGN_COMPONENT_KEY = "seed-card-design";
 export const SEED_CTA_DESIGN_COMPONENT_KEY = "seed-cta-design";
 export const SEED_CONTENT_DESIGN_COMPONENT_KEY = "seed-content-design";
 /** Design-only library part embedded in the “with library” template. */
@@ -117,15 +118,17 @@ const heroBindings = {
   heading: { name: "heading" },
   body: { name: "body" },
   image: { name: "image" },
-  cta: { name: "cta" },
+  primaryButton: { name: "primaryButton" },
+  secondaryButton: { name: "secondaryButton" },
+  slot: { name: "slot" },
 } as const;
 
 const ctaButtonBinding = { name: "button" } as const;
 
 /**
- * Hero block design: binds heading / body / image / cta per the catalog.
- * Layout: eyebrow + copy column beside a framed media panel — stacks on
- * mobile, becomes a two-column split from `lg`.
+ * Hero block design: binds heading / body / image / primaryButton /
+ * secondaryButton / slot per the catalog. Layout: eyebrow + copy column beside
+ * a framed media panel — stacks on mobile, becomes a two-column split from `lg`.
  */
 export const seedHeroDesignComposition = {
   rootId: "hero-root",
@@ -144,7 +147,13 @@ export const seedHeroDesignComposition = {
       kind: "primitive" as const,
       definitionKey: "primitive.section",
       parentId: "hero-root",
-      childIds: ["hero-eyebrow", "hero-heading", "hero-body", "hero-cta"],
+      childIds: [
+        "hero-eyebrow",
+        "hero-heading",
+        "hero-body",
+        "hero-actions",
+        "hero-slot",
+      ],
       styleBindingId: "sb-hero-content",
       propValues: {},
     },
@@ -190,13 +199,22 @@ export const seedHeroDesignComposition = {
         editorField: heroBindings.body,
       },
     },
-    "hero-cta": {
-      id: "hero-cta",
+    "hero-actions": {
+      id: "hero-actions",
+      kind: "primitive" as const,
+      definitionKey: "primitive.box",
+      parentId: "hero-content",
+      childIds: ["hero-primary-button", "hero-secondary-button"],
+      styleBindingId: "sb-hero-actions",
+      propValues: { tag: "div" },
+    },
+    "hero-primary-button": {
+      id: "hero-primary-button",
       kind: "primitive" as const,
       definitionKey: "primitive.button",
-      parentId: "hero-content",
+      parentId: "hero-actions",
       childIds: [],
-      styleBindingId: "sb-hero-cta",
+      styleBindingId: "sb-hero-primary-button",
       propValues: {
         label: "Start designing",
         linkType: "url",
@@ -207,8 +225,43 @@ export const seedHeroDesignComposition = {
       },
       contentBinding: {
         source: "editor" as const,
-        key: "cta",
-        editorField: heroBindings.cta,
+        key: "primaryButton",
+        editorField: heroBindings.primaryButton,
+      },
+    },
+    "hero-secondary-button": {
+      id: "hero-secondary-button",
+      kind: "primitive" as const,
+      definitionKey: "primitive.button",
+      parentId: "hero-actions",
+      childIds: [],
+      styleBindingId: "sb-hero-secondary-button",
+      propValues: {
+        label: "View pricing",
+        linkType: "url",
+        href: "/pricing",
+        collectionSlug: "",
+        entrySlug: "",
+        openInNewTab: false,
+      },
+      contentBinding: {
+        source: "editor" as const,
+        key: "secondaryButton",
+        editorField: heroBindings.secondaryButton,
+      },
+    },
+    "hero-slot": {
+      id: "hero-slot",
+      kind: "primitive" as const,
+      definitionKey: "primitive.slot",
+      parentId: "hero-content",
+      childIds: [],
+      styleBindingId: "sb-hero-slot",
+      propValues: { slotId: "hero-slot" },
+      contentBinding: {
+        source: "editor" as const,
+        key: "slot",
+        editorField: heroBindings.slot,
       },
     },
     "hero-image": {
@@ -240,9 +293,19 @@ export const seedHeroDesignComposition = {
       properties: [
         { type: "utility", property: "display", value: "flex" },
         { type: "utility", property: "flexDirection", value: "col" },
-        { type: "utility", property: "flexDirection", value: "row", breakpoint: "lg" },
+        {
+          type: "utility",
+          property: "flexDirection",
+          value: "row",
+          breakpoint: "lg",
+        },
         { type: "utility", property: "alignItems", value: "start" },
-        { type: "utility", property: "alignItems", value: "center", breakpoint: "lg" },
+        {
+          type: "utility",
+          property: "alignItems",
+          value: "center",
+          breakpoint: "lg",
+        },
         { type: "utility", property: "gap", value: "8" },
         { type: "utility", property: "gap", value: "12", breakpoint: "lg" },
         { type: "utility", property: "padding", value: "8" },
@@ -282,8 +345,18 @@ export const seedHeroDesignComposition = {
       nodeId: "hero-heading",
       properties: [
         { type: "utility", property: "fontSize", value: "4xl" },
-        { type: "utility", property: "fontSize", value: "5xl", breakpoint: "md" },
-        { type: "utility", property: "fontSize", value: "6xl", breakpoint: "lg" },
+        {
+          type: "utility",
+          property: "fontSize",
+          value: "5xl",
+          breakpoint: "md",
+        },
+        {
+          type: "utility",
+          property: "fontSize",
+          value: "6xl",
+          breakpoint: "lg",
+        },
         { type: "utility", property: "fontWeight", value: "semibold" },
         { type: "utility", property: "lineHeight", value: "tight" },
         { type: "utility", property: "letterSpacing", value: "tight" },
@@ -294,18 +367,53 @@ export const seedHeroDesignComposition = {
       nodeId: "hero-body",
       properties: [
         { type: "utility", property: "fontSize", value: "lg" },
-        { type: "utility", property: "fontSize", value: "xl", breakpoint: "md" },
+        {
+          type: "utility",
+          property: "fontSize",
+          value: "xl",
+          breakpoint: "md",
+        },
         { type: "utility", property: "lineHeight", value: "relaxed" },
         { type: "token", property: "color", token: "color.muted.foreground" },
       ],
     },
-    "sb-hero-cta": {
-      id: "sb-hero-cta",
-      nodeId: "hero-cta",
+    "sb-hero-actions": {
+      id: "sb-hero-actions",
+      nodeId: "hero-actions",
+      properties: [
+        { type: "utility", property: "display", value: "flex" },
+        { type: "utility", property: "flexWrap", value: "wrap" },
+        { type: "utility", property: "alignItems", value: "center" },
+        { type: "utility", property: "gap", value: "3" },
+      ],
+    },
+    "sb-hero-primary-button": {
+      id: "sb-hero-primary-button",
+      nodeId: "hero-primary-button",
       properties: [
         ...PILL_BUTTON,
         { type: "token", property: "background", token: "color.primary" },
         { type: "token", property: "color", token: "color.primary.foreground" },
+      ],
+    },
+    "sb-hero-secondary-button": {
+      id: "sb-hero-secondary-button",
+      nodeId: "hero-secondary-button",
+      properties: [
+        ...PILL_BUTTON,
+        ...HAIRLINE_BORDER,
+        { type: "token", property: "background", token: "color.background" },
+        { type: "token", property: "color", token: "color.foreground" },
+      ],
+    },
+    "sb-hero-slot": {
+      id: "sb-hero-slot",
+      nodeId: "hero-slot",
+      properties: [
+        { type: "utility", property: "display", value: "flex" },
+        { type: "utility", property: "flexDirection", value: "col" },
+        { type: "utility", property: "gap", value: "4" },
+        { type: "utility", property: "width", value: "full" },
       ],
     },
     "sb-hero-image": {
@@ -325,37 +433,48 @@ export const seedHeroDesignComposition = {
 } as const;
 
 /**
- * Feature block design: binds heading / body; `image` stays unbound (optional).
- * A calm bordered panel led by an accent-tinted eyebrow.
+ * Section block design: binds eyebrow / heading / primaryButton /
+ * secondaryButton / slot per the catalog. A calm bordered panel led by an
+ * accent-tinted eyebrow, closing with an actions row above the content slot.
  */
-export const seedFeatureDesignComposition = {
-  rootId: "feature-root",
+export const seedSectionDesignComposition = {
+  rootId: "section-root",
   nodes: {
-    "feature-root": {
-      id: "feature-root",
+    "section-root": {
+      id: "section-root",
       kind: "primitive" as const,
       definitionKey: "primitive.section" as const,
       parentId: null,
-      childIds: ["feature-eyebrow", "feature-heading", "feature-body"],
-      styleBindingId: "sb-feature-root",
+      childIds: [
+        "section-eyebrow",
+        "section-heading",
+        "section-actions",
+        "section-slot",
+      ],
+      styleBindingId: "sb-section-root",
       propValues: {},
     },
-    "feature-eyebrow": {
-      id: "feature-eyebrow",
+    "section-eyebrow": {
+      id: "section-eyebrow",
       kind: "text" as const,
       definitionKey: "primitive.text",
-      parentId: "feature-root",
+      parentId: "section-root",
       childIds: [],
-      styleBindingId: "sb-feature-eyebrow",
+      styleBindingId: "sb-section-eyebrow",
       propValues: { content: "Capabilities" },
+      contentBinding: {
+        source: "editor" as const,
+        key: "eyebrow",
+        editorField: { name: "eyebrow" },
+      },
     },
-    "feature-heading": {
-      id: "feature-heading",
+    "section-heading": {
+      id: "section-heading",
       kind: "primitive" as const,
       definitionKey: "primitive.heading",
-      parentId: "feature-root",
+      parentId: "section-root",
       childIds: [],
-      styleBindingId: "sb-feature-heading",
+      styleBindingId: "sb-section-heading",
       propValues: {
         content: "Everything your website launch needs",
         level: "h2",
@@ -366,27 +485,76 @@ export const seedFeatureDesignComposition = {
         editorField: { name: "heading" },
       },
     },
-    "feature-body": {
-      id: "feature-body",
-      kind: "text" as const,
-      definitionKey: "primitive.text",
-      parentId: "feature-root",
+    "section-actions": {
+      id: "section-actions",
+      kind: "primitive" as const,
+      definitionKey: "primitive.box",
+      parentId: "section-root",
+      childIds: ["section-primary-button", "section-secondary-button"],
+      styleBindingId: "sb-section-actions",
+      propValues: { tag: "div" },
+    },
+    "section-primary-button": {
+      id: "section-primary-button",
+      kind: "primitive" as const,
+      definitionKey: "primitive.button",
+      parentId: "section-actions",
       childIds: [],
-      styleBindingId: "sb-feature-body",
+      styleBindingId: "sb-section-primary-button",
       propValues: {
-        content: "Feature design body copy — replaced by the page block value.",
+        label: "Explore features",
+        linkType: "url",
+        href: "/features",
+        collectionSlug: "",
+        entrySlug: "",
+        openInNewTab: false,
       },
       contentBinding: {
         source: "editor" as const,
-        key: "body",
-        editorField: { name: "body" },
+        key: "primaryButton",
+        editorField: { name: "primaryButton" },
+      },
+    },
+    "section-secondary-button": {
+      id: "section-secondary-button",
+      kind: "primitive" as const,
+      definitionKey: "primitive.button",
+      parentId: "section-actions",
+      childIds: [],
+      styleBindingId: "sb-section-secondary-button",
+      propValues: {
+        label: "Talk to us",
+        linkType: "url",
+        href: "/contact",
+        collectionSlug: "",
+        entrySlug: "",
+        openInNewTab: false,
+      },
+      contentBinding: {
+        source: "editor" as const,
+        key: "secondaryButton",
+        editorField: { name: "secondaryButton" },
+      },
+    },
+    "section-slot": {
+      id: "section-slot",
+      kind: "primitive" as const,
+      definitionKey: "primitive.slot",
+      parentId: "section-root",
+      childIds: [],
+      styleBindingId: "sb-section-slot",
+      propValues: { slotId: "section-slot" },
+      contentBinding: {
+        source: "editor" as const,
+        key: "slot",
+        editorField: { name: "slot" },
       },
     },
   },
   styleBindings: {
-    "sb-feature-root": {
-      id: "sb-feature-root",
-      nodeId: "feature-root",
+    "sb-section-root": {
+      id: "sb-section-root",
+      nodeId: "section-root",
       properties: [
         { type: "utility", property: "display", value: "flex" },
         { type: "utility", property: "flexDirection", value: "col" },
@@ -399,34 +567,67 @@ export const seedFeatureDesignComposition = {
         { type: "token", property: "color", token: "color.foreground" },
       ],
     },
-    "sb-feature-eyebrow": {
-      id: "sb-feature-eyebrow",
-      nodeId: "feature-eyebrow",
+    "sb-section-eyebrow": {
+      id: "sb-section-eyebrow",
+      nodeId: "section-eyebrow",
       properties: [
         ...EYEBROW_TYPE,
         { type: "token", property: "color", token: "color.accent.foreground" },
       ],
     },
-    "sb-feature-heading": {
-      id: "sb-feature-heading",
-      nodeId: "feature-heading",
+    "sb-section-heading": {
+      id: "sb-section-heading",
+      nodeId: "section-heading",
       properties: [
         { type: "utility", property: "fontSize", value: "3xl" },
-        { type: "utility", property: "fontSize", value: "4xl", breakpoint: "md" },
+        {
+          type: "utility",
+          property: "fontSize",
+          value: "4xl",
+          breakpoint: "md",
+        },
         { type: "utility", property: "fontWeight", value: "semibold" },
         { type: "utility", property: "lineHeight", value: "tight" },
         { type: "utility", property: "letterSpacing", value: "tight" },
       ],
     },
-    "sb-feature-body": {
-      id: "sb-feature-body",
-      nodeId: "feature-body",
+    "sb-section-actions": {
+      id: "sb-section-actions",
+      nodeId: "section-actions",
       properties: [
-        { type: "utility", property: "fontSize", value: "base" },
-        { type: "utility", property: "fontSize", value: "lg", breakpoint: "md" },
-        { type: "utility", property: "lineHeight", value: "relaxed" },
-        { type: "utility", property: "maxWidth", value: "2xl" },
-        { type: "token", property: "color", token: "color.muted.foreground" },
+        { type: "utility", property: "display", value: "flex" },
+        { type: "utility", property: "flexWrap", value: "wrap" },
+        { type: "utility", property: "alignItems", value: "center" },
+        { type: "utility", property: "gap", value: "3" },
+      ],
+    },
+    "sb-section-primary-button": {
+      id: "sb-section-primary-button",
+      nodeId: "section-primary-button",
+      properties: [
+        ...PILL_BUTTON,
+        { type: "token", property: "background", token: "color.primary" },
+        { type: "token", property: "color", token: "color.primary.foreground" },
+      ],
+    },
+    "sb-section-secondary-button": {
+      id: "sb-section-secondary-button",
+      nodeId: "section-secondary-button",
+      properties: [
+        ...PILL_BUTTON,
+        ...HAIRLINE_BORDER,
+        { type: "token", property: "background", token: "color.background" },
+        { type: "token", property: "color", token: "color.foreground" },
+      ],
+    },
+    "sb-section-slot": {
+      id: "sb-section-slot",
+      nodeId: "section-slot",
+      properties: [
+        { type: "utility", property: "display", value: "flex" },
+        { type: "utility", property: "flexDirection", value: "col" },
+        { type: "utility", property: "gap", value: "4" },
+        { type: "utility", property: "width", value: "full" },
       ],
     },
   },
@@ -565,7 +766,12 @@ export const seedCtaDesignComposition = {
       nodeId: "cta-heading",
       properties: [
         { type: "utility", property: "fontSize", value: "3xl" },
-        { type: "utility", property: "fontSize", value: "5xl", breakpoint: "md" },
+        {
+          type: "utility",
+          property: "fontSize",
+          value: "5xl",
+          breakpoint: "md",
+        },
         { type: "utility", property: "fontWeight", value: "semibold" },
         { type: "utility", property: "lineHeight", value: "tight" },
         { type: "utility", property: "letterSpacing", value: "tight" },
@@ -672,9 +878,176 @@ export const seedContentDesignComposition = {
       nodeId: "content-body",
       properties: [
         { type: "utility", property: "fontSize", value: "base" },
-        { type: "utility", property: "fontSize", value: "lg", breakpoint: "md" },
+        {
+          type: "utility",
+          property: "fontSize",
+          value: "lg",
+          breakpoint: "md",
+        },
         { type: "utility", property: "lineHeight", value: "relaxed" },
         { type: "token", property: "color", token: "color.foreground" },
+      ],
+    },
+  },
+} as const;
+
+/**
+ * Card block design: binds image / body / link / button plus per-element
+ * visibility toggles (`imageVisible` / `bodyVisible` / `buttonVisible`).
+ *
+ * HTML validity (PR 06 §3): the `link` binds to the media+copy wrapper box and
+ * the `button` sits outside it as a sibling, so the card's anchor never nests
+ * the button's anchor.
+ */
+export const seedCardDesignComposition = {
+  rootId: "cardblock-root",
+  nodes: {
+    "cardblock-root": {
+      id: "cardblock-root",
+      kind: "primitive" as const,
+      definitionKey: "primitive.box" as const,
+      parentId: null,
+      childIds: ["cardblock-linked", "cardblock-button"],
+      styleBindingId: "sb-cardblock-root",
+      propValues: { tag: "article" },
+    },
+    "cardblock-linked": {
+      id: "cardblock-linked",
+      kind: "primitive" as const,
+      definitionKey: "primitive.box",
+      parentId: "cardblock-root",
+      childIds: ["cardblock-image", "cardblock-body"],
+      styleBindingId: "sb-cardblock-linked",
+      propValues: { tag: "div" },
+      contentBinding: {
+        source: "editor" as const,
+        key: "link",
+        editorField: { name: "link" },
+      },
+    },
+    "cardblock-image": {
+      id: "cardblock-image",
+      kind: "primitive" as const,
+      definitionKey: "primitive.image",
+      parentId: "cardblock-linked",
+      childIds: [],
+      styleBindingId: "sb-cardblock-image",
+      propValues: {
+        src: "",
+        alt: "Card image",
+        imageSource: "media",
+        imageUtilities: "object-cover",
+        mediaId: "",
+        mediaUrl: "",
+      },
+      contentBinding: {
+        source: "editor" as const,
+        key: "image",
+        editorField: { name: "image" },
+      },
+      visibilityBinding: {
+        source: "editor" as const,
+        editorFieldName: "imageVisible",
+      },
+    },
+    "cardblock-body": {
+      id: "cardblock-body",
+      kind: "text" as const,
+      definitionKey: "primitive.text",
+      parentId: "cardblock-linked",
+      childIds: [],
+      styleBindingId: "sb-cardblock-body",
+      propValues: {
+        content: "Card design body copy — replaced by the page block value.",
+      },
+      contentBinding: {
+        source: "editor" as const,
+        key: "body",
+        editorField: { name: "body" },
+      },
+      visibilityBinding: {
+        source: "editor" as const,
+        editorFieldName: "bodyVisible",
+      },
+    },
+    "cardblock-button": {
+      id: "cardblock-button",
+      kind: "primitive" as const,
+      definitionKey: "primitive.button",
+      parentId: "cardblock-root",
+      childIds: [],
+      styleBindingId: "sb-cardblock-button",
+      propValues: {
+        label: "Learn more",
+        linkType: "url",
+        href: "/contact",
+        collectionSlug: "",
+        entrySlug: "",
+        openInNewTab: false,
+      },
+      contentBinding: {
+        source: "editor" as const,
+        key: "button",
+        editorField: { name: "button" },
+      },
+      visibilityBinding: {
+        source: "editor" as const,
+        editorFieldName: "buttonVisible",
+      },
+    },
+  },
+  styleBindings: {
+    "sb-cardblock-root": {
+      id: "sb-cardblock-root",
+      nodeId: "cardblock-root",
+      properties: [
+        { type: "utility", property: "display", value: "flex" },
+        { type: "utility", property: "flexDirection", value: "col" },
+        { type: "utility", property: "gap", value: "4" },
+        { type: "utility", property: "padding", value: "6" },
+        { type: "utility", property: "borderRadius", value: "2xl" },
+        { type: "utility", property: "overflow", value: "hidden" },
+        ...HAIRLINE_BORDER,
+        { type: "token", property: "background", token: "color.card" },
+        { type: "token", property: "color", token: "color.card.foreground" },
+      ],
+    },
+    "sb-cardblock-linked": {
+      id: "sb-cardblock-linked",
+      nodeId: "cardblock-linked",
+      properties: [
+        { type: "utility", property: "display", value: "flex" },
+        { type: "utility", property: "flexDirection", value: "col" },
+        { type: "utility", property: "gap", value: "4" },
+      ],
+    },
+    "sb-cardblock-image": {
+      id: "sb-cardblock-image",
+      nodeId: "cardblock-image",
+      properties: [
+        { type: "utility", property: "width", value: "full" },
+        { type: "utility", property: "aspectRatio", value: "video" },
+        { type: "utility", property: "borderRadius", value: "xl" },
+        { type: "utility", property: "overflow", value: "hidden" },
+        ...HAIRLINE_BORDER,
+      ],
+    },
+    "sb-cardblock-body": {
+      id: "sb-cardblock-body",
+      nodeId: "cardblock-body",
+      properties: [
+        { type: "utility", property: "fontSize", value: "base" },
+        { type: "utility", property: "lineHeight", value: "relaxed" },
+        { type: "token", property: "color", token: "color.muted.foreground" },
+      ],
+    },
+    "sb-cardblock-button": {
+      id: "sb-cardblock-button",
+      nodeId: "cardblock-button",
+      properties: [
+        ...PILL_BUTTON,
+        { type: "token", property: "background", token: "color.primary" },
+        { type: "token", property: "color", token: "color.primary.foreground" },
       ],
     },
   },
@@ -877,11 +1250,7 @@ export function buildSeedPageTemplateComposition(): PageComposition {
       kind: "primitive",
       definitionKey: "primitive.box",
       parentId: "page-hero-section",
-      childIds: [
-        "page-hero-eyebrow",
-        "page-hero-heading",
-        "page-hero-subhead",
-      ],
+      childIds: ["page-hero-eyebrow", "page-hero-heading", "page-hero-subhead"],
       styleBindingId: "sb-page-hero-inner",
       propValues: { tag: "div" },
     },
@@ -992,8 +1361,18 @@ export function buildSeedPageTemplateComposition(): PageComposition {
         { type: "utility", property: "marginRight", value: "auto" },
         { type: "utility", property: "paddingLeft", value: "6" },
         { type: "utility", property: "paddingRight", value: "6" },
-        { type: "utility", property: "paddingLeft", value: "8", breakpoint: "md" },
-        { type: "utility", property: "paddingRight", value: "8", breakpoint: "md" },
+        {
+          type: "utility",
+          property: "paddingLeft",
+          value: "8",
+          breakpoint: "md",
+        },
+        {
+          type: "utility",
+          property: "paddingRight",
+          value: "8",
+          breakpoint: "md",
+        },
         { type: "utility", property: "paddingTop", value: "5" },
         { type: "utility", property: "paddingBottom", value: "5" },
       ],
@@ -1035,8 +1414,18 @@ export function buildSeedPageTemplateComposition(): PageComposition {
         { type: "utility", property: "paddingRight", value: "6" },
         { type: "utility", property: "paddingTop", value: "16" },
         { type: "utility", property: "paddingBottom", value: "16" },
-        { type: "utility", property: "paddingTop", value: "24", breakpoint: "md" },
-        { type: "utility", property: "paddingBottom", value: "24", breakpoint: "md" },
+        {
+          type: "utility",
+          property: "paddingTop",
+          value: "24",
+          breakpoint: "md",
+        },
+        {
+          type: "utility",
+          property: "paddingBottom",
+          value: "24",
+          breakpoint: "md",
+        },
       ],
     },
     "sb-page-hero-inner": {
@@ -1067,8 +1456,18 @@ export function buildSeedPageTemplateComposition(): PageComposition {
       nodeId: "page-hero-heading",
       properties: [
         { type: "utility", property: "fontSize", value: "5xl" },
-        { type: "utility", property: "fontSize", value: "6xl", breakpoint: "md" },
-        { type: "utility", property: "fontSize", value: "7xl", breakpoint: "lg" },
+        {
+          type: "utility",
+          property: "fontSize",
+          value: "6xl",
+          breakpoint: "md",
+        },
+        {
+          type: "utility",
+          property: "fontSize",
+          value: "7xl",
+          breakpoint: "lg",
+        },
         { type: "utility", property: "fontWeight", value: "semibold" },
         { type: "utility", property: "lineHeight", value: "tight" },
         { type: "utility", property: "letterSpacing", value: "tight" },
@@ -1079,7 +1478,12 @@ export function buildSeedPageTemplateComposition(): PageComposition {
       nodeId: "page-hero-subhead",
       properties: [
         { type: "utility", property: "fontSize", value: "lg" },
-        { type: "utility", property: "fontSize", value: "xl", breakpoint: "md" },
+        {
+          type: "utility",
+          property: "fontSize",
+          value: "xl",
+          breakpoint: "md",
+        },
         { type: "utility", property: "lineHeight", value: "relaxed" },
         { type: "utility", property: "maxWidth", value: "2xl" },
         { type: "utility", property: "marginLeft", value: "auto" },
@@ -1101,10 +1505,25 @@ export function buildSeedPageTemplateComposition(): PageComposition {
         { type: "utility", property: "marginRight", value: "auto" },
         { type: "utility", property: "paddingLeft", value: "6" },
         { type: "utility", property: "paddingRight", value: "6" },
-        { type: "utility", property: "paddingLeft", value: "8", breakpoint: "md" },
-        { type: "utility", property: "paddingRight", value: "8", breakpoint: "md" },
+        {
+          type: "utility",
+          property: "paddingLeft",
+          value: "8",
+          breakpoint: "md",
+        },
+        {
+          type: "utility",
+          property: "paddingRight",
+          value: "8",
+          breakpoint: "md",
+        },
         { type: "utility", property: "paddingBottom", value: "20" },
-        { type: "utility", property: "paddingBottom", value: "24", breakpoint: "md" },
+        {
+          type: "utility",
+          property: "paddingBottom",
+          value: "24",
+          breakpoint: "md",
+        },
       ],
     },
     "sb-page-footer": {
@@ -1122,9 +1541,24 @@ export function buildSeedPageTemplateComposition(): PageComposition {
       properties: [
         { type: "utility", property: "display", value: "flex" },
         { type: "utility", property: "flexDirection", value: "col" },
-        { type: "utility", property: "flexDirection", value: "row", breakpoint: "md" },
-        { type: "utility", property: "justifyContent", value: "between", breakpoint: "md" },
-        { type: "utility", property: "alignItems", value: "center", breakpoint: "md" },
+        {
+          type: "utility",
+          property: "flexDirection",
+          value: "row",
+          breakpoint: "md",
+        },
+        {
+          type: "utility",
+          property: "justifyContent",
+          value: "between",
+          breakpoint: "md",
+        },
+        {
+          type: "utility",
+          property: "alignItems",
+          value: "center",
+          breakpoint: "md",
+        },
         { type: "utility", property: "gap", value: "3" },
         { type: "utility", property: "width", value: "full" },
         { type: "utility", property: "maxWidth", value: "6xl" },
@@ -1132,8 +1566,18 @@ export function buildSeedPageTemplateComposition(): PageComposition {
         { type: "utility", property: "marginRight", value: "auto" },
         { type: "utility", property: "paddingLeft", value: "6" },
         { type: "utility", property: "paddingRight", value: "6" },
-        { type: "utility", property: "paddingLeft", value: "8", breakpoint: "md" },
-        { type: "utility", property: "paddingRight", value: "8", breakpoint: "md" },
+        {
+          type: "utility",
+          property: "paddingLeft",
+          value: "8",
+          breakpoint: "md",
+        },
+        {
+          type: "utility",
+          property: "paddingRight",
+          value: "8",
+          breakpoint: "md",
+        },
         { type: "utility", property: "paddingTop", value: "10" },
         { type: "utility", property: "paddingBottom", value: "10" },
       ],

@@ -5,6 +5,7 @@ export {
   type BlockFieldSpec,
   type BlockFieldType,
   blockCatalogEntry,
+  visibilityBindableFields,
 } from "./block-catalog.js";
 export {
   type CompositionNode,

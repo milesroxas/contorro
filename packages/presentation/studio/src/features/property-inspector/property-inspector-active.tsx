@@ -56,6 +56,7 @@ import {
   orderedStyleSectionsForInspector,
 } from "./property-inspector-style-model.js";
 import { InspectorOrderedStyleSectionItem } from "./property-inspector-style-sections.js";
+import { VisibilityBindingSection } from "./visibility-binding-section.js";
 
 function PrimitiveSettingsInspectors({
   composition,
@@ -154,6 +155,7 @@ function PropertyInspectorSettingsTab({
   resetNodePropKey,
   setNodeCollectionFieldBinding,
   setNodeEditorFieldBinding,
+  setNodeVisibilityBinding,
 }: {
   blockTypeSettings: BlockTypeSettings | null;
   componentsHref: string;
@@ -172,6 +174,7 @@ function PropertyInspectorSettingsTab({
   resetNodePropKey: (propKey: string) => void;
   setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
+  setNodeVisibilityBinding: (fieldName: string | null) => void;
 }) {
   const isRoot = node.id === composition.rootId;
   const activeBlockType = blockTypeSettings?.value ?? null;
@@ -186,6 +189,13 @@ function PropertyInspectorSettingsTab({
           composition={composition}
           node={node}
           setNodeEditorFieldBinding={setNodeEditorFieldBinding}
+        />
+      ) : null}
+      {!isRoot && activeBlockType !== null ? (
+        <VisibilityBindingSection
+          blockType={activeBlockType}
+          node={node}
+          setNodeVisibilityBinding={setNodeVisibilityBinding}
         />
       ) : null}
       <PrimitiveSettingsInspectors
@@ -270,6 +280,7 @@ export function PropertyInspectorActive({
   resetNodePropKey,
   setNodeCollectionFieldBinding,
   setNodeEditorFieldBinding,
+  setNodeVisibilityBinding,
   setStyleSectionOpenState,
   styleSectionOpenState,
   tokenMetadata,
@@ -291,6 +302,7 @@ export function PropertyInspectorActive({
   resetNodePropKey: (propKey: string) => void;
   setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
+  setNodeVisibilityBinding: (fieldName: string | null) => void;
   setStyleSectionOpenState: Dispatch<
     SetStateAction<Partial<Record<StyleSectionId, boolean>>>
   >;
@@ -496,6 +508,7 @@ export function PropertyInspectorActive({
               resetNodePropKey={resetNodePropKey}
               setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
               setNodeEditorFieldBinding={setNodeEditorFieldBinding}
+              setNodeVisibilityBinding={setNodeVisibilityBinding}
             />
           </TabsContent>
         </Tabs>

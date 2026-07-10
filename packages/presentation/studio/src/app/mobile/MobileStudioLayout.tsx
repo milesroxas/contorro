@@ -123,6 +123,7 @@ export function MobileStudioLayout({
   selectedNodeId,
   setNodeCollectionFieldBinding,
   setNodeEditorFieldBinding,
+  setNodeVisibilityBinding,
   stagedTapInsertion,
   onCancelStagedTapInsertion,
   studioResource,
@@ -174,6 +175,7 @@ export function MobileStudioLayout({
   selectedNodeId: string | null;
   setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
+  setNodeVisibilityBinding: (fieldName: string | null) => void;
   stagedTapInsertion: StagedTapInsertion | null;
   onCancelStagedTapInsertion: () => void;
   studioResource: "pageTemplate" | "component" | null;
@@ -381,6 +383,7 @@ export function MobileStudioLayout({
                 resetNodePropKey={resetNodePropKey}
                 setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
                 setNodeEditorFieldBinding={setNodeEditorFieldBinding}
+                setNodeVisibilityBinding={setNodeVisibilityBinding}
                 tokenMetadata={tokenMetadata}
               />
             ) : null}
@@ -662,6 +665,7 @@ function MobileInspectSheet({
   resetNodePropKey,
   setNodeCollectionFieldBinding,
   setNodeEditorFieldBinding,
+  setNodeVisibilityBinding,
   tokenMetadata,
 }: {
   activeBreakpoint: Breakpoint | null;
@@ -681,6 +685,7 @@ function MobileInspectSheet({
   resetNodePropKey: (propKey: string) => void;
   setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
+  setNodeVisibilityBinding: (fieldName: string | null) => void;
   tokenMetadata: TokenMeta[];
 }) {
   return (
@@ -700,6 +705,7 @@ function MobileInspectSheet({
         resetNodePropKey={resetNodePropKey}
         setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
         setNodeEditorFieldBinding={setNodeEditorFieldBinding}
+        setNodeVisibilityBinding={setNodeVisibilityBinding}
         tokenMetadata={tokenMetadata}
       />
     </div>

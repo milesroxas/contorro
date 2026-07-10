@@ -53,6 +53,7 @@ export {
   setNodeContentBinding,
   setNodeStyleProperty,
   setNodeTokenStyle,
+  setNodeVisibilityBinding,
   updateNodePropValues,
 } from "./graph/mutations.js";
 export {

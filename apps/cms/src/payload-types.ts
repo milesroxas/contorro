@@ -215,13 +215,124 @@ export interface Page {
                     [k: string]: unknown;
                   } | null;
                   image?: (number | null) | Media;
-                  cta?: {
+                  primaryButton?: {
                     label?: string | null;
                     linkType?: ('url' | 'page') | null;
                     url?: string | null;
                     page?: (number | null) | Page;
                     openInNewTab?: boolean | null;
                   };
+                  secondaryButton?: {
+                    label?: string | null;
+                    linkType?: ('url' | 'page') | null;
+                    url?: string | null;
+                    page?: (number | null) | Page;
+                    openInNewTab?: boolean | null;
+                  };
+                  /**
+                   * Blocks rendered inside this design's slot region.
+                   */
+                  slot?:
+                    | (
+                        | {
+                            /**
+                             * Choose a published design for this block.
+                             */
+                            design: number | Component;
+                            image?: (number | null) | Media;
+                            body?: {
+                              root: {
+                                type: string;
+                                children: {
+                                  type: any;
+                                  version: number;
+                                  [k: string]: unknown;
+                                }[];
+                                direction: ('ltr' | 'rtl') | null;
+                                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                                indent: number;
+                                version: number;
+                              };
+                              [k: string]: unknown;
+                            } | null;
+                            link?: {
+                              linkType?: ('url' | 'page') | null;
+                              url?: string | null;
+                              page?: (number | null) | Page;
+                              openInNewTab?: boolean | null;
+                            };
+                            button?: {
+                              label?: string | null;
+                              linkType?: ('url' | 'page') | null;
+                              url?: string | null;
+                              page?: (number | null) | Page;
+                              openInNewTab?: boolean | null;
+                            };
+                            imageVisible?: boolean | null;
+                            bodyVisible?: boolean | null;
+                            buttonVisible?: boolean | null;
+                            id?: string | null;
+                            blockName?: string | null;
+                            blockType: 'card';
+                          }
+                        | {
+                            /**
+                             * Choose a published design for this block.
+                             */
+                            design: number | Component;
+                            heading: string;
+                            body?: {
+                              root: {
+                                type: string;
+                                children: {
+                                  type: any;
+                                  version: number;
+                                  [k: string]: unknown;
+                                }[];
+                                direction: ('ltr' | 'rtl') | null;
+                                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                                indent: number;
+                                version: number;
+                              };
+                              [k: string]: unknown;
+                            } | null;
+                            button: {
+                              label: string;
+                              linkType?: ('url' | 'page') | null;
+                              url?: string | null;
+                              page?: (number | null) | Page;
+                              openInNewTab?: boolean | null;
+                            };
+                            id?: string | null;
+                            blockName?: string | null;
+                            blockType: 'cta';
+                          }
+                        | {
+                            /**
+                             * Choose a published design for this block.
+                             */
+                            design: number | Component;
+                            body: {
+                              root: {
+                                type: string;
+                                children: {
+                                  type: any;
+                                  version: number;
+                                  [k: string]: unknown;
+                                }[];
+                                direction: ('ltr' | 'rtl') | null;
+                                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                                indent: number;
+                                version: number;
+                              };
+                              [k: string]: unknown;
+                            };
+                            id?: string | null;
+                            blockName?: string | null;
+                            blockType: 'content';
+                          }
+                      )[]
+                    | null;
                   id?: string | null;
                   blockName?: string | null;
                   blockType: 'hero';
@@ -231,7 +342,136 @@ export interface Page {
                    * Choose a published design for this block.
                    */
                   design: number | Component;
+                  eyebrow?: string | null;
                   heading: string;
+                  primaryButton?: {
+                    label?: string | null;
+                    linkType?: ('url' | 'page') | null;
+                    url?: string | null;
+                    page?: (number | null) | Page;
+                    openInNewTab?: boolean | null;
+                  };
+                  secondaryButton?: {
+                    label?: string | null;
+                    linkType?: ('url' | 'page') | null;
+                    url?: string | null;
+                    page?: (number | null) | Page;
+                    openInNewTab?: boolean | null;
+                  };
+                  /**
+                   * Blocks rendered inside this design's slot region.
+                   */
+                  slot?:
+                    | (
+                        | {
+                            /**
+                             * Choose a published design for this block.
+                             */
+                            design: number | Component;
+                            image?: (number | null) | Media;
+                            body?: {
+                              root: {
+                                type: string;
+                                children: {
+                                  type: any;
+                                  version: number;
+                                  [k: string]: unknown;
+                                }[];
+                                direction: ('ltr' | 'rtl') | null;
+                                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                                indent: number;
+                                version: number;
+                              };
+                              [k: string]: unknown;
+                            } | null;
+                            link?: {
+                              linkType?: ('url' | 'page') | null;
+                              url?: string | null;
+                              page?: (number | null) | Page;
+                              openInNewTab?: boolean | null;
+                            };
+                            button?: {
+                              label?: string | null;
+                              linkType?: ('url' | 'page') | null;
+                              url?: string | null;
+                              page?: (number | null) | Page;
+                              openInNewTab?: boolean | null;
+                            };
+                            imageVisible?: boolean | null;
+                            bodyVisible?: boolean | null;
+                            buttonVisible?: boolean | null;
+                            id?: string | null;
+                            blockName?: string | null;
+                            blockType: 'card';
+                          }
+                        | {
+                            /**
+                             * Choose a published design for this block.
+                             */
+                            design: number | Component;
+                            heading: string;
+                            body?: {
+                              root: {
+                                type: string;
+                                children: {
+                                  type: any;
+                                  version: number;
+                                  [k: string]: unknown;
+                                }[];
+                                direction: ('ltr' | 'rtl') | null;
+                                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                                indent: number;
+                                version: number;
+                              };
+                              [k: string]: unknown;
+                            } | null;
+                            button: {
+                              label: string;
+                              linkType?: ('url' | 'page') | null;
+                              url?: string | null;
+                              page?: (number | null) | Page;
+                              openInNewTab?: boolean | null;
+                            };
+                            id?: string | null;
+                            blockName?: string | null;
+                            blockType: 'cta';
+                          }
+                        | {
+                            /**
+                             * Choose a published design for this block.
+                             */
+                            design: number | Component;
+                            body: {
+                              root: {
+                                type: string;
+                                children: {
+                                  type: any;
+                                  version: number;
+                                  [k: string]: unknown;
+                                }[];
+                                direction: ('ltr' | 'rtl') | null;
+                                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+                                indent: number;
+                                version: number;
+                              };
+                              [k: string]: unknown;
+                            };
+                            id?: string | null;
+                            blockName?: string | null;
+                            blockType: 'content';
+                          }
+                      )[]
+                    | null;
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'section';
+                }
+              | {
+                  /**
+                   * Choose a published design for this block.
+                   */
+                  design: number | Component;
+                  image?: (number | null) | Media;
                   body?: {
                     root: {
                       type: string;
@@ -247,10 +487,25 @@ export interface Page {
                     };
                     [k: string]: unknown;
                   } | null;
-                  image?: (number | null) | Media;
+                  link?: {
+                    linkType?: ('url' | 'page') | null;
+                    url?: string | null;
+                    page?: (number | null) | Page;
+                    openInNewTab?: boolean | null;
+                  };
+                  button?: {
+                    label?: string | null;
+                    linkType?: ('url' | 'page') | null;
+                    url?: string | null;
+                    page?: (number | null) | Page;
+                    openInNewTab?: boolean | null;
+                  };
+                  imageVisible?: boolean | null;
+                  bodyVisible?: boolean | null;
+                  buttonVisible?: boolean | null;
                   id?: string | null;
                   blockName?: string | null;
-                  blockType: 'feature';
+                  blockType: 'card';
                 }
               | {
                   /**
@@ -356,7 +611,7 @@ export interface Component {
   /**
    * Content contract this design implements. Leave empty for a design-only library part.
    */
-  blockType?: ('hero' | 'feature' | 'cta' | 'content') | null;
+  blockType?: ('hero' | 'section' | 'card' | 'cta' | 'content') | null;
   composition?:
     | {
         [k: string]: unknown;
@@ -595,7 +850,7 @@ export interface PagesSelect<T extends boolean = true> {
                     heading?: T;
                     body?: T;
                     image?: T;
-                    cta?:
+                    primaryButton?:
                       | T
                       | {
                           label?: T;
@@ -604,16 +859,189 @@ export interface PagesSelect<T extends boolean = true> {
                           page?: T;
                           openInNewTab?: T;
                         };
+                    secondaryButton?:
+                      | T
+                      | {
+                          label?: T;
+                          linkType?: T;
+                          url?: T;
+                          page?: T;
+                          openInNewTab?: T;
+                        };
+                    slot?:
+                      | T
+                      | {
+                          card?:
+                            | T
+                            | {
+                                design?: T;
+                                image?: T;
+                                body?: T;
+                                link?:
+                                  | T
+                                  | {
+                                      linkType?: T;
+                                      url?: T;
+                                      page?: T;
+                                      openInNewTab?: T;
+                                    };
+                                button?:
+                                  | T
+                                  | {
+                                      label?: T;
+                                      linkType?: T;
+                                      url?: T;
+                                      page?: T;
+                                      openInNewTab?: T;
+                                    };
+                                imageVisible?: T;
+                                bodyVisible?: T;
+                                buttonVisible?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          cta?:
+                            | T
+                            | {
+                                design?: T;
+                                heading?: T;
+                                body?: T;
+                                button?:
+                                  | T
+                                  | {
+                                      label?: T;
+                                      linkType?: T;
+                                      url?: T;
+                                      page?: T;
+                                      openInNewTab?: T;
+                                    };
+                                id?: T;
+                                blockName?: T;
+                              };
+                          content?:
+                            | T
+                            | {
+                                design?: T;
+                                body?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
                     id?: T;
                     blockName?: T;
                   };
-              feature?:
+              section?:
                 | T
                 | {
                     design?: T;
+                    eyebrow?: T;
                     heading?: T;
-                    body?: T;
+                    primaryButton?:
+                      | T
+                      | {
+                          label?: T;
+                          linkType?: T;
+                          url?: T;
+                          page?: T;
+                          openInNewTab?: T;
+                        };
+                    secondaryButton?:
+                      | T
+                      | {
+                          label?: T;
+                          linkType?: T;
+                          url?: T;
+                          page?: T;
+                          openInNewTab?: T;
+                        };
+                    slot?:
+                      | T
+                      | {
+                          card?:
+                            | T
+                            | {
+                                design?: T;
+                                image?: T;
+                                body?: T;
+                                link?:
+                                  | T
+                                  | {
+                                      linkType?: T;
+                                      url?: T;
+                                      page?: T;
+                                      openInNewTab?: T;
+                                    };
+                                button?:
+                                  | T
+                                  | {
+                                      label?: T;
+                                      linkType?: T;
+                                      url?: T;
+                                      page?: T;
+                                      openInNewTab?: T;
+                                    };
+                                imageVisible?: T;
+                                bodyVisible?: T;
+                                buttonVisible?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          cta?:
+                            | T
+                            | {
+                                design?: T;
+                                heading?: T;
+                                body?: T;
+                                button?:
+                                  | T
+                                  | {
+                                      label?: T;
+                                      linkType?: T;
+                                      url?: T;
+                                      page?: T;
+                                      openInNewTab?: T;
+                                    };
+                                id?: T;
+                                blockName?: T;
+                              };
+                          content?:
+                            | T
+                            | {
+                                design?: T;
+                                body?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                    id?: T;
+                    blockName?: T;
+                  };
+              card?:
+                | T
+                | {
+                    design?: T;
                     image?: T;
+                    body?: T;
+                    link?:
+                      | T
+                      | {
+                          linkType?: T;
+                          url?: T;
+                          page?: T;
+                          openInNewTab?: T;
+                        };
+                    button?:
+                      | T
+                      | {
+                          label?: T;
+                          linkType?: T;
+                          url?: T;
+                          page?: T;
+                          openInNewTab?: T;
+                        };
+                    imageVisible?: T;
+                    bodyVisible?: T;
+                    buttonVisible?: T;
                     id?: T;
                     blockName?: T;
                   };

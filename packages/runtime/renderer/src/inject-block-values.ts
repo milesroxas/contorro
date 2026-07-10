@@ -135,6 +135,23 @@ function buttonPatch(value: unknown): Record<string, unknown> | null {
   return Object.keys(patch).length > 0 ? patch : null;
 }
 
+/** Bare link (no label): patches `href` so the bound container/media element renders an anchor. */
+function linkPatch(value: unknown): Record<string, unknown> | null {
+  const link = populatedDocFromRelation(value);
+  if (!link) {
+    return null;
+  }
+  const href = buttonHref(link);
+  if (href === null) {
+    return null;
+  }
+  const patch: Record<string, unknown> = { href, linkType: "url" };
+  if (typeof link.openInNewTab === "boolean") {
+    patch.openInNewTab = link.openInNewTab;
+  }
+  return patch;
+}
+
 function numberPatch(value: unknown): Record<string, unknown> | null {
   return typeof value === "number" && Number.isFinite(value)
     ? { content: String(value) }
@@ -158,6 +175,11 @@ function propValuesPatchForField(
       return imagePatch(value);
     case "button":
       return buttonPatch(value);
+    case "link":
+      return linkPatch(value);
+    case "slot":
+      // Child blocks render via the slot pipeline, not propValues patching.
+      return null;
     case "number":
       return numberPatch(value);
     case "checkbox":
@@ -174,6 +196,34 @@ function boundFieldName(node: CompositionNode): string | null {
 }
 
 /**
+ * Editor visibility pass: a node with `visibilityBinding` whose referenced
+ * catalog `checkbox` value is exactly `false` gets `visibility.hidden`.
+ * Unset/missing values never hide authored content.
+ */
+function applyVisibilityBindings(
+  nodes: PageComposition["nodes"],
+  values: Record<string, unknown>,
+  entry: BlockCatalogEntry,
+): { nodes: PageComposition["nodes"]; changed: boolean } {
+  const checkboxNames = new Set(
+    entry.fields.filter((f) => f.type === "checkbox").map((f) => f.name),
+  );
+  const nextNodes = { ...nodes };
+  let changed = false;
+
+  for (const [id, node] of Object.entries(nodes)) {
+    const name = node.visibilityBinding?.editorFieldName;
+    if (!name || !checkboxNames.has(name) || values[name] !== false) {
+      continue;
+    }
+    nextNodes[id] = { ...nextNodes[id], visibility: { hidden: true } };
+    changed = true;
+  }
+
+  return { nodes: nextNodes, changed };
+}
+
+/**
  * Injects a block instance's typed values into its design composition.
  * `values` is the native Payload block row (field values keyed by catalog
  * field names, relations populated). Nodes bound to fields without a value
@@ -185,7 +235,7 @@ export function injectBlockValues(
   entry: BlockCatalogEntry,
 ): PageComposition {
   const fieldsByName = new Map(entry.fields.map((f) => [f.name, f]));
-  const nextNodes: PageComposition["nodes"] = { ...design.nodes };
+  let nextNodes: PageComposition["nodes"] = { ...design.nodes };
   let changed = false;
 
   for (const [id, node] of Object.entries(design.nodes)) {
@@ -206,11 +256,15 @@ export function injectBlockValues(
       continue;
     }
     nextNodes[id] = {
-      ...node,
+      ...nextNodes[id],
       propValues: { ...node.propValues, ...patch },
     };
     changed = true;
   }
+
+  const visibility = applyVisibilityBindings(nextNodes, values, entry);
+  nextNodes = visibility.nodes;
+  changed = changed || visibility.changed;
 
   return changed ? { ...design, nodes: nextNodes } : design;
 }

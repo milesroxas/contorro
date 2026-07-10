@@ -324,6 +324,55 @@ function blockBindingProblems(
   return problems;
 }
 
+/** A node bound to a `slot` field must be a `primitive.slot` (Studio enforces; assert at publish). */
+function slotBindingProblems(
+  entry: NonNullable<ReturnType<typeof blockCatalogEntry>>,
+  composition: PageComposition,
+): string[] {
+  const slotFieldNames = new Set(
+    entry.fields
+      .filter((field) => field.type === "slot")
+      .map((field) => field.name),
+  );
+  const problems: string[] = [];
+  for (const node of Object.values(composition.nodes)) {
+    const cb = node.contentBinding;
+    if (cb?.source !== "editor") {
+      continue;
+    }
+    const name = cb.editorField?.name ?? cb.key;
+    if (slotFieldNames.has(name) && node.definitionKey !== "primitive.slot") {
+      problems.push(
+        `slot field "${name}" is bound to a "${node.definitionKey}" node (must be primitive.slot)`,
+      );
+    }
+  }
+  return problems;
+}
+
+/** Every `visibilityBinding` must reference an existing checkbox field of the block. */
+function visibilityBindingProblems(
+  blockType: string,
+  entry: NonNullable<ReturnType<typeof blockCatalogEntry>>,
+  composition: PageComposition,
+): string[] {
+  const checkboxNames = new Set(
+    entry.fields
+      .filter((field) => field.type === "checkbox")
+      .map((field) => field.name),
+  );
+  const problems: string[] = [];
+  for (const node of Object.values(composition.nodes)) {
+    const name = node.visibilityBinding?.editorFieldName;
+    if (name !== undefined && !checkboxNames.has(name)) {
+      problems.push(
+        `visibility binding "${name}" is not a checkbox field of block type "${blockType}"`,
+      );
+    }
+  }
+  return problems;
+}
+
 function validatePublishedBlockDesignBindings(
   blockType: string,
   composition: PageComposition,
@@ -332,11 +381,11 @@ function validatePublishedBlockDesignBindings(
   if (!entry) {
     throw new APIError(`Unknown block type "${blockType}"`, 400);
   }
-  const problems = blockBindingProblems(
-    blockType,
-    entry,
-    editorBindingCounts(composition),
-  );
+  const problems = [
+    ...blockBindingProblems(blockType, entry, editorBindingCounts(composition)),
+    ...slotBindingProblems(entry, composition),
+    ...visibilityBindingProblems(blockType, entry, composition),
+  ];
   if (problems.length > 0) {
     throw new APIError(
       `Design does not satisfy block type "${blockType}": ${problems.join("; ")}.`,

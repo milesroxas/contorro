@@ -33,6 +33,7 @@ export function PropertyInspector({
   resetNodePropKey,
   setNodeCollectionFieldBinding,
   setNodeEditorFieldBinding,
+  setNodeVisibilityBinding,
   tokenMetadata,
 }: {
   activeBreakpoint: Breakpoint | null;
@@ -53,6 +54,7 @@ export function PropertyInspector({
   resetNodePropKey: (propKey: string) => void;
   setNodeCollectionFieldBinding: (fieldPath: string | null) => void;
   setNodeEditorFieldBinding: (field: EditorFieldSpec | null) => void;
+  setNodeVisibilityBinding: (fieldName: string | null) => void;
   tokenMetadata: TokenMeta[];
 }) {
   const [styleSectionOpenState, setStyleSectionOpenState] = useState<
@@ -83,6 +85,7 @@ export function PropertyInspector({
       resetNodePropKey={resetNodePropKey}
       setNodeCollectionFieldBinding={setNodeCollectionFieldBinding}
       setNodeEditorFieldBinding={setNodeEditorFieldBinding}
+      setNodeVisibilityBinding={setNodeVisibilityBinding}
       setStyleSectionOpenState={setStyleSectionOpenState}
       styleSectionOpenState={styleSectionOpenState}
       tokenMetadata={tokenMetadata}

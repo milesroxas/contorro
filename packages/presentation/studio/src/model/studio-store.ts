@@ -21,6 +21,7 @@ import {
   resetNodePropKeyToPrimitiveDefault,
   setNodeContentBinding,
   setNodeStyleProperty,
+  setNodeVisibilityBinding as setNodeVisibilityBindingInComposition,
   studioNewCompositionSessionId,
   updateNodePropValues,
 } from "@repo/domains-composition";
@@ -318,6 +319,8 @@ export type StudioStoreState = {
     nodeId: string,
     field: EditorFieldSpec | null,
   ) => void;
+  /** Editor show/hide toggle: binds the node to a catalog checkbox field (null clears). */
+  setNodeVisibilityBinding: (nodeId: string, fieldName: string | null) => void;
   setNodeCollectionFieldBinding: (
     nodeId: string,
     fieldPath: string | null,
@@ -965,6 +968,34 @@ export function createStudioStore(
           ? undefined
           : { source: "editor" as const, key: field.name, editorField: field };
       const next = setNodeContentBinding(composition, nodeId, binding);
+      if (!next.ok) {
+        return;
+      }
+      set({
+        composition: next.value,
+        historyPast: [...get().historyPast, composition],
+        historyFuture: [],
+        dirty: true,
+        canUndo: true,
+        canRedo: false,
+      });
+    },
+
+    setNodeVisibilityBinding: (nodeId, fieldName) => {
+      const { composition } = get();
+      if (!composition) {
+        return;
+      }
+      const trimmed = fieldName?.trim() ?? "";
+      const binding =
+        trimmed === ""
+          ? undefined
+          : { source: "editor" as const, editorFieldName: trimmed };
+      const next = setNodeVisibilityBindingInComposition(
+        composition,
+        nodeId,
+        binding,
+      );
       if (!next.ok) {
         return;
       }

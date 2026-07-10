@@ -223,6 +223,36 @@ export function setNodeContentBinding(
 }
 
 /**
+ * Sets or clears `visibilityBinding` on a node (editor show/hide toggle bound
+ * to a catalog checkbox field; independent of `contentBinding`).
+ */
+export function setNodeVisibilityBinding(
+  composition: PageComposition,
+  nodeId: string,
+  visibilityBinding: CompositionNode["visibilityBinding"],
+): Result<PageComposition, "INVALID_NODE"> {
+  const node = composition.nodes[nodeId];
+  if (!node) {
+    return err("INVALID_NODE");
+  }
+  const nextNode: CompositionNode = {
+    ...node,
+    visibilityBinding,
+  };
+  const nextNodes = { ...composition.nodes, [nodeId]: nextNode };
+  const assembled: PageComposition = {
+    rootId: composition.rootId,
+    nodes: nextNodes,
+    styleBindings: { ...composition.styleBindings },
+  };
+  const parsed = PageCompositionSchema.safeParse(assembled);
+  if (!parsed.success) {
+    return err("INVALID_NODE");
+  }
+  return ok(parsed.data);
+}
+
+/**
  * Moves an existing subtree to `targetParentId` at `index` (0-based in the
  * target's child list after the node is removed from its current parent).
  */

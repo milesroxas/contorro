@@ -39,6 +39,13 @@ export const CompositionNodeSchema = z.object({
   /** Inline vs CMS-driven content; `editor` + `editorField` = Payload-managed fields. */
   contentBinding: ContentBindingSchema.optional(),
   visibility: z.object({ hidden: z.boolean() }).optional(),
+  /**
+   * Editor-controlled show/hide, independent of `contentBinding`: references a
+   * catalog `checkbox` field by name ("visible when truthy or unset").
+   */
+  visibilityBinding: z
+    .object({ source: z.literal("editor"), editorFieldName: z.string() })
+    .optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 

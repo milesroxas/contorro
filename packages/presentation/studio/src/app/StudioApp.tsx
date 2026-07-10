@@ -506,6 +506,9 @@ export function StudioApp({
   const setNodeCollectionFieldBinding = useStudioStore(
     (s) => s.setNodeCollectionFieldBinding,
   );
+  const setNodeVisibilityBinding = useStudioStore(
+    (s) => s.setNodeVisibilityBinding,
+  );
   const saveDraft = useStudioStore((s) => s.saveDraft);
   const publish = useStudioStore((s) => s.publish);
   const rename = useStudioStore((s) => s.rename);
@@ -855,6 +858,14 @@ export function StudioApp({
     },
     [forSelectedNode, setNodeEditorFieldBinding],
   );
+  const handleSetNodeVisibilityBinding = useCallback(
+    (fieldName: string | null) => {
+      forSelectedNode((nodeId) => {
+        setNodeVisibilityBinding(nodeId, fieldName);
+      });
+    },
+    [forSelectedNode, setNodeVisibilityBinding],
+  );
 
   if (!composition) {
     return (
@@ -973,6 +984,7 @@ export function StudioApp({
                 handleSetNodeCollectionFieldBinding
               }
               setNodeEditorFieldBinding={handleSetNodeEditorFieldBinding}
+              setNodeVisibilityBinding={handleSetNodeVisibilityBinding}
               stagedTapInsertion={stagedTapInsertion}
               studioResource={studioResource}
               theme={theme}
@@ -1151,6 +1163,11 @@ export function StudioApp({
                 setNodeCollectionFieldBinding={(fieldPath) => {
                   if (selectedNodeId) {
                     setNodeCollectionFieldBinding(selectedNodeId, fieldPath);
+                  }
+                }}
+                setNodeVisibilityBinding={(fieldName) => {
+                  if (selectedNodeId) {
+                    setNodeVisibilityBinding(selectedNodeId, fieldName);
                   }
                 }}
               />

@@ -1,20 +1,22 @@
-import {
-  type MigrateDownArgs,
-  type MigrateUpArgs,
-  sql,
-} from "@payloadcms/db-postgres";
+import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
 
-export async function up({
-  db,
-  payload: _payload,
-  req: _req,
-}: MigrateUpArgs): Promise<void> {
+export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
-   CREATE TYPE "public"."enum_pages_blocks_hero_cta_link_type" AS ENUM('url', 'page');
+   CREATE TYPE "public"."enum_pages_blocks_card_link_link_type" AS ENUM('url', 'page');
+  CREATE TYPE "public"."enum_pages_blocks_card_button_link_type" AS ENUM('url', 'page');
   CREATE TYPE "public"."enum_pages_blocks_cta_button_link_type" AS ENUM('url', 'page');
+  CREATE TYPE "public"."enum_pages_blocks_hero_primary_button_link_type" AS ENUM('url', 'page');
+  CREATE TYPE "public"."enum_pages_blocks_hero_secondary_button_link_type" AS ENUM('url', 'page');
+  CREATE TYPE "public"."enum_pages_blocks_section_primary_button_link_type" AS ENUM('url', 'page');
+  CREATE TYPE "public"."enum_pages_blocks_section_secondary_button_link_type" AS ENUM('url', 'page');
   CREATE TYPE "public"."enum_pages_status" AS ENUM('draft', 'published');
-  CREATE TYPE "public"."enum__pages_v_blocks_hero_cta_link_type" AS ENUM('url', 'page');
+  CREATE TYPE "public"."enum__pages_v_blocks_card_link_link_type" AS ENUM('url', 'page');
+  CREATE TYPE "public"."enum__pages_v_blocks_card_button_link_type" AS ENUM('url', 'page');
   CREATE TYPE "public"."enum__pages_v_blocks_cta_button_link_type" AS ENUM('url', 'page');
+  CREATE TYPE "public"."enum__pages_v_blocks_hero_primary_button_link_type" AS ENUM('url', 'page');
+  CREATE TYPE "public"."enum__pages_v_blocks_hero_secondary_button_link_type" AS ENUM('url', 'page');
+  CREATE TYPE "public"."enum__pages_v_blocks_section_primary_button_link_type" AS ENUM('url', 'page');
+  CREATE TYPE "public"."enum__pages_v_blocks_section_secondary_button_link_type" AS ENUM('url', 'page');
   CREATE TYPE "public"."enum__pages_v_version_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum_users_role" AS ENUM('admin', 'designer', 'contentEditor', 'engineer');
   CREATE TYPE "public"."enum_design_token_sets_tokens_category" AS ENUM('color', 'space', 'size', 'radius', 'typography', 'shadow', 'border', 'zIndex', 'opacity', 'transition', 'breakpoint', 'container');
@@ -23,40 +25,34 @@ export async function up({
   CREATE TYPE "public"."enum__design_token_sets_v_version_tokens_category" AS ENUM('color', 'space', 'size', 'radius', 'typography', 'shadow', 'border', 'zIndex', 'opacity', 'transition', 'breakpoint', 'container');
   CREATE TYPE "public"."enum__design_token_sets_v_version_tokens_mode" AS ENUM('light', 'dark');
   CREATE TYPE "public"."enum__design_token_sets_v_version_status" AS ENUM('draft', 'published');
-  CREATE TYPE "public"."enum_components_block_type" AS ENUM('hero', 'feature', 'cta', 'content');
+  CREATE TYPE "public"."enum_components_block_type" AS ENUM('hero', 'section', 'card', 'cta', 'content');
   CREATE TYPE "public"."enum_components_status" AS ENUM('draft', 'published');
-  CREATE TYPE "public"."enum__components_v_version_block_type" AS ENUM('hero', 'feature', 'cta', 'content');
+  CREATE TYPE "public"."enum__components_v_version_block_type" AS ENUM('hero', 'section', 'card', 'cta', 'content');
   CREATE TYPE "public"."enum__components_v_version_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum_page_compositions_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum__page_compositions_v_version_status" AS ENUM('draft', 'published');
   CREATE TYPE "public"."enum_payload_folders_folder_type" AS ENUM('components');
   CREATE TYPE "public"."enum_design_system_settings_active_color_mode" AS ENUM('light', 'dark');
-  CREATE TABLE "pages_blocks_hero" (
+  CREATE TABLE "pages_blocks_card" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
   	"_path" text NOT NULL,
   	"id" varchar PRIMARY KEY NOT NULL,
   	"design_id" integer,
-  	"heading" varchar,
-  	"body" jsonb,
   	"image_id" integer,
-  	"cta_label" varchar,
-  	"cta_link_type" "enum_pages_blocks_hero_cta_link_type" DEFAULT 'url',
-  	"cta_url" varchar,
-  	"cta_page_id" integer,
-  	"cta_open_in_new_tab" boolean DEFAULT false,
-  	"block_name" varchar
-  );
-  
-  CREATE TABLE "pages_blocks_feature" (
-  	"_order" integer NOT NULL,
-  	"_parent_id" integer NOT NULL,
-  	"_path" text NOT NULL,
-  	"id" varchar PRIMARY KEY NOT NULL,
-  	"design_id" integer,
-  	"heading" varchar,
   	"body" jsonb,
-  	"image_id" integer,
+  	"link_link_type" "enum_pages_blocks_card_link_link_type" DEFAULT 'url',
+  	"link_url" varchar,
+  	"link_page_id" integer,
+  	"link_open_in_new_tab" boolean DEFAULT false,
+  	"button_label" varchar,
+  	"button_link_type" "enum_pages_blocks_card_button_link_type" DEFAULT 'url',
+  	"button_url" varchar,
+  	"button_page_id" integer,
+  	"button_open_in_new_tab" boolean DEFAULT false,
+  	"image_visible" boolean DEFAULT true,
+  	"body_visible" boolean DEFAULT true,
+  	"button_visible" boolean DEFAULT true,
   	"block_name" varchar
   );
   
@@ -86,6 +82,49 @@ export async function up({
   	"block_name" varchar
   );
   
+  CREATE TABLE "pages_blocks_hero" (
+  	"_order" integer NOT NULL,
+  	"_parent_id" integer NOT NULL,
+  	"_path" text NOT NULL,
+  	"id" varchar PRIMARY KEY NOT NULL,
+  	"design_id" integer,
+  	"heading" varchar,
+  	"body" jsonb,
+  	"image_id" integer,
+  	"primary_button_label" varchar,
+  	"primary_button_link_type" "enum_pages_blocks_hero_primary_button_link_type" DEFAULT 'url',
+  	"primary_button_url" varchar,
+  	"primary_button_page_id" integer,
+  	"primary_button_open_in_new_tab" boolean DEFAULT false,
+  	"secondary_button_label" varchar,
+  	"secondary_button_link_type" "enum_pages_blocks_hero_secondary_button_link_type" DEFAULT 'url',
+  	"secondary_button_url" varchar,
+  	"secondary_button_page_id" integer,
+  	"secondary_button_open_in_new_tab" boolean DEFAULT false,
+  	"block_name" varchar
+  );
+  
+  CREATE TABLE "pages_blocks_section" (
+  	"_order" integer NOT NULL,
+  	"_parent_id" integer NOT NULL,
+  	"_path" text NOT NULL,
+  	"id" varchar PRIMARY KEY NOT NULL,
+  	"design_id" integer,
+  	"eyebrow" varchar,
+  	"heading" varchar,
+  	"primary_button_label" varchar,
+  	"primary_button_link_type" "enum_pages_blocks_section_primary_button_link_type" DEFAULT 'url',
+  	"primary_button_url" varchar,
+  	"primary_button_page_id" integer,
+  	"primary_button_open_in_new_tab" boolean DEFAULT false,
+  	"secondary_button_label" varchar,
+  	"secondary_button_link_type" "enum_pages_blocks_section_secondary_button_link_type" DEFAULT 'url',
+  	"secondary_button_url" varchar,
+  	"secondary_button_page_id" integer,
+  	"secondary_button_open_in_new_tab" boolean DEFAULT false,
+  	"block_name" varchar
+  );
+  
   CREATE TABLE "pages_content_slots" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
@@ -105,33 +144,26 @@ export async function up({
   	"_status" "enum_pages_status" DEFAULT 'draft'
   );
   
-  CREATE TABLE "_pages_v_blocks_hero" (
+  CREATE TABLE "_pages_v_blocks_card" (
   	"_order" integer NOT NULL,
   	"_parent_id" integer NOT NULL,
   	"_path" text NOT NULL,
   	"id" serial PRIMARY KEY NOT NULL,
   	"design_id" integer,
-  	"heading" varchar,
-  	"body" jsonb,
   	"image_id" integer,
-  	"cta_label" varchar,
-  	"cta_link_type" "enum__pages_v_blocks_hero_cta_link_type" DEFAULT 'url',
-  	"cta_url" varchar,
-  	"cta_page_id" integer,
-  	"cta_open_in_new_tab" boolean DEFAULT false,
-  	"_uuid" varchar,
-  	"block_name" varchar
-  );
-  
-  CREATE TABLE "_pages_v_blocks_feature" (
-  	"_order" integer NOT NULL,
-  	"_parent_id" integer NOT NULL,
-  	"_path" text NOT NULL,
-  	"id" serial PRIMARY KEY NOT NULL,
-  	"design_id" integer,
-  	"heading" varchar,
   	"body" jsonb,
-  	"image_id" integer,
+  	"link_link_type" "enum__pages_v_blocks_card_link_link_type" DEFAULT 'url',
+  	"link_url" varchar,
+  	"link_page_id" integer,
+  	"link_open_in_new_tab" boolean DEFAULT false,
+  	"button_label" varchar,
+  	"button_link_type" "enum__pages_v_blocks_card_button_link_type" DEFAULT 'url',
+  	"button_url" varchar,
+  	"button_page_id" integer,
+  	"button_open_in_new_tab" boolean DEFAULT false,
+  	"image_visible" boolean DEFAULT true,
+  	"body_visible" boolean DEFAULT true,
+  	"button_visible" boolean DEFAULT true,
   	"_uuid" varchar,
   	"block_name" varchar
   );
@@ -160,6 +192,51 @@ export async function up({
   	"id" serial PRIMARY KEY NOT NULL,
   	"design_id" integer,
   	"body" jsonb,
+  	"_uuid" varchar,
+  	"block_name" varchar
+  );
+  
+  CREATE TABLE "_pages_v_blocks_hero" (
+  	"_order" integer NOT NULL,
+  	"_parent_id" integer NOT NULL,
+  	"_path" text NOT NULL,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"design_id" integer,
+  	"heading" varchar,
+  	"body" jsonb,
+  	"image_id" integer,
+  	"primary_button_label" varchar,
+  	"primary_button_link_type" "enum__pages_v_blocks_hero_primary_button_link_type" DEFAULT 'url',
+  	"primary_button_url" varchar,
+  	"primary_button_page_id" integer,
+  	"primary_button_open_in_new_tab" boolean DEFAULT false,
+  	"secondary_button_label" varchar,
+  	"secondary_button_link_type" "enum__pages_v_blocks_hero_secondary_button_link_type" DEFAULT 'url',
+  	"secondary_button_url" varchar,
+  	"secondary_button_page_id" integer,
+  	"secondary_button_open_in_new_tab" boolean DEFAULT false,
+  	"_uuid" varchar,
+  	"block_name" varchar
+  );
+  
+  CREATE TABLE "_pages_v_blocks_section" (
+  	"_order" integer NOT NULL,
+  	"_parent_id" integer NOT NULL,
+  	"_path" text NOT NULL,
+  	"id" serial PRIMARY KEY NOT NULL,
+  	"design_id" integer,
+  	"eyebrow" varchar,
+  	"heading" varchar,
+  	"primary_button_label" varchar,
+  	"primary_button_link_type" "enum__pages_v_blocks_section_primary_button_link_type" DEFAULT 'url',
+  	"primary_button_url" varchar,
+  	"primary_button_page_id" integer,
+  	"primary_button_open_in_new_tab" boolean DEFAULT false,
+  	"secondary_button_label" varchar,
+  	"secondary_button_link_type" "enum__pages_v_blocks_section_secondary_button_link_type" DEFAULT 'url',
+  	"secondary_button_url" varchar,
+  	"secondary_button_page_id" integer,
+  	"secondary_button_open_in_new_tab" boolean DEFAULT false,
   	"_uuid" varchar,
   	"block_name" varchar
   );
@@ -400,32 +477,46 @@ export async function up({
   	"created_at" timestamp(3) with time zone
   );
   
-  ALTER TABLE "pages_blocks_hero" ADD CONSTRAINT "pages_blocks_hero_design_id_components_id_fk" FOREIGN KEY ("design_id") REFERENCES "public"."components"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "pages_blocks_hero" ADD CONSTRAINT "pages_blocks_hero_image_id_media_id_fk" FOREIGN KEY ("image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "pages_blocks_hero" ADD CONSTRAINT "pages_blocks_hero_cta_page_id_pages_id_fk" FOREIGN KEY ("cta_page_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "pages_blocks_hero" ADD CONSTRAINT "pages_blocks_hero_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."pages"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "pages_blocks_feature" ADD CONSTRAINT "pages_blocks_feature_design_id_components_id_fk" FOREIGN KEY ("design_id") REFERENCES "public"."components"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "pages_blocks_feature" ADD CONSTRAINT "pages_blocks_feature_image_id_media_id_fk" FOREIGN KEY ("image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "pages_blocks_feature" ADD CONSTRAINT "pages_blocks_feature_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."pages"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "pages_blocks_card" ADD CONSTRAINT "pages_blocks_card_design_id_components_id_fk" FOREIGN KEY ("design_id") REFERENCES "public"."components"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "pages_blocks_card" ADD CONSTRAINT "pages_blocks_card_image_id_media_id_fk" FOREIGN KEY ("image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "pages_blocks_card" ADD CONSTRAINT "pages_blocks_card_link_page_id_pages_id_fk" FOREIGN KEY ("link_page_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "pages_blocks_card" ADD CONSTRAINT "pages_blocks_card_button_page_id_pages_id_fk" FOREIGN KEY ("button_page_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "pages_blocks_card" ADD CONSTRAINT "pages_blocks_card_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."pages"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "pages_blocks_cta" ADD CONSTRAINT "pages_blocks_cta_design_id_components_id_fk" FOREIGN KEY ("design_id") REFERENCES "public"."components"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "pages_blocks_cta" ADD CONSTRAINT "pages_blocks_cta_button_page_id_pages_id_fk" FOREIGN KEY ("button_page_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "pages_blocks_cta" ADD CONSTRAINT "pages_blocks_cta_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."pages"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "pages_blocks_content" ADD CONSTRAINT "pages_blocks_content_design_id_components_id_fk" FOREIGN KEY ("design_id") REFERENCES "public"."components"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "pages_blocks_content" ADD CONSTRAINT "pages_blocks_content_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."pages"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "pages_blocks_hero" ADD CONSTRAINT "pages_blocks_hero_design_id_components_id_fk" FOREIGN KEY ("design_id") REFERENCES "public"."components"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "pages_blocks_hero" ADD CONSTRAINT "pages_blocks_hero_image_id_media_id_fk" FOREIGN KEY ("image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "pages_blocks_hero" ADD CONSTRAINT "pages_blocks_hero_primary_button_page_id_pages_id_fk" FOREIGN KEY ("primary_button_page_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "pages_blocks_hero" ADD CONSTRAINT "pages_blocks_hero_secondary_button_page_id_pages_id_fk" FOREIGN KEY ("secondary_button_page_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "pages_blocks_hero" ADD CONSTRAINT "pages_blocks_hero_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."pages"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "pages_blocks_section" ADD CONSTRAINT "pages_blocks_section_design_id_components_id_fk" FOREIGN KEY ("design_id") REFERENCES "public"."components"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "pages_blocks_section" ADD CONSTRAINT "pages_blocks_section_primary_button_page_id_pages_id_fk" FOREIGN KEY ("primary_button_page_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "pages_blocks_section" ADD CONSTRAINT "pages_blocks_section_secondary_button_page_id_pages_id_fk" FOREIGN KEY ("secondary_button_page_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "pages_blocks_section" ADD CONSTRAINT "pages_blocks_section_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."pages"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "pages_content_slots" ADD CONSTRAINT "pages_content_slots_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."pages"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "pages" ADD CONSTRAINT "pages_page_composition_id_page_compositions_id_fk" FOREIGN KEY ("page_composition_id") REFERENCES "public"."page_compositions"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "_pages_v_blocks_hero" ADD CONSTRAINT "_pages_v_blocks_hero_design_id_components_id_fk" FOREIGN KEY ("design_id") REFERENCES "public"."components"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "_pages_v_blocks_hero" ADD CONSTRAINT "_pages_v_blocks_hero_image_id_media_id_fk" FOREIGN KEY ("image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "_pages_v_blocks_hero" ADD CONSTRAINT "_pages_v_blocks_hero_cta_page_id_pages_id_fk" FOREIGN KEY ("cta_page_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "_pages_v_blocks_hero" ADD CONSTRAINT "_pages_v_blocks_hero_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."_pages_v"("id") ON DELETE cascade ON UPDATE no action;
-  ALTER TABLE "_pages_v_blocks_feature" ADD CONSTRAINT "_pages_v_blocks_feature_design_id_components_id_fk" FOREIGN KEY ("design_id") REFERENCES "public"."components"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "_pages_v_blocks_feature" ADD CONSTRAINT "_pages_v_blocks_feature_image_id_media_id_fk" FOREIGN KEY ("image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
-  ALTER TABLE "_pages_v_blocks_feature" ADD CONSTRAINT "_pages_v_blocks_feature_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."_pages_v"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "_pages_v_blocks_card" ADD CONSTRAINT "_pages_v_blocks_card_design_id_components_id_fk" FOREIGN KEY ("design_id") REFERENCES "public"."components"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_pages_v_blocks_card" ADD CONSTRAINT "_pages_v_blocks_card_image_id_media_id_fk" FOREIGN KEY ("image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_pages_v_blocks_card" ADD CONSTRAINT "_pages_v_blocks_card_link_page_id_pages_id_fk" FOREIGN KEY ("link_page_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_pages_v_blocks_card" ADD CONSTRAINT "_pages_v_blocks_card_button_page_id_pages_id_fk" FOREIGN KEY ("button_page_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_pages_v_blocks_card" ADD CONSTRAINT "_pages_v_blocks_card_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."_pages_v"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "_pages_v_blocks_cta" ADD CONSTRAINT "_pages_v_blocks_cta_design_id_components_id_fk" FOREIGN KEY ("design_id") REFERENCES "public"."components"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_pages_v_blocks_cta" ADD CONSTRAINT "_pages_v_blocks_cta_button_page_id_pages_id_fk" FOREIGN KEY ("button_page_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_pages_v_blocks_cta" ADD CONSTRAINT "_pages_v_blocks_cta_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."_pages_v"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "_pages_v_blocks_content" ADD CONSTRAINT "_pages_v_blocks_content_design_id_components_id_fk" FOREIGN KEY ("design_id") REFERENCES "public"."components"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_pages_v_blocks_content" ADD CONSTRAINT "_pages_v_blocks_content_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."_pages_v"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "_pages_v_blocks_hero" ADD CONSTRAINT "_pages_v_blocks_hero_design_id_components_id_fk" FOREIGN KEY ("design_id") REFERENCES "public"."components"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_pages_v_blocks_hero" ADD CONSTRAINT "_pages_v_blocks_hero_image_id_media_id_fk" FOREIGN KEY ("image_id") REFERENCES "public"."media"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_pages_v_blocks_hero" ADD CONSTRAINT "_pages_v_blocks_hero_primary_button_page_id_pages_id_fk" FOREIGN KEY ("primary_button_page_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_pages_v_blocks_hero" ADD CONSTRAINT "_pages_v_blocks_hero_secondary_button_page_id_pages_id_fk" FOREIGN KEY ("secondary_button_page_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_pages_v_blocks_hero" ADD CONSTRAINT "_pages_v_blocks_hero_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."_pages_v"("id") ON DELETE cascade ON UPDATE no action;
+  ALTER TABLE "_pages_v_blocks_section" ADD CONSTRAINT "_pages_v_blocks_section_design_id_components_id_fk" FOREIGN KEY ("design_id") REFERENCES "public"."components"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_pages_v_blocks_section" ADD CONSTRAINT "_pages_v_blocks_section_primary_button_page_id_pages_id_fk" FOREIGN KEY ("primary_button_page_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_pages_v_blocks_section" ADD CONSTRAINT "_pages_v_blocks_section_secondary_button_page_id_pages_id_fk" FOREIGN KEY ("secondary_button_page_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
+  ALTER TABLE "_pages_v_blocks_section" ADD CONSTRAINT "_pages_v_blocks_section_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."_pages_v"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "_pages_v_version_content_slots" ADD CONSTRAINT "_pages_v_version_content_slots_parent_id_fk" FOREIGN KEY ("_parent_id") REFERENCES "public"."_pages_v"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "_pages_v" ADD CONSTRAINT "_pages_v_parent_id_pages_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."pages"("id") ON DELETE set null ON UPDATE no action;
   ALTER TABLE "_pages_v" ADD CONSTRAINT "_pages_v_version_page_composition_id_page_compositions_id_fk" FOREIGN KEY ("version_page_composition_id") REFERENCES "public"."page_compositions"("id") ON DELETE set null ON UPDATE no action;
@@ -452,17 +543,13 @@ export async function up({
   ALTER TABLE "payload_preferences_rels" ADD CONSTRAINT "payload_preferences_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."payload_preferences"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_preferences_rels" ADD CONSTRAINT "payload_preferences_rels_users_fk" FOREIGN KEY ("users_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "design_system_settings" ADD CONSTRAINT "design_system_settings_default_token_set_id_design_token_sets_id_fk" FOREIGN KEY ("default_token_set_id") REFERENCES "public"."design_token_sets"("id") ON DELETE set null ON UPDATE no action;
-  CREATE INDEX "pages_blocks_hero_order_idx" ON "pages_blocks_hero" USING btree ("_order");
-  CREATE INDEX "pages_blocks_hero_parent_id_idx" ON "pages_blocks_hero" USING btree ("_parent_id");
-  CREATE INDEX "pages_blocks_hero_path_idx" ON "pages_blocks_hero" USING btree ("_path");
-  CREATE INDEX "pages_blocks_hero_design_idx" ON "pages_blocks_hero" USING btree ("design_id");
-  CREATE INDEX "pages_blocks_hero_image_idx" ON "pages_blocks_hero" USING btree ("image_id");
-  CREATE INDEX "pages_blocks_hero_cta_cta_page_idx" ON "pages_blocks_hero" USING btree ("cta_page_id");
-  CREATE INDEX "pages_blocks_feature_order_idx" ON "pages_blocks_feature" USING btree ("_order");
-  CREATE INDEX "pages_blocks_feature_parent_id_idx" ON "pages_blocks_feature" USING btree ("_parent_id");
-  CREATE INDEX "pages_blocks_feature_path_idx" ON "pages_blocks_feature" USING btree ("_path");
-  CREATE INDEX "pages_blocks_feature_design_idx" ON "pages_blocks_feature" USING btree ("design_id");
-  CREATE INDEX "pages_blocks_feature_image_idx" ON "pages_blocks_feature" USING btree ("image_id");
+  CREATE INDEX "pages_blocks_card_order_idx" ON "pages_blocks_card" USING btree ("_order");
+  CREATE INDEX "pages_blocks_card_parent_id_idx" ON "pages_blocks_card" USING btree ("_parent_id");
+  CREATE INDEX "pages_blocks_card_path_idx" ON "pages_blocks_card" USING btree ("_path");
+  CREATE INDEX "pages_blocks_card_design_idx" ON "pages_blocks_card" USING btree ("design_id");
+  CREATE INDEX "pages_blocks_card_image_idx" ON "pages_blocks_card" USING btree ("image_id");
+  CREATE INDEX "pages_blocks_card_link_link_page_idx" ON "pages_blocks_card" USING btree ("link_page_id");
+  CREATE INDEX "pages_blocks_card_button_button_page_idx" ON "pages_blocks_card" USING btree ("button_page_id");
   CREATE INDEX "pages_blocks_cta_order_idx" ON "pages_blocks_cta" USING btree ("_order");
   CREATE INDEX "pages_blocks_cta_parent_id_idx" ON "pages_blocks_cta" USING btree ("_parent_id");
   CREATE INDEX "pages_blocks_cta_path_idx" ON "pages_blocks_cta" USING btree ("_path");
@@ -472,6 +559,19 @@ export async function up({
   CREATE INDEX "pages_blocks_content_parent_id_idx" ON "pages_blocks_content" USING btree ("_parent_id");
   CREATE INDEX "pages_blocks_content_path_idx" ON "pages_blocks_content" USING btree ("_path");
   CREATE INDEX "pages_blocks_content_design_idx" ON "pages_blocks_content" USING btree ("design_id");
+  CREATE INDEX "pages_blocks_hero_order_idx" ON "pages_blocks_hero" USING btree ("_order");
+  CREATE INDEX "pages_blocks_hero_parent_id_idx" ON "pages_blocks_hero" USING btree ("_parent_id");
+  CREATE INDEX "pages_blocks_hero_path_idx" ON "pages_blocks_hero" USING btree ("_path");
+  CREATE INDEX "pages_blocks_hero_design_idx" ON "pages_blocks_hero" USING btree ("design_id");
+  CREATE INDEX "pages_blocks_hero_image_idx" ON "pages_blocks_hero" USING btree ("image_id");
+  CREATE INDEX "pages_blocks_hero_primary_button_primary_button_page_idx" ON "pages_blocks_hero" USING btree ("primary_button_page_id");
+  CREATE INDEX "pages_blocks_hero_secondary_button_secondary_button_page_idx" ON "pages_blocks_hero" USING btree ("secondary_button_page_id");
+  CREATE INDEX "pages_blocks_section_order_idx" ON "pages_blocks_section" USING btree ("_order");
+  CREATE INDEX "pages_blocks_section_parent_id_idx" ON "pages_blocks_section" USING btree ("_parent_id");
+  CREATE INDEX "pages_blocks_section_path_idx" ON "pages_blocks_section" USING btree ("_path");
+  CREATE INDEX "pages_blocks_section_design_idx" ON "pages_blocks_section" USING btree ("design_id");
+  CREATE INDEX "pages_blocks_section_primary_button_primary_button_page_idx" ON "pages_blocks_section" USING btree ("primary_button_page_id");
+  CREATE INDEX "pages_blocks_section_secondary_button_secondary_button_p_idx" ON "pages_blocks_section" USING btree ("secondary_button_page_id");
   CREATE INDEX "pages_content_slots_order_idx" ON "pages_content_slots" USING btree ("_order");
   CREATE INDEX "pages_content_slots_parent_id_idx" ON "pages_content_slots" USING btree ("_parent_id");
   CREATE UNIQUE INDEX "pages_slug_idx" ON "pages" USING btree ("slug");
@@ -479,17 +579,13 @@ export async function up({
   CREATE INDEX "pages_updated_at_idx" ON "pages" USING btree ("updated_at");
   CREATE INDEX "pages_created_at_idx" ON "pages" USING btree ("created_at");
   CREATE INDEX "pages__status_idx" ON "pages" USING btree ("_status");
-  CREATE INDEX "_pages_v_blocks_hero_order_idx" ON "_pages_v_blocks_hero" USING btree ("_order");
-  CREATE INDEX "_pages_v_blocks_hero_parent_id_idx" ON "_pages_v_blocks_hero" USING btree ("_parent_id");
-  CREATE INDEX "_pages_v_blocks_hero_path_idx" ON "_pages_v_blocks_hero" USING btree ("_path");
-  CREATE INDEX "_pages_v_blocks_hero_design_idx" ON "_pages_v_blocks_hero" USING btree ("design_id");
-  CREATE INDEX "_pages_v_blocks_hero_image_idx" ON "_pages_v_blocks_hero" USING btree ("image_id");
-  CREATE INDEX "_pages_v_blocks_hero_cta_cta_page_idx" ON "_pages_v_blocks_hero" USING btree ("cta_page_id");
-  CREATE INDEX "_pages_v_blocks_feature_order_idx" ON "_pages_v_blocks_feature" USING btree ("_order");
-  CREATE INDEX "_pages_v_blocks_feature_parent_id_idx" ON "_pages_v_blocks_feature" USING btree ("_parent_id");
-  CREATE INDEX "_pages_v_blocks_feature_path_idx" ON "_pages_v_blocks_feature" USING btree ("_path");
-  CREATE INDEX "_pages_v_blocks_feature_design_idx" ON "_pages_v_blocks_feature" USING btree ("design_id");
-  CREATE INDEX "_pages_v_blocks_feature_image_idx" ON "_pages_v_blocks_feature" USING btree ("image_id");
+  CREATE INDEX "_pages_v_blocks_card_order_idx" ON "_pages_v_blocks_card" USING btree ("_order");
+  CREATE INDEX "_pages_v_blocks_card_parent_id_idx" ON "_pages_v_blocks_card" USING btree ("_parent_id");
+  CREATE INDEX "_pages_v_blocks_card_path_idx" ON "_pages_v_blocks_card" USING btree ("_path");
+  CREATE INDEX "_pages_v_blocks_card_design_idx" ON "_pages_v_blocks_card" USING btree ("design_id");
+  CREATE INDEX "_pages_v_blocks_card_image_idx" ON "_pages_v_blocks_card" USING btree ("image_id");
+  CREATE INDEX "_pages_v_blocks_card_link_link_page_idx" ON "_pages_v_blocks_card" USING btree ("link_page_id");
+  CREATE INDEX "_pages_v_blocks_card_button_button_page_idx" ON "_pages_v_blocks_card" USING btree ("button_page_id");
   CREATE INDEX "_pages_v_blocks_cta_order_idx" ON "_pages_v_blocks_cta" USING btree ("_order");
   CREATE INDEX "_pages_v_blocks_cta_parent_id_idx" ON "_pages_v_blocks_cta" USING btree ("_parent_id");
   CREATE INDEX "_pages_v_blocks_cta_path_idx" ON "_pages_v_blocks_cta" USING btree ("_path");
@@ -499,6 +595,19 @@ export async function up({
   CREATE INDEX "_pages_v_blocks_content_parent_id_idx" ON "_pages_v_blocks_content" USING btree ("_parent_id");
   CREATE INDEX "_pages_v_blocks_content_path_idx" ON "_pages_v_blocks_content" USING btree ("_path");
   CREATE INDEX "_pages_v_blocks_content_design_idx" ON "_pages_v_blocks_content" USING btree ("design_id");
+  CREATE INDEX "_pages_v_blocks_hero_order_idx" ON "_pages_v_blocks_hero" USING btree ("_order");
+  CREATE INDEX "_pages_v_blocks_hero_parent_id_idx" ON "_pages_v_blocks_hero" USING btree ("_parent_id");
+  CREATE INDEX "_pages_v_blocks_hero_path_idx" ON "_pages_v_blocks_hero" USING btree ("_path");
+  CREATE INDEX "_pages_v_blocks_hero_design_idx" ON "_pages_v_blocks_hero" USING btree ("design_id");
+  CREATE INDEX "_pages_v_blocks_hero_image_idx" ON "_pages_v_blocks_hero" USING btree ("image_id");
+  CREATE INDEX "_pages_v_blocks_hero_primary_button_primary_button_page_idx" ON "_pages_v_blocks_hero" USING btree ("primary_button_page_id");
+  CREATE INDEX "_pages_v_blocks_hero_secondary_button_secondary_button_p_idx" ON "_pages_v_blocks_hero" USING btree ("secondary_button_page_id");
+  CREATE INDEX "_pages_v_blocks_section_order_idx" ON "_pages_v_blocks_section" USING btree ("_order");
+  CREATE INDEX "_pages_v_blocks_section_parent_id_idx" ON "_pages_v_blocks_section" USING btree ("_parent_id");
+  CREATE INDEX "_pages_v_blocks_section_path_idx" ON "_pages_v_blocks_section" USING btree ("_path");
+  CREATE INDEX "_pages_v_blocks_section_design_idx" ON "_pages_v_blocks_section" USING btree ("design_id");
+  CREATE INDEX "_pages_v_blocks_section_primary_button_primary_button_pa_idx" ON "_pages_v_blocks_section" USING btree ("primary_button_page_id");
+  CREATE INDEX "_pages_v_blocks_section_secondary_button_secondary_butto_idx" ON "_pages_v_blocks_section" USING btree ("secondary_button_page_id");
   CREATE INDEX "_pages_v_version_content_slots_order_idx" ON "_pages_v_version_content_slots" USING btree ("_order");
   CREATE INDEX "_pages_v_version_content_slots_parent_id_idx" ON "_pages_v_version_content_slots" USING btree ("_parent_id");
   CREATE INDEX "_pages_v_parent_idx" ON "_pages_v" USING btree ("parent_id");
@@ -593,25 +702,23 @@ export async function up({
   CREATE INDEX "payload_preferences_rels_users_id_idx" ON "payload_preferences_rels" USING btree ("users_id");
   CREATE INDEX "payload_migrations_updated_at_idx" ON "payload_migrations" USING btree ("updated_at");
   CREATE INDEX "payload_migrations_created_at_idx" ON "payload_migrations" USING btree ("created_at");
-  CREATE INDEX "design_system_settings_default_token_set_idx" ON "design_system_settings" USING btree ("default_token_set_id");`);
+  CREATE INDEX "design_system_settings_default_token_set_idx" ON "design_system_settings" USING btree ("default_token_set_id");`)
 }
 
-export async function down({
-  db,
-  payload: _payload,
-  req: _req,
-}: MigrateDownArgs): Promise<void> {
+export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
-   DROP TABLE "pages_blocks_hero" CASCADE;
-  DROP TABLE "pages_blocks_feature" CASCADE;
+   DROP TABLE "pages_blocks_card" CASCADE;
   DROP TABLE "pages_blocks_cta" CASCADE;
   DROP TABLE "pages_blocks_content" CASCADE;
+  DROP TABLE "pages_blocks_hero" CASCADE;
+  DROP TABLE "pages_blocks_section" CASCADE;
   DROP TABLE "pages_content_slots" CASCADE;
   DROP TABLE "pages" CASCADE;
-  DROP TABLE "_pages_v_blocks_hero" CASCADE;
-  DROP TABLE "_pages_v_blocks_feature" CASCADE;
+  DROP TABLE "_pages_v_blocks_card" CASCADE;
   DROP TABLE "_pages_v_blocks_cta" CASCADE;
   DROP TABLE "_pages_v_blocks_content" CASCADE;
+  DROP TABLE "_pages_v_blocks_hero" CASCADE;
+  DROP TABLE "_pages_v_blocks_section" CASCADE;
   DROP TABLE "_pages_v_version_content_slots" CASCADE;
   DROP TABLE "_pages_v" CASCADE;
   DROP TABLE "users_sessions" CASCADE;
@@ -634,11 +741,21 @@ export async function down({
   DROP TABLE "payload_preferences_rels" CASCADE;
   DROP TABLE "payload_migrations" CASCADE;
   DROP TABLE "design_system_settings" CASCADE;
-  DROP TYPE "public"."enum_pages_blocks_hero_cta_link_type";
+  DROP TYPE "public"."enum_pages_blocks_card_link_link_type";
+  DROP TYPE "public"."enum_pages_blocks_card_button_link_type";
   DROP TYPE "public"."enum_pages_blocks_cta_button_link_type";
+  DROP TYPE "public"."enum_pages_blocks_hero_primary_button_link_type";
+  DROP TYPE "public"."enum_pages_blocks_hero_secondary_button_link_type";
+  DROP TYPE "public"."enum_pages_blocks_section_primary_button_link_type";
+  DROP TYPE "public"."enum_pages_blocks_section_secondary_button_link_type";
   DROP TYPE "public"."enum_pages_status";
-  DROP TYPE "public"."enum__pages_v_blocks_hero_cta_link_type";
+  DROP TYPE "public"."enum__pages_v_blocks_card_link_link_type";
+  DROP TYPE "public"."enum__pages_v_blocks_card_button_link_type";
   DROP TYPE "public"."enum__pages_v_blocks_cta_button_link_type";
+  DROP TYPE "public"."enum__pages_v_blocks_hero_primary_button_link_type";
+  DROP TYPE "public"."enum__pages_v_blocks_hero_secondary_button_link_type";
+  DROP TYPE "public"."enum__pages_v_blocks_section_primary_button_link_type";
+  DROP TYPE "public"."enum__pages_v_blocks_section_secondary_button_link_type";
   DROP TYPE "public"."enum__pages_v_version_status";
   DROP TYPE "public"."enum_users_role";
   DROP TYPE "public"."enum_design_token_sets_tokens_category";
@@ -654,5 +771,5 @@ export async function down({
   DROP TYPE "public"."enum_page_compositions_status";
   DROP TYPE "public"."enum__page_compositions_v_version_status";
   DROP TYPE "public"."enum_payload_folders_folder_type";
-  DROP TYPE "public"."enum_design_system_settings_active_color_mode";`);
+  DROP TYPE "public"."enum_design_system_settings_active_color_mode";`)
 }
