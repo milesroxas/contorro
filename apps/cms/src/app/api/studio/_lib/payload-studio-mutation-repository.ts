@@ -132,6 +132,17 @@ export function payloadStudioMutationRepository(
 
         // Conditional write: check and update in one operation so two
         // concurrent saves cannot both pass a separate pre-read check.
+        //
+        // `draft: true` even for publish: the revision token the client holds
+        // comes from draft-aware reads (`findByID({ draft: true })` returns the
+        // latest version's timestamp), so the `where` must be evaluated against
+        // the version timeline too — Payload only routes bulk updates through
+        // `queryDrafts` when `draft` is set. With `draft: false` the match runs
+        // against the parent row's `updatedAt`, which draft saves never touch,
+        // so every publish after a draft save would false-conflict. The
+        // `_status: "published"` in `data` still performs a real publish:
+        // Payload treats `draft && data._status === "published"` as a publish
+        // per document.
         const result = await payload.update({
           collection,
           where: {
@@ -141,7 +152,7 @@ export function payloadStudioMutationRepository(
             ],
           },
           data,
-          draft: intent === "draft",
+          draft: true,
           user,
           overrideAccess: false,
         });

@@ -11,6 +11,11 @@ import { defaultPageTemplateComposition } from "@repo/domains-composition";
  * - Design-only library parts (no `blockType`, no editor bindings) used as
  *   embedded refs inside page templates.
  * - Design-only page templates (header / hero / main slot / footer).
+ *
+ * Styling intent: a warm, editorial system driven entirely by design tokens.
+ * Sections are token-tinted cards with hairline borders, generous responsive
+ * padding, a constrained content measure, and a tracked uppercase eyebrow —
+ * a deliberate look rather than a stack of full-bleed default boxes.
  */
 
 export const SEED_HERO_DESIGN_COMPONENT_KEY = "seed-hero-design";
@@ -71,6 +76,42 @@ export function lexicalRichText(text: string): {
   };
 }
 
+/**
+ * Shared style fragments — one definition per repeated visual pattern so the
+ * seed reads as a system, not a pile of one-off overrides.
+ */
+
+/** Hairline border tied to the theme border token (needs an explicit width/style). */
+const HAIRLINE_BORDER = [
+  { type: "utility", property: "borderWidth", value: "DEFAULT" },
+  { type: "utility", property: "borderStyle", value: "solid" },
+  { type: "token", property: "borderColor", token: "color.border" },
+] as const;
+
+/** Tracked, uppercase kicker above a heading. Pair with a color token per section. */
+const EYEBROW_TYPE = [
+  { type: "utility", property: "fontSize", value: "xs" },
+  { type: "utility", property: "fontWeight", value: "semibold" },
+  { type: "utility", property: "textTransform", value: "uppercase" },
+  { type: "utility", property: "letterSpacing", value: "widest" },
+] as const;
+
+/** Pill button geometry. Pair with background/color tokens per usage. */
+const PILL_BUTTON = [
+  { type: "utility", property: "display", value: "inline-flex" },
+  { type: "utility", property: "justifyContent", value: "center" },
+  { type: "utility", property: "alignItems", value: "center" },
+  { type: "utility", property: "gap", value: "2" },
+  { type: "utility", property: "paddingTop", value: "3" },
+  { type: "utility", property: "paddingBottom", value: "3" },
+  { type: "utility", property: "paddingLeft", value: "6" },
+  { type: "utility", property: "paddingRight", value: "6" },
+  { type: "utility", property: "borderRadius", value: "full" },
+  { type: "utility", property: "fontSize", value: "sm" },
+  { type: "utility", property: "fontWeight", value: "semibold" },
+  { type: "utility", property: "width", value: "fit" },
+] as const;
+
 /** Catalog field bindings used in seed designs (names only — the catalog owns types/labels). */
 const heroBindings = {
   heading: { name: "heading" },
@@ -81,7 +122,11 @@ const heroBindings = {
 
 const ctaButtonBinding = { name: "button" } as const;
 
-/** Hero block design: binds heading / body / image / cta per the catalog. */
+/**
+ * Hero block design: binds heading / body / image / cta per the catalog.
+ * Layout: eyebrow + copy column beside a framed media panel — stacks on
+ * mobile, becomes a two-column split from `lg`.
+ */
 export const seedHeroDesignComposition = {
   rootId: "hero-root",
   nodes: {
@@ -99,9 +144,18 @@ export const seedHeroDesignComposition = {
       kind: "primitive" as const,
       definitionKey: "primitive.section",
       parentId: "hero-root",
-      childIds: ["hero-heading", "hero-body", "hero-cta"],
+      childIds: ["hero-eyebrow", "hero-heading", "hero-body", "hero-cta"],
       styleBindingId: "sb-hero-content",
       propValues: {},
+    },
+    "hero-eyebrow": {
+      id: "hero-eyebrow",
+      kind: "text" as const,
+      definitionKey: "primitive.text",
+      parentId: "hero-content",
+      childIds: [],
+      styleBindingId: "sb-hero-eyebrow",
+      propValues: { content: "Design system starter" },
     },
     "hero-heading": {
       id: "hero-heading",
@@ -186,9 +240,17 @@ export const seedHeroDesignComposition = {
       properties: [
         { type: "utility", property: "display", value: "flex" },
         { type: "utility", property: "flexDirection", value: "col" },
-        { type: "utility", property: "gap", value: "6" },
+        { type: "utility", property: "flexDirection", value: "row", breakpoint: "lg" },
+        { type: "utility", property: "alignItems", value: "start" },
+        { type: "utility", property: "alignItems", value: "center", breakpoint: "lg" },
+        { type: "utility", property: "gap", value: "8" },
+        { type: "utility", property: "gap", value: "12", breakpoint: "lg" },
         { type: "utility", property: "padding", value: "8" },
-        { type: "utility", property: "borderRadius", value: "2xl" },
+        { type: "utility", property: "padding", value: "12", breakpoint: "md" },
+        { type: "utility", property: "padding", value: "16", breakpoint: "lg" },
+        { type: "utility", property: "borderRadius", value: "3xl" },
+        { type: "utility", property: "overflow", value: "hidden" },
+        ...HAIRLINE_BORDER,
         { type: "token", property: "background", token: "color.card" },
         { type: "token", property: "color", token: "color.card.foreground" },
       ],
@@ -199,16 +261,32 @@ export const seedHeroDesignComposition = {
       properties: [
         { type: "utility", property: "display", value: "flex" },
         { type: "utility", property: "flexDirection", value: "col" },
-        { type: "utility", property: "gap", value: "4" },
+        { type: "utility", property: "alignItems", value: "start" },
+        { type: "utility", property: "gap", value: "5" },
+        { type: "utility", property: "flex", value: "1" },
+        { type: "utility", property: "width", value: "full" },
+        { type: "utility", property: "maxWidth", value: "2xl" },
+        { type: "utility", property: "textAlign", value: "left" },
+      ],
+    },
+    "sb-hero-eyebrow": {
+      id: "sb-hero-eyebrow",
+      nodeId: "hero-eyebrow",
+      properties: [
+        ...EYEBROW_TYPE,
+        { type: "token", property: "color", token: "color.primary" },
       ],
     },
     "sb-hero-heading": {
       id: "sb-hero-heading",
       nodeId: "hero-heading",
       properties: [
-        { type: "utility", property: "fontSize", value: "5xl" },
+        { type: "utility", property: "fontSize", value: "4xl" },
+        { type: "utility", property: "fontSize", value: "5xl", breakpoint: "md" },
+        { type: "utility", property: "fontSize", value: "6xl", breakpoint: "lg" },
         { type: "utility", property: "fontWeight", value: "semibold" },
         { type: "utility", property: "lineHeight", value: "tight" },
+        { type: "utility", property: "letterSpacing", value: "tight" },
       ],
     },
     "sb-hero-body": {
@@ -216,6 +294,7 @@ export const seedHeroDesignComposition = {
       nodeId: "hero-body",
       properties: [
         { type: "utility", property: "fontSize", value: "lg" },
+        { type: "utility", property: "fontSize", value: "xl", breakpoint: "md" },
         { type: "utility", property: "lineHeight", value: "relaxed" },
         { type: "token", property: "color", token: "color.muted.foreground" },
       ],
@@ -224,14 +303,7 @@ export const seedHeroDesignComposition = {
       id: "sb-hero-cta",
       nodeId: "hero-cta",
       properties: [
-        { type: "utility", property: "display", value: "inline-flex" },
-        { type: "utility", property: "justifyContent", value: "center" },
-        { type: "utility", property: "alignItems", value: "center" },
-        { type: "utility", property: "gap", value: "2" },
-        { type: "utility", property: "padding", value: "3" },
-        { type: "utility", property: "borderRadius", value: "full" },
-        { type: "utility", property: "fontWeight", value: "semibold" },
-        { type: "utility", property: "width", value: "fit" },
+        ...PILL_BUTTON,
         { type: "token", property: "background", token: "color.primary" },
         { type: "token", property: "color", token: "color.primary.foreground" },
       ],
@@ -241,14 +313,21 @@ export const seedHeroDesignComposition = {
       nodeId: "hero-image",
       properties: [
         { type: "utility", property: "width", value: "full" },
-        { type: "utility", property: "aspectRatio", value: "16/9" },
-        { type: "utility", property: "borderRadius", value: "xl" },
+        { type: "utility", property: "width", value: "1/2", breakpoint: "lg" },
+        { type: "utility", property: "flexShrink", value: "0" },
+        { type: "utility", property: "aspectRatio", value: "video" },
+        { type: "utility", property: "borderRadius", value: "2xl" },
+        { type: "utility", property: "overflow", value: "hidden" },
+        ...HAIRLINE_BORDER,
       ],
     },
   },
 } as const;
 
-/** Feature block design: binds heading / body; `image` stays unbound (optional). */
+/**
+ * Feature block design: binds heading / body; `image` stays unbound (optional).
+ * A calm bordered panel led by an accent-tinted eyebrow.
+ */
 export const seedFeatureDesignComposition = {
   rootId: "feature-root",
   nodes: {
@@ -257,9 +336,18 @@ export const seedFeatureDesignComposition = {
       kind: "primitive" as const,
       definitionKey: "primitive.section" as const,
       parentId: null,
-      childIds: ["feature-heading", "feature-body"],
+      childIds: ["feature-eyebrow", "feature-heading", "feature-body"],
       styleBindingId: "sb-feature-root",
       propValues: {},
+    },
+    "feature-eyebrow": {
+      id: "feature-eyebrow",
+      kind: "text" as const,
+      definitionKey: "primitive.text",
+      parentId: "feature-root",
+      childIds: [],
+      styleBindingId: "sb-feature-eyebrow",
+      propValues: { content: "Capabilities" },
     },
     "feature-heading": {
       id: "feature-heading",
@@ -304,33 +392,50 @@ export const seedFeatureDesignComposition = {
         { type: "utility", property: "flexDirection", value: "col" },
         { type: "utility", property: "gap", value: "4" },
         { type: "utility", property: "padding", value: "8" },
+        { type: "utility", property: "padding", value: "10", breakpoint: "md" },
         { type: "utility", property: "borderRadius", value: "2xl" },
+        ...HAIRLINE_BORDER,
         { type: "token", property: "background", token: "color.background" },
         { type: "token", property: "color", token: "color.foreground" },
+      ],
+    },
+    "sb-feature-eyebrow": {
+      id: "sb-feature-eyebrow",
+      nodeId: "feature-eyebrow",
+      properties: [
+        ...EYEBROW_TYPE,
+        { type: "token", property: "color", token: "color.accent.foreground" },
       ],
     },
     "sb-feature-heading": {
       id: "sb-feature-heading",
       nodeId: "feature-heading",
       properties: [
-        { type: "utility", property: "fontSize", value: "4xl" },
+        { type: "utility", property: "fontSize", value: "3xl" },
+        { type: "utility", property: "fontSize", value: "4xl", breakpoint: "md" },
         { type: "utility", property: "fontWeight", value: "semibold" },
         { type: "utility", property: "lineHeight", value: "tight" },
+        { type: "utility", property: "letterSpacing", value: "tight" },
       ],
     },
     "sb-feature-body": {
       id: "sb-feature-body",
       nodeId: "feature-body",
       properties: [
-        { type: "utility", property: "fontSize", value: "lg" },
+        { type: "utility", property: "fontSize", value: "base" },
+        { type: "utility", property: "fontSize", value: "lg", breakpoint: "md" },
         { type: "utility", property: "lineHeight", value: "relaxed" },
+        { type: "utility", property: "maxWidth", value: "2xl" },
         { type: "token", property: "color", token: "color.muted.foreground" },
       ],
     },
   },
 } as const;
 
-/** CTA block design: binds heading / body / button; secondary button is static design. */
+/**
+ * CTA block design: binds heading / body / button; secondary button is static
+ * design. A centered, high-contrast primary panel closing a page.
+ */
 export const seedCtaDesignComposition = {
   rootId: "cta-root",
   nodes: {
@@ -339,9 +444,18 @@ export const seedCtaDesignComposition = {
       kind: "primitive" as const,
       definitionKey: "primitive.section" as const,
       parentId: null,
-      childIds: ["cta-heading", "cta-body", "cta-actions"],
+      childIds: ["cta-eyebrow", "cta-heading", "cta-body", "cta-actions"],
       styleBindingId: "sb-cta-root",
       propValues: {},
+    },
+    "cta-eyebrow": {
+      id: "cta-eyebrow",
+      kind: "text" as const,
+      definitionKey: "primitive.text",
+      parentId: "cta-root",
+      childIds: [],
+      styleBindingId: "sb-cta-eyebrow",
+      propValues: { content: "Ready when you are" },
     },
     "cta-heading": {
       id: "cta-heading",
@@ -428,10 +542,21 @@ export const seedCtaDesignComposition = {
       properties: [
         { type: "utility", property: "display", value: "flex" },
         { type: "utility", property: "flexDirection", value: "col" },
-        { type: "utility", property: "gap", value: "4" },
-        { type: "utility", property: "padding", value: "8" },
-        { type: "utility", property: "borderRadius", value: "2xl" },
+        { type: "utility", property: "alignItems", value: "center" },
+        { type: "utility", property: "textAlign", value: "center" },
+        { type: "utility", property: "gap", value: "6" },
+        { type: "utility", property: "padding", value: "10" },
+        { type: "utility", property: "padding", value: "16", breakpoint: "md" },
+        { type: "utility", property: "borderRadius", value: "3xl" },
         { type: "token", property: "background", token: "color.primary" },
+        { type: "token", property: "color", token: "color.primary.foreground" },
+      ],
+    },
+    "sb-cta-eyebrow": {
+      id: "sb-cta-eyebrow",
+      nodeId: "cta-eyebrow",
+      properties: [
+        ...EYEBROW_TYPE,
         { type: "token", property: "color", token: "color.primary.foreground" },
       ],
     },
@@ -439,9 +564,14 @@ export const seedCtaDesignComposition = {
       id: "sb-cta-heading",
       nodeId: "cta-heading",
       properties: [
-        { type: "utility", property: "fontSize", value: "4xl" },
+        { type: "utility", property: "fontSize", value: "3xl" },
+        { type: "utility", property: "fontSize", value: "5xl", breakpoint: "md" },
         { type: "utility", property: "fontWeight", value: "semibold" },
         { type: "utility", property: "lineHeight", value: "tight" },
+        { type: "utility", property: "letterSpacing", value: "tight" },
+        { type: "utility", property: "maxWidth", value: "3xl" },
+        { type: "utility", property: "marginLeft", value: "auto" },
+        { type: "utility", property: "marginRight", value: "auto" },
       ],
     },
     "sb-cta-body": {
@@ -450,6 +580,9 @@ export const seedCtaDesignComposition = {
       properties: [
         { type: "utility", property: "fontSize", value: "lg" },
         { type: "utility", property: "lineHeight", value: "relaxed" },
+        { type: "utility", property: "maxWidth", value: "2xl" },
+        { type: "utility", property: "marginLeft", value: "auto" },
+        { type: "utility", property: "marginRight", value: "auto" },
       ],
     },
     "sb-cta-actions": {
@@ -457,20 +590,17 @@ export const seedCtaDesignComposition = {
       nodeId: "cta-actions",
       properties: [
         { type: "utility", property: "display", value: "flex" },
-        { type: "utility", property: "gap", value: "3" },
+        { type: "utility", property: "flexWrap", value: "wrap" },
+        { type: "utility", property: "justifyContent", value: "center" },
         { type: "utility", property: "alignItems", value: "center" },
+        { type: "utility", property: "gap", value: "3" },
       ],
     },
     "sb-cta-primary-button": {
       id: "sb-cta-primary-button",
       nodeId: "cta-primary-button",
       properties: [
-        { type: "utility", property: "display", value: "inline-flex" },
-        { type: "utility", property: "justifyContent", value: "center" },
-        { type: "utility", property: "alignItems", value: "center" },
-        { type: "utility", property: "padding", value: "3" },
-        { type: "utility", property: "borderRadius", value: "full" },
-        { type: "utility", property: "fontWeight", value: "semibold" },
+        ...PILL_BUTTON,
         { type: "token", property: "background", token: "color.card" },
         { type: "token", property: "color", token: "color.card.foreground" },
       ],
@@ -479,24 +609,21 @@ export const seedCtaDesignComposition = {
       id: "sb-cta-secondary-button",
       nodeId: "cta-secondary-button",
       properties: [
-        { type: "utility", property: "display", value: "inline-flex" },
-        { type: "utility", property: "justifyContent", value: "center" },
-        { type: "utility", property: "alignItems", value: "center" },
-        { type: "utility", property: "padding", value: "3" },
-        { type: "utility", property: "borderRadius", value: "full" },
-        { type: "utility", property: "fontWeight", value: "semibold" },
-        { type: "token", property: "background", token: "color.secondary" },
-        {
-          type: "token",
-          property: "color",
-          token: "color.secondary.foreground",
-        },
+        ...PILL_BUTTON,
+        { type: "utility", property: "borderWidth", value: "DEFAULT" },
+        { type: "utility", property: "borderStyle", value: "solid" },
+        { type: "utility", property: "borderColor", value: "white" },
+        { type: "token", property: "background", token: "color.primary" },
+        { type: "token", property: "color", token: "color.primary.foreground" },
       ],
     },
   },
 } as const;
 
-/** Content block design: binds the required `body` rich text field. */
+/**
+ * Content block design: binds the required `body` rich text field.
+ * Centered prose measure for comfortable long-form reading.
+ */
 export const seedContentDesignComposition = {
   rootId: "content-root",
   nodes: {
@@ -534,7 +661,10 @@ export const seedContentDesignComposition = {
         { type: "utility", property: "display", value: "flex" },
         { type: "utility", property: "flexDirection", value: "col" },
         { type: "utility", property: "gap", value: "4" },
-        { type: "utility", property: "padding", value: "6" },
+        { type: "utility", property: "width", value: "full" },
+        { type: "utility", property: "maxWidth", value: "prose" },
+        { type: "utility", property: "marginLeft", value: "auto" },
+        { type: "utility", property: "marginRight", value: "auto" },
       ],
     },
     "sb-content-body": {
@@ -542,7 +672,9 @@ export const seedContentDesignComposition = {
       nodeId: "content-body",
       properties: [
         { type: "utility", property: "fontSize", value: "base" },
+        { type: "utility", property: "fontSize", value: "lg", breakpoint: "md" },
         { type: "utility", property: "lineHeight", value: "relaxed" },
+        { type: "token", property: "color", token: "color.foreground" },
       ],
     },
   },
@@ -560,9 +692,18 @@ export const seedContentHighlightComposition = {
       kind: "primitive" as const,
       definitionKey: "primitive.section" as const,
       parentId: null,
-      childIds: ["card-heading", "card-body"],
+      childIds: ["card-eyebrow", "card-heading", "card-body"],
       styleBindingId: "sb-card-root",
       propValues: {},
+    },
+    "card-eyebrow": {
+      id: "card-eyebrow",
+      kind: "text" as const,
+      definitionKey: "primitive.text",
+      parentId: "card-root",
+      childIds: [],
+      styleBindingId: "sb-card-eyebrow",
+      propValues: { content: "Library part" },
     },
     "card-heading": {
       id: "card-heading",
@@ -596,11 +737,20 @@ export const seedContentHighlightComposition = {
       properties: [
         { type: "utility", property: "display", value: "flex" },
         { type: "utility", property: "flexDirection", value: "col" },
-        { type: "utility", property: "gap", value: "4" },
-        { type: "utility", property: "padding", value: "6" },
-        { type: "utility", property: "borderRadius", value: "xl" },
+        { type: "utility", property: "gap", value: "3" },
+        { type: "utility", property: "padding", value: "8" },
+        { type: "utility", property: "borderRadius", value: "2xl" },
+        ...HAIRLINE_BORDER,
         { type: "token", property: "background", token: "color.card" },
         { type: "token", property: "color", token: "color.card.foreground" },
+      ],
+    },
+    "sb-card-eyebrow": {
+      id: "sb-card-eyebrow",
+      nodeId: "card-eyebrow",
+      properties: [
+        ...EYEBROW_TYPE,
+        { type: "token", property: "color", token: "color.primary" },
       ],
     },
     "sb-card-heading": {
@@ -610,6 +760,7 @@ export const seedContentHighlightComposition = {
         { type: "utility", property: "fontSize", value: "2xl" },
         { type: "utility", property: "fontWeight", value: "semibold" },
         { type: "utility", property: "lineHeight", value: "tight" },
+        { type: "utility", property: "letterSpacing", value: "tight" },
       ],
     },
     "sb-card-body": {
@@ -650,13 +801,7 @@ export const seedPrimaryButtonComposition = {
       id: "sb-seed-button-root",
       nodeId: "seed-button-root",
       properties: [
-        { type: "utility", property: "display", value: "inline-flex" },
-        { type: "utility", property: "justifyContent", value: "center" },
-        { type: "utility", property: "alignItems", value: "center" },
-        { type: "utility", property: "gap", value: "2" },
-        { type: "utility", property: "padding", value: "3" },
-        { type: "utility", property: "borderRadius", value: "full" },
-        { type: "utility", property: "fontWeight", value: "semibold" },
+        ...PILL_BUTTON,
         { type: "token", property: "background", token: "color.primary" },
         { type: "token", property: "color", token: "color.primary.foreground" },
       ],
@@ -666,8 +811,15 @@ export const seedPrimaryButtonComposition = {
 
 /**
  * Design-only page template aligned with `defaultPageTemplateComposition()`
- * (header / main+slot / footer) plus a static hero section. Templates carry
- * no CMS-editable fields — page content lives in native blocks.
+ * (header / main+slot / footer). Templates carry no CMS-editable fields — page
+ * content lives in native blocks rendered into the `main` slot.
+ *
+ * Layout conventions:
+ * - Full-bleed token-tinted header/footer bands, each with a centered inner
+ *   row capped to a `6xl` measure and consistent gutter padding.
+ * - A full-bleed hero masthead (centered `5xl` measure, responsive type scale).
+ * - A centered `6xl` content column that wraps the block slot with even
+ *   vertical rhythm between blocks.
  */
 export function buildSeedPageTemplateComposition(): PageComposition {
   const base = defaultPageTemplateComposition();
@@ -676,14 +828,23 @@ export function buildSeedPageTemplateComposition(): PageComposition {
     ...base.nodes,
     "page-header": {
       ...base.nodes["page-header"],
-      childIds: ["page-header-brand", "page-header-nav"],
+      childIds: ["page-header-inner"],
       styleBindingId: "sb-page-header",
+    },
+    "page-header-inner": {
+      id: "page-header-inner",
+      kind: "primitive",
+      definitionKey: "primitive.box",
+      parentId: "page-header",
+      childIds: ["page-header-brand", "page-header-nav"],
+      styleBindingId: "sb-page-header-inner",
+      propValues: { tag: "div" },
     },
     "page-header-brand": {
       id: "page-header-brand",
       kind: "text",
       definitionKey: "primitive.text",
-      parentId: "page-header",
+      parentId: "page-header-inner",
       childIds: [],
       styleBindingId: "sb-page-header-brand",
       propValues: { content: "Contorro" },
@@ -692,14 +853,14 @@ export function buildSeedPageTemplateComposition(): PageComposition {
       id: "page-header-nav",
       kind: "text",
       definitionKey: "primitive.text",
-      parentId: "page-header",
+      parentId: "page-header-inner",
       childIds: [],
       styleBindingId: "sb-page-header-nav",
       propValues: { content: "Product · Solutions · Pricing · Contact" },
     },
     "page-main": {
       ...base.nodes["page-main"],
-      childIds: ["page-hero-section", "page-main-slot"],
+      childIds: ["page-hero-section", "page-content"],
       styleBindingId: "sb-page-main",
     },
     "page-hero-section": {
@@ -707,19 +868,41 @@ export function buildSeedPageTemplateComposition(): PageComposition {
       kind: "primitive",
       definitionKey: "primitive.section",
       parentId: "page-main",
-      childIds: ["page-hero-heading", "page-hero-subhead"],
+      childIds: ["page-hero-inner"],
       styleBindingId: "sb-page-hero-section",
       propValues: {},
+    },
+    "page-hero-inner": {
+      id: "page-hero-inner",
+      kind: "primitive",
+      definitionKey: "primitive.box",
+      parentId: "page-hero-section",
+      childIds: [
+        "page-hero-eyebrow",
+        "page-hero-heading",
+        "page-hero-subhead",
+      ],
+      styleBindingId: "sb-page-hero-inner",
+      propValues: { tag: "div" },
+    },
+    "page-hero-eyebrow": {
+      id: "page-hero-eyebrow",
+      kind: "text",
+      definitionKey: "primitive.text",
+      parentId: "page-hero-inner",
+      childIds: [],
+      styleBindingId: "sb-page-hero-eyebrow",
+      propValues: { content: "Build · Compose · Publish" },
     },
     "page-hero-heading": {
       id: "page-hero-heading",
       kind: "primitive",
       definitionKey: "primitive.heading",
-      parentId: "page-hero-section",
+      parentId: "page-hero-inner",
       childIds: [],
       styleBindingId: "sb-page-hero-heading",
       propValues: {
-        content: "Seed template hero — authored in Studio",
+        content: "A design system your whole team can build on",
         level: "h1",
       },
     },
@@ -727,24 +910,55 @@ export function buildSeedPageTemplateComposition(): PageComposition {
       id: "page-hero-subhead",
       kind: "text",
       definitionKey: "primitive.text",
-      parentId: "page-hero-section",
+      parentId: "page-hero-inner",
       childIds: [],
       styleBindingId: "sb-page-hero-subhead",
       propValues: {
         content:
-          "Templates are design-only; page content lives in blocks below.",
+          "This masthead lives in the template. Page content is composed from typed blocks in the column below.",
       },
+    },
+    "page-content": {
+      id: "page-content",
+      kind: "primitive",
+      definitionKey: "primitive.box",
+      parentId: "page-main",
+      childIds: ["page-main-slot"],
+      styleBindingId: "sb-page-content",
+      propValues: { tag: "div" },
+    },
+    "page-main-slot": {
+      ...base.nodes["page-main-slot"],
+      parentId: "page-content",
     },
     "page-footer": {
       ...base.nodes["page-footer"],
-      childIds: ["page-footer-note"],
+      childIds: ["page-footer-inner"],
       styleBindingId: "sb-page-footer",
+    },
+    "page-footer-inner": {
+      id: "page-footer-inner",
+      kind: "primitive",
+      definitionKey: "primitive.box",
+      parentId: "page-footer",
+      childIds: ["page-footer-brand", "page-footer-note"],
+      styleBindingId: "sb-page-footer-inner",
+      propValues: { tag: "div" },
+    },
+    "page-footer-brand": {
+      id: "page-footer-brand",
+      kind: "text",
+      definitionKey: "primitive.text",
+      parentId: "page-footer-inner",
+      childIds: [],
+      styleBindingId: "sb-page-footer-brand",
+      propValues: { content: "Contorro" },
     },
     "page-footer-note": {
       id: "page-footer-note",
       kind: "text",
       definitionKey: "primitive.text",
-      parentId: "page-footer",
+      parentId: "page-footer-inner",
       childIds: [],
       styleBindingId: "sb-page-footer-note",
       propValues: {
@@ -759,24 +973,48 @@ export function buildSeedPageTemplateComposition(): PageComposition {
       id: "sb-page-header",
       nodeId: "page-header",
       properties: [
+        { type: "utility", property: "width", value: "full" },
+        { type: "token", property: "background", token: "color.card" },
+        { type: "token", property: "color", token: "color.card.foreground" },
+      ],
+    },
+    "sb-page-header-inner": {
+      id: "sb-page-header-inner",
+      nodeId: "page-header-inner",
+      properties: [
         { type: "utility", property: "display", value: "flex" },
         { type: "utility", property: "justifyContent", value: "between" },
         { type: "utility", property: "alignItems", value: "center" },
-        { type: "utility", property: "padding", value: "6" },
+        { type: "utility", property: "gap", value: "4" },
+        { type: "utility", property: "width", value: "full" },
+        { type: "utility", property: "maxWidth", value: "6xl" },
+        { type: "utility", property: "marginLeft", value: "auto" },
+        { type: "utility", property: "marginRight", value: "auto" },
+        { type: "utility", property: "paddingLeft", value: "6" },
+        { type: "utility", property: "paddingRight", value: "6" },
+        { type: "utility", property: "paddingLeft", value: "8", breakpoint: "md" },
+        { type: "utility", property: "paddingRight", value: "8", breakpoint: "md" },
+        { type: "utility", property: "paddingTop", value: "5" },
+        { type: "utility", property: "paddingBottom", value: "5" },
       ],
     },
     "sb-page-header-brand": {
       id: "sb-page-header-brand",
       nodeId: "page-header-brand",
       properties: [
-        { type: "utility", property: "fontSize", value: "xl" },
+        { type: "utility", property: "fontSize", value: "lg" },
         { type: "utility", property: "fontWeight", value: "semibold" },
+        { type: "utility", property: "letterSpacing", value: "tight" },
       ],
     },
     "sb-page-header-nav": {
       id: "sb-page-header-nav",
       nodeId: "page-header-nav",
-      properties: [{ type: "utility", property: "fontSize", value: "sm" }],
+      properties: [
+        { type: "utility", property: "fontSize", value: "sm" },
+        { type: "utility", property: "letterSpacing", value: "wide" },
+        { type: "token", property: "color", token: "color.muted.foreground" },
+      ],
     },
     "sb-page-main": {
       id: "sb-page-main",
@@ -784,8 +1022,6 @@ export function buildSeedPageTemplateComposition(): PageComposition {
       properties: [
         { type: "utility", property: "display", value: "flex" },
         { type: "utility", property: "flexDirection", value: "col" },
-        { type: "utility", property: "gap", value: "8" },
-        { type: "utility", property: "padding", value: "6" },
         { type: "utility", property: "minHeight", value: "screen" },
         { type: "token", property: "background", token: "color.background" },
         { type: "token", property: "color", token: "color.foreground" },
@@ -795,20 +1031,47 @@ export function buildSeedPageTemplateComposition(): PageComposition {
       id: "sb-page-hero-section",
       nodeId: "page-hero-section",
       properties: [
+        { type: "utility", property: "paddingLeft", value: "6" },
+        { type: "utility", property: "paddingRight", value: "6" },
+        { type: "utility", property: "paddingTop", value: "16" },
+        { type: "utility", property: "paddingBottom", value: "16" },
+        { type: "utility", property: "paddingTop", value: "24", breakpoint: "md" },
+        { type: "utility", property: "paddingBottom", value: "24", breakpoint: "md" },
+      ],
+    },
+    "sb-page-hero-inner": {
+      id: "sb-page-hero-inner",
+      nodeId: "page-hero-inner",
+      properties: [
         { type: "utility", property: "display", value: "flex" },
         { type: "utility", property: "flexDirection", value: "col" },
-        { type: "utility", property: "gap", value: "4" },
-        { type: "utility", property: "padding", value: "8" },
-        { type: "utility", property: "borderRadius", value: "xl" },
-        { type: "token", property: "background", token: "color.card" },
+        { type: "utility", property: "alignItems", value: "center" },
+        { type: "utility", property: "textAlign", value: "center" },
+        { type: "utility", property: "gap", value: "6" },
+        { type: "utility", property: "width", value: "full" },
+        { type: "utility", property: "maxWidth", value: "5xl" },
+        { type: "utility", property: "marginLeft", value: "auto" },
+        { type: "utility", property: "marginRight", value: "auto" },
+      ],
+    },
+    "sb-page-hero-eyebrow": {
+      id: "sb-page-hero-eyebrow",
+      nodeId: "page-hero-eyebrow",
+      properties: [
+        ...EYEBROW_TYPE,
+        { type: "token", property: "color", token: "color.primary" },
       ],
     },
     "sb-page-hero-heading": {
       id: "sb-page-hero-heading",
       nodeId: "page-hero-heading",
       properties: [
-        { type: "utility", property: "fontSize", value: "4xl" },
+        { type: "utility", property: "fontSize", value: "5xl" },
+        { type: "utility", property: "fontSize", value: "6xl", breakpoint: "md" },
+        { type: "utility", property: "fontSize", value: "7xl", breakpoint: "lg" },
+        { type: "utility", property: "fontWeight", value: "semibold" },
         { type: "utility", property: "lineHeight", value: "tight" },
+        { type: "utility", property: "letterSpacing", value: "tight" },
       ],
     },
     "sb-page-hero-subhead": {
@@ -816,13 +1079,73 @@ export function buildSeedPageTemplateComposition(): PageComposition {
       nodeId: "page-hero-subhead",
       properties: [
         { type: "utility", property: "fontSize", value: "lg" },
+        { type: "utility", property: "fontSize", value: "xl", breakpoint: "md" },
         { type: "utility", property: "lineHeight", value: "relaxed" },
+        { type: "utility", property: "maxWidth", value: "2xl" },
+        { type: "utility", property: "marginLeft", value: "auto" },
+        { type: "utility", property: "marginRight", value: "auto" },
+        { type: "token", property: "color", token: "color.muted.foreground" },
+      ],
+    },
+    "sb-page-content": {
+      id: "sb-page-content",
+      nodeId: "page-content",
+      properties: [
+        { type: "utility", property: "display", value: "flex" },
+        { type: "utility", property: "flexDirection", value: "col" },
+        { type: "utility", property: "gap", value: "10" },
+        { type: "utility", property: "gap", value: "12", breakpoint: "md" },
+        { type: "utility", property: "width", value: "full" },
+        { type: "utility", property: "maxWidth", value: "6xl" },
+        { type: "utility", property: "marginLeft", value: "auto" },
+        { type: "utility", property: "marginRight", value: "auto" },
+        { type: "utility", property: "paddingLeft", value: "6" },
+        { type: "utility", property: "paddingRight", value: "6" },
+        { type: "utility", property: "paddingLeft", value: "8", breakpoint: "md" },
+        { type: "utility", property: "paddingRight", value: "8", breakpoint: "md" },
+        { type: "utility", property: "paddingBottom", value: "20" },
+        { type: "utility", property: "paddingBottom", value: "24", breakpoint: "md" },
       ],
     },
     "sb-page-footer": {
       id: "sb-page-footer",
       nodeId: "page-footer",
-      properties: [{ type: "utility", property: "padding", value: "6" }],
+      properties: [
+        { type: "utility", property: "width", value: "full" },
+        { type: "token", property: "background", token: "color.card" },
+        { type: "token", property: "color", token: "color.muted.foreground" },
+      ],
+    },
+    "sb-page-footer-inner": {
+      id: "sb-page-footer-inner",
+      nodeId: "page-footer-inner",
+      properties: [
+        { type: "utility", property: "display", value: "flex" },
+        { type: "utility", property: "flexDirection", value: "col" },
+        { type: "utility", property: "flexDirection", value: "row", breakpoint: "md" },
+        { type: "utility", property: "justifyContent", value: "between", breakpoint: "md" },
+        { type: "utility", property: "alignItems", value: "center", breakpoint: "md" },
+        { type: "utility", property: "gap", value: "3" },
+        { type: "utility", property: "width", value: "full" },
+        { type: "utility", property: "maxWidth", value: "6xl" },
+        { type: "utility", property: "marginLeft", value: "auto" },
+        { type: "utility", property: "marginRight", value: "auto" },
+        { type: "utility", property: "paddingLeft", value: "6" },
+        { type: "utility", property: "paddingRight", value: "6" },
+        { type: "utility", property: "paddingLeft", value: "8", breakpoint: "md" },
+        { type: "utility", property: "paddingRight", value: "8", breakpoint: "md" },
+        { type: "utility", property: "paddingTop", value: "10" },
+        { type: "utility", property: "paddingBottom", value: "10" },
+      ],
+    },
+    "sb-page-footer-brand": {
+      id: "sb-page-footer-brand",
+      nodeId: "page-footer-brand",
+      properties: [
+        { type: "utility", property: "fontSize", value: "sm" },
+        { type: "utility", property: "fontWeight", value: "semibold" },
+        { type: "token", property: "color", token: "color.foreground" },
+      ],
     },
     "sb-page-footer-note": {
       id: "sb-page-footer-note",
@@ -848,17 +1171,20 @@ export const PAGE_MAIN_EMBED_PRIMARY_BUTTON_LIBRARY_ID =
 
 /**
  * Same as {@link buildSeedPageTemplateComposition}, plus design-only
- * `primitive.libraryComponent` refs (highlight card + primary button) between
- * the hero and the `main` layout slot. Embedded refs carry no instance values.
+ * `primitive.libraryComponent` refs (highlight card + primary button) placed at
+ * the top of the centered content column, before the block slot. Embedded refs
+ * carry no instance values.
  */
 export function buildSeedPageTemplateWithLibraryComposition(): PageComposition {
   const base = buildSeedPageTemplateComposition();
-  const pageMain = base.nodes["page-main"];
-  if (!pageMain) {
-    throw new Error("buildSeedPageTemplateComposition: missing page-main");
+  const pageContent = base.nodes["page-content"];
+  if (!pageContent) {
+    throw new Error(
+      "buildSeedPageTemplateComposition: missing page-content wrapper",
+    );
   }
 
-  const slotIdx = pageMain.childIds.indexOf("page-main-slot");
+  const slotIdx = pageContent.childIds.indexOf("page-main-slot");
   const libraryEmbedIds = [
     PAGE_MAIN_EMBED_LIBRARY_ID,
     PAGE_MAIN_EMBED_PRIMARY_BUTTON_LIBRARY_ID,
@@ -869,7 +1195,7 @@ export function buildSeedPageTemplateWithLibraryComposition(): PageComposition {
       id: PAGE_MAIN_EMBED_LIBRARY_ID,
       kind: "designerComponent",
       definitionKey: "primitive.libraryComponent",
-      parentId: "page-main",
+      parentId: "page-content",
       childIds: [],
       propValues: { componentKey: SEED_CONTENT_HIGHLIGHT_COMPONENT_KEY },
     },
@@ -877,19 +1203,19 @@ export function buildSeedPageTemplateWithLibraryComposition(): PageComposition {
       id: PAGE_MAIN_EMBED_PRIMARY_BUTTON_LIBRARY_ID,
       kind: "designerComponent",
       definitionKey: "primitive.libraryComponent",
-      parentId: "page-main",
+      parentId: "page-content",
       childIds: [],
       propValues: { componentKey: SEED_PRIMARY_BUTTON_COMPONENT_KEY },
     },
-    "page-main": {
-      ...pageMain,
+    "page-content": {
+      ...pageContent,
       childIds:
         slotIdx === -1
-          ? [...pageMain.childIds, ...libraryEmbedIds]
+          ? [...pageContent.childIds, ...libraryEmbedIds]
           : [
-              ...pageMain.childIds.slice(0, slotIdx),
+              ...pageContent.childIds.slice(0, slotIdx),
               ...libraryEmbedIds,
-              ...pageMain.childIds.slice(slotIdx),
+              ...pageContent.childIds.slice(slotIdx),
             ],
     },
   };
