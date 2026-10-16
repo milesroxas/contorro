@@ -1,6 +1,10 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import {
+  type MigrateDownArgs,
+  type MigrateUpArgs,
+  sql,
+} from "@payloadcms/db-postgres";
 
-export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
+export async function up({ db }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
    CREATE TYPE "public"."enum_pages_blocks_card_link_link_type" AS ENUM('url', 'page');
   CREATE TYPE "public"."enum_pages_blocks_card_button_link_type" AS ENUM('url', 'page');
@@ -702,10 +706,10 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "payload_preferences_rels_users_id_idx" ON "payload_preferences_rels" USING btree ("users_id");
   CREATE INDEX "payload_migrations_updated_at_idx" ON "payload_migrations" USING btree ("updated_at");
   CREATE INDEX "payload_migrations_created_at_idx" ON "payload_migrations" USING btree ("created_at");
-  CREATE INDEX "design_system_settings_default_token_set_idx" ON "design_system_settings" USING btree ("default_token_set_id");`)
+  CREATE INDEX "design_system_settings_default_token_set_idx" ON "design_system_settings" USING btree ("default_token_set_id");`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({ db }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    DROP TABLE "pages_blocks_card" CASCADE;
   DROP TABLE "pages_blocks_cta" CASCADE;
@@ -771,5 +775,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TYPE "public"."enum_page_compositions_status";
   DROP TYPE "public"."enum__page_compositions_v_version_status";
   DROP TYPE "public"."enum_payload_folders_folder_type";
-  DROP TYPE "public"."enum_design_system_settings_active_color_mode";`)
+  DROP TYPE "public"."enum_design_system_settings_active_color_mode";`);
 }
